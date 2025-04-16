@@ -1,278 +1,221 @@
 import os
 import cv2
-import time
 import torch
 import argparse
 import numpy as np
 from termcolor import colored
 from tqdm import tqdm
-from glob import glob
-from src.utils.plot import plot_hand_camera
-from scipy.ndimage import gaussian_filter1d
-
-from demo.hamer.vitpose_model import ViTPoseModel
-from demo.hamer.hamer.configs import CACHE_DIR_HAMER
-from demo.hamer.hamer.models import HAMER, download_models, load_hamer, DEFAULT_CHECKPOINT
-from demo.hamer.hamer.utils import recursive_to
-from demo.hamer.hamer.datasets.vitdet_dataset import ViTDetDataset, DEFAULT_MEAN, DEFAULT_STD
-from demo.hamer.hamer.utils.renderer import Renderer, cam_crop_to_full
-from demo.hamer.hamer.utils.utils_detectron2 import DefaultPredictor_Lazy
+import zipfile
+import shutil
+import matplotlib
+from demo.depth_anything_v2.dpt import DepthAnythingV2
+from src.fmcw.simulator import Simulation
 
 
-LIGHT_BLUE=(0.65098039,  0.74117647,  0.85882353)
-camera_params = {
-    'camera_position': [0, 0, 0],
-    'camera_target': [0, 0, 1],
-    'camera_intrinsic': [454.788/2.5, 454.696/2.5, 321.283/2.5, 186.695/2.5]
-}
-
-
-def process_single_image(img, model, model_cfg, detector, keypoint_detector, renderer, device='cuda'):
+def process_sequence(args, video_path):
     """
-    Process a single image and return hand mesh reconstruction results
+    Process video sequence using batch inference
     Args:
-        img: numpy array of shape [H, W, 3] in BGR format
-        model: HaMeR model
-        model_cfg: model config
-        detector: body detector (VitDet)
-        keypoint_detector: keypoint detector (ViTPose)
-        renderer: mesh renderer
-        device: device to run model on
-    Returns:
-        dict containing reconstruction results, or None if no hands detected
+        args: ArgumentParser object containing all parameters
+        video_path: Path to the video file
     """
-    # Detect humans in image
-    img_bgr = img[:, :, ::-1]
-    det_out = detector(img_bgr)
-    det_instances = det_out['instances']
-    valid_idx = (det_instances.pred_classes==0) & (det_instances.scores > 0.5)
-    pred_bboxes = det_instances.pred_boxes.tensor[valid_idx].cpu().numpy()
-    pred_scores = det_instances.scores[valid_idx].cpu().numpy()
-    # Detect human keypoints
-    vitposes_out = keypoint_detector.predict_pose(img, [np.concatenate([pred_bboxes, pred_scores[:, None]], axis=1)],)
-    assert len(vitposes_out) == 1, 'Must be only one human in the image'
-    
-    left_hand_keyp = vitposes_out[0]['keypoints'][-42:-21]
-    right_hand_keyp = vitposes_out[0]['keypoints'][-21:]
-    
-    def process_hand(keyp):
-        valid = keyp[:,2] > 0.5
-        assert sum(valid) > 3, 'No valid hand keypoints'
-        bbox = [keyp[valid,0].min(), keyp[valid,1].min(), keyp[valid,0].max(), keyp[valid,1].max()]
-        return bbox
-    
-    boxes = np.stack([process_hand(left_hand_keyp), process_hand(right_hand_keyp)])
-    right = np.stack([0, 1])
-
-    # # Draw two bounding boxes on the image
-    # img_bgr_copy = img_bgr.copy()
-    # for bbox in boxes:
-    #     x1, y1, x2, y2 = map(int, bbox)
-    #     cv2.rectangle(img_bgr_copy, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Green box with thickness 2
-    # # Save the image with bounding boxes
-    # cv2.imwrite('output.png', img_bgr_copy)
-
-    # Extract hand bounding boxes
-    batch_size = 2
-    dataset = ViTDetDataset(model_cfg, img_bgr, boxes, right, rescale_factor=2.0)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
-
-    batch = next(iter(dataloader))
-    batch = recursive_to(batch, device)
-    
-    with torch.no_grad():
-        out = model(batch)
-        
-    multiplier = (2*batch['right']-1)
-    pred_cam = out['pred_cam']
-    pred_cam[:,1] = multiplier*pred_cam[:,1]
-    box_center = batch["box_center"].float()
-    box_size = batch["box_size"].float()
-    img_size = batch["img_size"].float()
-    scaled_focal_length = model_cfg.EXTRA.FOCAL_LENGTH / model_cfg.MODEL.IMAGE_SIZE * img_size.max()
-    pred_cam_t_full = cam_crop_to_full(pred_cam, box_center, box_size, img_size, scaled_focal_length).detach().cpu().numpy()
-
-    verts = out['pred_vertices'].detach().cpu().numpy()  # [B, V, 3]
-    joints = out['pred_keypoints_3d'].detach().cpu().numpy()  # [B, J, 3]
-    is_right = batch['right'].cpu().numpy()  # [B]
-    verts[..., 0] = (2 * is_right[:, None] - 1) * verts[..., 0]
-    verts = verts + pred_cam_t_full[:, None, :]
-    joints[..., 0] = (2 * is_right[:, None] - 1) * joints[..., 0]
-    joints = joints + pred_cam_t_full[:, None, :]
-    hand_pose = out['pred_mano_params']['hand_pose'].detach().cpu().numpy()
-    betas = out['pred_mano_params']['betas'].detach().cpu().numpy()
-    return {'verts': verts, 'joints': joints, 'hand_pose': hand_pose, 'betas': betas}
-    
-
-def process_sequence(seq_id, model, model_cfg, detector, keypoint_detector, renderer, device='cuda'):
-    data_root = os.path.join('/root/autodl-tmp/datasets/CollectedProc', seq_id)
-    if not os.path.exists(os.path.join(data_root, 'color.npy')):
-        print(colored(f'{seq_id} does not exist', 'red'))
+    if not os.path.exists(video_path):
+        print(colored(f'Video file {video_path} does not exist', 'red'))
         return
     
-    color_data_list = np.load(os.path.join(data_root, 'color.npy'))
-    depth_data_list = np.load(os.path.join(data_root, 'depth.npy')) # used for correcting the z-axis
-    num_frames = len(color_data_list)
+    # Initialize FMCW simulator
+    simulator = Simulation(dtype=torch.float32, ctype=torch.complex64)
     
-    # stage 1: get pred results, and save the depth
-    results_list = []
-    depth = np.zeros((num_frames, 2))
-    for index in tqdm(range(num_frames)):
-        color_img = color_data_list[index]
-        depth_img = depth_data_list[index]
-        results = process_single_image(color_img, model, model_cfg, detector, keypoint_detector, renderer, device='cuda')
-        for k in range(2):
-            x_pred = results['joints'][k][:, 0]
-            y_pred = results['joints'][k][:, 1]
-            z_pred = results['joints'][k][:, 2]
-            x2d = (x_pred / z_pred * 12500 + 321.283).astype(np.int32)
-            y2d = (y_pred / z_pred * 12500 + 186.695).astype(np.int32)
-            joints2d = np.stack([x2d, y2d], axis=-1)
-            joints2d = joints2d[joints2d[:, 0] > 0]
-            joints2d = joints2d[joints2d[:, 0] < 640]
-            joints2d = joints2d[joints2d[:, 1] > 0]
-            joints2d = joints2d[joints2d[:, 1] < 360]
-            depths = depth_img[joints2d[:, 1], joints2d[:, 0]]
-            depth[index, k] = depths[(100 < depths) & (depths < 500)].mean() / 1e3
-        results_list.append(results)
-    
-    # stage 1.5: smooth the depth
-    depth_smooth = gaussian_filter1d(depth, sigma=1, axis=0)
-    
-    # stage 2: correct the z-axis
-    for index in tqdm(range(num_frames)):
-        color_img = color_data_list[index]
-        results = results_list[index]
-        joints_all = np.zeros((2, 21, 3))
-        verts_all = np.zeros((2, 778, 3))
-        # process both hands
-        for k in range(2):
-            joints = results['joints'][k].copy()
-            depth_pred = joints[:, 2].mean()
-            diff = depth_smooth[index, k] - depth_pred
-
-            # def compute_rigid_transform(source, target):
-            #     """rotate first, then translate"""
-            #     source_centered = source - source[0]
-            #     target_centered = target - target[0]
-            #     H = np.dot(source_centered.T, target_centered)
-            #     U, S, Vt = np.linalg.svd(H)
-            #     R = np.dot(Vt.T, U.T)
-            #     det = np.linalg.det(R)
-            #     if det < 0:
-            #         Vt[-1] *= -1
-            #         R = np.dot(Vt.T, U.T)
-            #     translation = target.mean(0) - source.mean(0)
-            #     return R, translation
-            
-            # # correct the joints
-            # joints_org = results['joints'][k].copy()
-            # joints_target = results['joints'][k].copy()
-            # scale = (joints_org[:, 2] + diff) / joints_org[:, 2]
-            
-            # joints_target[:, 0] *= scale * 12500 / 454.788
-            # joints_target[:, 1] *= scale * 12500 / 454.696
-            # joints_target[:, 2] *= scale
-            # R, translation = compute_rigid_transform(joints_org, joints_target)
-            # rot_center = joints_org.mean(0)
-            
-            # joints = results['joints'][k].copy()
-            # joints = np.einsum('ij,kj->ki', R, joints_org - rot_center) + rot_center + translation
-            # joints_all[k] = joints
-            
-            # # correct the verts (use the same rotation and translation)
-            # verts = results['verts'][k].copy()
-            # verts = np.einsum('ij,kj->ki', R, verts - rot_center) + rot_center + translation
-            # verts_all[k] = verts
-            
-            # correct the joints
-            joints_target = results['joints'][k].copy()
-            scale = (joints_target[:, 2] + diff) / joints_target[:, 2]
-            joints_target[:, 0] *= scale * 12500 / 454.788
-            joints_target[:, 1] *= scale * 12500 / 454.696
-            joints_target[:, 2] *= scale
-            joints_all[k] = joints_target
-            
-            verts_target = results['verts'][k].copy()
-            scale = (verts_target[:, 2] + diff) / verts_target[:, 2]
-            verts_target[:, 0] *= scale * 12500 / 454.788
-            verts_target[:, 1] *= scale * 12500 / 454.696
-            verts_target[:, 2] *= scale
-            verts_all[k] = verts_target
+    # Read all frames
+    cap = cv2.VideoCapture(video_path)
+    frames = []
+    depths = []
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = frame[15:-35, 22:-22] # crop
+        frames.append(frame)
+        # Estimate depth
+        depth = args.depth_estimator.infer_image(frame, input_size=518)  # Use default input size
+        depths.append(depth)
+    cap.release()
         
-        # plot the hand
-        image = cv2.resize(color_img, (256, 144))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        plot_hand_camera(image, joints_all[0], **camera_params, boundary=False)
-        plot_hand_camera(image, joints_all[1], **camera_params, boundary=False)
-        os.makedirs(f'/root/autodl-tmp/mmHand/output/{seq_id}', exist_ok=True)
-        cv2.imwrite(f'/root/autodl-tmp/mmHand/output/{seq_id}/{index:06d}.png', image)
+    # Process in batches
+    seq_id = os.path.splitext(os.path.basename(video_path))[0]
+    num_frames = len(frames)
+    
+    # Convert depth sequence to tensor for batch processing
+    depths = np.stack(depths, axis=0)  # [N, H, W]
+    depths = torch.from_numpy(depths).float().to(args.device)
+    
+    # Set batch size
+    batch_size = min(args.batch_size, num_frames)
+    num_batches = (num_frames + batch_size - 1) // batch_size
+    
+    # Store radar signals
+    radar_signals = []
+    
+    # Batch processing for FMCW simulation
+    for i in range(num_batches):
+        start_idx = i * batch_size
+        end_idx = min((i + 1) * batch_size, num_frames)
+        depth_batch = depths[start_idx:end_idx]  # [B, H, W]
         
-        # save the joints and verts
-        os.makedirs(f'{data_root}/joints', exist_ok=True)
-        os.makedirs(f'{data_root}/verts', exist_ok=True)
-        np.save(f'{data_root}/joints/{index:06d}.npy', joints_all)
-        np.save(f'{data_root}/verts/{index:06d}.npy', verts_all) 
-        # save the params
-        hand_pose = results['hand_pose']
-        betas = results['betas']
-        params = {
-            'hand_pose': hand_pose,
-            'betas': betas}
-        os.makedirs(f'{data_root}/params', exist_ok=True)
-        np.savez(f'{data_root}/params/{index:06d}.npz', **params)
+        # Calculate path information
+        path_info = simulator.forward(depth_batch)  # [3, B, num_rx, max_num_paths]
+        
+        # Generate radar frame
+        radar_frame = simulator.get_raw_radar_frame(
+            path_info, 
+            TX=simulator.TX,
+            save_cuda_memory=True
+        )  # [B, num_chirps, num_rx, num_samples]
+        
+        radar_signals.append(radar_frame.cpu().numpy())
+    
+    # Concatenate results from all batches
+    radar_signals = np.concatenate(radar_signals, axis=0)  # [N, num_chirps, num_rx, num_samples]
+    
+    # Set output directory
+    output_dir = video_path.replace('.mp4', '').replace('csl-news', 'csl-news-data')
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Save depth sequence and radar signals
+    np.save(os.path.join(output_dir, 'depths.npy'), depths.cpu().numpy())
+    np.save(os.path.join(output_dir, 'radar_signals.npy'), radar_signals)
+    
+    # Visualization part
+    if True:
+        # Set up output directory and video writer
+        output_dir = '/root/autodl-tmp/omniHand/output'
+        output_path = os.path.join(output_dir, os.path.basename(video_path))
 
+        # Get video dimensions
+        frame_height = frames[0].shape[0]
+        frame_width = frames[0].shape[1]
+        margin_width = 50
+        output_width = frame_width * 2 + margin_width
+        
+        # Initialize video writer with same fps as input video
+        cap = cv2.VideoCapture(video_path)
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+        cap.release()
+        
+        out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (output_width, frame_height))
+        # Set up colormap for depth visualization
+        cmap = matplotlib.colormaps.get_cmap('Spectral_r')
+        # Process and write each frame
+        for frame, depth in zip(frames, depths):
+            # Normalize and colorize depth
+            depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
+            depth = depth.astype(np.uint8)
+            depth = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(np.uint8)
+            # Create white margin between frames
+            split_region = np.ones((frame_height, margin_width, 3), dtype=np.uint8) * 255
+            # Combine frames horizontally
+            combined_frame = cv2.hconcat([frame, split_region, depth])
+            out.write(combined_frame)
+        out.release()
+
+
+def process_archive(args, archive_id):
+    """
+    Process a single archive: extract, process videos, then cleanup
+    Args:
+        args: ArgumentParser object containing all parameters
+        archive_id: ID of the archive to process
+    """
+    base_path = '/root/autodl-tmp/datasets/csl-news'
+    zip_path = os.path.join(base_path, f'archive_{archive_id}.zip')
+    extract_path = os.path.join(base_path, f'archive_{archive_id}')
+
+    if not os.path.exists(zip_path):
+        print(colored(f'Archive file {zip_path} does not exist', 'red'))
+        return False
+
+    try:
+        # Extract archive
+        print(colored(f'Extracting archive_{archive_id}...', 'blue'))
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_path)
+        
+        # Get all MP4 files
+        mp4_files = []
+        for root, dirs, files in os.walk(extract_path):
+            for file in files:
+                if file.endswith('.mp4'):
+                    mp4_files.append(os.path.join(root, file))
+        mp4_files.sort()
+
+        # Process each video with progress bar
+        for video_path in tqdm(mp4_files, desc=f'Processing archive_{archive_id}'):
+            try:
+                process_sequence(args, video_path)
+            except Exception as e:
+                print(colored(f'Failed to process: {video_path}', 'red'))
+                print(e)
+                continue
+
+    except Exception as e:
+        print(colored(f'Error processing archive_{archive_id}: {str(e)}', 'red'))
+        return False
+    
+    finally:
+        # Cleanup
+        if os.path.exists(extract_path):
+            shutil.rmtree(extract_path)
+
+    return True
+
+def main():
+    parser = argparse.ArgumentParser(description='Depth Estimation for Video Sequences')
+    parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
+    parser.add_argument('--id', nargs='+', default=None, help='List of sequences to process')
+    parser.add_argument('--start', type=int, default=None, help='Start archive number')
+    parser.add_argument('--end', type=int, default=None, help='End archive number')
+    parser.add_argument('--depth-model', type=str, default='vits', 
+                       choices=['vits', 'vitb', 'vitl', 'vitg'],
+                       help='Depth estimation model size')
+    args = parser.parse_args()
+    
+    # Process ID range if not explicitly provided
+    if args.id is None:
+        args.id = list(range(args.start, args.end + 1))
+        args.id = [f'{i:03d}' for i in args.id]
+
+    # Add device to args
+    args.device = torch.device('cuda')
+    
+    # Initialize depth estimator and add to args
+    print(colored('Initializing depth estimation model...', 'blue'))
+    model_configs = {
+        'vits': {'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384]},
+        'vitb': {'encoder': 'vitb', 'features': 128, 'out_channels': [96, 192, 384, 768]},
+        'vitl': {'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]},
+        'vitg': {'encoder': 'vitg', 'features': 384, 'out_channels': [1536, 1536, 1536, 1536]}
+    }
+    args.depth_estimator = DepthAnythingV2(**model_configs[args.depth_model])
+    args.depth_estimator.load_state_dict(
+        torch.load(f'demo/depth_anything_v2/checkpoints/depth_anything_v2_{args.depth_model}.pth', map_location='cpu'))
+    args.depth_estimator = args.depth_estimator.to(args.device).eval()
+    print(colored('Depth estimation model loaded successfully', 'green'))
+
+    # Process each archive in range
+    for archive_id in args.id:
+        print(colored(f'\nProcessing archive_{archive_id}', 'blue'))
+        print(colored('=' * 50, 'blue'))
+        
+        success = process_archive(args, archive_id)
+        
+        if success:
+            print(colored(f'Successfully completed archive_{archive_id}', 'green'))
+        else:
+            print(colored(f'Failed to process archive_{archive_id}', 'red'))
+        
+        print(colored('=' * 50, 'blue'))
+
+    print(colored('\nAll archives processing completed', 'green'))
 
 if __name__ == '__main__':
-    # load the hamer model
-    os.chdir('demo/hamer')
-    parser = argparse.ArgumentParser(description='HaMeR demo code')
-    parser.add_argument('--body_detector', type=str, default='vitdet', choices=['vitdet', 'regnety'], help='Using regnety improves runtime and reduces memory')
-    parser.add_argument('--id', nargs='+', default=None, help='List of sequences to process')
-    parser.add_argument('--start', type=int, default=None)
-    parser.add_argument('--end', type=int, default=None)
-    args = parser.parse_args()
-    if args.id is None:
-        args.id = ['%04d' % i for i in range(args.start, args.end + 1)]
-
-    model, model_cfg = load_hamer(DEFAULT_CHECKPOINT)
-    model = model.to('cuda')
-    model.eval()
-    # Load detector
-    if args.body_detector == 'vitdet':
-        from detectron2.config import LazyConfig
-        cfg_path = 'hamer/configs/cascade_mask_rcnn_vitdet_h_75ep.py'
-        detectron2_cfg = LazyConfig.load(str(cfg_path))
-        detectron2_cfg.train.init_checkpoint = "https://dl.fbaipublicfiles.com/detectron2/ViTDet/COCO/cascade_mask_rcnn_vitdet_h/f328730692/model_final_f05665.pkl"
-        for i in range(3):
-            detectron2_cfg.model.roi_heads.box_predictors[i].test_score_thresh = 0.25
-        detector = DefaultPredictor_Lazy(detectron2_cfg)
-    elif args.body_detector == 'regnety':
-        from detectron2 import model_zoo
-        from detectron2.config import get_cfg
-        detectron2_cfg = model_zoo.get_config('new_baselines/mask_rcnn_regnety_4gf_dds_FPN_400ep_LSJ.py', trained=True)
-        detectron2_cfg.model.roi_heads.box_predictor.test_score_thresh = 0.5
-        detectron2_cfg.model.roi_heads.box_predictor.test_nms_thresh   = 0.4
-        detector = DefaultPredictor_Lazy(detectron2_cfg)
-    # keypoint detector
-    keypoint_detector = ViTPoseModel('cuda')
-    # Setup the renderer
-    renderer = Renderer(model_cfg, faces=model.mano.faces)
-    print(colored('All models loaded', 'green'))
-    
-    # start annotation 
-    failed_seq_list = []
-    
-    for seq_id in tqdm(args.id):
-        print(colored(f'Processing {seq_id}', 'yellow'))
-        try: 
-            process_sequence(seq_id, model, model_cfg, detector, keypoint_detector, renderer, device='cuda')
-        except Exception as e:
-            failed_seq_list.append(seq_id)
-            print(colored(f'Failed to process {seq_id}', 'red'))
-            print(e)
-
-    if len(failed_seq_list) > 0:
-        print(colored(f'Failed seq list: {failed_seq_list}', 'red'))
-    else: 
-        print(colored('All sequences processed successfully', 'green'))
+    main()
