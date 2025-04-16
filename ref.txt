@@ -1,0 +1,185 @@
+import os
+import cv2
+import torch
+import argparse
+import numpy as np
+from termcolor import colored
+from tqdm import tqdm
+from utils import plot_hand_camera
+from hamer.vitpose_model import ViTPoseModel
+from mmpose.datasets.pipelines import Compose
+from mmcv.parallel import collate
+
+
+def inference_batch_pose(model, images, device='cpu'):
+    """
+    Simplified batch inference function
+    Args:
+        model: ViTPose model
+        images: List of numpy arrays [H,W,3] (BGR format)
+        device: Computing device
+    Returns:
+        list[dict]: Keypoint prediction results for each image
+    """
+    cfg = model.cfg
+    batch_data = []
+    
+    # Define flip pairs for keypoint symmetry
+    flip_pairs = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12],
+                  [13, 14], [15, 16], [17, 20], [18, 21], [19, 22],
+                  [23, 39], [24, 38], [25, 37], [26, 36], [27, 35], 
+                  [28, 34], [29, 33], [30, 32], [40, 49], [41, 48], 
+                  [42, 47], [43, 46], [44, 45], [54, 58], [55, 57], 
+                  [59, 68], [60, 67], [61, 66], [62, 65], [63, 70], 
+                  [64, 69], [71, 77], [72, 76], [73, 75], [78, 82], 
+                  [79, 81], [83, 87], [84, 86], [88, 90], [91, 112], 
+                  [92, 113], [93, 114], [94, 115], [95, 116], [96, 117], 
+                  [97, 118], [98, 119], [99, 120], [100, 121], [101, 122], 
+                  [102, 123], [103, 124], [104, 125], [105, 126], [106, 127], 
+                  [107, 128], [108, 129], [109, 130], [110, 131], [111, 132]]
+    
+    # Process each image
+    for img in images:
+        h, w = img.shape[:2]
+        center = np.array([w * 0.5, h * 0.5])
+        
+        # Calculate input size and scale
+        input_size = cfg.data_cfg['image_size']
+        aspect_ratio = input_size[0] / input_size[1]
+        
+        # Adjust dimensions based on aspect ratio
+        if w > aspect_ratio * h:
+            h = w * 1.0 / aspect_ratio
+        elif w < aspect_ratio * h:
+            w = h * aspect_ratio
+        
+        scale = np.array([w / 200.0, h / 200.0], dtype=np.float32) * 1.25
+
+        # Prepare single image data
+        data = {
+            'img': img,  
+            'center': center,
+            'scale': scale,
+            'bbox_score': 1.0,
+            'bbox_id': 0,
+            'joints_3d': np.zeros((cfg.data_cfg.num_joints, 3), dtype=np.float32),
+            'joints_3d_visible': np.zeros((cfg.data_cfg.num_joints, 3), dtype=np.float32),
+            'rotation': 0,
+            'flip_pairs': flip_pairs,
+            'ann_info': {
+                'image_size': np.array(cfg.data_cfg['image_size']),
+                'num_joints': cfg.data_cfg['num_joints'],
+                'flip_pairs': flip_pairs
+            }
+        }
+        
+        data = Compose(cfg.test_pipeline)(data)
+        batch_data.append(data)
+    
+    # Batch processing
+    batch_data = collate(batch_data, samples_per_gpu=len(batch_data))
+    
+    # Model inference
+    with torch.no_grad():
+        result = model(
+            img=batch_data['img'].to(device),
+            img_metas=batch_data['img_metas'].data[0],
+            return_loss=False,
+            return_heatmap=False)
+    
+    return result['preds']
+
+def process_sequence(video_path, keypoint_detector, batch_size=4, device='cpu'):
+    """
+    处理视频序列，使用批量推理
+    """
+    if not os.path.exists(video_path):
+        print(colored(f'{video_path} 不存在', 'red'))
+        return
+    
+    # 读取所有帧
+    print(colored('正在读取视频帧...', 'blue'))
+    cap = cv2.VideoCapture(video_path)
+    frames = []
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frames.append(frame)
+    cap.release()
+    print(colored(f'共读取 {len(frames)} 帧', 'blue'))
+    
+    # 批量处理
+    seq_id = os.path.splitext(os.path.basename(video_path))[0]
+    num_frames = len(frames)
+    
+    # 创建骨架连接定义
+    skeleton = [
+        (0, 5), (5, 9), (9, 13), (13, 17), (17, 0),
+        (0, 1), (1, 2), (2, 3), (3, 4),
+        (5, 6), (6, 7), (7, 8),
+        (9, 10), (10, 11), (11, 12),
+        (13, 14), (14, 15), (15, 16),
+        (17, 18), (18, 19), (19, 20)
+    ]
+    
+    # 按批次处理
+    for i in tqdm(range(0, num_frames, batch_size)):
+        batch_frames = frames[i:min(i + batch_size, num_frames)]
+        
+        # 批量推理
+        preds = inference_batch_pose(keypoint_detector.model, batch_frames, device)
+        
+        # 处理每张图片的结果
+        for j, pred in enumerate(preds):
+            frame_idx = i + j
+            image = cv2.cvtColor(batch_frames[j], cv2.COLOR_BGR2RGB)
+            image = cv2.resize(image, (image.shape[1] * 4, image.shape[0] * 4), interpolation=cv2.INTER_LINEAR)
+            
+            # 提取左右手关键点
+            left_hand = pred[-42:-21]   # [21, 3]
+            right_hand = pred[-21:]     # [21, 3]
+            
+            # 绘制左手关键点和骨架
+            for pt in left_hand:
+                cv2.circle(image, (int(pt[0] * 4), int(pt[1] * 4)), 5, (0, 255, 0), -1)
+            for k1, k2 in skeleton:
+                pt1 = left_hand[k1]
+                pt2 = left_hand[k2]
+                cv2.line(image, (int(pt1[0] * 4), int(pt1[1] * 4)), 
+                        (int(pt2[0] * 4), int(pt2[1] * 4)), (0, 255, 0), 2)
+            
+            # 绘制右手关键点和骨架
+            for pt in right_hand:
+                cv2.circle(image, (int(pt[0] * 4), int(pt[1] * 4)), 5, (0, 0, 255), -1)
+            for k1, k2 in skeleton:
+                pt1 = right_hand[k1]
+                pt2 = right_hand[k2]
+                cv2.line(image, (int(pt1[0] * 4), int(pt1[1] * 4)), 
+                        (int(pt2[0] * 4), int(pt2[1] * 4)), (0, 0, 255), 2)
+            
+            # 保存结果
+            os.makedirs(f'output/{seq_id}', exist_ok=True)
+            cv2.imwrite(f'output/{seq_id}/{frame_idx:06d}.png', 
+                       cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+
+if __name__ == '__main__':
+    device = torch.device('mps')
+    
+    parser = argparse.ArgumentParser(description='ViTPose手部关键点检测')
+    parser.add_argument('--video_path', type=str, required=True, help='输入视频文件路径')
+    parser.add_argument('--batch_size', type=int, default=4, help='批处理大小')
+    args = parser.parse_args()
+
+    # 加载关键点检测器
+    os.chdir('hamer')
+    keypoint_detector = ViTPoseModel(device)
+    print(colored('模型加载完成', 'green'))
+    
+    # 处理视频
+    try:
+        process_sequence(args.video_path, keypoint_detector, args.batch_size, device)
+        print(colored('视频处理成功', 'green'))
+    except Exception as e:
+        print(colored('视频处理失败', 'red'))
+        print(e)
