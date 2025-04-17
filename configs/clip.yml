@@ -1,0 +1,30 @@
+log_dir: 'log/'
+strategy: 'ddp'
+
+data_cfg: 
+  target: src.data.dataloader.mmCSLNewsDInterface 
+  params: 
+    cfg: 
+      train_split: 'dataset/csl-news-demo01/train.json'
+      val_split: 'dataset/csl-news-demo01/val.json'
+      test_split: 'dataset/csl-news-demo01/val.json'
+      opt: 
+        data_root: '/root/autodl-tmp/datasets/csl-news/signals'
+      batch_size: 128
+      num_workers: 1
+      sample_ratio: 1
+
+model_cfg: 
+  target: src.model.clip.CLIP
+  params: 
+    max_epochs: 50
+    learning_rate: 1.0e-04
+    encoder_cfg:
+      model_name: 'vit_base_patch16_224'
+      image_resolution: [512, 64]
+      embed_dim: 256
+    text_cfg:
+      model_name: '/root/autodl-tmp/omniHand/huggingface/chinese_sentence_bert'
+      embed_dim: 768
+      unfreeze_last_layer_num: 3
+    temperature: 0.10

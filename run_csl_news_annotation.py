@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 from termcolor import colored
 from tqdm import tqdm
+import time
 import mmcv
 import mmengine
 import matplotlib.pyplot as plt
@@ -80,9 +81,10 @@ def process_sequence(args, video_path, pose_estimator, visualizer: Pose3dLocalVi
         print(colored(f'Video file {video_path} does not exist', 'red'))
         return
     seq_id = os.path.splitext(os.path.basename(video_path))[0]
+    print(colored(f'\n>> Processing sequence: {seq_id}', 'cyan'))
     
     # Read frames
-    print(colored('Reading video frames...', 'blue'))
+    print(colored('[1] Reading frames...', 'blue'))
     cap = cv2.VideoCapture(video_path)
     frames = []
     while True:
@@ -93,77 +95,56 @@ def process_sequence(args, video_path, pose_estimator, visualizer: Pose3dLocalVi
         frames.append(frame)
     frames = np.array(frames)
     cap.release()
-    print(colored(f'Read {len(frames)} frames', 'blue'))
+    print(colored(f'    [OK] Loaded {len(frames)} frames', 'green'))
     
-    # Process each frame
-    print(colored('Processing frames...', 'blue'))
-
-    
+    # Estimate poses
+    print(colored('[2] Estimating poses...', 'blue'))
     keypoints_all = []
-    for frame_idx in range(len(frames)):
+    for frame_idx in tqdm(range(len(frames)), desc='    Processing', ncols=80):
         frame = frames[frame_idx].copy()
         pose_results = process_single_image(frame, pose_estimator, visualizer, args)
         keypoints = pose_results.pred_instances.keypoints[0]
         keypoints_all.append(keypoints)
         
-        # keypoints_transformed = pose_results.pred_instances.transformed_keypoints[0]
-        # left_hand = keypoints_transformed[-42:-21]   # Last 42 points are hands, first 21 is left hand
-        # right_hand = keypoints_transformed[-21:]      # Last 21 points is right hand
-        # # Draw left hand in blue, right hand in red
-        # frame = draw_2d_keypoints(frame, left_hand, color=(255, 0, 0))  # Blue
-        # frame = draw_2d_keypoints(frame, right_hand, color=(0, 0, 255)) # Red
-        # # Save the visualized frame if needed
-        # os.makedirs(f'output/{seq_id}', exist_ok=True)
-        # cv2.imwrite(f'output/{seq_id}/{frame_idx:04d}.jpg', frame)
-        
     keypoints_all = np.array(keypoints_all)
+    print(colored('    [OK] Pose estimation completed', 'green'))
     
+    # Process keypoints
+    print(colored('[3] Processing keypoints...', 'blue'))
     depths_center = keypoints_all[:, [6, 7], 2].mean()
     keypoints_all[..., 2] = keypoints_all[..., 2] - depths_center
     keypoints_all = keypoints_all[:, -42:] # [N, 42, 3]
     
-    # Apply 1D Gaussian filter along time dimension with sigma=2
+    # Apply smoothing
     keypoints_all = gaussian_filter1d(keypoints_all, sigma=2, axis=0)
-    
     velocities_all = (keypoints_all[1:] - keypoints_all[:-1]) * 30
     keypoints_all = keypoints_all[:-1]
     num_frames = len(keypoints_all)
+    print(colored('    [OK] Keypoint processing completed', 'green'))
     
-    mmwave_cubes = []
-    for frame_idx in range(num_frames):
+    # Generate radar signals
+    print(colored('[4] Generating radar signals...', 'blue'))
+    time_doppler_signal = np.zeros((num_frames, 64))
+    time_azimuth_signal = np.zeros((num_frames, 64))
+    time_elevation_signal = np.zeros((num_frames, 64))
+    
+    for frame_idx in tqdm(range(num_frames), desc='   Simulating', ncols=80):
         keypoints = torch.from_numpy(keypoints_all[frame_idx]).to(args.device)
         velocities = torch.from_numpy(velocities_all[frame_idx]).to(args.device)
-        mmwave_cube = simulator.forward(keypoints, velocities)
-        mmwave_cubes.append(mmwave_cube)    
-    mmwave_cubes = torch.stack(mmwave_cubes, dim=0) # [num_frames, doppler, range, azimuth, elevation]
+        mmwave_cube = simulator.forward(keypoints, velocities).cpu().numpy()
+        time_doppler_signal[frame_idx] = mmwave_cube.sum(axis=3).sum(axis=2).sum(axis=1)
+        time_azimuth_signal[frame_idx] = mmwave_cube.sum(axis=3).sum(axis=1).sum(axis=0)
+        time_elevation_signal[frame_idx] = mmwave_cube.sum(axis=2).sum(axis=1).sum(axis=0)
     
-    signal = mmwave_cubes.clone()
-    time_doppler_signal = signal.sum([2,3,4])
-    time_azimuth_signal = signal.sum([1,2,4])
-    time_elevation_signal = signal.sum([1,2,3])
-    # time_doppler_signal = time_doppler_signal / torch.max(time_doppler_signal, dim=1, keepdim=True)[0]
-    # time_azimuth_signal = time_azimuth_signal / torch.max(time_azimuth_signal, dim=1, keepdim=True)[0]
-    # time_elevation_signal = time_elevation_signal / torch.max(time_elevation_signal, dim=1, keepdim=True)[0]
-    
-    # plt.figure(figsize=(8, 12))
-    # plt.subplot(311)
-    # plt.imshow(time_doppler_signal.cpu().numpy().T, aspect='auto')
-    # plt.title('Time-Doppler')
-    # plt.subplot(312)
-    # plt.imshow(time_azimuth_signal.cpu().numpy().T, aspect='auto')
-    # plt.title('Time-Azimuth')
-    # plt.subplot(313)
-    # plt.imshow(time_elevation_signal.cpu().numpy().T, aspect='auto')
-    # plt.title('Time-Elevation') 
-    # plt.tight_layout()
-    # plt.savefig('output.png')
-    # plt.close()
-    
-    time_signal = torch.stack([time_doppler_signal, time_azimuth_signal, time_elevation_signal], dim=-1)
+    # Save results
+    print(colored('[5] Saving results...', 'blue'))
+    time_signal = np.stack([time_doppler_signal, time_azimuth_signal, time_elevation_signal], axis=-1)
     save_path = video_path.replace('.mp4', '.npy').replace('videos', 'signals')
-    np.save(save_path, time_signal.cpu().numpy())
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)  
+    np.save(save_path, time_signal)
+    print(colored(f'    [OK] Results saved to: {save_path}', 'green'))
+    print(colored('[OK] Sequence processing completed\n', 'green', attrs=['bold']))
 
- 
 def process_archive(args, archive_id, pose_estimator, visualizer, simulator):
     """Process a single archive
     """
@@ -172,13 +153,15 @@ def process_archive(args, archive_id, pose_estimator, visualizer, simulator):
     extract_path = os.path.join(base_path, f'videos/archive_{archive_id}')
 
     if not os.path.exists(zip_path):
-        print(colored(f'Archive file {zip_path} does not exist', 'red'))
+        print(colored(f'[X] Archive file {zip_path} does not exist', 'red'))
         return False
         
     # Extract archive
+    print(colored('[1] Extracting archive...', 'blue'))
     import zipfile
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(extract_path)
+    print(colored('    [OK] Archive extracted', 'green'))
     
     # Get all MP4 files
     mp4_files = []
@@ -189,15 +172,30 @@ def process_archive(args, archive_id, pose_estimator, visualizer, simulator):
     mp4_files.sort()
     
     # Process each video
-    for video_path in tqdm(mp4_files, desc=f'Processing archive_{archive_id}'):
+    total_videos = len(mp4_files)
+    start_time = time.time()
+    processed_videos = 0
+    
+    print(colored(f'[2] Processing {total_videos} videos...', 'blue'))
+    for i, video_path in enumerate(mp4_files):
         if not ('Common-Concerns' in video_path or 'Dragon-TV' in video_path):
-            print(colored(f'Skipping video: {video_path}', 'yellow'))
+            print(colored(f'    [SKIP] {os.path.basename(video_path)}', 'yellow'))
             continue
+            
         process_sequence(args, video_path, pose_estimator, visualizer, simulator)
+        processed_videos += 1
         
-    # Remove extracted files
+        if processed_videos >= 2:
+            avg_time_per_video = (time.time() - start_time) / processed_videos
+            remaining_videos = total_videos - (i + 1)
+            est_time_remaining = (remaining_videos * avg_time_per_video) / 60
+            print(colored(f'[INFO] Progress: {i+1}/{total_videos}, ETA: {est_time_remaining:.1f}min', 'cyan'))
+    
+    # Cleanup
+    print(colored('[3] Cleaning up...', 'blue'))
     import shutil
     shutil.rmtree(extract_path)
+    print(colored('    [OK] Temporary files removed', 'green'))
     
     return True
 
@@ -207,14 +205,15 @@ def main():
     parser.add_argument('--id', nargs='+', default=None, help='List of sequences to process')
     parser.add_argument('--start', type=int, default=None, help='Start archive number')
     parser.add_argument('--end', type=int, default=None, help='End archive number')
-    parser.add_argument('--gpu', type=int, dest='gpu_ids', help='GPU IDs')
-    parser.add_argument('--device', default='cuda:0', help='Device for inference')
+    parser.add_argument('--gpu', type=int, dest='gpu_id', help='GPU ID')
+    # parser.add_argument('--device', default='cuda:0', help='Device for inference')
     parser.add_argument('--kpt-thr', type=float, default=0.3, help='Keypoint threshold')
     args = parser.parse_args()
     
     if args.id is None:
         args.id = list(range(args.start, args.end + 1))
         args.id = [f'{i:03d}' for i in args.id]
+    args.device = 'cuda:' + str(args.gpu_id)    
 
     # Initialize model
     print(colored('Initializing model...', 'blue'))

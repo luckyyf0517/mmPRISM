@@ -1,9 +1,12 @@
 **/.DS_Store
 **/__pycache__
 
+dataset/
 demo/
-output/
+huggingface/
 log/
+output/
+wandb/
 
 src/mano/*.pkl
 
