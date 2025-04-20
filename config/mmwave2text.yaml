@@ -8,12 +8,10 @@ data_cfg:
       train_split: 'dataset/csl-news-demo01/train.json'
       val_split: 'dataset/csl-news-demo01/val.json'
       test_split: 'dataset/csl-news-demo01/val.json'
-      data_root: '/path/to/your/data'
       max_length: 384
       doppler_size: 64
       num_channels: 1
       selected_channel: 2
-      batch_size: 32
       num_workers: 4 
 
 model_cfg:

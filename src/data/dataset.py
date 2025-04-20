@@ -14,7 +14,6 @@ from torch.utils.data import Dataset, DataLoader
 class mmCSLNewsDataset(Dataset):
     def __init__(self, opt, split_path=None):
         self.opt = opt
-        self.data_root = opt.get('data_root', None)
         with open(split_path, 'r') as f:
             self.data_dict = json.load(f)
 
@@ -55,7 +54,6 @@ class mmCSLNewsDataset(Dataset):
 
 if __name__ == '__main__':
     opt = {
-        'data_root': '/root/autodl-tmp/datasets/csl-news/signals',
         'max_length': 384,
         'doppler_size': 64,
         'num_channels': 1,

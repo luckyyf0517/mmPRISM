@@ -34,6 +34,7 @@ class mmWave2Text(LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.cfg = cfg
+        self.batch_size = cfg.batch_size
         
         # Signal processing layers
         self.signal_proj = nn.Linear(cfg.doppler_size, cfg.hidden_dim)
@@ -51,6 +52,9 @@ class mmWave2Text(LightningModule):
         # Feature projection
         self.feature_proj = nn.Linear(cfg.hidden_dim, 768)
         
+        # Initialize weights
+        self.apply(self._init_weights)
+
         # Initialize MT5 model and tokenizer
         self.mt5_model = MT5ForConditionalGeneration.from_pretrained(cfg.mt5_path)
         self.mt5_tokenizer = T5Tokenizer.from_pretrained(
@@ -59,8 +63,6 @@ class mmWave2Text(LightningModule):
             model_max_length=512  # Set a reasonable maximum length
         )
         
-        # Initialize weights
-        self.apply(self._init_weights)
     
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -74,7 +76,6 @@ class mmWave2Text(LightningModule):
     def forward(self, src_input, tgt_input):
         # Process input signal [B, T, N]
         B, T, N = src_input.shape
-        self.batch_size = B
         
         # Project signal to hidden dimension
         signal = self.signal_proj(src_input)  # [B, T, hidden_dim]
@@ -153,13 +154,16 @@ class mmWave2Text(LightningModule):
     def training_step(self, batch, batch_idx):
         outputs = self(batch['signal'], batch['caption'])
         loss = outputs['loss']
-        self.log('train/loss', loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=self.batch_size)
+        self.log('train/loss', loss, on_step=True, on_epoch=False, 
+                 prog_bar=True, sync_dist=True, batch_size=self.batch_size)
+        
         return loss
     
     def validation_step(self, batch, batch_idx):
         outputs = self(batch['signal'], batch['caption'])
         loss = outputs['loss']
-        self.log('valid/loss', loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=self.batch_size)
+        self.log('valid/loss', loss, on_step=False, on_epoch=True, 
+                 prog_bar=True, sync_dist=True, batch_size=self.batch_size)
         return loss
 
     def configure_optimizers(self):
@@ -168,9 +172,18 @@ class mmWave2Text(LightningModule):
             lr=self.cfg.learning_rate,
             weight_decay=0.01
         )
+        
+        # DeepSpeed will automatically handle learning rate scheduling
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
-            T_max=self.cfg.max_epochs,
+            T_max=self.trainer.max_epochs,
             eta_min=0
         )
-        return [optimizer], [scheduler]
+        
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "epoch",
+            }
+        }
