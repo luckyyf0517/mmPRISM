@@ -109,7 +109,7 @@ class ImageEncoder(nn.Module):
     ):
         super().__init__()
         # Override image resolution with fixed values
-        image_resolution = [512, 64]
+        image_resolution = [384, 64]
         self.model_name = model_name
         
         # Initialize appropriate vision model
@@ -117,7 +117,7 @@ class ImageEncoder(nn.Module):
             self.visual = _create_vision_transformer(
                 model_name, 
                 pretrained=pretrained, 
-                in_chans=3, 
+                in_chans=1, 
                 img_size=image_resolution, 
                 num_classes=embed_dim, 
                 **kwargs
@@ -143,32 +143,6 @@ class ImageEncoder(nn.Module):
         """
         return self.visual(x)
     
-    def encode_to_sequence(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Encode image to a sequence representation.
-        
-        Args:
-            x: Input image tensor
-            
-        Returns:
-            Sequence representation of the image
-        """
-        if 'vit' in self.model_name: 
-            x = self.visual.forward_features(x)
-            x = x[:, 1:, :]  # Remove CLS token, shape: [b, n, c]
-        elif 'resnet' in self.model_name: 
-            # Extract features from ResNet layers
-            x = self.visual.conv1(x)
-            x = self.visual.bn1(x)
-            x = self.visual.relu(x)
-            x = self.visual.maxpool(x)
-            x = self.visual.layer1(x)
-            x = self.visual.layer2(x)
-            x = self.visual.layer3(x)
-            # Reshape to sequence format
-            x = einops.rearrange(x, 'b c h w -> b (h w) c')
-        return x
-
 
 class CLIPProjection(nn.Module):
     """
@@ -178,9 +152,11 @@ class CLIPProjection(nn.Module):
         in_dim: Input dimension
         out_dim: Output dimension
     """
-    def __init__(self, in_dim: int, out_dim: int):
+    def __init__(self, in_dim: int, out_dim: int, dropout: float = 0.1):
         super().__init__()
         self.projection = nn.Linear(in_dim, out_dim)
+        self.norm = nn.LayerNorm(out_dim)
+        self.dropout = nn.Dropout(dropout)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -192,7 +168,10 @@ class CLIPProjection(nn.Module):
         Returns:
             Projected embeddings
         """
-        return self.projection(x)
+        x = self.projection(x)
+        x = self.norm(x)
+        x = self.dropout(x)
+        return x
 
 
 class CLIP(pl.LightningModule):
@@ -265,18 +244,6 @@ class CLIP(pl.LightningModule):
         """Initialize model parameters."""
         if self.text_projection is not None:
             nn.init.normal_(self.text_projection.projection.weight, std=0.01)
-            
-        # Initialize transformer parameters if applicable
-        if hasattr(self.image_encoder, 'window_size') and self.image_encoder.window_size is not None: 
-            nn.init.normal_(self.positional_embedding, std=0.01)
-            proj_std = (self.transformer.width ** -0.5) * ((2 * self.transformer.layers) ** -0.5)
-            attn_std = self.transformer.width ** -0.5
-            fc_std = (2 * self.transformer.width) ** -0.5
-            for block in self.transformer.resblocks:
-                nn.init.normal_(block.attn.in_proj_weight, std=attn_std)
-                nn.init.normal_(block.attn.out_proj.weight, std=proj_std)
-                nn.init.normal_(block.mlp.c_fc.weight, std=fc_std)
-                nn.init.normal_(block.mlp.c_proj.weight, std=proj_std)
 
     def encode_image(self, image: torch.Tensor) -> torch.Tensor:
         """
@@ -338,14 +305,16 @@ class CLIP(pl.LightningModule):
         text_features = batch['text_features']
         
         if not self.use_siglip: 
-            loss_clip = self.loss_fn(image_features, text_features, logit_scale=self.logit_scale)
+            loss_clip = self.loss_fn(
+                image_features, 
+                text_features, 
+                logit_scale=self.logit_scale)
         else: 
             loss_clip = self.loss_fn(
                 image_features, 
                 text_features, 
                 logit_scale=self.logit_scale, 
-                logit_bias=self.logit_bias
-            )
+                logit_bias=self.logit_bias)
             
         return {'loss_clip': loss_clip}
     
@@ -362,15 +331,15 @@ class CLIP(pl.LightningModule):
             Processed batch with features
         """
         self.batch_size = batch['signal'].size(0)
-        batch['signal'] = batch['signal'].permute(0, 3, 1, 2).float()  # [b, c, h, w]
+        batch['signal'] = batch['signal'].float().contiguous()  # [b, c, h, w]
         
         signal = batch['signal']
         text = batch['caption']
         
         image_features, text_features = self.forward(signal, text)
         
-        batch['image_features'] = image_features
-        batch['text_features'] = text_features
+        batch['image_features'] = image_features.contiguous()
+        batch['text_features'] = text_features.contiguous()
         
         return batch
     

@@ -72,11 +72,18 @@ def process_single_image(frame, pose_estimator, visualizer, args):
     
     # Estimate 3D pose
     pose_results = inference_topdown(pose_estimator, frame, bbox)
-    return pose_results[0]  # 只取第一个人的结果
+    return pose_results[0] 
+
 
 def process_sequence(args, video_path, pose_estimator, visualizer: Pose3dLocalVisualizer, simulator: Simulation):
     """Process video sequence using RTMPose3D
     """
+
+    save_path = video_path.replace('.mp4', '.npy').replace('videos', 'poses')
+    if os.path.exists(save_path):
+        print(colored(f'    [SKIP] {os.path.basename(video_path)}: {save_path} already exists', 'yellow'))
+        return
+
     if not os.path.exists(video_path):
         print(colored(f'Video file {video_path} does not exist', 'red'))
         return
@@ -113,37 +120,17 @@ def process_sequence(args, video_path, pose_estimator, visualizer: Pose3dLocalVi
     print(colored('[3] Processing keypoints...', 'blue'))
     depths_center = keypoints_all[:, [6, 7], 2].mean()
     keypoints_all[..., 2] = keypoints_all[..., 2] - depths_center
-    keypoints_all = keypoints_all[:, -42:] # [N, 42, 3]
-    
-    # Apply smoothing
-    keypoints_all = gaussian_filter1d(keypoints_all, sigma=2, axis=0)
-    velocities_all = (keypoints_all[1:] - keypoints_all[:-1]) * 30
-    keypoints_all = keypoints_all[:-1]
-    num_frames = len(keypoints_all)
-    print(colored('    [OK] Keypoint processing completed', 'green'))
-    
-    # Generate radar signals
-    print(colored('[4] Generating radar signals...', 'blue'))
-    time_doppler_signal = np.zeros((num_frames, 64))
-    time_azimuth_signal = np.zeros((num_frames, 64))
-    time_elevation_signal = np.zeros((num_frames, 64))
-    
-    for frame_idx in tqdm(range(num_frames), desc='   Simulating', ncols=80):
-        keypoints = torch.from_numpy(keypoints_all[frame_idx]).to(args.device)
-        velocities = torch.from_numpy(velocities_all[frame_idx]).to(args.device)
-        mmwave_cube = simulator.forward(keypoints, velocities).cpu().numpy()
-        time_doppler_signal[frame_idx] = mmwave_cube.sum(axis=3).sum(axis=2).sum(axis=1)
-        time_azimuth_signal[frame_idx] = mmwave_cube.sum(axis=3).sum(axis=1).sum(axis=0)
-        time_elevation_signal[frame_idx] = mmwave_cube.sum(axis=2).sum(axis=1).sum(axis=0)
+    keypoints_all = np.concatenate([
+        keypoints_all[:, :17], # body
+        keypoints_all[:, -42:], # hands
+    ], axis=1) # [N, 59, 3]
     
     # Save results
-    print(colored('[5] Saving results...', 'blue'))
-    time_signal = np.stack([time_doppler_signal, time_azimuth_signal, time_elevation_signal], axis=-1)
-    save_path = video_path.replace('.mp4', '.npy').replace('videos', 'signals')
+    save_path = video_path.replace('.mp4', '.npy').replace('videos', 'poses')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)  
-    np.save(save_path, time_signal)
+    np.save(save_path, keypoints_all)
     print(colored(f'    [OK] Results saved to: {save_path}', 'green'))
-    print(colored('[OK] Sequence processing completed\n', 'green', attrs=['bold']))
+    
 
 def process_archive(args, archive_id, pose_estimator, visualizer, simulator):
     """Process a single archive
@@ -181,9 +168,13 @@ def process_archive(args, archive_id, pose_estimator, visualizer, simulator):
         if not ('Common-Concerns' in video_path or 'Dragon-TV' in video_path):
             print(colored(f'    [SKIP] {os.path.basename(video_path)}', 'yellow'))
             continue
-            
-        process_sequence(args, video_path, pose_estimator, visualizer, simulator)
-        processed_videos += 1
+        
+        try: 
+            process_sequence(args, video_path, pose_estimator, visualizer, simulator)
+            processed_videos += 1
+        except Exception as e:
+            print(colored(f'    [ERROR] {os.path.basename(video_path)}: {e}', 'red'))
+            continue
         
         if processed_videos >= 2:
             avg_time_per_video = (time.time() - start_time) / processed_videos
@@ -211,7 +202,7 @@ def main():
     args = parser.parse_args()
     
     if args.id is None:
-        args.id = list(range(args.start, args.end + 1))
+        args.id = list(range(args.start, args.end))
         args.id = [f'{i:03d}' for i in args.id]
     args.device = 'cuda:' + str(args.gpu_id)    
 

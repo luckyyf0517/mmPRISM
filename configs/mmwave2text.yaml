@@ -1,0 +1,29 @@
+log_dir: 'log/'
+strategy: 'ddp'
+
+data_cfg:
+  target: src.data.data_interface.mmWaveDataInterface
+  params:
+    cfg: 
+      train_split: 'dataset/csl-news-demo01/train.json'
+      val_split: 'dataset/csl-news-demo01/val.json'
+      test_split: 'dataset/csl-news-demo01/val.json'
+      data_root: '/path/to/your/data'
+      max_length: 384
+      doppler_size: 64
+      num_channels: 1
+      selected_channel: 2
+      batch_size: 32
+      num_workers: 4 
+
+model_cfg:
+  target: src.model.model.mmWave2Text
+  params:
+    cfg: 
+      hidden_dim: 256
+      max_length: 384
+      doppler_size: 64
+      mt5_path: 'huggingface/mt5-base'
+      label_smoothing: 0.1
+      learning_rate: 1.0e-4
+      max_epochs: 50

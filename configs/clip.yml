@@ -10,7 +10,10 @@ data_cfg:
       test_split: 'dataset/csl-news-demo01/val.json'
       opt: 
         data_root: '/root/autodl-tmp/datasets/csl-news/signals'
-      batch_size: 128
+        max_length: 384
+        doppler_size: 64
+        num_channels: 1
+      batch_size: 32
       num_workers: 1
       sample_ratio: 1
 
@@ -20,11 +23,12 @@ model_cfg:
     max_epochs: 50
     learning_rate: 1.0e-04
     encoder_cfg:
-      model_name: 'vit_base_patch16_224'
+      model_name: 'vit_large_patch16_224'
       image_resolution: [512, 64]
       embed_dim: 256
+      pretrained: False
     text_cfg:
       model_name: '/root/autodl-tmp/omniHand/huggingface/chinese_sentence_bert'
       embed_dim: 768
-      unfreeze_last_layer_num: 3
+      unfreeze_last_layer_num: 0
     temperature: 0.10

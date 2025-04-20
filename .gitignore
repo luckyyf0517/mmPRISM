@@ -6,9 +6,11 @@ demo/
 huggingface/
 log/
 output/
+pack/
 wandb/
 
 src/mano/*.pkl
 
 *.png
 *.mp4
+*.zip
