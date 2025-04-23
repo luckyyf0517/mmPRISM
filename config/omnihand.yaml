@@ -8,9 +8,9 @@ data_cfg:
   params:
     cfg: 
       dataset: src.data.dataset.mmSingleImageDataset
-      train_split: 'dataset/csl-news-demo01/train.json'
-      val_split: 'dataset/csl-news-demo01/val.json'
-      test_split: 'dataset/csl-news-demo01/val.json'
+      train_split: 'dataset/csl-news-demo02/train.json'
+      val_split: 'dataset/csl-news-demo02/val.json'
+      test_split: 'dataset/csl-news-demo02/val.json'
       num_workers: 4
 
 # Model configuration

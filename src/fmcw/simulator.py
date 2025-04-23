@@ -36,8 +36,8 @@ class Simulation(nn.Module):
         azi_ele_id = torch.tensor(self.simulator.D)
         azi_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.W)
         ele_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.H)
-        self.bm_weights = build_steering_vector(azi_ele_id, azi_theta_grid, ele_theta_grid)
-        self.bm_weights = nn.Parameter(self.bm_weights, requires_grad=False)
+        bm_weights = build_steering_vector(azi_ele_id, azi_theta_grid, ele_theta_grid)
+        self.bm_weights = nn.Parameter(torch.view_as_real(bm_weights), requires_grad=False)
         
         self.dtype = dtype
         self.ctype = ctype
@@ -121,7 +121,8 @@ class Simulation(nn.Module):
         radar_frame = radar_frame * torch.hann_window(num_chirps, device=radar_frame.device)[:, None, None]
         radar_frame = torch.fft.fftshift(torch.fft.fft(radar_frame, dim=0), dim=0)
         # beamforming
-        radar_frame = torch.einsum('cd,acb->abd', self.bm_weights, radar_frame)
+        bm_weights = torch.view_as_complex(self.bm_weights)
+        radar_frame = torch.einsum('cd,acb->abd', bm_weights, radar_frame)
         radar_frame = radar_frame.abs() ** 2
         return radar_frame.reshape(self.D, self.R, self.W, self.H)
 
