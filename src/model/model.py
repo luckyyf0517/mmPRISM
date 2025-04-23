@@ -2,9 +2,13 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 import math
-from transformers import MT5ForConditionalGeneration, T5Tokenizer
+from transformers import AutoTokenizer, AutoConfig
 import warnings
 from pytorch_lightning import LightningModule
+from src.utils.tools import instantiate_from_config
+from src.model.model_factory import ModelFactory
+from timm.models.layers import trunc_normal_
+
 
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
     # Method based on https://people.sc.fsu.edu/~jburkardt/presentations/truncated_normal.pdf
@@ -29,6 +33,7 @@ def _no_grad_trunc_normal_(tensor, mean, std, a, b):
 def trunc_normal_(tensor, mean=0., std=1., a=-2., b=2.):
     return _no_grad_trunc_normal_(tensor, mean, std, a, b)
 
+
 class mmWave2Text(LightningModule):
     def __init__(self, cfg):
         super().__init__()
@@ -36,33 +41,25 @@ class mmWave2Text(LightningModule):
         self.cfg = cfg
         self.batch_size = cfg.batch_size
         
-        # Signal processing layers
-        self.signal_proj = nn.Linear(cfg.doppler_size, cfg.hidden_dim)
-        
-        # Temporal processing layers
-        self.temporal_conv = nn.Sequential(
-            nn.Conv1d(cfg.hidden_dim, cfg.hidden_dim, kernel_size=3, padding=1),
-            nn.LayerNorm([cfg.hidden_dim, cfg.max_length]),
-            nn.GELU(),
-            nn.Conv1d(cfg.hidden_dim, cfg.hidden_dim, kernel_size=3, padding=1),
-            nn.LayerNorm([cfg.hidden_dim, cfg.max_length]),
-            nn.GELU()
-        )
-        
-        # Feature projection
-        self.feature_proj = nn.Linear(cfg.hidden_dim, 768)
+        # Initialize signal encoder
+        self.signal_encoder = instantiate_from_config(cfg.signal_encoder)
         
         # Initialize weights
         self.apply(self._init_weights)
 
-        # Initialize MT5 model and tokenizer
-        self.mt5_model = MT5ForConditionalGeneration.from_pretrained(cfg.mt5_path)
-        self.mt5_tokenizer = T5Tokenizer.from_pretrained(
-            cfg.mt5_path,
-            legacy=False,
-            model_max_length=512  # Set a reasonable maximum length
-        )
+        # Prepare model configuration
+        model_config = {
+            'model_path': cfg.model_path,
+            'mm_input_dim': cfg.signal_encoder.params.output_channels,
+            'model_max_length': cfg.model_max_length
+        }
         
+        # Create model using model factory
+        self.model = ModelFactory.create_model(cfg.model_type, model_config)
+        self.tokenizer = self.model.get_tokenizer()
+        
+        # Initialize loss function
+        self.loss_fct = nn.CrossEntropyLoss(label_smoothing=self.cfg.label_smoothing, ignore_index=-100)
     
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -74,81 +71,70 @@ class mmWave2Text(LightningModule):
             nn.init.constant_(m.weight, 1.0)
 
     def forward(self, src_input, tgt_input):
-        # Process input signal [B, T, N]
-        B, T, N = src_input.shape
+        # Process input signal [B, N, C]
+        B, N, C = src_input.shape
+        inputs_embeds = self.signal_encoder(src_input) # [B, N, C]
         
-        # Project signal to hidden dimension
-        signal = self.signal_proj(src_input)  # [B, T, hidden_dim]
-
-        # Process temporal dimension
-        signal = signal.permute(0, 2, 1)  # [B, hidden_dim, T]
-        signal = self.temporal_conv(signal)  # [B, hidden_dim, T]
-        signal = signal.permute(0, 2, 1)  # [B, T, hidden_dim]
-        
-        # Project each timestep to MT5 dimension
-        inputs_embeds = self.feature_proj(signal)  # [B, T, 768]
-        
-        # Add prefix token with explicit max_length
-        prefix_token = self.mt5_tokenizer(
+        # Add prefix token
+        prefix_token = self.tokenizer(
             [f"Translate millimeter wave signal to text: "] * B,
             padding="longest",
             truncation=True,
-            max_length=512,  # Explicitly specify maximum length
+            max_length=self.cfg.model_max_length,
             return_tensors="pt",
         ).to(inputs_embeds.device)
         
-        prefix_embeds = self.mt5_model.encoder.embed_tokens(prefix_token['input_ids'])
-        inputs_embeds = torch.cat([prefix_embeds, inputs_embeds], dim=1)  # Directly concatenate all timesteps
+        prefix_embeds = self.model.get_model().embed_tokens(prefix_token['input_ids'])
         
-        # Prepare attention mask - Modified to include all timesteps
+        # Prepare attention mask
         attention_mask = torch.cat([
             prefix_token['attention_mask'],
-            torch.ones((B, T), device=inputs_embeds.device)  # Add mask for each timestep
+            torch.ones((B, N), device=inputs_embeds.device)
         ], dim=1)
         
-        # Prepare target tokens with explicit max_length
-        tgt_input_tokenizer = self.mt5_tokenizer(
+        # Prepare target tokens
+        tgt_input_tokenizer = self.tokenizer(
             tgt_input,
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=128,  # Explicitly specify maximum length for target text
+            max_length=128,
         )
         
         labels = tgt_input_tokenizer['input_ids']
-        labels[labels == self.mt5_tokenizer.pad_token_id] = -100
+        labels[labels == self.tokenizer.pad_token_id] = -100
         
-        # Forward through MT5
-        out = self.mt5_model(
-            inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
-            labels=labels.to(inputs_embeds.device),
-            return_dict=True
-        )
+        # Prepare model input
+        model_input = {
+            'input_wave_embeds': inputs_embeds,
+            'inputs_embeds': prefix_embeds,
+            'attention_mask': attention_mask,
+            'labels': labels.to(inputs_embeds.device)
+        }
         
-        # Compute loss
-        label = labels.reshape(-1)
-        out_logits = out['logits']
-        logits = out_logits.reshape(-1, out_logits.shape[-1])
-        loss_fct = nn.CrossEntropyLoss(label_smoothing=self.cfg.label_smoothing, ignore_index=-100)
-        loss = loss_fct(logits, label.to(out_logits.device, non_blocking=True))
+        # Forward pass
+        outputs = self.model.forward(model_input)
         
         return {
             'inputs_embeds': inputs_embeds,
             'attention_mask': attention_mask,
-            'loss': loss
+            'loss': outputs['loss']
         }
         
     @torch.no_grad()
     def generate(self, pre_compute_item, max_new_tokens=128, num_beams=5):
-        inputs_embeds = pre_compute_item['inputs_embeds']
-        attention_mask = pre_compute_item['attention_mask']
+        # Prepare model input
+        model_input = {
+            'input_wave_embeds': pre_compute_item['inputs_embeds'],
+            'attention_mask': pre_compute_item['attention_mask']
+        }
         
-        out = self.mt5_model.generate(
-            inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
+        # Generate text
+        out = self.model.generate(
+            model_input,
             max_new_tokens=max_new_tokens,
-            num_beams=num_beams)
+            num_beams=num_beams
+        )
         return out
 
     def training_step(self, batch, batch_idx):
@@ -173,7 +159,6 @@ class mmWave2Text(LightningModule):
             weight_decay=0.01
         )
         
-        # DeepSpeed will automatically handle learning rate scheduling
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
             T_max=self.trainer.max_epochs,

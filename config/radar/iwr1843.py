@@ -15,7 +15,7 @@ ramp_end_time = 55e-6
 adc_sample_end_time = adc_start_time + num_adc_samples / adc_sample_rate 
 assert adc_sample_end_time < ramp_end_time, "Adc sampling time exceeds chirp duration"
 
-num_chirps = 64
+num_chirps = 32
 frame_period = 5e-2
 chirp_period = (idle_time + ramp_end_time) 
 chirp_last_period = chirp_period * num_chirps

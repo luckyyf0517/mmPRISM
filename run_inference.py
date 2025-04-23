@@ -53,6 +53,9 @@ def main():
         # Prepare input data
         signal = torch.from_numpy(sample['signal']).float().unsqueeze(0)
         signal = signal.to(args.device)
+
+        # # debug
+        # signal = torch.zeros_like(signal)
         
         # Perform inference
         with torch.no_grad():
@@ -60,8 +63,8 @@ def main():
             
             output_ids = model.generate(
                 pre_compute_item=outputs,
-                max_new_tokens=128,
-                num_beams=5)
+                max_new_tokens=100,
+                num_beams=4)
             generated_text = model.mt5_tokenizer.decode(output_ids[0], skip_special_tokens=True)
         
         # Print results

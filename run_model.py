@@ -58,7 +58,7 @@ def parse_args():
     parser.add_argument('--batch-size', dest="batch_size", default=32, type=int)
     parser.add_argument('--gradient-accumulation-steps', dest="gradient_accumulation_steps", 
                        default=1, type=int)
-    
+    parser.add_argument('--max-epochs', dest="max_epochs", default=100, type=int)
     # DeepSpeed related arguments
     parser = add_deepspeed_args(parser)
     
@@ -105,23 +105,22 @@ def main():
     data = instantiate_from_config(cfg.data_cfg)
     
     # Set logger
-    logger = WandbLogger(name=args.version, project='mmWave2Text')
+    logger = WandbLogger(name=args.version, project='omniHand')
     if not args.resume_checkpoint and args.rank == 0: 
         log_file_list = glob.glob(os.path.join(cfg.log_dir, args.version, '*.ckpt'))
         if len(log_file_list) > 0:
             if args.reset: 
-                for log_file in log_file_list: 
-                    os.remove(log_file) 
+                shutil.rmtree(os.path.join(cfg.log_dir, args.version))
             else: 
                 raise ValueError("Checkpoint files already exist. Please use --reset to restart a new experiment.")
         
     # Set checkpoint callback
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(cfg.log_dir, args.version),
-        monitor='valid/loss',
-        filename='epoch_{epoch:02d}_val_{valid/loss:.4f}',
-        save_top_k=10,
-        mode='min',
+        monitor='epoch',  # Monitor the epoch to save the latest checkpoints
+        filename='epoch_{epoch:02d}',
+        save_top_k=5,  # Save the latest 5 checkpoints
+        mode='max',  # Save based on the latest epochs
         auto_insert_metric_name=False, 
         save_last=True,
         save_weights_only=False,)
@@ -142,15 +141,21 @@ def main():
         config=get_train_ds_config(args)
     )
 
+    precision_map = {
+        'bf16': 'bf16-mixed',
+        'fp16': 'fp16-mixed',
+        'fp32': '32'
+    }
+    
     # Modify Trainer configuration
     trainer = Trainer(
         accelerator='gpu',
         devices=args.world_size,
         strategy=strategy,  # Use the created strategy
-        precision='bf16-mixed' if args.dtype == 'bf16' else 'fp16-mixed',
+        precision=precision_map[args.dtype],
         logger=logger,
         log_every_n_steps=1,
-        max_epochs=cfg.model_cfg.params.cfg.max_epochs,
+        max_epochs=args.max_epochs,
         num_sanity_val_steps=2,
         reload_dataloaders_every_n_epochs=1, 
         callbacks=[checkpoint_callback],

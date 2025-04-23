@@ -52,7 +52,7 @@ def split_data(raw_data_root, signals_list, subfolder='csl-news-demo01', val_rat
 if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--signals_root', type=str, default='/root/autodl-tmp/datasets/csl-news/signals',
+    parser.add_argument('--signals_root', type=str, default='/root/autodl-tmp/datasets/csl-news/poses',
                        help='Root directory containing signal data')
     parser.add_argument('--subfolder', type=str, default='csl-news-demo01',
                        help='Subfolder name for saving split files')

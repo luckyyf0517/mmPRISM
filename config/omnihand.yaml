@@ -1,0 +1,35 @@
+# Basic settings
+log_dir: 'log/'
+strategy: 'ddp'
+
+# Data configuration
+data_cfg:
+  target: src.data.data_interface.BaseDataInterface
+  params:
+    cfg: 
+      dataset: src.data.dataset.mmSingleImageDataset
+      train_split: 'dataset/csl-news-demo01/train.json'
+      val_split: 'dataset/csl-news-demo01/val.json'
+      test_split: 'dataset/csl-news-demo01/val.json'
+      num_workers: 4
+
+# Model configuration
+model_cfg:
+  target: src.model.omnihand.OmniHand
+  params:
+    cfg:
+      backbone: 
+        target: src.model.cubenet.CubeNet
+        params: 
+          input_dim: 32
+          hidden_dims: [64, 128, 256, 512]
+          num_blocks: [3, 4, 6, 3]
+          strides: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [1, 1, 1]] 
+          block: src.model.cubenet.BasicBlock3D
+          norm_layer: torch.nn.GroupNorm
+        pretrained: null
+        freeze: false
+      training:
+        lr: 1.0e-4
+        betas: [0.9, 0.999]
+        weight_decay: 0.01

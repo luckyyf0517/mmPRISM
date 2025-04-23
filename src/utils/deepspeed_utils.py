@@ -14,6 +14,11 @@ def get_train_ds_config(args):
     elif args.dtype == "bf16":
         data_type = "bfloat16"
         dtype_config = {"enabled": True}
+    elif args.dtype == "fp32":
+        data_type = "fp32"
+        dtype_config = {"enabled": True}
+    else: 
+        raise ValueError(f"Unsupported data type: {args.dtype}")
 
     # ZeRO optimization configuration
     zero_opt_dict = {
@@ -65,8 +70,7 @@ def add_deepspeed_args(parser):
     
     group.add_argument('--dtype',
                       type=str,
-                      default='bf16',
-                      choices=['fp16', 'bf16'],
+                      default='fp32',
                       help='Training data type')
     
     group.add_argument('--zero_stage',

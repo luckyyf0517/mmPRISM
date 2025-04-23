@@ -3,7 +3,7 @@ import glob
 from moviepy.editor import ImageSequenceClip
 
 
-def make_video(path, video_name, fps=30): 
+def make_video(path, video_name, fps=10): 
     images = sorted(glob.glob(os.path.join(path, '*.png')))  
     print('Making video from', len(images), 'images')
     clip = ImageSequenceClip(images, fps=fps)
@@ -26,11 +26,11 @@ if __name__ == '__main__':
         for subfolder in subfolders:
             print('Making video from', subfolder)
             output_file = subfolder[:-1] + '.mp4'
-            make_video(subfolder, output_file, fps=30)
+            make_video(subfolder, output_file, fps=10)
     else:
         output_folder = args.output
         if output_folder is None:
             output_folder = input_folder[:-1] if input_folder[-1] == '/' else input_folder
             output_folder += '.mp4'
             print('Output folder not specified, using %s' % output_folder)
-        make_video(input_folder, output_folder, fps=30)
+        make_video(input_folder, output_folder, fps=10)

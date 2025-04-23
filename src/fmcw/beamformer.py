@@ -36,3 +36,9 @@ def build_steering_vector(azi_ele_id, azi_theta_grid, ele_theta_grid, device='cu
     steering_vector = torch.exp(-1j * _phi_2d(
         azi_ele_theta[:, :, 0], azi_ele_theta[:, :, 1], azi_ele_id[:, :, 0], azi_ele_id[:, :, 1]))
     return steering_vector
+
+def build_steering_vector_1d(azi_id, azi_theta_grid, device='cuda'):
+    azi_theta = azi_theta_grid.unsqueeze(0)
+    azi_id = azi_id.unsqueeze(1)
+    steering_vector = torch.exp(-1j * _phi_2d(azi_theta, azi_theta, azi_id, azi_id))
+    return steering_vector

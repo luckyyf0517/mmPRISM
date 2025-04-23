@@ -11,6 +11,7 @@ import time
 from src.fmcw.simulator import Simulation
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
 
 
 def process_point_cloud(data):
@@ -48,8 +49,8 @@ def process_point_cloud(data):
         interpolated_points_list.append(interpolated_points)
     interpolated_points = np.concatenate(interpolated_points_list, axis=1)
     all_body_points = np.concatenate((body, interpolated_points, handl, handr), axis=1)
-    all_body_points[..., 2] *= 0.5
-    all_body_points[..., 1] -= 0.15
+    all_body_points[..., 2] *= 0.6
+    all_body_points[..., 1] 
     return all_body_points
 
 
@@ -70,20 +71,18 @@ def process_sequence(args, pose_path, simulator: Simulation):
     # Apply smoothing and calculate velocities
     print(colored('[2] Processing keypoints...', 'blue'))
     keypoints_all = process_point_cloud(keypoints_all) 
-    # Interpolate keypoints from 30fps to 50fps using scipy
-    target_fps = 20
-    num_original_frames = keypoints_all.shape[0]
-    num_interpolated_frames = int(num_original_frames * (target_fps / 30))
-    # Create a new array for interpolated keypoints
-    time_original = np.arange(num_original_frames)
-    time_interpolated = np.linspace(0, num_original_frames - 1, num_interpolated_frames)
-    # Interpolate using scipy's interp1d
-    interpolated_keypoints_all = interp1d(time_original, keypoints_all, axis=0, kind='linear')(time_interpolated)
+    # Print min/max values for each dimension
+    print(colored('    Min/Max values for each dimension:', 'blue'))
+    print(f'    X: min = {keypoints_all[..., 0].min():.3f}, max = {keypoints_all[..., 0].max():.3f}')
+    print(f'    Y: min = {keypoints_all[..., 1].min():.3f}, max = {keypoints_all[..., 1].max():.3f}') 
+    print(f'    Z: min = {keypoints_all[..., 2].min():.3f}, max = {keypoints_all[..., 2].max():.3f}')
+    
     # Update keypoints_all with interpolated data
-    keypoints_all = interpolated_keypoints_all
     keypoints_all = gaussian_filter1d(keypoints_all, sigma=1, axis=0)
-    velocities_all = (keypoints_all[1:] - keypoints_all[:-1]) * target_fps 
+    velocities_all = (keypoints_all[1:] - keypoints_all[:-1]) * 10 
     keypoints_all = keypoints_all[:-1]
+    velocities_all = velocities_all[::3] # 30fps -> 10fps
+    keypoints_all = keypoints_all[::3]
     num_frames = len(keypoints_all)
     print(colored('    [OK] Keypoint processing completed', 'green'))
     
@@ -94,6 +93,10 @@ def process_sequence(args, pose_path, simulator: Simulation):
         keypoints = torch.from_numpy(keypoints_all[frame_idx]).to(args.device)
         velocities = torch.from_numpy(velocities_all[frame_idx]).to(args.device)
         signal = simulator.forward(keypoints, velocities).cpu().numpy()
+        
+        ra = signal.sum(0)
+        da = signal.sum(1) 
+        signal = np.stack([ra, da], axis=0)
         mmwave_signals.append(signal)
     mmwave_signals = np.stack(mmwave_signals, axis=0)
     print(colored(f'    [OK] Radar signals generated with shape {mmwave_signals.shape}', 'green'))

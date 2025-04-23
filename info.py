@@ -220,7 +220,7 @@ def main():
     print(colored(f"Analyzing dataset at: {base_path}", "cyan"))
     
     analyze_archives(base_path)
-    # analyze_poses(base_path)
+    analyze_poses(base_path)
     # analyze_videos(base_path)
     analyze_signals(base_path)
     analyze_progress(base_path)
