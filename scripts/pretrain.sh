@@ -5,7 +5,7 @@ deepspeed --include localhost:0,1 \
     --batch-size 32 \
     --max-epochs 100 \
     --gradient-accumulation-steps 1 \
-    --version "omnihand-0423" \
+    --version "omnihand-0423-vq" \
     --dtype fp32 \
     --zero_stage 2 \
     --reset

@@ -6,7 +6,7 @@ from transformers import AutoTokenizer, AutoConfig
 import warnings
 from pytorch_lightning import LightningModule
 from src.utils.tools import instantiate_from_config
-from src.model.model_factory import ModelFactory
+from src.model.llm.model_factory import ModelFactory
 from timm.models.layers import trunc_normal_
 
 

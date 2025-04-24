@@ -28,5 +28,6 @@ range_resolution = light_speed / (2 * bandwidth)
 doppler_resolution = wave_length / (2 * chirp_last_period)
 max_range = num_adc_samples * range_resolution 
 max_doppler = num_chirps / 2 * doppler_resolution
-print(f"Range resolution: {range_resolution:.4f}m, Doppler resolution: {doppler_resolution:.4f}m/s")
-print(f"Max range: {max_range:.2f}m, Max doppler: {max_doppler:.2f}m/s")
+
+# print(f"Range resolution: {range_resolution:.4f}m, Doppler resolution: {doppler_resolution:.4f}m/s")
+# print(f"Max range: {max_range:.2f}m, Max doppler: {max_doppler:.2f}m/s")

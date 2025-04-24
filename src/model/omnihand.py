@@ -74,6 +74,18 @@ class OmniHand(LightningModule):
         return {
             'joints': joints,
         }
+    
+    def forward_feature(self, input_data):
+        """Forward pass for feature extraction"""
+        features = input_data['features']
+        # Predict joint positions for both hands
+        joints_l = self.regressor['l'](features).view(-1, 24, 3)
+        joints_r = self.regressor['r'](features).view(-1, 24, 3)
+        # Stack l and r hand joints
+        joints = torch.stack([joints_l, joints_r], dim=1)  # [B, 2, 24, 3]
+        return {
+            'joints': joints,
+        }
 
     def shared_step(self, batch, batch_idx, phase='train'):
         """Shared training/validation/test step"""

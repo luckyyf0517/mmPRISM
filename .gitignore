@@ -5,9 +5,10 @@ dataset/
 demo/
 huggingface/
 log/
-output/
+outputs/
 pack/
 wandb/
+weights/
 
 src/mano/*.pkl
 

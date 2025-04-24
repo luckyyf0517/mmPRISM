@@ -57,7 +57,6 @@ def analyze_poses(base_path):
     total_poses = 0
     total_size = 0
     pose_stats = defaultdict(int)
-    frame_stats = []
     
     print(f"Found {len(pose_dirs)} pose directories")
     for pose_dir in pose_dirs:
@@ -72,27 +71,10 @@ def analyze_poses(base_path):
         for pose_path in poses:
             category = pose_path.split('/')[-2]  # Get parent directory name
             pose_stats[category] += 1
-            
-            # Analyze frame counts
-            try:
-                data = np.load(pose_path)
-                frame_stats.append(len(data))
-            except:
-                continue
     
     print(f"\nTotal poses: {total_poses:,}")
     print(f"Total size: {format_size(total_size)}")
     
-    if frame_stats:
-        print(f"\nFrame statistics:")
-        print(f"  Average frames: {np.mean(frame_stats):.1f}")
-        print(f"  Median frames: {np.median(frame_stats):.1f}")
-        print(f"  Min frames: {np.min(frame_stats)}")
-        print(f"  Max frames: {np.max(frame_stats)}")
-    
-    print("\nCategory distribution:")
-    for category, count in sorted(pose_stats.items()):
-        print(f"  {category}: {count:,} files")
 
 def analyze_videos(base_path):
     """Analyze videos folder content"""
@@ -126,61 +108,38 @@ def analyze_videos(base_path):
     print(f"\nTotal videos: {total_videos:,}")
     print(f"Total size: {format_size(total_size)}")
     
-    print("\nCategory distribution:")
-    for category, count in sorted(video_stats.items()):
-        print(f"  {category}: {count:,} files")
 
-def analyze_signals(base_path):
-    """Analyze signals folder content"""
-    print(colored("\n=== Signals Analysis ===", "blue"))
-    signal_pattern = os.path.join(base_path, "signals/archive_*/")
-    signal_dirs = sorted(glob(signal_pattern))
+def analyze_features(base_path):
+    """Analyze features folder content"""
+    print(colored("\n=== Features Analysis ===", "blue"))
+    feature_pattern = os.path.join(base_path, "features/archive_*/")
+    feature_dirs = sorted(glob(feature_pattern))
     
-    if not signal_dirs:
-        print(colored("[X] No signal directories found", "red"))
+    if not feature_dirs:
+        print(colored("[X] No feature directories found", "red"))
         return
     
-    total_signals = 0
+    total_features = 0
     total_size = 0
-    signal_stats = defaultdict(int)
-    signal_dims = []
+    feature_stats = defaultdict(int)
     
-    print(f"Found {len(signal_dirs)} signal directories")
-    for signal_dir in signal_dirs:
-        archive_id = os.path.basename(os.path.dirname(signal_dir))
-        signals = glob(os.path.join(signal_dir, "**/*.npy"), recursive=True)
+    print(f"Found {len(feature_dirs)} feature directories")
+    for feature_dir in feature_dirs:
+        archive_id = os.path.basename(os.path.dirname(feature_dir))
+        features = glob(os.path.join(feature_dir, "**/*.npy"), recursive=True)
         
-        dir_size = sum(os.path.getsize(f) for f in signals)
+        dir_size = sum(os.path.getsize(f) for f in features)
         total_size += dir_size
-        total_signals += len(signals)
+        total_features += len(features)
         
-        # Analyze categories and dimensions
-        for signal_path in signals:
-            category = signal_path.split('/')[-2]  # Get parent directory name
-            signal_stats[category] += 1
-            
-            # Analyze signal dimensions
-            try:
-                data = np.load(signal_path)
-                signal_dims.append(data.shape)  # [frames, 64, 3] for doppler, azimuth, elevation
-            except:
-                continue
+        # Analyze categories
+        for feature_path in features:
+            category = feature_path.split('/')[-2]  # Get parent directory name
+            feature_stats[category] += 1
     
-    print(f"\nTotal signals: {total_signals:,}")
+    print(f"\nTotal features: {total_features:,}")
     print(f"Total size: {format_size(total_size)}")
     
-    if signal_dims:
-        frame_lengths = [dim[0] for dim in signal_dims]
-        print(f"\nSignal statistics:")
-        print(f"  Signal shape: {signal_dims[0]}")  # Should be consistent
-        print(f"  Average frames: {np.mean(frame_lengths):.1f}")
-        print(f"  Median frames: {np.median(frame_lengths):.1f}")
-        print(f"  Min frames: {np.min(frame_lengths)}")
-        print(f"  Max frames: {np.max(frame_lengths)}")
-    
-    print("\nCategory distribution:")
-    for category, count in sorted(signal_stats.items()):
-        print(f"  {category}: {count:,} files")
 
 def analyze_progress(base_path):
     """Analyze processing progress"""
@@ -197,19 +156,19 @@ def analyze_progress(base_path):
     video_dirs = glob(os.path.join(base_path, "videos/archive_*/"))
     video_ids = set(os.path.basename(os.path.dirname(v)).split('_')[1] for v in video_dirs)
     
-    signal_dirs = glob(os.path.join(base_path, "signals/archive_*/"))
-    signal_ids = set(os.path.basename(os.path.dirname(s)).split('_')[1] for s in signal_dirs)
+    feature_dirs = glob(os.path.join(base_path, "features/archive_*/"))
+    feature_ids = set(os.path.basename(os.path.dirname(f)).split('_')[1] for f in feature_dirs)
     
     total_archives = len(archive_ids)
     print(f"Total archives: {total_archives}")
     print(f"Processed poses: {len(pose_ids)} ({len(pose_ids)/total_archives*100:.1f}%)")
     print(f"Processed videos: {len(video_ids)} ({len(video_ids)/total_archives*100:.1f}%)")
-    print(f"Processed signals: {len(signal_ids)} ({len(signal_ids)/total_archives*100:.1f}%)")
+    print(f"Processed features: {len(feature_ids)} ({len(feature_ids)/total_archives*100:.1f}%)")
     
     # Check processing pipeline consistency
-    if pose_ids - signal_ids:
-        print("\nPoses without signals:")
-        print("  " + ", ".join(sorted(pose_ids - signal_ids)))
+    if pose_ids - feature_ids:
+        print("\nPoses without features:")
+        print("  " + ", ".join(sorted(pose_ids - feature_ids)))
     
     if archive_ids - pose_ids:
         print("\nUnprocessed archives (poses):")
@@ -222,7 +181,7 @@ def main():
     analyze_archives(base_path)
     analyze_poses(base_path)
     # analyze_videos(base_path)
-    analyze_signals(base_path)
+    analyze_features(base_path)
     analyze_progress(base_path)
 
 if __name__ == '__main__':

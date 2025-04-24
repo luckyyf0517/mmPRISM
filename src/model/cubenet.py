@@ -43,7 +43,7 @@ class BasicBlock3D(nn.Module):
 
 class CubeNet(nn.Module):
     def __init__(self, 
-                 block=BasicBlock3D, 
+                 block='src.model.cubenet.BasicBlock3D', 
                  input_dim=128, 
                  hidden_dims=None, 
                  num_blocks=None, 

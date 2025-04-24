@@ -46,14 +46,17 @@ class BaseDataInterface(LightningDataModule):
         # Setup datasets based on stage
         if stage == 'fit' or stage is None:
             self.train_dataset = self.dataset_cls(
+                opt=self.cfg.opt,
                 split_path=self.train_split
             )
             self.val_dataset = self.dataset_cls(
+                opt=self.cfg.opt,
                 split_path=self.val_split
             )
         
         if stage == 'test' or stage is None:
             self.test_dataset = self.dataset_cls(
+                opt=self.cfg.opt,
                 split_path=self.test_split
             )
     

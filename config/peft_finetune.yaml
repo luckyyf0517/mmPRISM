@@ -1,0 +1,70 @@
+# Basic settings
+log_dir: "outputs/peft_finetune"
+strategy: "deepspeed"
+
+# Data configuration
+data_cfg:
+  target: src.data.data_interface.BaseDataInterface
+  params:
+    cfg:
+      dataset: src.data.dataset.mmWaveSequenceDataset
+      train_split: 'dataset/csl-news-demo02/train.json'
+      val_split: 'dataset/csl-news-demo02/val.json'
+      test_split: 'dataset/csl-news-demo02/val.json'
+      opt: 
+        caption_path: "dataset/CSL_News_Labels_converted.json"
+        max_length: 160
+      num_workers: 4
+
+# Model configuration
+model_cfg:
+  target: src.model.peft_trainer.PEFTTrainer
+  params:
+    cfg:
+      # Simulator configuration
+      simulator:
+        target: src.fmcw.simulator.Simulation
+        params: {}
+      
+      # Feature extractor configuration
+      backbone:
+        target: src.model.cubenet.CubeNet
+        params:
+          input_dim: 32
+          hidden_dims: [64, 128, 256, 512]
+          num_blocks: [3, 4, 6, 3]
+          strides: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [1, 1, 1]]
+          block: src.model.cubenet.BasicBlock3D
+          norm_layer: torch.nn.GroupNorm
+        pretrained: "weights/cubenet"
+        freeze: true  
+      
+      # LLM configuration
+      model_type: "phi3"
+      model:
+        model_path: "huggingface/Phi-3-mini-4k-instruct"
+        mm_input_dim: 512
+        model_max_length: 2048
+        wave_start_token: "<wave>"
+        wave_end_token: "</wave>"
+        wave_patch_token: "<wave_patch>"
+      
+      # PEFT configuration
+      use_peft: true
+      fix_llm: true
+      peft_config:
+        r: 8
+        lora_alpha: 32
+        target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
+        lora_dropout: 0.1
+        bias: "none"
+        do_not_add_lora_model: ["mm_projection_layers"]
+      
+      # Training configuration
+      training:
+        batch_size: 8
+        max_epochs: 10
+        learning_rate: 1.0e-4
+        weight_decay: 0.01
+        warmup_steps: 100
+      

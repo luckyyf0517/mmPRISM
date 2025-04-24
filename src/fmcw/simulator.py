@@ -121,7 +121,7 @@ class Simulation(nn.Module):
         radar_frame = radar_frame * torch.hann_window(num_chirps, device=radar_frame.device)[:, None, None]
         radar_frame = torch.fft.fftshift(torch.fft.fft(radar_frame, dim=0), dim=0)
         # beamforming
-        bm_weights = torch.view_as_complex(self.bm_weights)
+        bm_weights = self.bm_weights[..., 0] + 1j * self.bm_weights[..., 1]
         radar_frame = torch.einsum('cd,acb->abd', bm_weights, radar_frame)
         radar_frame = radar_frame.abs() ** 2
         return radar_frame.reshape(self.D, self.R, self.W, self.H)
@@ -183,8 +183,6 @@ class mmSimulator(nn.Module):
         k_s = k_s / k_s_length.unsqueeze(-1)  # [num_rx, N, 3]
         vel = (torch.sum(velocities_3d * k_i, dim=-1)[None] - 
                torch.sum(velocities_3d * k_s, dim=-1)) / 2  # [num_rx, N]
-        
-        # from IPython import embed; embed(header='compute_paths_from_points')
         
         return {
             'a': a.to(self.dtype),
