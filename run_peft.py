@@ -33,9 +33,6 @@ from pytorch_lightning.strategies import DeepSpeedStrategy
 from src.utils.io import load_yaml
 from src.utils.tools import instantiate_from_config
 from src.utils.deepspeed_utils import add_deepspeed_args, get_train_ds_config
-from src.model.peft_trainer import PEFTTrainer
-from src.data.dataset import mmWaveSequenceDataset
-from torch.utils.data import DataLoader
 
 
 def set_seed(seed, n_gpu):
@@ -153,7 +150,7 @@ def main():
         'fp32': '32'
     }
     
-    # Create trainer
+    # Create trainer with temporary settings: 1 epoch, 10 steps
     trainer = Trainer(
         accelerator='gpu',
         devices=args.world_size,
@@ -161,31 +158,21 @@ def main():
         precision=precision_map[args.dtype],
         logger=logger,
         callbacks=callbacks,
-        max_epochs=args.max_epochs,
+        max_epochs=args.max_epochs,  # Set to 1 epoch
         num_sanity_val_steps=2,
         reload_dataloaders_every_n_epochs=1,
         log_every_n_steps=1,
         accumulate_grad_batches=args.gradient_accumulation_steps,
+        # limit_train_batches=10,  # Limit to 10 steps
+        # limit_val_batches=10  # Limit to 10 steps
     )
     
     # Train model
     if not args.test:
-        trainer.fit(
-            model,
-            datamodule=data,  # 使用 data interface
-            ckpt_path=args.resume_checkpoint
-        )
+        trainer.fit(model, datamodule=data, ckpt_path=args.resume_checkpoint)
     else:
-        trainer.test(
-            model,
-            datamodule=data,
-            ckpt_path=args.resume_checkpoint
-        )
+        trainer.test(model, datamodule=data, ckpt_path=args.resume_checkpoint)
     
-    # Save final model
-    if trainer.is_global_zero:
-        trainer.save_checkpoint(os.path.join(cfg.log_dir, args.version, "final_model.ckpt"))
-
 
 if __name__ == '__main__':
     main() 

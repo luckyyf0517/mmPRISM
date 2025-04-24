@@ -28,6 +28,5 @@ def get_obj_from_str(string, reload=False):
 
 def instantiate_from_config(config, **kwargs):
     if not "target" in config:
-        # raise KeyError("Expected key `target` to instantiate.")
         return None
     return get_obj_from_str(config["target"])(**config.get("params", dict()), **kwargs)

@@ -14,6 +14,7 @@ from torch.utils.data import Dataset, DataLoader
 class mmSingleImageDataset(Dataset):
     def __init__(self, opt=None, split_path=None):
         self.opt = opt
+        self.max_length = opt.get('max_length', 192)
         self.mode = opt.get('mode', 'pose')  # 'pose' or 'feature'
         with open(split_path, 'r') as f:
             self.data_dict = json.load(f)
@@ -32,8 +33,8 @@ class mmSingleImageDataset(Dataset):
                 np.concatenate([pose[[5,7,9], :], pose[-42:-21, :]], axis=0),
                 np.concatenate([pose[[6,8,10], :], pose[-21:, :]], axis=0)
             ], axis=-3)
-            
-        frame_idx = random.randint(0, len(pose) - 2)
+        
+        frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
         points_3d = pose[frame_idx] # [17+21+21, 3]
         joints = process_pose(points_3d) # (2, 24, 3)
         
@@ -161,40 +162,4 @@ if __name__ == '__main__':
         'max_length': 160,
         'mode': 'pose'
     }, split_path='dataset/csl-news-demo02/all.json')
-    print(f"Dataset size: {len(dataset_pose)}")
     
-    sample_pose = dataset_pose[0]
-    print("\nSample data (pose mode):")
-    print(f"ID: {sample_pose['id']}")
-    print(f"Joints shape: {sample_pose['joints'].shape}")
-    print(f"Points 3D shape: {sample_pose['points_3d'].shape}")
-    print(f"Velocities 3D shape: {sample_pose['velocities_3d'].shape}")
-    print(f"Caption: {sample_pose['caption']}")
-    
-    # Test DataLoader in pose mode
-    dataloader_pose = DataLoader(dataset_pose, batch_size=2, shuffle=True)
-    batch_pose = next(iter(dataloader_pose))
-    print("\nBatch data shapes (pose mode):")
-    print(f"Batch joints shape: {batch_pose['joints'].shape}")
-    print(f"Batch points 3D shape: {batch_pose['points_3d'].shape}")
-    print(f"Batch velocities 3D shape: {batch_pose['velocities_3d'].shape}")
-    
-    # Test mmWaveSequenceDataset in feature mode
-    print("\nTesting mmWaveSequenceDataset in feature mode...")
-    dataset_feature = mmWaveSequenceDataset({
-        'max_length': 160,
-        'mode': 'feature'
-    }, split_path='dataset/csl-news-demo02/all.json')
-    print(f"Dataset size: {len(dataset_feature)}")
-    
-    sample_feature = dataset_feature[0]
-    print("\nSample data (feature mode):")
-    print(f"ID: {sample_feature['id']}")
-    print(f"Features shape: {sample_feature['features'].shape}")
-    print(f"Caption: {sample_feature['caption']}")
-    
-    # Test DataLoader in feature mode
-    dataloader_feature = DataLoader(dataset_feature, batch_size=2, shuffle=True)
-    batch_feature = next(iter(dataloader_feature))
-    print("\nBatch data shapes (feature mode):")
-    print(f"Batch features shape: {batch_feature['features'].shape}")

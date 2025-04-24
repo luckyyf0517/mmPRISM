@@ -34,6 +34,12 @@ class OmniHand(LightningModule):
         
         # Initialize backbone (Vision Transformer)
         self.backbone = instantiate_from_config(cfg.backbone)
+        if cfg.backbone.pretrained is not None:
+            self.backbone.load_state_dict(torch.load(
+                os.path.join(cfg.backbone.pretrained, 'model.pth'), weights_only=True), strict=False)
+        if cfg.backbone.freeze:
+            for param in self.backbone.parameters():
+                param.requires_grad = False
         
         # Initialize regression heads for hand keypoints
         self.feature_dim = cfg.backbone.params.hidden_dims[-1]
@@ -61,31 +67,29 @@ class OmniHand(LightningModule):
         Returns:
             joints: Predicted joint positions of shape [B, 2, 24, 3] (2 for l/r hands)
         """
-        x = self.simulator(input_data['points_3d'], input_data['velocities_3d'])
+        features = self.encode_feature(input_data['points_3d'], input_data['velocities_3d'])
+        joints = self.forward_feature(features)
+        return {
+            'joints': joints,
+        }
+        
+    def encode_feature(self, points_3d, velocities_3d):
+        """Encode input data into features"""
+        x = self.simulator(points_3d, velocities_3d)
         # Extract features using ViT
         features = self.backbone(x)  # [B, feature_dim, 4, 4, 4]
         # Global max pooling across spatial dimensions
         features = F.adaptive_max_pool3d(features, 1).squeeze(-1).squeeze(-1).squeeze(-1)  # [B, feature_dim]
-        # Predict joint positions for both hands
-        joints_l = self.regressor['l'](features).view(-1, 24, 3)
-        joints_r = self.regressor['r'](features).view(-1, 24, 3)
-        # Stack l and r hand joints
-        joints = torch.stack([joints_l, joints_r], dim=1)  # [B, 2, 24, 3]
-        return {
-            'joints': joints,
-        }
+        return features
     
-    def forward_feature(self, input_data):
+    def forward_feature(self, features):
         """Forward pass for feature extraction"""
-        features = input_data['features']
         # Predict joint positions for both hands
         joints_l = self.regressor['l'](features).view(-1, 24, 3)
         joints_r = self.regressor['r'](features).view(-1, 24, 3)
         # Stack l and r hand joints
         joints = torch.stack([joints_l, joints_r], dim=1)  # [B, 2, 24, 3]
-        return {
-            'joints': joints,
-        }
+        return joints
 
     def shared_step(self, batch, batch_idx, phase='train'):
         """Shared training/validation/test step"""

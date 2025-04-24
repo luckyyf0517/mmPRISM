@@ -27,7 +27,7 @@ pip install -r requirements.txt
 
 ## Project Structure
 
-- `src/trainer/peft_trainer.py`: PyTorch Lightning module for PEFT fine-tuning
+- `src/trainer/wavellm.py`: PyTorch Lightning module for PEFT fine-tuning
 - `src/trainer/train_peft.py`: Training script
 - `src/data/dataset.py`: Dataset classes for millimeter wave data
 - `src/model/encoder/encoder.py`: Encoder for millimeter wave signals

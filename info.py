@@ -4,6 +4,7 @@ from collections import defaultdict
 import numpy as np
 from termcolor import colored
 import zipfile
+from tqdm import tqdm
 
 def format_size(size_bytes):
     """Convert size in bytes to human readable format"""
@@ -61,7 +62,7 @@ def analyze_poses(base_path):
     print(f"Found {len(pose_dirs)} pose directories")
     for pose_dir in pose_dirs:
         archive_id = os.path.basename(os.path.dirname(pose_dir))
-        poses = glob(os.path.join(pose_dir, "**/*.npy"), recursive=True)
+        poses = sorted(glob(os.path.join(pose_dir, "**/*.npy"), recursive=True))
         
         dir_size = sum(os.path.getsize(f) for f in poses)
         total_size += dir_size
@@ -95,7 +96,7 @@ def analyze_videos(base_path):
         if not os.path.exists(video_dir):  # Skip if directory doesn't exist
             continue
             
-        videos = glob(os.path.join(video_dir, "**/*.mp4"), recursive=True)
+        videos = sorted(glob(os.path.join(video_dir, "**/*.mp4"), recursive=True))
         dir_size = sum(os.path.getsize(f) for f in videos)
         total_size += dir_size
         total_videos += len(videos)
@@ -126,7 +127,7 @@ def analyze_features(base_path):
     print(f"Found {len(feature_dirs)} feature directories")
     for feature_dir in feature_dirs:
         archive_id = os.path.basename(os.path.dirname(feature_dir))
-        features = glob(os.path.join(feature_dir, "**/*.npy"), recursive=True)
+        features = sorted(glob(os.path.join(feature_dir, "**/*.npy"), recursive=True))
         
         dir_size = sum(os.path.getsize(f) for f in features)
         total_size += dir_size
@@ -163,7 +164,7 @@ def analyze_progress(base_path):
     print(f"Total archives: {total_archives}")
     print(f"Processed poses: {len(pose_ids)} ({len(pose_ids)/total_archives*100:.1f}%)")
     print(f"Processed videos: {len(video_ids)} ({len(video_ids)/total_archives*100:.1f}%)")
-    print(f"Processed features: {len(feature_ids)} ({len(feature_ids)/total_archives*100:.1f}%)")
+    print(f"Processed features: {len(feature_ids)/total_archives*100:.1f}%)")
     
     # Check processing pipeline consistency
     if pose_ids - feature_ids:
@@ -173,15 +174,31 @@ def analyze_progress(base_path):
     if archive_ids - pose_ids:
         print("\nUnprocessed archives (poses):")
         print("  " + ", ".join(sorted(archive_ids - pose_ids)))
+    
+    # Calculate percentage of files in poses and features relative to archives
+    for archive_id in sorted(archive_ids):
+        pose_count = len(glob(os.path.join(base_path, f"poses/archive_{archive_id}/*.npy")))
+        feature_count = len(glob(os.path.join(base_path, f"features/archive_{archive_id}/*.npy")))
+        
+        archive_path = os.path.join(base_path, f"archives/archive_{archive_id}.zip")
+        with zipfile.ZipFile(archive_path, 'r') as zf:
+            total_files_in_archive = len(zf.namelist())
+        
+        pose_percentage = (pose_count / total_files_in_archive) * 100 if total_files_in_archive else 0
+        feature_percentage = (feature_count / total_files_in_archive) * 100 if total_files_in_archive else 0
+        
+        # Display progress bars
+        print(f"\nArchive {archive_id}:")
+        tqdm(total=100, desc=colored("Poses:    ", "green"), initial=pose_percentage, ncols=50, bar_format="{l_bar}{bar}| {n:.1f}%")
+        tqdm(total=100, desc=colored("Features: ", "cyan"), initial=feature_percentage, ncols=50, bar_format="{l_bar}{bar}| {n:.1f}%")
 
 def main():
     base_path = '/root/autodl-tmp/datasets/csl-news'
     print(colored(f"Analyzing dataset at: {base_path}", "cyan"))
     
-    analyze_archives(base_path)
-    analyze_poses(base_path)
-    # analyze_videos(base_path)
-    analyze_features(base_path)
+    # analyze_archives(base_path)
+    # analyze_poses(base_path)
+    # analyze_features(base_path)
     analyze_progress(base_path)
 
 if __name__ == '__main__':

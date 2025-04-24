@@ -1,5 +1,5 @@
 # Basic settings
-log_dir: "outputs/peft_finetune"
+log_dir: "log/peft_finetune"
 strategy: "deepspeed"
 
 # Data configuration
@@ -14,11 +14,12 @@ data_cfg:
       opt: 
         caption_path: "dataset/CSL_News_Labels_converted.json"
         max_length: 160
+        mode: "feature"
       num_workers: 4
 
 # Model configuration
 model_cfg:
-  target: src.model.peft_trainer.PEFTTrainer
+  target: src.model.wavellm.WaveLLM
   params:
     cfg:
       # Simulator configuration
@@ -54,7 +55,7 @@ model_cfg:
       fix_llm: true
       peft_config:
         r: 8
-        lora_alpha: 32
+        lora_alpha: 16
         target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
         lora_dropout: 0.1
         bias: "none"

@@ -40,11 +40,13 @@ def main():
             'block': 'src.model.cubenet.BasicBlock3D',
             'norm_layer': 'torch.nn.GroupNorm'
         },
-        'pretrained': 'weights/cubenet',
-        'freeze': True
     }
     backbone = instantiate_from_config(cubenet_cfg)
-    backbone = backbone.to(device).eval()
+    backbone.load_state_dict(torch.load(
+        os.path.join('weights/cubenet/model.pth'), weights_only=True), strict=True)
+    for param in backbone.parameters():
+        param.requires_grad = False
+    backbone.eval().to(device)
     
     if local_rank == 0:
         print(colored("\nModel setup:", "yellow"))
@@ -52,8 +54,8 @@ def main():
     
     # Initialize dataset with DistributedSampler
     dataset = mmWaveSequenceDataset(
-        opt={'max_length': 192, 'mode': 'pose'},
-        split_path='dataset/csl-news-demo03/all.json'
+        opt={'max_length': 512, 'mode': 'pose'},
+        split_path='dataset/csl-news-demo02/all.json'
     )
     sampler = DistributedSampler(dataset, shuffle=False)
     dataloader = DataLoader(

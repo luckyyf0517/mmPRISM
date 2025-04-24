@@ -9,7 +9,7 @@ from src.model.llm.model_factory import ModelFactory
 from src.utils.tools import instantiate_from_config
 
 
-class PEFTTrainer(pl.LightningModule):
+class WaveLLM(pl.LightningModule):
     """PyTorch Lightning module for PEFT fine-tuning with LoRA"""
     def __init__(self, cfg):
         super().__init__()
@@ -143,6 +143,8 @@ class PEFTTrainer(pl.LightningModule):
                 self.tokenizer.pad_token_id,
                 device=labels.device)
             labels = torch.cat([labels, padding], dim=1)
+        else: 
+            labels = labels[:, :input_length]
         labels[labels == self.tokenizer.pad_token_id] = -100
         
         # Forward pass
