@@ -17,11 +17,12 @@ class Phi3ModelWrapper(Phi3Model):
         # Initialize weights and apply final processing
         self.mm_projection_layers = nn.Linear(self.config.mm_input_dim, self.config.hidden_size)
         self.wave_token = getattr(config, 'wave_token', '<|wave_token|>')
+        
+        # Initialize weights and apply final processing
         self.post_init()
 
     def forward(
         self,
-        input_wave_tokens: torch.LongTensor = None,
         input_wave_embeds: torch.Tensor = None,
         input_ids: torch.LongTensor = None,
         attention_mask: Optional[torch.Tensor] = None,
@@ -54,6 +55,7 @@ class Phi3ModelWrapper(Phi3Model):
                     if (cur_input_ids == self.config.wave_start_token).sum() != (cur_input_ids == self.config.wave_end_token).sum():
                         raise ValueError("The number of wave start tokens and wave end tokens should be the same.")
                     wave_start_tokens = torch.where(cur_input_ids == self.config.wave_start_token)[0]
+                    assert len(wave_start_tokens) > 0, "No wave start token found."
                     for wave_start_token_pos in wave_start_tokens:
                         if cur_input_ids[wave_start_token_pos + num_patches + 1] != self.config.wave_end_token:
                             raise ValueError("The wave end token should follow the wave start token.")
@@ -95,7 +97,7 @@ class Phi3ModelWrapper(Phi3Model):
                     new_input_embeds.append(cur_new_input_embeds)
                     cur_wave_idx += 1
             inputs_embeds = torch.stack(new_input_embeds, dim=0)
-
+        
         return super().forward(
             input_ids=None,
             attention_mask=attention_mask,
@@ -109,12 +111,14 @@ class Phi3ModelWrapper(Phi3Model):
         )
 
 
-class Phi3ForCausalLMWrapper(Phi3ForCausalLM):
+class Phi3ForCausalLM(Phi3ForCausalLM):
     def __init__(self, config):
         super().__init__(config)
         self.model = Phi3ModelWrapper(config)
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        
+        # Initialize weights and apply final processing
         self.post_init()
 
     def get_model(self):
@@ -144,14 +148,12 @@ class Phi3ForCausalLMWrapper(Phi3ForCausalLM):
             **kwargs
         )
         model_inputs.update({
-            "input_wave_tokens": kwargs.get("input_wave_tokens", None),
             "input_wave_embeds": kwargs.get("input_wave_embeds", None),
         })
         return model_inputs
 
     def forward(
         self,
-        input_wave_tokens: torch.LongTensor = None,
         input_wave_embeds: torch.Tensor = None,
         input_ids: torch.LongTensor = None,
         attention_mask: Optional[torch.Tensor] = None,
@@ -173,7 +175,6 @@ class Phi3ForCausalLMWrapper(Phi3ForCausalLM):
 
         outputs = self.model(
             input_ids=input_ids,
-            input_wave_tokens=input_wave_tokens,
             input_wave_embeds=input_wave_embeds,
             attention_mask=attention_mask,
             past_key_values=past_key_values,
@@ -256,61 +257,3 @@ class Phi3ForCausalLMWrapper(Phi3ForCausalLM):
                     for p in self.get_output_embeddings().parameters():
                         p.requires_grad = True
                     print("Setting output embeddings and all input embeddings trainable.")
-
-    def generate(
-        self,
-        input_wave_embeds: Optional[torch.Tensor] = None,
-        input_ids: Optional[torch.LongTensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        do_sample: bool = True,
-        temperature: float = 1.0,
-        top_k: int = 50,
-        top_p: float = 0.95,
-        num_beams: int = 4,
-        max_new_tokens: int = 30,
-        **kwargs
-    ) -> torch.LongTensor:
-        """Generate text based on input tokens and wave embeddings."""
-        
-        # Prepare inputs_embeds if we have wave embeddings
-        if input_wave_embeds is not None:
-            inputs_embeds = self.model.embed_tokens(input_ids)
-            wave_features = self.model.mm_projection_layers(input_wave_embeds).to(dtype=torch.bfloat16)
-
-            new_input_embeds = []
-            for cur_input_ids, cur_input_embeds in zip(input_ids, inputs_embeds):
-                wave_start_pos = torch.where(cur_input_ids == self.config.wave_start_token)[0][0]
-                cur_wave_features = wave_features[0].to(device=cur_input_embeds.device)
-                num_patches = cur_wave_features.shape[0]
-                
-                cur_new_input_embeds = torch.cat((
-                    cur_input_embeds[:wave_start_pos+1],
-                    cur_wave_features,
-                    cur_input_embeds[wave_start_pos + num_patches + 1:]
-                ), dim=0)
-                new_input_embeds.append(cur_new_input_embeds)
-                
-            inputs_embeds = torch.stack(new_input_embeds, dim=0)
-            input_ids = None  # Set to None since we're using inputs_embeds
-        
-        # Merge generation parameters
-        generation_kwargs = {
-            'input_ids': input_ids,
-            'inputs_embeds': inputs_embeds,
-            'attention_mask': attention_mask,
-            'do_sample': do_sample,
-            'temperature': temperature,
-            'top_k': top_k,
-            'top_p': top_p,
-            'num_beams': num_beams,
-            'max_new_tokens': max_new_tokens,
-        }
-        # Update with additional parameters without overwriting existing ones
-        generation_kwargs.update(kwargs)
-        
-        # Generate with model
-        with torch.inference_mode():
-            with torch.autocast('cuda', dtype=torch.bfloat16):
-                outputs = self.model.generate(**generation_kwargs)
-        
-        return outputs

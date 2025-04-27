@@ -188,7 +188,7 @@ def analyze_progress(base_path):
         feature_percentage = (feature_count / total_files_in_archive) * 100 if total_files_in_archive else 0
         
         # Display progress bars
-        print(f"\nArchive {archive_id}:")
+        print(f"Archive {archive_id}:")
         tqdm(total=100, desc=colored("Poses:    ", "green"), initial=pose_percentage, ncols=50, bar_format="{l_bar}{bar}| {n:.1f}%")
         tqdm(total=100, desc=colored("Features: ", "cyan"), initial=feature_percentage, ncols=50, bar_format="{l_bar}{bar}| {n:.1f}%")
 

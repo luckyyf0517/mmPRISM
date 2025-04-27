@@ -13,7 +13,7 @@ data_cfg:
       test_split: 'dataset/csl-news-demo02/val.json'
       opt: 
         caption_path: "dataset/CSL_News_Labels_converted.json"
-        max_length: 160
+        max_length: 512
         mode: "feature"
       num_workers: 4
 
@@ -22,24 +22,6 @@ model_cfg:
   target: src.model.wavellm.WaveLLM
   params:
     cfg:
-      # Simulator configuration
-      simulator:
-        target: src.fmcw.simulator.Simulation
-        params: {}
-      
-      # Feature extractor configuration
-      backbone:
-        target: src.model.cubenet.CubeNet
-        params:
-          input_dim: 32
-          hidden_dims: [64, 128, 256, 512]
-          num_blocks: [3, 4, 6, 3]
-          strides: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [1, 1, 1]]
-          block: src.model.cubenet.BasicBlock3D
-          norm_layer: torch.nn.GroupNorm
-        pretrained: "weights/cubenet"
-        freeze: true  
-      
       # LLM configuration
       model_type: "phi3"
       model:
@@ -57,7 +39,7 @@ model_cfg:
         r: 8
         lora_alpha: 16
         target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
-        lora_dropout: 0.1
+        lora_dropout: 0.05
         bias: "none"
         do_not_add_lora_model: ["mm_projection_layers"]
       
@@ -65,7 +47,7 @@ model_cfg:
       training:
         batch_size: 8
         max_epochs: 10
-        learning_rate: 1.0e-4
+        learning_rate: 5.0e-4
         weight_decay: 0.01
         warmup_steps: 100
       

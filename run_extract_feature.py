@@ -89,6 +89,8 @@ def main():
                 
             # Determine feature path
             feature_path = path.replace('poses', 'features')
+            if os.path.exists(feature_path):
+                continue
             
             # Simulate and extract features
             mmwave = simulator(points_t.to(device), velocities_t.to(device))  # [T, 32, 32, 32, 32]

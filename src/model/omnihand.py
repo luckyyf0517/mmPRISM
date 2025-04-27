@@ -43,17 +43,20 @@ class OmniHand(LightningModule):
         
         # Initialize regression heads for hand keypoints
         self.feature_dim = cfg.backbone.params.hidden_dims[-1]
+        self.relu = nn.ReLU()
         self.regressor = nn.ModuleDict({
-            'l': nn.Sequential(
-                nn.Linear(self.feature_dim, 512),
-                nn.ReLU(),
-                nn.Linear(512, 24 * 3)
-            ),
-            'r': nn.Sequential(
-                nn.Linear(self.feature_dim, 512),
-                nn.ReLU(),
-                nn.Linear(512, 24 * 3)
-            )})
+            # 'l': nn.Sequential(
+            #     nn.Linear(self.feature_dim, 512),
+            #     nn.ReLU(),
+            #     nn.Linear(512, 24 * 3)
+            # ),
+            'l': nn.Linear(self.feature_dim, 24 * 3),
+            # 'r': nn.Sequential(
+            #     nn.Linear(self.feature_dim, 512),
+            #     nn.ReLU(),
+            #     nn.Linear(512, 24 * 3)
+            # ),
+            'r': nn.Linear(self.feature_dim, 24 * 3)})
         
         # Training parameters
         self.lr = cfg.training.lr
@@ -80,6 +83,7 @@ class OmniHand(LightningModule):
         features = self.backbone(x)  # [B, feature_dim, 4, 4, 4]
         # Global max pooling across spatial dimensions
         features = F.adaptive_max_pool3d(features, 1).squeeze(-1).squeeze(-1).squeeze(-1)  # [B, feature_dim]
+        features = self.relu(features)
         return features
     
     def forward_feature(self, features):

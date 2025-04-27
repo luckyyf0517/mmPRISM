@@ -6,7 +6,11 @@ from transformers import get_cosine_schedule_with_warmup
 from peft import get_peft_model, LoraConfig
 from typing import Dict, Any, List, Optional, Union
 from src.model.llm.model_factory import ModelFactory
+from src.model.llm.conversation import default_conversation
 from src.utils.tools import instantiate_from_config
+from termcolor import colored
+from src.model.text_processor import preprocess_multimodal_wave, preprocess, format_conversation
+IGNORE_INDEX = -100
 
 
 class WaveLLM(pl.LightningModule):
@@ -16,14 +20,6 @@ class WaveLLM(pl.LightningModule):
         self.save_hyperparameters()
         self.cfg = cfg
         self.batch_size = self.cfg.training.batch_size
-        
-        # Initialize simulator
-        self.simulator = instantiate_from_config(self.cfg.simulator)
-        
-        # Initialize backbone
-        self.backbone = instantiate_from_config(self.cfg.backbone)
-        for param in self.backbone.parameters():
-            param.requires_grad = False
         
         # Create model using model factory
         self.model = ModelFactory.create_model(self.cfg.model_type, self.cfg.model)
@@ -40,33 +36,29 @@ class WaveLLM(pl.LightningModule):
         
         # Initialize LoRA if enabled
         if self.cfg.use_peft:
+            # First fix all parameters
+            self.model.requires_grad_(False)
+
             # First get all linear layer names excluding mm_projection_layers
             target_modules = self._find_all_linear_names(
-                exclude_keywords=['mm_projection_layers']
-            )
-            
+                exclude_keywords=['mm_projection_layers'])
+
             lora_config = LoraConfig(
                 r=self.cfg.peft_config.r,
                 lora_alpha=self.cfg.peft_config.lora_alpha,
                 target_modules=target_modules,  # Use the filtered target modules
                 lora_dropout=self.cfg.peft_config.lora_dropout,
                 bias=self.cfg.peft_config.bias,
-                task_type="CAUSAL_LM",
-            )
+                task_type="CAUSAL_LM")
             self.model = get_peft_model(self.model, lora_config)
-            
-            # Fix LLM parameters if specified
-            if self.cfg.fix_llm:
-                # First fix all parameters
-                self.model.requires_grad_(False)
-                
-                # Then selectively enable training for mm_projection_layers
-                if hasattr(self.model, 'get_model'):
-                    # Some models wrap the base model in a get_model() method
-                    if hasattr(self.model.get_model(), 'mm_projection_layers'):
-                        self.model.get_model().mm_projection_layers.requires_grad_(True)
-                elif hasattr(self.model, 'mm_projection_layers'):
-                    self.model.mm_projection_layers.requires_grad_(True)
+
+            # Enable training for mm_projection_layers
+            self.model.get_model().mm_projection_layers.requires_grad_(True)
+
+        # from IPython import embed; embed()
+        # # Iterate over all parameters in the model and print their names and requires_grad status
+        # for name, param in self.model.get_model().named_parameters():
+        #     print(f"Parameter name: {name}, requires_grad: {param.requires_grad}")
         
         # Print trainable parameters
         self._print_trainable_parameters()
@@ -96,68 +88,65 @@ class WaveLLM(pl.LightningModule):
             all_param += param.numel()
             if param.requires_grad:
                 trainable_params += param.numel()
-                print(f"{name}: {param.numel()} parameters")
-        print(
-            f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
-        )
+        trainable_params_str = colored(f"trainable params: {trainable_params}", 'green')
+        all_params_str = colored(f"all params: {all_param}", 'yellow')
+        trainable_percent_str = colored(f"trainable%: {100 * trainable_params / all_param:.2f}", 'blue')
+        print(f"{trainable_params_str} || {all_params_str} || {trainable_percent_str}")
 
     def forward(self, batch):
-        # Directly use pre-computed features from dataset
+        # Get wave embeddings
         wave_embeds = batch['features'].to(torch.bfloat16)  # [B, T, C]
-        
-        # Get wave patch token from model config
-        wave_start_token = self.model.config.default_wave_start_token
-        wave_end_token = self.model.config.default_wave_end_token
-        wave_patch_token = self.model.config.default_wave_patch_token
 
-        # Construct input sequence
+        # # debug
+        # wave_embeds = torch.zeros_like(wave_embeds)
+        
+        # Construct wave tokens
         B, T = wave_embeds.shape[:2]
-        input_text = [f"Translate millimeter wave signal to text: {wave_start_token}{wave_patch_token*T}{wave_end_token}"] * B
+
+        # Format conversations
+        conversations = [format_conversation(
+            question="Translate this millimeter wave signal to text.",
+            answer=batch['caption'][i]
+        ) for i in range(B)]
+
+        # Get wave patch token from model config
+        conversations = preprocess_multimodal_wave(
+            conversations,
+            wave_token_len=T,
+            default_wave_patch_token=self.model.config.default_wave_patch_token,
+            default_wave_start_token=self.model.config.default_wave_start_token,
+            default_wave_end_token=self.model.config.default_wave_end_token
+        )
         
-        # Tokenize input sequence
-        model_inputs = self.tokenizer(
-            input_text,
-            padding="longest",
-            truncation=True,
-            max_length=self.cfg.model.model_max_length,
-            return_tensors="pt",
-        ).to(wave_embeds.device)
-        
-        # Prepare target tokens
-        target_tokens = self.tokenizer(
-            batch['caption'],
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=self.cfg.model.model_max_length,
-        ).to(wave_embeds.device)
-        
-        labels = target_tokens['input_ids']
-        labels[labels == self.tokenizer.pad_token_id] = -100
-        
-        input_length = model_inputs['input_ids'].size(1)
-        labels = target_tokens['input_ids']
-        if labels.size(1) < input_length:
-            padding = torch.full(
-                (labels.size(0), input_length - labels.size(1)),
-                self.tokenizer.pad_token_id,
-                device=labels.device)
-            labels = torch.cat([labels, padding], dim=1)
-        else: 
-            labels = labels[:, :input_length]
-        labels[labels == self.tokenizer.pad_token_id] = -100
-        
+        # Process text
+        processed = preprocess(conversations, self.tokenizer)
+
         # Forward pass
         outputs = self.model(
             input_wave_embeds=wave_embeds,
-            input_ids=model_inputs['input_ids'],
-            attention_mask=model_inputs['attention_mask'],
-            labels=labels.to(wave_embeds.device)
+            input_ids=processed['input_ids'].to(wave_embeds.device),
+            attention_mask=processed['input_ids'].ne(self.tokenizer.pad_token_id).to(wave_embeds.device),
+            labels=processed['labels'].to(wave_embeds.device)
         )
+
+        # Decode labels and logits to text
+        labels = processed['labels']; ignore_index = processed['labels'] == IGNORE_INDEX
+        labels[ignore_index] = self.tokenizer.pad_token_id
+        labels_decoded = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
         
+        logits = torch.argmax(outputs['logits'], dim=-1)
+        logits[ignore_index] = self.tokenizer.pad_token_id
+        logits_decoded = self.tokenizer.batch_decode(logits, skip_special_tokens=True)
+
+        # # Print decoded texts with different colors
+        # for label_text, logits_text in zip(labels_decoded, logits_decoded):
+        #     print("-" * 80)
+        #     print(colored("Label Text:", "yellow"), colored(label_text, "yellow"))
+        #     print(colored("Logits Text:", "green"), colored(logits_text, "green"))
+
         return {
-            'inputs_embeds': wave_embeds,
-            'attention_mask': model_inputs['attention_mask'],
+            'inputs_embeds': wave_embeds, 
+            'attention_mask': processed['input_ids'].ne(self.tokenizer.pad_token_id),
             'loss': outputs['loss']
         }
     
@@ -182,7 +171,6 @@ class WaveLLM(pl.LightningModule):
         loss = outputs['loss']
         self.log('train/loss', loss, on_step=True, on_epoch=False, 
                  prog_bar=True, sync_dist=True, batch_size=self.batch_size)
-        
         return loss
     
     def validation_step(self, batch, batch_idx):

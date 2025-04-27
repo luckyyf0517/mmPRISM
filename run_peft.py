@@ -90,8 +90,7 @@ def main():
     if args.version is None:
         args.version = args.config.replace('.yaml', '').replace('config/', '')
     
-    
-    # 初始化数据接口
+    # Initialize data interface
     data_cfg = cfg.data_cfg
     data_cfg.params.cfg.batch_size = args.batch_size
     data = instantiate_from_config(data_cfg)
@@ -107,19 +106,20 @@ def main():
         project="mmwave-csl"
     )
     
-    if not args.resume_checkpoint and args.rank == 0: 
-        log_file_list = glob.glob(os.path.join(cfg.log_dir, args.version, '*.ckpt'))
-        if len(log_file_list) > 0:
-            if args.reset: 
-                shutil.rmtree(os.path.join(cfg.log_dir, args.version))
-            else: 
-                raise ValueError("Checkpoint files already exist. Please use --reset to restart a new experiment.")
+    # if not args.resume_checkpoint and args.rank == 0: 
+    #     log_file_list = glob.glob(os.path.join(cfg.log_dir, args.version, '*.ckpt'))
+    #     if len(log_file_list) > 0:
+    #         if args.reset: 
+    #             shutil.rmtree(os.path.join(cfg.log_dir, args.version))
+    #         else: 
+    #             raise ValueError("Checkpoint files already exist. Please use --reset to restart a new experiment.")
     
     # Set callbacks
     callbacks = [
         ModelCheckpoint(
             dirpath=os.path.join(cfg.log_dir, args.version),
-            filename="model-{epoch:02d}-{val_loss:.2f}",
+            filename="model-epoch-{epoch:02d}-val_loss-{valid/loss:.2f}",
+            auto_insert_metric_name=False,
             save_top_k=3,
             monitor="valid/loss",
             mode="min",
@@ -158,7 +158,7 @@ def main():
         precision=precision_map[args.dtype],
         logger=logger,
         callbacks=callbacks,
-        max_epochs=args.max_epochs,  # Set to 1 epoch
+        max_epochs=args.max_epochs, 
         num_sanity_val_steps=2,
         reload_dataloaders_every_n_epochs=1,
         log_every_n_steps=1,

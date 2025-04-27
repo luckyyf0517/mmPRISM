@@ -1,6 +1,6 @@
 import torch.nn as nn
 from typing import Dict, Any, Type
-from src.model.llm.phi3_model import Phi3ForCausalLMWrapper
+from src.model.llm.phi3_model import Phi3ForCausalLM
 from easydict import EasyDict
 import os
 import torch
@@ -11,7 +11,7 @@ class ModelFactory:
     """Factory class for creating different models"""
     
     MODEL_TYPES = {
-        'phi3': Phi3ForCausalLMWrapper,
+        'phi3': Phi3ForCausalLM,
     }
     
     @classmethod
