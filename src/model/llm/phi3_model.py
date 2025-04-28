@@ -1,24 +1,18 @@
 import torch
 import torch.nn as nn
-from transformers import Phi3Model, Phi3ForCausalLM, AutoTokenizer, AutoConfig
+from transformers import Phi3Model, Phi3ForCausalLM
 from typing import List, Optional, Union, Dict, Any, Tuple
 from torch.nn import CrossEntropyLoss
+from src.model.llm.base_model import WaveBaseModel
 
 from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
     CausalLMOutputWithPast,
-    SequenceClassifierOutputWithPast,
-    TokenClassifierOutput,
 )
 
-class Phi3ModelWrapper(Phi3Model):
+class Phi3ModelWrapper(WaveBaseModel, Phi3Model):
     def __init__(self, config):
         super().__init__(config)
-        # Initialize weights and apply final processing
-        self.mm_projection_layers = nn.Linear(self.config.mm_input_dim, self.config.hidden_size)
-        self.wave_token = getattr(config, 'wave_token', '<|wave_token|>')
-        
-        # Initialize weights and apply final processing
         self.post_init()
 
     def forward(
@@ -34,69 +28,13 @@ class Phi3ModelWrapper(Phi3Model):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
-        cache_position: Optional[torch.LongTensor] = None,
-        num_logits_to_keep: int = 0,
         **kwargs
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
 
-        orig_embeds_params = getattr(self, 'orig_embeds_params', None)
-
         if input_ids.shape[1] != 1 or self.training:
-            wave_features = self.mm_projection_layers(input_wave_embeds)
-
-            new_input_embeds = []
-            cur_wave_idx = 0
-            for cur_input_ids, cur_input_embeds in zip(input_ids, inputs_embeds):
-                cur_wave_features = wave_features[cur_wave_idx].to(device=cur_input_embeds.device)
-                num_patches = cur_wave_features.shape[0]
-                if self.config.mm_use_wave_start_end:
-                    if (cur_input_ids == self.config.wave_start_token).sum() != (cur_input_ids == self.config.wave_end_token).sum():
-                        raise ValueError("The number of wave start tokens and wave end tokens should be the same.")
-                    wave_start_tokens = torch.where(cur_input_ids == self.config.wave_start_token)[0]
-                    assert len(wave_start_tokens) > 0, "No wave start token found."
-                    for wave_start_token_pos in wave_start_tokens:
-                        if cur_input_ids[wave_start_token_pos + num_patches + 1] != self.config.wave_end_token:
-                            raise ValueError("The wave end token should follow the wave start token.")
-                        if orig_embeds_params is not None:
-                            cur_new_input_embeds = torch.cat((
-                                cur_input_embeds[:wave_start_token_pos].detach(),
-                                cur_input_embeds[wave_start_token_pos:wave_start_token_pos+1],
-                                cur_wave_features,
-                                cur_input_embeds[wave_start_token_pos + num_patches + 1:wave_start_token_pos + num_patches + 2],
-                                cur_input_embeds[wave_start_token_pos + num_patches + 2:].detach()
-                            ), dim=0)
-                        else:
-                            cur_new_input_embeds = torch.cat((
-                                cur_input_embeds[:wave_start_token_pos+1],
-                                cur_wave_features,
-                                cur_input_embeds[wave_start_token_pos + num_patches + 1:]
-                            ), dim=0)
-                        cur_wave_idx += 1
-                    new_input_embeds.append(cur_new_input_embeds)
-                else:
-                    if (cur_input_ids == self.config.wave_patch_token).sum() != num_patches:
-                        raise ValueError("The number of wave patch tokens should be the same as the number of wave patches.")
-                    masked_indices = torch.where(cur_input_ids == self.config.wave_patch_token)[0]
-                    mask_index_start = masked_indices[0]
-                    if (masked_indices != torch.arange(mask_index_start, mask_index_start+num_patches, device=masked_indices.device, dtype=masked_indices.dtype)).any():
-                        raise ValueError("The wave patch tokens should be consecutive.")
-                    if orig_embeds_params is not None:
-                        cur_new_input_embeds = torch.cat((
-                            cur_input_embeds[:mask_index_start].detach(),
-                            cur_wave_features,
-                            cur_input_embeds[mask_index_start+num_patches:].detach()
-                        ), dim=0)
-                    else:
-                        cur_new_input_embeds = torch.cat((
-                            cur_input_embeds[:mask_index_start],
-                            cur_wave_features,
-                            cur_input_embeds[mask_index_start+num_patches:]
-                        ), dim=0)
-                    new_input_embeds.append(cur_new_input_embeds)
-                    cur_wave_idx += 1
-            inputs_embeds = torch.stack(new_input_embeds, dim=0)
+            inputs_embeds = self.process_wave_features(input_ids, inputs_embeds, input_wave_embeds)
         
         return super().forward(
             input_ids=None,
@@ -110,15 +48,12 @@ class Phi3ModelWrapper(Phi3Model):
             **kwargs
         )
 
-
 class Phi3ForCausalLM(Phi3ForCausalLM):
     def __init__(self, config):
         super().__init__(config)
         self.model = Phi3ModelWrapper(config)
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
-        
-        # Initialize weights and apply final processing
         self.post_init()
 
     def get_model(self):
@@ -130,10 +65,6 @@ class Phi3ForCausalLM(Phi3ForCausalLM):
         past_key_values=None,
         attention_mask=None,
         inputs_embeds=None,
-        cache_position=None,
-        position_ids=None,
-        use_cache=True,
-        num_logits_to_keep=0,
         **kwargs,
     ):
         model_inputs = super().prepare_inputs_for_generation(
@@ -141,10 +72,6 @@ class Phi3ForCausalLM(Phi3ForCausalLM):
             past_key_values=past_key_values,
             attention_mask=attention_mask,
             inputs_embeds=inputs_embeds,
-            cache_position=cache_position,
-            position_ids=position_ids,
-            use_cache=use_cache,
-            num_logits_to_keep=num_logits_to_keep,
             **kwargs
         )
         model_inputs.update({
@@ -171,7 +98,6 @@ class Phi3ForCausalLM(Phi3ForCausalLM):
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-        position_ids = None
 
         outputs = self.model(
             input_ids=input_ids,
@@ -183,7 +109,7 @@ class Phi3ForCausalLM(Phi3ForCausalLM):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
-            position_ids=position_ids,
+            **kwargs
         )
         hidden_states = outputs[0]
         logits = self.lm_head(hidden_states)
@@ -214,46 +140,4 @@ class Phi3ForCausalLM(Phi3ForCausalLM):
         )
 
     def initialize_tokenizer_wave_backbone_config(self, tokenizer, device, fix_llm=True):
-        config = self.config
-        mm_use_wave_start_end = self.config.mm_use_wave_start_end = config.mm_use_wave_start_end
-
-        default_wave_patch_token = config.default_wave_patch_token
-        self.config.default_wave_patch_token = default_wave_patch_token
-        tokenizer.add_tokens([default_wave_patch_token], special_tokens=True)
-        self.resize_token_embeddings(len(tokenizer))
-        self.config.wave_patch_token = tokenizer.convert_tokens_to_ids([default_wave_patch_token])[0]
-
-        if mm_use_wave_start_end:
-            default_wave_start_token = config.default_wave_start_token
-            default_wave_end_token = config.default_wave_end_token
-            self.config.default_wave_start_token = default_wave_start_token
-            self.config.default_wave_end_token = default_wave_end_token
-
-            num_new_tokens = tokenizer.add_tokens([default_wave_start_token, default_wave_end_token], special_tokens=True)
-            self.resize_token_embeddings(len(tokenizer))
-            self.config.wave_start_token = tokenizer.convert_tokens_to_ids([default_wave_start_token])[0]
-            self.config.wave_end_token = tokenizer.convert_tokens_to_ids([default_wave_end_token])[0]
-
-            if num_new_tokens > 0:
-                input_embeddings = self.get_input_embeddings().weight.data
-                output_embeddings = self.get_output_embeddings().weight.data
-
-                input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
-                output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
-
-                input_embeddings[-num_new_tokens:] = input_embeddings_avg
-                output_embeddings[-num_new_tokens:] = output_embeddings_avg
-
-                # need to update the input embedding, but no need to update the output embedding
-                for p in self.get_input_embeddings().parameters():
-                    p.requires_grad = True
-                if fix_llm:
-                    self.get_model().orig_embeds_params = [self.get_input_embeddings().weight.data.clone().to(device=device)]
-                    for p in self.get_output_embeddings().parameters():
-                        p.requires_grad = False
-                    print(f"Setting output embeddings fixed and {num_new_tokens} new tokens' input embeddings trainable.")
-                else:
-                    self.get_model().orig_embeds_params = None
-                    for p in self.get_output_embeddings().parameters():
-                        p.requires_grad = True
-                    print("Setting output embeddings and all input embeddings trainable.")
+        self.model.initialize_wave_tokens(tokenizer, device, fix_llm)

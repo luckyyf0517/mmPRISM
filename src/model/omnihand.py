@@ -83,11 +83,11 @@ class OmniHand(LightningModule):
         features = self.backbone(x)  # [B, feature_dim, 4, 4, 4]
         # Global max pooling across spatial dimensions
         features = F.adaptive_max_pool3d(features, 1).squeeze(-1).squeeze(-1).squeeze(-1)  # [B, feature_dim]
-        features = self.relu(features)
         return features
     
     def forward_feature(self, features):
         """Forward pass for feature extraction"""
+        features = self.relu(features)
         # Predict joint positions for both hands
         joints_l = self.regressor['l'](features).view(-1, 24, 3)
         joints_r = self.regressor['r'](features).view(-1, 24, 3)

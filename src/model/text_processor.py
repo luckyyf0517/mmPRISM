@@ -1,46 +1,84 @@
-import torch
-from typing import Dict, Sequence
+import sys
+sys.path.append(".")
+
+from typing import Dict, Sequence, List
 from src.model.llm.conversation import conv_phi3 as default_conversation
 
 IGNORE_INDEX = -100
 
-def preprocess_multimodal_wave(
+def insert_wave_tokens(
     sources: Sequence[str],
     wave_indicator: str = "<wave>",
     default_wave_patch_token: str = "<wave_patch>",
     wave_token_len: int = 248,
-    mm_use_wave_start_end: bool = True,
-    default_wave_start_token: str = "<wave_bos>",
-    default_wave_end_token: str = "<wave_eos>"
+    use_wave_markers: bool = True,
+    wave_start_token: str = "<wave_bos>",
+    wave_end_token: str = "<wave_eos>"
 ) -> Dict:
+    """
+    Process and replace wave indicators with appropriate tokens in the input sources
+    """
     for source in sources:
         for sentence in source:
-            replace_token = default_wave_patch_token * wave_token_len 
-            if mm_use_wave_start_end:
-                replace_token = default_wave_start_token + replace_token + default_wave_end_token
-            if sentence["value"] is not None:
-                sentence["value"] = sentence["value"].replace(wave_indicator, replace_token)
+            if sentence["value"] is None:
+                continue
+                
+            token_sequence = default_wave_patch_token * wave_token_len
+            if use_wave_markers:
+                token_sequence = f"{wave_start_token}{token_sequence}{wave_end_token}"
+            
+            sentence["value"] = sentence["value"].replace(wave_indicator, token_sequence)
     return sources
 
-def preprocess(sources, tokenizer):
+def prepare_conversation_data(sources: Sequence[Dict], tokenizer) -> Dict:
+    """
+    Prepare and tokenize conversation data for model input
+    Input: [<prompt>, <question>, <wave>, <answer>]
+    Labels: [<masked_prompt>, <masked_wave>, <masked_question>, <answer>]
+    """
     conv = default_conversation.copy()
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
+    
+    conversations = _build_conversations(sources, conv, roles)
+    return _tokenize_and_mask(conversations, tokenizer, conv)
 
-    # Apply prompt templates
+def create_conversation(questions: List[str], answers: List[str]) -> List[Dict]:
+    """
+    Create a formatted conversation pair from question and answer
+    """
+    if isinstance(questions, str):
+        questions = [questions] * len(answers)
+    else: 
+        assert len(questions) == len(answers), "Questions and answers must have the same length"
+    
     conversations = []
-    for i, source in enumerate(sources):
+    for question, answer in zip(questions, answers):
+        conversations.append([{
+            "from": "human",
+            "value": f'{question}\n<wave>'
+        }, {
+            "from": "gpt",
+            "value": answer
+        }])
+    return conversations
+
+def _build_conversations(sources, conv, roles):
+    """Helper function to build conversation prompts"""
+    conversations = []
+    for source in sources:
         if roles[source[0]["from"]] != conv.roles[0]:
-            # Skip the first one if it is not from human
             source = source[1:]
 
         conv.messages = []
         for j, sentence in enumerate(source):
             role = roles[sentence["from"]]
-            assert role == conv.roles[j % 2], f"{i}"
+            assert role == conv.roles[j % 2], f"Role mismatch at index {j}"
             conv.append_message(role, sentence["value"])
         conversations.append(conv.get_prompt())
+    return conversations
 
-    # Tokenize conversations
+def _tokenize_and_mask(conversations, tokenizer, conv):
+    """Helper function to tokenize and mask conversation data"""
     input_ids = tokenizer(
         conversations,
         return_tensors="pt",
@@ -51,6 +89,15 @@ def preprocess(sources, tokenizer):
     targets = input_ids.clone()
 
     # Mask targets
+    _apply_target_masks(conversations, targets, tokenizer, conv)
+    
+    return {
+        "input_ids": input_ids,
+        "labels": targets,
+    }
+
+def _apply_target_masks(conversations, targets, tokenizer, conv):
+    """Helper function to apply masks to target sequences"""
     sep = conv.roles[1]
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
@@ -77,17 +124,55 @@ def preprocess(sources, tokenizer):
                 print(
                     f"WARNING: tokenization mismatch precess_v3: {cur_len} vs. {total_len}."
                     f" (ignored)")
-    return dict(
-        input_ids=input_ids,
-        labels=targets,
-    )
 
-def format_conversation(question: str = None, answer: str = None) -> list:
+
+def prepare_simple_data(
+    sources: Sequence[Dict], 
+    tokenizer,
+    prefix: str = "Translate sign language video to English: "
+) -> Dict:
+    """
+    Prepare simple input format for encoder-decoder models like MT5
+    Input: [<question>, <wave>]
+    Labels: [<answer>]
+    """
+    # Prepare input prompts with wave tokens
+    input_texts = []
+    target_texts = []
     
-    return [{
-        "from": "human",
-        "value": f"<wave>\n{question}"
-    }, {
-        "from": "gpt",
-        "value": answer
-    }]
+    for source in sources:
+        # Extract question (with wave token) and answer
+        question = source[0]["value"]  # Contains <wave> token
+        answer = source[1]["value"]    # Target caption
+        
+        # Combine prefix and question
+        input_text = prefix + question
+        
+        input_texts.append(input_text)
+        target_texts.append(answer)
+    
+    # Tokenize inputs
+    inputs = tokenizer(
+        input_texts,
+        padding="longest",
+        max_length=tokenizer.model_max_length,
+        truncation=True,
+        return_tensors="pt"
+    ).input_ids
+    
+    # Tokenize targets
+    targets = tokenizer(
+        target_texts,
+        padding="longest",
+        max_length=tokenizer.model_max_length,
+        truncation=True,
+        return_tensors="pt"
+    ).input_ids
+    
+    # Replace padding token id with -100 for labels
+    targets[targets == tokenizer.pad_token_id] = -IGNORE_INDEX
+    
+    return {
+        "input_ids": inputs,
+        "labels": targets
+    }

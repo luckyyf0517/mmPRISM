@@ -4,13 +4,13 @@ import numpy as np
 from tqdm import tqdm
 from termcolor import colored
 from src.data.dataset import mmWaveSequenceDataset
-from src.model.cubenet import CubeNet
 from torch.utils.data import DataLoader
-from src.fmcw.simulator import Simulation
+from src.utils.io import load_yaml
 from src.utils.tools import instantiate_from_config
 import torch.distributed as dist
 from torch.utils.data.distributed import DistributedSampler
-
+from easydict import EasyDict as edict
+from deepspeed.utils.zero_to_fp32 import load_state_dict_from_zero_checkpoint
 
 def main():
     # Initialize distributed training
@@ -27,30 +27,23 @@ def main():
         print(colored(f"- Backend: NCCL", "yellow"))
         print(colored(f"- GPU Memory: {torch.cuda.get_device_properties(local_rank).total_memory / 1024**3:.1f} GB", "yellow"))
     
-    # Initialize models (no DDP wrapper needed)
-    simulator = Simulation().to(device).eval()
+    # Load OmniHand model from checkpoint
+    args = edict({
+        'config': 'config/omnihand.yaml',
+        'resume_checkpoint': 'log/omnihand-0427/last.ckpt',
+    })
+    cfg = load_yaml(args.config)
     
-    cubenet_cfg = {
-        'target': 'src.model.cubenet.CubeNet',
-        'params': {
-            'input_dim': 32,
-            'hidden_dims': [64, 128, 256, 512],
-            'num_blocks': [3, 4, 6, 3], 
-            'strides': [[2, 2, 2], [2, 2, 2], [2, 2, 2], [1, 1, 1]],
-            'block': 'src.model.cubenet.BasicBlock3D',
-            'norm_layer': 'torch.nn.GroupNorm'
-        },
-    }
-    backbone = instantiate_from_config(cubenet_cfg)
-    backbone.load_state_dict(torch.load(
-        os.path.join('weights/cubenet/model.pth'), weights_only=True), strict=True)
-    for param in backbone.parameters():
-        param.requires_grad = False
-    backbone.eval().to(device)
+    # Initialize model
+    model_cfg = cfg.model_cfg
+    model_cfg.params.cfg.batch_size = 1
+    model = instantiate_from_config(model_cfg)
+    model = load_state_dict_from_zero_checkpoint(model, args.resume_checkpoint)
+    model = model.to(device).eval()
     
     if local_rank == 0:
         print(colored("\nModel setup:", "yellow"))
-        print(colored("- Models moved to GPU and set to eval mode", "yellow"))
+        print(colored("- OmniHand model loaded and set to eval mode", "yellow"))
     
     # Initialize dataset with DistributedSampler
     dataset = mmWaveSequenceDataset(
@@ -81,29 +74,25 @@ def main():
         for batch in tqdm(dataloader, 
                          desc=colored(f"GPU {local_rank}", "blue"),
                          disable=local_rank != 0):
-            # Get batch b timestep data
+            # Get batch timestep data
             max_len = batch['valid_length'][0].item()
-            points_t = batch['points_3d'][0, :max_len]      # [T, 59, 3]
+            points_t = batch['points_3d'][0, :max_len] # [T, 59, 3]
             velocities_t = batch['velocities_3d'][0, :max_len]  # [T, 59, 3]
             path = batch['path'][0]
                 
             # Determine feature path
             feature_path = path.replace('poses', 'features')
-            if os.path.exists(feature_path):
-                continue
-            
-            # Simulate and extract features
-            mmwave = simulator(points_t.to(device), velocities_t.to(device))  # [T, 32, 32, 32, 32]
-            features = backbone(mmwave)  # [T, feature_dim]
-            features = torch.nn.functional.adaptive_max_pool3d(features, (1, 1, 1))
-            features = features.squeeze(-1).squeeze(-1).squeeze(-1)  # [T, feature_dim]
-
-            # Save features for each sample in batch
+            features = model.encode_feature(
+                points_t.to(device), 
+                velocities_t.to(device))  # [T, feature_dim]
             os.makedirs(os.path.dirname(feature_path), exist_ok=True)
             np.save(feature_path, features.cpu().numpy())
             
-            # # Print save info for all ranks
-            # print(colored(f"[Rank {local_rank}] Saved to {feature_path}", "green"))
+            pose_path = path.replace('poses', 'pred_poses')
+            joints_pred = model.forward_feature(features)
+            joints_pred = joints_pred.cpu().numpy()
+            os.makedirs(os.path.dirname(pose_path), exist_ok=True)
+            np.save(pose_path, joints_pred)
 
     dist.barrier()  # Wait for all processes to complete
     if local_rank == 0:

@@ -9,11 +9,11 @@ from src.model.llm.model_factory import ModelFactory
 from src.model.llm.conversation import default_conversation
 from src.utils.tools import instantiate_from_config
 from termcolor import colored
-from src.model.text_processor import preprocess_multimodal_wave, preprocess, format_conversation
+from src.model.text_processor import insert_wave_tokens, create_conversation, prepare_conversation_data, prepare_simple_data
 IGNORE_INDEX = -100
 
 
-class WaveLLM(pl.LightningModule):
+class WaveLLMTrainer(pl.LightningModule):
     """PyTorch Lightning module for PEFT fine-tuning with LoRA"""
     def __init__(self, cfg):
         super().__init__()
@@ -27,8 +27,10 @@ class WaveLLM(pl.LightningModule):
         # Create tokenizer using model factory
         self.tokenizer = ModelFactory.create_tokenizer(self.cfg.model)
         
+        self.conv_type = 'role' # 'role' or 'simple'
+        
         # Initialize model tokens with tokenizer
-        self.model.initialize_tokenizer_wave_backbone_config(
+        self.model.initialize_wave_tokens(
             tokenizer=self.tokenizer,
             device=self.device,
             fix_llm=self.cfg.fix_llm
@@ -97,30 +99,34 @@ class WaveLLM(pl.LightningModule):
         # Get wave embeddings
         wave_embeds = batch['features'].to(torch.bfloat16)  # [B, T, C]
 
-        # # debug
-        # wave_embeds = torch.zeros_like(wave_embeds)
-        
         # Construct wave tokens
         B, T = wave_embeds.shape[:2]
 
         # Format conversations
-        conversations = [format_conversation(
-            question="Translate this millimeter wave signal to text.",
-            answer=batch['caption'][i]
-        ) for i in range(B)]
-
+        conversations = create_conversation(
+            questions="Translate this millimeter wave signal to text.",
+            answers=batch['caption']
+        )
         # Get wave patch token from model config
-        conversations = preprocess_multimodal_wave(
+        conversations = insert_wave_tokens(
             conversations,
             wave_token_len=T,
             default_wave_patch_token=self.model.config.default_wave_patch_token,
             default_wave_start_token=self.model.config.default_wave_start_token,
             default_wave_end_token=self.model.config.default_wave_end_token
         )
-        
-        # Process text
-        processed = preprocess(conversations, self.tokenizer)
 
+        # Prepare input and labels
+        if self.conv_type == 'role':
+            # input: [<prompt>, <question>, <wave>, <answer>]
+            # labels: [<masked_prompt>, <masked_wave>, <masked_question>, <answer>]
+            processed = prepare_conversation_data(conversations, self.tokenizer)
+
+        elif self.conv_type == 'simple':
+            # input: [<question>, <wave>]
+            # labels: [<answer>]
+            processed = prepare_simple_data(conversations, self.tokenizer)
+        
         # Forward pass
         outputs = self.model(
             input_wave_embeds=wave_embeds,
@@ -129,20 +135,6 @@ class WaveLLM(pl.LightningModule):
             labels=processed['labels'].to(wave_embeds.device)
         )
 
-        # Decode labels and logits to text
-        labels = processed['labels']; ignore_index = processed['labels'] == IGNORE_INDEX
-        labels[ignore_index] = self.tokenizer.pad_token_id
-        labels_decoded = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
-        
-        logits = torch.argmax(outputs['logits'], dim=-1)
-        logits[ignore_index] = self.tokenizer.pad_token_id
-        logits_decoded = self.tokenizer.batch_decode(logits, skip_special_tokens=True)
-
-        # # Print decoded texts with different colors
-        # for label_text, logits_text in zip(labels_decoded, logits_decoded):
-        #     print("-" * 80)
-        #     print(colored("Label Text:", "yellow"), colored(label_text, "yellow"))
-        #     print(colored("Logits Text:", "green"), colored(logits_text, "green"))
 
         return {
             'inputs_embeds': wave_embeds, 

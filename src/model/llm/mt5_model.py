@@ -1,161 +1,137 @@
 import torch
 import torch.nn as nn
-from transformers import MT5ForConditionalGeneration, T5Tokenizer, AutoConfig
-from typing import Dict, Any, Optional, Union, List
+from transformers import MT5Model, MT5ForConditionalGeneration
+from typing import Dict, Any, Optional, Union, List, Tuple
+from torch.nn import CrossEntropyLoss
+from src.model.llm.base_model import WaveBaseModel
 
+from transformers.modeling_outputs import (
+    BaseModelOutputWithPast,
+    Seq2SeqLMOutput,
+)
 
-class MT5ModelWrapper(nn.Module):
-    """Wrapper class for MT5 model, implementing the MultiModalLanguageModel interface"""
-    
+class MT5ModelWrapper(WaveBaseModel, MT5Model):
     def __init__(self, config):
-        super().__init__()
-        self.config = config
-        self.model_path = config.model_path
-        
-        # Initialize model and tokenizer
-        self.model = MT5ForConditionalGeneration.from_pretrained(
-            self.model_path,
-            torch_dtype=torch.bfloat16
-        )
-        self.tokenizer = T5Tokenizer.from_pretrained(
-            self.model_path,
-            model_max_length=config.model_max_length
-        )
-        
-        # Initialize wave-related components
-        self.mm_input_dim = config.mm_input_dim
-        self.mm_projection_layers = nn.Linear(self.mm_input_dim, self.model.config.d_model)
-        
-        # Special tokens config
-        self.wave_start_token = config.wave_start_token
-        self.wave_end_token = config.wave_end_token
-        self.wave_patch_token = config.wave_patch_token
-        self.mm_use_wave_start_end = getattr(config, 'mm_use_wave_start_end', True)
+        super().__init__(config)
+        self.post_init()
 
     def forward(
         self,
-        input_wave_tokens: Optional[torch.LongTensor] = None,
-        input_wave_embeds: Optional[torch.Tensor] = None,
-        input_ids: Optional[torch.LongTensor] = None,
+        input_wave_embeds: torch.Tensor = None,
+        input_ids: torch.LongTensor = None,
         attention_mask: Optional[torch.Tensor] = None,
-        labels: Optional[torch.LongTensor] = None,
+        decoder_input_ids: Optional[torch.LongTensor] = None,
+        decoder_attention_mask: Optional[torch.Tensor] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
+        labels: Optional[torch.LongTensor] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
         **kwargs
-    ):
+    ) -> Union[Tuple, BaseModelOutputWithPast]:
         if inputs_embeds is None:
-            inputs_embeds = self.model.shared(input_ids)
-
-        orig_embeds_params = getattr(self, 'orig_embeds_params', None)
+            inputs_embeds = self.shared(input_ids)
 
         if input_ids.shape[1] != 1 or self.training:
-            if input_wave_tokens is not None or input_wave_embeds is not None:
-                bs = input_ids.shape[0]
-                wave_features = self.mm_projection_layers(input_wave_embeds)
+            inputs_embeds = self.process_wave_features(input_ids, inputs_embeds, input_wave_embeds)
 
-                new_input_embeds = []
-                cur_wave_idx = 0
-                for cur_input_ids, cur_input_embeds in zip(input_ids, inputs_embeds):
-                    cur_wave_features = wave_features[cur_wave_idx].to(device=cur_input_embeds.device)
-                    num_patches = cur_wave_features.shape[0]
-
-                    if self.mm_use_wave_start_end:
-                        if (cur_input_ids == self.wave_start_token).sum() != (cur_input_ids == self.wave_end_token).sum():
-                            raise ValueError("The number of wave start tokens and wave end tokens should be the same.")
-                        wave_start_tokens = torch.where(cur_input_ids == self.wave_start_token)[0]
-                        for wave_start_token_pos in wave_start_tokens:
-                            if cur_input_ids[wave_start_token_pos + num_patches + 1] != self.wave_end_token:
-                                raise ValueError("The wave end token should follow the wave start token.")
-                            if orig_embeds_params is not None:
-                                cur_new_input_embeds = torch.cat((
-                                    cur_input_embeds[:wave_start_token_pos].detach(),
-                                    cur_input_embeds[wave_start_token_pos:wave_start_token_pos+1],
-                                    cur_wave_features,
-                                    cur_input_embeds[wave_start_token_pos + num_patches + 1:wave_start_token_pos + num_patches + 2],
-                                    cur_input_embeds[wave_start_token_pos + num_patches + 2:].detach()
-                                ), dim=0)
-                            else:
-                                cur_new_input_embeds = torch.cat((
-                                    cur_input_embeds[:wave_start_token_pos+1],
-                                    cur_wave_features,
-                                    cur_input_embeds[wave_start_token_pos + num_patches + 1:]
-                                ), dim=0)
-                            cur_wave_idx += 1
-                        new_input_embeds.append(cur_new_input_embeds)
-                    else:
-                        if (cur_input_ids == self.wave_patch_token).sum() != num_patches:
-                            raise ValueError("The number of wave patch tokens should be the same as the number of wave patches.")
-                        masked_indices = torch.where(cur_input_ids == self.wave_patch_token)[0]
-                        mask_index_start = masked_indices[0]
-                        if (masked_indices != torch.arange(mask_index_start, mask_index_start+num_patches, device=masked_indices.device, dtype=masked_indices.dtype)).any():
-                            raise ValueError("The wave patch tokens should be consecutive.")
-                        if orig_embeds_params is not None:
-                            cur_new_input_embeds = torch.cat((
-                                cur_input_embeds[:mask_index_start].detach(),
-                                cur_wave_features,
-                                cur_input_embeds[mask_index_start+num_patches:].detach()
-                            ), dim=0)
-                        else:
-                            cur_new_input_embeds = torch.cat((
-                                cur_input_embeds[:mask_index_start],
-                                cur_wave_features,
-                                cur_input_embeds[mask_index_start+num_patches:]
-                            ), dim=0)
-                        new_input_embeds.append(cur_new_input_embeds)
-                        cur_wave_idx += 1
-                inputs_embeds = torch.stack(new_input_embeds, dim=0)
-            else:
-                raise ValueError("Either input_wave_tokens or input_wave_embeds should be provided.")
-
-        # For MT5, we need decoder input ids
-        if labels is not None:
-            decoder_input_ids = self.model._shift_right(labels)
-        else:
-            batch_size = inputs_embeds.shape[0]
-            decoder_input_ids = torch.full(
-                (batch_size, 1),
-                self.tokenizer.pad_token_id,
-                dtype=torch.long,
-                device=inputs_embeds.device
-            )
-
-        outputs = self.model(
-            inputs_embeds=inputs_embeds,
+        return super().forward(
+            input_ids=None,
             attention_mask=attention_mask,
             decoder_input_ids=decoder_input_ids,
-            labels=labels,
-            return_dict=True,
+            decoder_attention_mask=decoder_attention_mask,
+            inputs_embeds=inputs_embeds,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
             **kwargs
         )
 
-        return outputs
-    
-    def generate(self, input_data: Dict[str, Any], **kwargs) -> torch.Tensor:
-        """Generate text"""
-        # Extract required parameters from input data
-        input_wave_embeds = input_data.get('input_wave_embeds')
-        attention_mask = input_data.get('attention_mask')
-        
-        # Process multimodal input
-        if input_wave_embeds is not None:
-            # Project multimodal features directly
-            inputs_embeds = self.mm_projection_layers(input_wave_embeds)
-        else:
-            inputs_embeds = input_data.get('inputs_embeds')
-        
-        # Call model generate
-        outputs = self.model.generate(
-            inputs_embeds=inputs_embeds,
+class MT5ForConditionalGeneration(MT5ForConditionalGeneration):
+    def __init__(self, config):
+        super().__init__(config)
+        self.model = MT5ModelWrapper(config)
+        self.post_init()
+
+    def get_model(self):
+        return self.model
+
+    def prepare_inputs_for_generation(
+        self,
+        input_ids,
+        attention_mask=None,
+        inputs_embeds=None,
+        **kwargs
+    ):
+        model_inputs = super().prepare_inputs_for_generation(
+            input_ids=input_ids,
             attention_mask=attention_mask,
+            inputs_embeds=inputs_embeds,
             **kwargs
         )
+        model_inputs.update({
+            "input_wave_embeds": kwargs.get("input_wave_embeds", None),
+        })
+        return model_inputs
+
+    def forward(
+        self,
+        input_wave_embeds: torch.Tensor = None,
+        input_ids: torch.LongTensor = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        decoder_input_ids: Optional[torch.LongTensor] = None,
+        decoder_attention_mask: Optional[torch.Tensor] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        labels: Optional[torch.LongTensor] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        **kwargs
+    ) -> Union[Tuple, Seq2SeqLMOutput]:
+        if labels is not None:
+            decoder_input_ids = self.model._shift_right(labels)
         
-        return outputs
-    
-    def get_tokenizer(self):
-        """Get tokenizer"""
-        return self.tokenizer
-    
-    def get_model(self):
-        """Get underlying model"""
-        return self.model
+        outputs = self.model(
+            input_ids=input_ids,
+            input_wave_embeds=input_wave_embeds,
+            attention_mask=attention_mask,
+            decoder_input_ids=decoder_input_ids,
+            decoder_attention_mask=decoder_attention_mask,
+            inputs_embeds=inputs_embeds,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+            **kwargs
+        )
+
+        sequence_output = outputs[0]
+        lm_logits = self.lm_head(sequence_output)
+
+        loss = None
+        if labels is not None:
+            loss_fct = CrossEntropyLoss(ignore_index=-100)
+            loss = loss_fct(lm_logits.view(-1, self.config.vocab_size), labels.view(-1))
+
+        if not return_dict:
+            output = (lm_logits,) + outputs[1:]
+            return ((loss,) + output) if loss is not None else output
+
+        return Seq2SeqLMOutput(
+            loss=loss,
+            logits=lm_logits,
+            past_key_values=outputs.past_key_values,
+            decoder_hidden_states=outputs.decoder_hidden_states,
+            decoder_attentions=outputs.decoder_attentions,
+            cross_attentions=outputs.cross_attentions,
+            encoder_last_hidden_state=outputs.encoder_last_hidden_state,
+            encoder_hidden_states=outputs.encoder_hidden_states,
+            encoder_attentions=outputs.encoder_attentions,
+        )
+
+    def generate(self, input_data: Dict[str, Any], **kwargs) -> torch.Tensor:
+        """Generate text"""
+        model_inputs = self.model.prepare_inputs_for_generation(input_data, **kwargs)
+        return super().generate(**model_inputs)
+
+    def initialize_tokenizer_wave_backbone_config(self, tokenizer, device, fix_llm=True):
+        self.model.initialize_wave_tokens(tokenizer, device, fix_llm)
