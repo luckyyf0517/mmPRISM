@@ -9,8 +9,8 @@ IGNORE_INDEX = -100
 def insert_wave_tokens(
     sources: Sequence[str],
     wave_indicator: str = "<wave>",
-    default_wave_patch_token: str = "<wave_patch>",
-    wave_token_len: int = 248,
+    wave_patch_token: str = "<wave_patch>",
+    wave_token_lens: int = 248,
     use_wave_markers: bool = True,
     wave_start_token: str = "<wave_bos>",
     wave_end_token: str = "<wave_eos>"
@@ -18,12 +18,12 @@ def insert_wave_tokens(
     """
     Process and replace wave indicators with appropriate tokens in the input sources
     """
-    for source in sources:
+    for source, wave_token_len in zip(sources, wave_token_lens):
         for sentence in source:
             if sentence["value"] is None:
                 continue
                 
-            token_sequence = default_wave_patch_token * wave_token_len
+            token_sequence = wave_patch_token * wave_token_len
             if use_wave_markers:
                 token_sequence = f"{wave_start_token}{token_sequence}{wave_end_token}"
             
@@ -42,7 +42,7 @@ def prepare_conversation_data(sources: Sequence[Dict], tokenizer) -> Dict:
     conversations = _build_conversations(sources, conv, roles)
     return _tokenize_and_mask(conversations, tokenizer, conv)
 
-def create_conversation(questions: List[str], answers: List[str]) -> List[Dict]:
+def create_conversation(questions: List[str], answers: List[str], add_wave: bool = True) -> List[Dict]:
     """
     Create a formatted conversation pair from question and answer
     """
@@ -55,7 +55,7 @@ def create_conversation(questions: List[str], answers: List[str]) -> List[Dict]:
     for question, answer in zip(questions, answers):
         conversations.append([{
             "from": "human",
-            "value": f'{question}\n<wave>'
+            "value": f'{question}\n<wave>' if add_wave else question
         }, {
             "from": "gpt",
             "value": answer
@@ -93,6 +93,7 @@ def _tokenize_and_mask(conversations, tokenizer, conv):
     
     return {
         "input_ids": input_ids,
+        "attention_mask": input_ids.ne(tokenizer.pad_token_id),
         "labels": targets,
     }
 
@@ -119,17 +120,16 @@ def _apply_target_masks(conversations, targets, tokenizer, conv):
             target[cur_len : cur_len + instruction_len] = IGNORE_INDEX
             cur_len += round_len + 1
         target[cur_len:] = IGNORE_INDEX
-        if cur_len < tokenizer.model_max_length:
-            if cur_len != total_len:
-                print(
-                    f"WARNING: tokenization mismatch precess_v3: {cur_len} vs. {total_len}."
-                    f" (ignored)")
+        # if cur_len < tokenizer.model_max_length:
+        #     if cur_len != total_len:
+        #         print(
+        #             f"WARNING: tokenization mismatch precess_v3: {cur_len} vs. {total_len}."
+        #             f" (ignored)")
 
 
 def prepare_simple_data(
     sources: Sequence[Dict], 
     tokenizer,
-    prefix: str = "Translate sign language video to English: "
 ) -> Dict:
     """
     Prepare simple input format for encoder-decoder models like MT5
@@ -145,12 +145,9 @@ def prepare_simple_data(
         question = source[0]["value"]  # Contains <wave> token
         answer = source[1]["value"]    # Target caption
         
-        # Combine prefix and question
-        input_text = prefix + question
-        
-        input_texts.append(input_text)
+        input_texts.append(question)
         target_texts.append(answer)
-    
+        
     # Tokenize inputs
     inputs = tokenizer(
         input_texts,
@@ -170,9 +167,10 @@ def prepare_simple_data(
     ).input_ids
     
     # Replace padding token id with -100 for labels
-    targets[targets == tokenizer.pad_token_id] = -IGNORE_INDEX
-    
+    targets[targets == tokenizer.pad_token_id] = IGNORE_INDEX
+
     return {
         "input_ids": inputs,
-        "labels": targets
+        "attention_mask": inputs.ne(tokenizer.pad_token_id), 
+        "labels": targets,
     }

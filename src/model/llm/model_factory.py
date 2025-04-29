@@ -1,6 +1,7 @@
 import torch.nn as nn
 from typing import Dict, Any, Type
 from src.model.llm.phi3_model import Phi3ForCausalLM
+from src.model.llm.mt5_model import MT5ForConditionalGeneration
 from easydict import EasyDict
 import os
 import torch
@@ -12,6 +13,7 @@ class ModelFactory:
     
     MODEL_TYPES = {
         'phi3': Phi3ForCausalLM,
+        'mt5': MT5ForConditionalGeneration,
     }
     
     @classmethod
@@ -62,7 +64,8 @@ class ModelFactory:
         model = model_class.from_pretrained(
             config.model_path,
             cache_dir=config.get('cache_dir'),
-            torch_dtype=torch.bfloat16
+            torch_dtype=torch.bfloat16, 
+            # attn_implementation='flash_attention_2',
         )
 
         # Disable model cache for training

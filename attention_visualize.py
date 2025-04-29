@@ -14,7 +14,7 @@ sys.path.append('.')
 
 from src.utils.io import load_yaml
 from src.utils.tools import instantiate_from_config
-from src.model.text_processor import preprocess_multimodal_wave, preprocess, format_conversation
+from src.model.llm.text_processor import preprocess_multimodal_wave, preprocess, format_conversation
 
 def parse_args():
     parser = argparse.ArgumentParser()

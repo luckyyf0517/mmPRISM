@@ -2,10 +2,10 @@
 deepspeed --include localhost:0,1 \
     run_peft.py \
     --config config/wavellm_mt5.yaml \
-    --batch-size 8 \
-    --max-epochs 5 \
-    --gradient-accumulation-steps 1 \
-    --version "wavellm_mt5_0428_debug_1" \
+    --batch-size 24 \
+    --max-epochs 10 \
+    --gradient-accumulation-steps 8 \
+    --version "wavellm_mt5_0429_debug_pose" \
     --dtype bf16 \
     --zero_stage 2 \
     --reset

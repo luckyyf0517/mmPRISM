@@ -1,15 +1,17 @@
+import sys
+sys.path.append('.')
+
 import os
 import torch
 import torch.nn as nn
+from pprint import pprint
 import pytorch_lightning as pl
 from transformers import get_cosine_schedule_with_warmup
 from peft import get_peft_model, LoraConfig
-from typing import Dict, Any, List, Optional, Union
 from src.model.llm.model_factory import ModelFactory
-from src.model.llm.conversation import default_conversation
+from src.model.llm.text_processor import *
 from src.utils.tools import instantiate_from_config
 from termcolor import colored
-from src.model.text_processor import insert_wave_tokens, create_conversation, prepare_conversation_data, prepare_simple_data
 IGNORE_INDEX = -100
 
 
@@ -23,11 +25,11 @@ class WaveLLMTrainer(pl.LightningModule):
         
         # Create model using model factory
         self.model = ModelFactory.create_model(self.cfg.model_type, self.cfg.model)
+        self.hand_pose_encoder = HandPoseEncoder()
         
         # Create tokenizer using model factory
         self.tokenizer = ModelFactory.create_tokenizer(self.cfg.model)
-        
-        self.conv_type = 'role' # 'role' or 'simple'
+        self.conv_type = self.cfg.conv_type # 'role' or 'simple'
         
         # Initialize model tokens with tokenizer
         self.model.initialize_wave_tokens(
@@ -55,15 +57,11 @@ class WaveLLMTrainer(pl.LightningModule):
             self.model = get_peft_model(self.model, lora_config)
 
             # Enable training for mm_projection_layers
-            self.model.get_model().mm_projection_layers.requires_grad_(True)
+            self.model.mm_projection_layers.requires_grad_(True)
 
-        # from IPython import embed; embed()
-        # # Iterate over all parameters in the model and print their names and requires_grad status
-        # for name, param in self.model.get_model().named_parameters():
-        #     print(f"Parameter name: {name}, requires_grad: {param.requires_grad}")
-        
         # Print trainable parameters
         self._print_trainable_parameters()
+        
     
     def _find_all_linear_names(self, exclude_keywords=None):
         """Find all linear layer names in the model"""
@@ -96,24 +94,28 @@ class WaveLLMTrainer(pl.LightningModule):
         print(f"{trainable_params_str} || {all_params_str} || {trainable_percent_str}")
 
     def forward(self, batch):
-        # Get wave embeddings
-        wave_embeds = batch['features'].to(torch.bfloat16)  # [B, T, C]
+        # # Get wave embeddings
+        # wave_embeds = batch['features'].to(torch.bfloat16)  # [B, T, C]
 
-        # Construct wave tokens
-        B, T = wave_embeds.shape[:2]
+        poses = batch['joints'].to(torch.bfloat16)  # [B, T, 2, 24, 3]
+        wave_embeds = self.hand_pose_encoder(poses)  # [B, T, C]
+        
+        # debug
+        wave_embeds = torch.zeros_like(wave_embeds)
 
         # Format conversations
         conversations = create_conversation(
-            questions="Translate this millimeter wave signal to text.",
+            questions="Translate sign language signal to Chinese.",
             answers=batch['caption']
         )
+
         # Get wave patch token from model config
         conversations = insert_wave_tokens(
             conversations,
-            wave_token_len=T,
-            default_wave_patch_token=self.model.config.default_wave_patch_token,
-            default_wave_start_token=self.model.config.default_wave_start_token,
-            default_wave_end_token=self.model.config.default_wave_end_token
+            wave_token_lens=batch['valid_length'],
+            wave_patch_token=self.model.config.default_wave_patch_token,
+            wave_start_token=self.model.config.default_wave_start_token,
+            wave_end_token=self.model.config.default_wave_end_token
         )
 
         # Prepare input and labels
@@ -121,43 +123,29 @@ class WaveLLMTrainer(pl.LightningModule):
             # input: [<prompt>, <question>, <wave>, <answer>]
             # labels: [<masked_prompt>, <masked_wave>, <masked_question>, <answer>]
             processed = prepare_conversation_data(conversations, self.tokenizer)
-
         elif self.conv_type == 'simple':
             # input: [<question>, <wave>]
             # labels: [<answer>]
             processed = prepare_simple_data(conversations, self.tokenizer)
-        
+
         # Forward pass
         outputs = self.model(
             input_wave_embeds=wave_embeds,
             input_ids=processed['input_ids'].to(wave_embeds.device),
-            attention_mask=processed['input_ids'].ne(self.tokenizer.pad_token_id).to(wave_embeds.device),
+            attention_mask=processed['attention_mask'].to(wave_embeds.device),
             labels=processed['labels'].to(wave_embeds.device)
         )
 
+        # from IPython import embed; embed()
+        # pprint(self.tokenizer.batch_decode(processed['labels'], skip_special_tokens=True))
+        # pprint(self.tokenizer.batch_decode(outputs['logits'].argmax(dim=-1), skip_special_tokens=True))
 
         return {
             'inputs_embeds': wave_embeds, 
-            'attention_mask': processed['input_ids'].ne(self.tokenizer.pad_token_id),
+            'attention_mask': processed['attention_mask'], 
             'loss': outputs['loss']
         }
     
-    @torch.no_grad()
-    def generate(self, pre_compute_item, max_new_tokens=128, num_beams=5):
-        # Prepare model input
-        model_input = {
-            'input_wave_embeds': pre_compute_item['inputs_embeds'],
-            'attention_mask': pre_compute_item['attention_mask']
-        }
-        
-        # Generate text
-        out = self.model.generate(
-            model_input,
-            max_new_tokens=max_new_tokens,
-            num_beams=num_beams
-        )
-        return out
-
     def training_step(self, batch, batch_idx):
         outputs = self(batch)
         loss = outputs['loss']
@@ -176,7 +164,7 @@ class WaveLLMTrainer(pl.LightningModule):
         optimizer = torch.optim.AdamW(
             self.parameters(),
             lr=self.cfg.training.learning_rate,
-            weight_decay=0.01
+            weight_decay=self.cfg.training.weight_decay
         )
         
         scheduler = get_cosine_schedule_with_warmup(
@@ -193,3 +181,111 @@ class WaveLLMTrainer(pl.LightningModule):
                 "interval": "step",
             }
         }
+
+
+from src.model.stgcn_layers import Graph, get_stgcn_chain
+class HandPoseEncoder(nn.Module):
+    def __init__(self, hidden_dim=64):
+        super().__init__()
+        
+        # Initialize graphs for body and hands
+        self.modes = ['body', 'left', 'right']
+        self.graph = {}
+        self.gcn_modules = nn.ModuleDict()
+        self.fusion_gcn_modules = nn.ModuleDict()
+        
+        # Projection layer
+        self.proj_linear = nn.Linear(3, hidden_dim)
+        
+        # Create graph and GCN for body and hands
+        for mode in self.modes:
+            if mode == 'body':
+                self.graph[mode] = Graph(layout='body', strategy='distance', max_hop=1)
+            else:
+                self.graph[mode] = Graph(layout='hand', strategy='distance', max_hop=1)
+                
+            A = torch.tensor(self.graph[mode].A, dtype=torch.float32, requires_grad=False)
+            
+            # Create spatial and temporal GCN modules
+            spatial_kernel_size = A.size(0)
+            self.gcn_modules[mode], final_dim = get_stgcn_chain(
+                hidden_dim, 
+                'spatial', 
+                (1, spatial_kernel_size), 
+                A.clone(), 
+                True
+            )
+            
+            self.fusion_gcn_modules[mode], _ = get_stgcn_chain(
+                final_dim,
+                'temporal',
+                (5, spatial_kernel_size),
+                A.clone(),
+                True
+            )
+
+    def forward(self, x):
+        """
+        Input: x [B, N, 2, 24, 3] - batch, frames, hands(left/right), joints, coords
+        Output: [B, N, C] - C is the final feature dimension
+        """
+        features = []
+        
+        # Reshape input data format
+        x = {
+            'body': torch.cat([x[:, :, 0, :3], x[:, :, 1, :3]], dim=2),  # Concatenate the first 3 points of both hands
+            'left': x[:, :, 0, 3:],  # All points of the left hand
+            'right': x[:, :, 1, 3:]  # All points of the right hand
+        }
+        
+        # Process body features first
+        body_data = x['body']  # [B, N, 6, 3]
+        body_proj = self.proj_linear(body_data)
+        body_proj = body_proj.permute(0, 3, 1, 2)  # [B, C, N, 6]
+        body_feat = self.gcn_modules['body'](body_proj)
+        body_feat = self.fusion_gcn_modules['body'](body_feat)
+        
+        # Add body features to output
+        pool_body_feat = body_feat.mean(-1).transpose(1, 2)  # [B, N, C]
+        features.append(pool_body_feat)
+            
+        # Process left and right hands
+        for mode in ['left', 'right']:
+            # Get data for one hand [B, N, 24, 3]
+            hand_data = x[mode]
+            
+            # Project to hidden dim [B, N, 24, hidden_dim]
+            proj_feat = self.proj_linear(hand_data)
+            proj_feat = proj_feat.permute(0, 3, 1, 2)
+            
+            # Forward pass through spatial GCN
+            spatial_feat = self.gcn_modules[mode](proj_feat)
+            
+            # Add body reference features
+            if mode == 'left':
+                ref_feat = body_feat[..., [2]]
+            else:
+                ref_feat = body_feat[..., [5]]
+            
+            spatial_feat = spatial_feat + ref_feat.detach()
+            
+            # Forward pass through temporal GCN
+            temporal_feat = self.fusion_gcn_modules[mode](spatial_feat)
+            
+            # Average pooling over node dimension [B, C, N]
+            pool_feat = temporal_feat.mean(-1)
+            
+            # Rearrange dimensions to [B, N, C]
+            pool_feat = pool_feat.transpose(1, 2)
+            features.append(pool_feat)
+        
+        # Merge features from both hands
+        output = torch.cat(features, dim=-1)  # [B, N, C*2]
+        
+        return output
+    
+    
+if __name__ == '__main__':
+    model = HandPoseEncoder()
+    x = torch.randn(1, 10, 2, 24, 3)
+    print(model(x).shape)

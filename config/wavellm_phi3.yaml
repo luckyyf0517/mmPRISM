@@ -19,11 +19,12 @@ data_cfg:
 
 # Model configuration
 model_cfg:
-  target: src.model.wavellm.WaveLLM
+  target: src.model.trainer.WaveLLMTrainer
   params:
     cfg:
       # LLM configuration
       model_type: "phi3"
+      conv_type: "role" # "role" or "simple"
       model:
         model_path: "huggingface/Phi-3-mini-4k-instruct"
         mm_input_dim: 512

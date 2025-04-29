@@ -97,7 +97,7 @@ def main():
     
     # Create model
     model_cfg = cfg.model_cfg
-    model_cfg.params.cfg.batch_size = args.batch_size
+    model_cfg.params.cfg.training.batch_size = args.batch_size
     model = instantiate_from_config(model_cfg)
     
     # Set logger

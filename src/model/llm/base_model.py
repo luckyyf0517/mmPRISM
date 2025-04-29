@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Dict, Any, Optional, Union, List, Tuple
 from transformers import PreTrainedModel
+from einops.layers.torch import Rearrange
 
 class WaveBaseModel(PreTrainedModel):
     """Base class for wave-enabled language models"""
@@ -10,8 +11,34 @@ class WaveBaseModel(PreTrainedModel):
         super().__init__(config)
         self.config = config
         # Initialize wave projection layer
-        self.mm_projection_layers = nn.Linear(self.config.mm_input_dim, self.config.hidden_size)
-        
+        temporal_modeling = False
+        if temporal_modeling: 
+            self.mm_projection_layers = nn.Sequential(
+                nn.Linear(self.config.mm_input_dim, self.config.hidden_size),
+                nn.LayerNorm(self.config.hidden_size),
+                Rearrange('b n c -> b c n'),  # BNC -> BCN
+                nn.Conv1d(
+                    in_channels=self.config.hidden_size,
+                    out_channels=self.config.hidden_size,
+                    kernel_size=3,
+                    padding=1,
+                    groups=self.config.hidden_size 
+                ),
+                nn.GELU(),
+                nn.Conv1d(
+                    in_channels=self.config.hidden_size,
+                    out_channels=self.config.hidden_size,
+                    kernel_size=3,
+                    padding=1
+                ),
+                Rearrange('b c n -> b n c'),  # BCN -> BNC
+                nn.LayerNorm(self.config.hidden_size)
+            )
+        else: 
+            self.mm_projection_layers = nn.Linear(self.config.mm_input_dim, self.config.hidden_size)
+            # nn.init.constant_(self.mm_projection_layers.weight, 1.0)
+            # nn.init.constant_(self.mm_projection_layers.bias, 0.0)
+            
     def process_wave_features(
         self,
         input_ids: torch.LongTensor,
@@ -20,34 +47,38 @@ class WaveBaseModel(PreTrainedModel):
     ) -> torch.FloatTensor:
         """Process and merge wave features with text embeddings"""
         orig_embeds_params = getattr(self, 'orig_embeds_params', None)
+        input_wave_embeds = nn.functional.relu(input_wave_embeds)
         wave_features = self.mm_projection_layers(input_wave_embeds)
 
         new_input_embeds = []
         cur_wave_idx = 0
         for cur_input_ids, cur_input_embeds in zip(input_ids, inputs_embeds):
             cur_wave_features = wave_features[cur_wave_idx].to(device=cur_input_embeds.device)
-            num_patches = cur_wave_features.shape[0]
+            
+            num_patches = (cur_input_ids == self.config.wave_patch_token).sum().item()
+            cur_wave_features = cur_wave_features[:num_patches]
             
             if (cur_input_ids == self.config.wave_start_token).sum() != (cur_input_ids == self.config.wave_end_token).sum():
                 raise ValueError("The number of wave start tokens and wave end tokens should be the same.")
             wave_start_tokens = torch.where(cur_input_ids == self.config.wave_start_token)[0]
             assert len(wave_start_tokens) > 0, "No wave start token found."
             for wave_start_token_pos in wave_start_tokens:
-                if cur_input_ids[wave_start_token_pos + num_patches + 1] != self.config.wave_end_token:
+                wave_end_token_pose = wave_start_token_pos + num_patches + 1
+                if cur_input_ids[wave_end_token_pose] != self.config.wave_end_token:
                     raise ValueError("The wave end token should follow the wave start token.")
                 if orig_embeds_params is not None:
                     cur_new_input_embeds = torch.cat((
                         cur_input_embeds[:wave_start_token_pos].detach(),
-                        cur_input_embeds[wave_start_token_pos:wave_start_token_pos+1],
+                        cur_input_embeds[wave_start_token_pos: wave_start_token_pos + 1],
                         cur_wave_features,
-                        cur_input_embeds[wave_start_token_pos + num_patches + 1:wave_start_token_pos + num_patches + 2],
-                        cur_input_embeds[wave_start_token_pos + num_patches + 2:].detach()
+                        cur_input_embeds[wave_end_token_pose: wave_end_token_pose + 1],
+                        cur_input_embeds[wave_end_token_pose + 1:].detach()
                     ), dim=0)
                 else:
                     cur_new_input_embeds = torch.cat((
-                        cur_input_embeds[:wave_start_token_pos+1],
+                        cur_input_embeds[:wave_start_token_pos + 1],
                         cur_wave_features,
-                        cur_input_embeds[wave_start_token_pos + num_patches + 1:]
+                        cur_input_embeds[wave_end_token_pose:]
                     ), dim=0)
                 cur_wave_idx += 1
             new_input_embeds.append(cur_new_input_embeds)
@@ -66,13 +97,16 @@ class WaveBaseModel(PreTrainedModel):
         # Add wave start/end tokens
         default_wave_start_token = config.default_wave_start_token
         default_wave_end_token = config.default_wave_end_token
+        default_wave_patch_token = config.default_wave_patch_token
         self.config.default_wave_start_token = default_wave_start_token
         self.config.default_wave_end_token = default_wave_end_token
+        self.config.default_wave_patch_token = default_wave_patch_token
 
-        num_new_tokens = tokenizer.add_tokens([default_wave_start_token, default_wave_end_token], special_tokens=True)
+        num_new_tokens = tokenizer.add_tokens([default_wave_start_token, default_wave_end_token, default_wave_patch_token], special_tokens=True)
         self.resize_token_embeddings(len(tokenizer))
         self.config.wave_start_token = tokenizer.convert_tokens_to_ids([default_wave_start_token])[0]
         self.config.wave_end_token = tokenizer.convert_tokens_to_ids([default_wave_end_token])[0]
+        self.config.wave_patch_token = tokenizer.convert_tokens_to_ids([default_wave_patch_token])[0]
 
         if num_new_tokens > 0:
             input_embeddings = self.get_input_embeddings().weight.data
@@ -97,24 +131,3 @@ class WaveBaseModel(PreTrainedModel):
                 for p in self.get_output_embeddings().parameters():
                     p.requires_grad = True
                 print("Setting output embeddings and all input embeddings trainable.")
-
-    def prepare_inputs_for_generation(
-        self,
-        input_data: Dict[str, Any],
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Prepare inputs for text generation"""
-        input_wave_embeds = input_data.get('input_wave_embeds')
-        attention_mask = input_data.get('attention_mask')
-        
-        if input_wave_embeds is not None:
-            inputs_embeds = self.mm_projection_layers(input_wave_embeds)
-        else:
-            inputs_embeds = input_data.get('inputs_embeds')
-            
-        model_inputs = {
-            "inputs_embeds": inputs_embeds,
-            "attention_mask": attention_mask,
-        }
-        model_inputs.update(kwargs)
-        return model_inputs

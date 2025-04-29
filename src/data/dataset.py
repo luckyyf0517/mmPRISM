@@ -137,19 +137,21 @@ class mmWaveSequenceDataset(Dataset):
                 'caption': self.caption_dict.get(id, "")
             }
             
-        else:  # mode == 'feature'
+        elif self.mode == 'feature': 
             # Mode 2: Load pre-computed features
             features = self.load_feature_data(data_path)
+            valid_length = features.shape[0]
             
             # Truncate or pad sequence
-            if features.shape[0] > self.max_length:
+            if valid_length > self.max_length:
                 features = features[:self.max_length]
             else:
-                pad_width = ((0, self.max_length - features.shape[0]), (0, 0))
+                pad_width = ((0, self.max_length - valid_length), (0, 0))
                 features = np.pad(features, pad_width, mode='constant')
             
             return {
-                'id': id,
+                'id': id, 
+                'valid_length': valid_length,
                 'features': torch.from_numpy(features).float(),  # (T, feature_dim)
                 'caption': self.caption_dict.get(id, "")
             }
