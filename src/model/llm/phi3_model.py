@@ -34,13 +34,15 @@ class Phi3ForCausalLM(WaveBaseModel, Phi3ForCausalLM):
         return_dict: Optional[bool] = None,
         **kwargs
     ) -> Union[Tuple, CausalLMOutputWithPast]:
+        
         # Prepare input embeddings
-        if inputs_embeds is None and input_ids is not None:
+        if self.training:
             inputs_embeds = self.model.embed_tokens(input_ids)
-            
-        # Insert wave features into input_embeds
-        if input_wave_embeds is not None:
+            # Insert wave features into input_embeds
             inputs_embeds = self.process_wave_features(input_ids, inputs_embeds, input_wave_embeds)
+        else:
+            if inputs_embeds is None: # not first time forward
+                inputs_embeds = self.model.embed_tokens(input_ids)
 
         return super().forward(
             input_ids=None,
@@ -56,31 +58,26 @@ class Phi3ForCausalLM(WaveBaseModel, Phi3ForCausalLM):
             **kwargs
         )
 
-    def prepare_inputs_for_generation(
+    def generate(
         self,
-        input_ids,
-        past_key_values=None,
-        attention_mask=None,
-        inputs_embeds=None,
-        cache_position=None,
-        position_ids=None,
-        use_cache=True,
-        num_logits_to_keep=0,
-        **kwargs,
+        input_ids: Optional[torch.LongTensor] = None,
+        input_wave_embeds: Optional[torch.Tensor] = None,
+        **model_kwargs
     ):
-        # For Phi3, which is a causal LLM, we need to retain input_ids for generation
-        model_inputs = super().prepare_inputs_for_generation(
+        assert input_wave_embeds is not None and input_ids is not None, \
+            "input_wave_embeds and input_ids must be provided"
+        inputs_embeds = self.model.embed_tokens(input_ids)
+        inputs_embeds = self.process_wave_features(
             input_ids=input_ids,
-            past_key_values=past_key_values,
-            attention_mask=attention_mask,
             inputs_embeds=inputs_embeds,
-            cache_position=cache_position,
-            position_ids=position_ids,
-            use_cache=use_cache,
-            num_logits_to_keep=num_logits_to_keep,
-            **kwargs
+            input_wave_embeds=input_wave_embeds
         )
-        
-        # Add input_wave_embeds to model_inputs
-        model_inputs["input_wave_embeds"] = kwargs.get("input_wave_embeds", None)
-        return model_inputs
+        return super().generate(
+            input_ids=None,
+            inputs_embeds=inputs_embeds,
+            use_cache=True, 
+            num_logits_to_keep=0,
+            **model_kwargs
+        )
+
+    

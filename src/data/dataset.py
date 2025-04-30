@@ -106,6 +106,12 @@ class mmWaveSequenceDataset(Dataset):
         feature_path = pose_path.replace('poses', 'features')
         features = np.load(feature_path)  # (T, feature_dim)
         return features
+    
+    def load_pred_pose_data(self, pose_path):
+        """Mode 3: Load pose prediction data"""
+        pred_pose_path = pose_path.replace('poses', 'pred_poses')
+        pred_pose = np.load(pred_pose_path)  # (T, 2, 24, 3)
+        return pred_pose
 
     def __getitem__(self, index):
         id, data_path = list(self.data_dict.items())[index]
@@ -131,12 +137,11 @@ class mmWaveSequenceDataset(Dataset):
                 'id': id,
                 'path': data_path, 
                 'valid_length': valid_length,
-                'joints': torch.from_numpy(joints).float(),
-                'points_3d': torch.from_numpy(points_3d).float(),
-                'velocities_3d': torch.from_numpy(velocities_3d).float(),
+                'joints': torch.from_numpy(joints).float(), # (T, 2, 24, 3)
+                'points_3d': torch.from_numpy(points_3d).float(), # (T, 57, 3)
+                'velocities_3d': torch.from_numpy(velocities_3d).float(), # (T, 57, 3)
                 'caption': self.caption_dict.get(id, "")
             }
-            
         elif self.mode == 'feature': 
             # Mode 2: Load pre-computed features
             features = self.load_feature_data(data_path)
@@ -153,5 +158,23 @@ class mmWaveSequenceDataset(Dataset):
                 'id': id, 
                 'valid_length': valid_length,
                 'features': torch.from_numpy(features).float(),  # (T, feature_dim)
+                'caption': self.caption_dict.get(id, "")
+            }
+        elif self.mode == 'pred_pose':
+            # Mode 3: Load pose prediction data
+            pred_pose = self.load_pred_pose_data(data_path)
+            valid_length = pred_pose.shape[0]
+            
+            # Truncate or pad sequence
+            if valid_length > self.max_length:
+                pred_pose = pred_pose[:self.max_length]
+            else:
+                pad_width = ((0, self.max_length - valid_length), (0, 0), (0, 0), (0, 0))
+                pred_pose = np.pad(pred_pose, pad_width, mode='constant')
+            
+            return {
+                'id': id,
+                'valid_length': valid_length,
+                'joints': torch.from_numpy(pred_pose).float(), # (T, 2, 24, 3)
                 'caption': self.caption_dict.get(id, "")
             }

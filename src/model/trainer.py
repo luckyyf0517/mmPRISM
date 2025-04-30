@@ -94,15 +94,12 @@ class WaveLLMTrainer(pl.LightningModule):
         print(f"{trainable_params_str} || {all_params_str} || {trainable_percent_str}")
 
     def forward(self, batch):
-        # # Get wave embeddings
+        # Get wave embeddings
         # wave_embeds = batch['features'].to(torch.bfloat16)  # [B, T, C]
 
         poses = batch['joints'].to(torch.bfloat16)  # [B, T, 2, 24, 3]
         wave_embeds = self.hand_pose_encoder(poses)  # [B, T, C]
         
-        # debug
-        wave_embeds = torch.zeros_like(wave_embeds)
-
         # Format conversations
         conversations = create_conversation(
             questions="Translate sign language signal to Chinese.",
@@ -203,7 +200,6 @@ class HandPoseEncoder(nn.Module):
                 self.graph[mode] = Graph(layout='body', strategy='distance', max_hop=1)
             else:
                 self.graph[mode] = Graph(layout='hand', strategy='distance', max_hop=1)
-                
             A = torch.tensor(self.graph[mode].A, dtype=torch.float32, requires_grad=False)
             
             # Create spatial and temporal GCN modules
@@ -215,7 +211,6 @@ class HandPoseEncoder(nn.Module):
                 A.clone(), 
                 True
             )
-            
             self.fusion_gcn_modules[mode], _ = get_stgcn_chain(
                 final_dim,
                 'temporal',
@@ -244,48 +239,32 @@ class HandPoseEncoder(nn.Module):
         body_proj = body_proj.permute(0, 3, 1, 2)  # [B, C, N, 6]
         body_feat = self.gcn_modules['body'](body_proj)
         body_feat = self.fusion_gcn_modules['body'](body_feat)
-        
         # Add body features to output
         pool_body_feat = body_feat.mean(-1).transpose(1, 2)  # [B, N, C]
         features.append(pool_body_feat)
-            
         # Process left and right hands
         for mode in ['left', 'right']:
             # Get data for one hand [B, N, 24, 3]
             hand_data = x[mode]
-            
             # Project to hidden dim [B, N, 24, hidden_dim]
             proj_feat = self.proj_linear(hand_data)
             proj_feat = proj_feat.permute(0, 3, 1, 2)
-            
             # Forward pass through spatial GCN
             spatial_feat = self.gcn_modules[mode](proj_feat)
-            
             # Add body reference features
             if mode == 'left':
                 ref_feat = body_feat[..., [2]]
             else:
                 ref_feat = body_feat[..., [5]]
-            
             spatial_feat = spatial_feat + ref_feat.detach()
-            
             # Forward pass through temporal GCN
             temporal_feat = self.fusion_gcn_modules[mode](spatial_feat)
-            
             # Average pooling over node dimension [B, C, N]
             pool_feat = temporal_feat.mean(-1)
-            
             # Rearrange dimensions to [B, N, C]
             pool_feat = pool_feat.transpose(1, 2)
             features.append(pool_feat)
         
         # Merge features from both hands
         output = torch.cat(features, dim=-1)  # [B, N, C*2]
-        
         return output
-    
-    
-if __name__ == '__main__':
-    model = HandPoseEncoder()
-    x = torch.randn(1, 10, 2, 24, 3)
-    print(model(x).shape)

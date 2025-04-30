@@ -1,5 +1,5 @@
 # Basic settings
-log_dir: 'log/'
+log_dir: 'log/omnihand'
 strategy: 'ddp'
 
 # Data configuration

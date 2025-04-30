@@ -14,7 +14,7 @@ data_cfg:
       opt: 
         caption_path: "dataset/CSL_News_Labels_converted.json"
         max_length: 512
-        mode: "pose"
+        mode: "pred_pose"
       num_workers: 4
 
 # Model configuration

@@ -11,33 +11,7 @@ class WaveBaseModel(PreTrainedModel):
         super().__init__(config)
         self.config = config
         # Initialize wave projection layer
-        temporal_modeling = False
-        if temporal_modeling: 
-            self.mm_projection_layers = nn.Sequential(
-                nn.Linear(self.config.mm_input_dim, self.config.hidden_size),
-                nn.LayerNorm(self.config.hidden_size),
-                Rearrange('b n c -> b c n'),  # BNC -> BCN
-                nn.Conv1d(
-                    in_channels=self.config.hidden_size,
-                    out_channels=self.config.hidden_size,
-                    kernel_size=3,
-                    padding=1,
-                    groups=self.config.hidden_size 
-                ),
-                nn.GELU(),
-                nn.Conv1d(
-                    in_channels=self.config.hidden_size,
-                    out_channels=self.config.hidden_size,
-                    kernel_size=3,
-                    padding=1
-                ),
-                Rearrange('b c n -> b n c'),  # BCN -> BNC
-                nn.LayerNorm(self.config.hidden_size)
-            )
-        else: 
-            self.mm_projection_layers = nn.Linear(self.config.mm_input_dim, self.config.hidden_size)
-            # nn.init.constant_(self.mm_projection_layers.weight, 1.0)
-            # nn.init.constant_(self.mm_projection_layers.bias, 0.0)
+        self.mm_projection_layers = nn.Linear(self.config.mm_input_dim, self.config.hidden_size)
             
     def process_wave_features(
         self,

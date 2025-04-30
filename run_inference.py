@@ -32,8 +32,9 @@ def set_seed(seed):
 
 def prepare_batch(samples, model, tokenizer, conv_type='role'):
     # Stack features and collect captions/valid_lengths
-    poses = torch.stack([s['joints'] for s in samples], dim=0)  # [B, N, 2, 24, 3]
-    wave_embeds = model.hand_pose_encoder(poses)  # [B, N, C]
+    # poses = torch.stack([s['joints'] for s in samples], dim=0)  # [B, N, 2, 24, 3]
+    # wave_embeds = model.hand_pose_encoder(poses.cuda())  # [B, N, C]
+    wave_embeds = torch.stack([s['features'] for s in samples], dim=0)  # [B, N, C]
     
     captions = [s['caption'] for s in samples]
     valid_lengths = [s['valid_length'] for s in samples]
@@ -41,7 +42,7 @@ def prepare_batch(samples, model, tokenizer, conv_type='role'):
     # Build conversation
     conversations = create_conversation(
         questions="Translate sign language signal to Chinese.",
-        answers=captions
+        answers=['']
     )
 
     # Insert wave tokens
@@ -75,30 +76,15 @@ def generate_outputs(model, tokenizer, input_ids, attention_mask, wave_embeds):
                 input_ids=input_ids.cuda(),
                 input_wave_embeds=wave_embeds.to(torch.bfloat16).cuda(),
                 attention_mask=attention_mask.cuda(),
+                do_sample=True,
                 max_new_tokens=128,
                 num_beams=5,
-                do_sample=True,
-                temperature=1.0,
                 top_k=50,
-                top_p=0.95
+                top_p=0.95,
             )
     generated_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
     return [text.strip() for text in generated_text]
 
-def generate_outputs_forward(model, tokenizer, input_ids, attention_mask, wave_embeds, labels):
-    model.eval()
-    with torch.no_grad():
-        with torch.autocast('cuda', dtype=torch.bfloat16):
-            outputs = model.model(
-                input_ids=input_ids.cuda(),
-                input_wave_embeds=wave_embeds.to(torch.bfloat16).cuda(),
-                attention_mask=attention_mask.cuda(),
-                labels=labels.cuda(),
-                return_dict=True
-            )
-    outputs = torch.argmax(outputs.logits, dim=-1)
-    generated_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-    return [text.strip() for text in generated_text]
 
 def main():
     args = parse_args()
@@ -110,15 +96,14 @@ def main():
     # Initialize data module
     data_cfg = cfg.data_cfg
     data_cfg.params.cfg.batch_size = 1
-    data_cfg.params.cfg.opt.mode = 'pose'
     data = instantiate_from_config(data_cfg)
     data.setup('fit')
-    dataset = data.val_dataset
+    dataset = data.train_dataset
     
     # Initialize model
     with torch.autocast('cuda', dtype=torch.bfloat16):  
         model_cfg = cfg.model_cfg
-        model_cfg.params.cfg.batch_size = 1
+        model_cfg.params.cfg.training.batch_size = 1
         model = instantiate_from_config(model_cfg)
     
     # Load checkpoint using load_state_dict_from_zero_checkpoint
@@ -131,7 +116,8 @@ def main():
         raise RuntimeError("Tokenizer is not initialized in the model.")
 
     # Get conv_type from model config, default to 'role'
-    conv_type = 'simple'
+    conv_type = model_cfg.params.cfg.conv_type
+    model_type = model_cfg.params.cfg.model_type
     
     # Select random samples
     total_samples = len(dataset)
@@ -145,7 +131,6 @@ def main():
             sample = dataset[idx]
             input_ids, attention_mask, wave_embeds, labels = prepare_batch([sample], model, tokenizer, conv_type=conv_type)
             outputs = generate_outputs(model, tokenizer, input_ids, attention_mask, wave_embeds)
-            # outputs = generate_outputs_forward(model, tokenizer, input_ids, attention_mask, wave_embeds, labels)
             print("\nSample", idx)
             print(colored("Generated Caption:", "green"), colored(outputs[0], "green"))
             print(colored("Ground Truth:", "yellow"), colored(sample['caption'], "yellow"))

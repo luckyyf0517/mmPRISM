@@ -46,9 +46,8 @@ model_cfg:
       
       # Training configuration
       training:
-        batch_size: 8
         max_epochs: 10
         learning_rate: 5.0e-4
-        weight_decay: 0.01
+        weight_decay: 1.0e-4
         warmup_steps: 100
       

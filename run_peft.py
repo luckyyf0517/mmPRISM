@@ -106,23 +106,22 @@ def main():
         project="mmwave-csl"
     )
     
-    # if not args.resume_checkpoint and args.rank == 0: 
-    #     log_file_list = glob.glob(os.path.join(cfg.log_dir, args.version, '*.ckpt'))
-    #     if len(log_file_list) > 0:
-    #         if args.reset: 
-    #             shutil.rmtree(os.path.join(cfg.log_dir, args.version))
-    #         else: 
-    #             raise ValueError("Checkpoint files already exist. Please use --reset to restart a new experiment.")
+    if not args.resume_checkpoint and args.rank == 0: 
+        log_file_list = glob.glob(os.path.join(cfg.log_dir, args.version, '*.ckpt'))
+        if len(log_file_list) > 0:
+            if args.reset: 
+                shutil.rmtree(os.path.join(cfg.log_dir, args.version))
+            else: 
+                raise ValueError("Checkpoint files already exist. Please use --reset to restart a new experiment.")
     
     # Set callbacks
     callbacks = [
         ModelCheckpoint(
             dirpath=os.path.join(cfg.log_dir, args.version),
-            filename="model-epoch-{epoch:02d}-val_loss-{valid/loss:.2f}",
+            filename="model-epoch-{epoch:02d}",
             auto_insert_metric_name=False,
-            save_top_k=3,
-            monitor="valid/loss",
-            mode="min",
+            every_n_epochs=5,
+            save_top_k=-1,
             save_last=True
         ),
         LearningRateMonitor(logging_interval="step")
