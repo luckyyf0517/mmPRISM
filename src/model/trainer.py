@@ -328,21 +328,3 @@ class WaveLLMTrainer(pl.LightningModule):
         
         # Decode and return ALL generated texts (don't just take index 0)
         return self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-
-    def _save_predictions(self, preds, refs, save_dir="./outputs"):
-        """Save prediction and reference results to a file"""
-        # Create output directory
-        os.makedirs(save_dir, exist_ok=True)
-        
-        # Save predictions and references
-        pred_path = os.path.join(save_dir, "test_predictions.txt")
-        ref_path = os.path.join(save_dir, "test_references.txt")
-        
-        with open(pred_path, "w", encoding="utf-8") as f_pred, \
-             open(ref_path, "w", encoding="utf-8") as f_ref:
-            for pred, ref in zip(preds, refs):
-                f_pred.write(pred + "\n")
-                f_ref.write(ref + "\n")
-        
-        print(f"Predictions and references saved to {pred_path} and {ref_path}")
-

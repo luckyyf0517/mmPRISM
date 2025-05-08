@@ -1,5 +1,6 @@
 #!/bin/bash
 deepspeed --include localhost:0,1 \
+    --master_port 12345 \
     run_peft.py \
     --config config/wavellm_mt5.yaml \
     --batch-size 24 \
