@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class Simulation(nn.Module): 
-    def __init__(self, dtype=torch.float32, ctype=torch.complex64): 
+    def __init__(self, learnable_weights=False, dtype=torch.float32, ctype=torch.complex64): 
         super().__init__()
         self.radar_cfg = radar_cfg
         self.simulator = mmSimulator(radar_cfg, dtype=dtype, ctype=ctype)
@@ -37,7 +37,7 @@ class Simulation(nn.Module):
         azi_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.W)
         ele_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.H)
         bm_weights = build_steering_vector(azi_ele_id, azi_theta_grid, ele_theta_grid)
-        self.bm_weights = nn.Parameter(torch.view_as_real(bm_weights), requires_grad=False)
+        self.bm_weights = nn.Parameter(torch.view_as_real(bm_weights), requires_grad=learnable_weights)
         
         self.dtype = dtype
         self.ctype = ctype

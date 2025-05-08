@@ -10,39 +10,55 @@ from tqdm import tqdm
 from collections import defaultdict
 from torch.utils.data import Dataset, DataLoader
 
-        
-class mmSingleImageDataset(Dataset):
+class BaseDataset(Dataset):
+    """Base dataset class with common functionality"""
     def __init__(self, opt=None, split_path=None):
         self.opt = opt
         self.max_length = opt.get('max_length', 192)
-        self.mode = opt.get('mode', 'pose')  # 'pose' or 'feature'
+        
+        # Load data paths
         with open(split_path, 'r') as f:
             self.data_dict = json.load(f)
-
+            
     def __len__(self):
         return len(self.data_dict)
     
+    def pad_sequence(self, sequence, valid_length, pad_shape):
+        """Pad or truncate sequences to max_length"""
+        if valid_length > self.max_length:
+            return sequence[:self.max_length]
+        else:
+            pad_width = tuple([(0, self.max_length - valid_length)] + 
+                            [(0, 0) for _ in range(len(pad_shape))])
+            return np.pad(sequence, pad_width, mode='constant')
+
+class mmSingleImageDataset(BaseDataset):
+    """Dataset for single frame pose/feature data"""
+    
+    def __init__(self, opt=None, split_path=None):
+        super().__init__(opt, split_path)
+        self.mode = opt.get('mode', 'pose')  # 'pose' or 'feature'
+    
+    def process_pose(self, pose):
+        """Extract arm and hand joints from pose data"""
+        return np.stack([
+            np.concatenate([pose[[5,7,9], :], pose[-42:-21, :]], axis=0),
+            np.concatenate([pose[[6,8,10], :], pose[-21:, :]], axis=0)
+        ], axis=-3)
+    
     def __getitem__(self, index):
         id, pose_path = list(self.data_dict.items())[index]
-        pose = np.load(pose_path) # (T, 59, 3)
+        pose = np.load(pose_path)  # (T, 59, 3)
         
-        def process_pose(pose):
-            """Extract arm and hand joints from pose data"""
-            # Extract arm and hand joints
-            return np.stack([
-                np.concatenate([pose[[5,7,9], :], pose[-42:-21, :]], axis=0),
-                np.concatenate([pose[[6,8,10], :], pose[-21:, :]], axis=0)
-            ], axis=-3)
-
+        # Randomly select a frame
         frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
-        points_3d = pose[frame_idx] # [17+21+21, 3]
-        joints = process_pose(points_3d) # (2, 24, 3)
+        points_3d = pose[frame_idx]  # [17+21+21, 3]
+        joints = self.process_pose(points_3d)  # (2, 24, 3)
         
         if self.mode == 'feature':
             # Load pre-computed features
             feature_path = pose_path.replace('poses', 'features')
-            features = np.load(feature_path)  # (T, feature_dim)
-            features = features[frame_idx]  # (feature_dim)
+            features = np.load(feature_path)[frame_idx]  # (feature_dim)
             
             return {
                 'id': id,
@@ -53,128 +69,94 @@ class mmSingleImageDataset(Dataset):
             velocities_3d = (pose[frame_idx+1] - pose[frame_idx]) * 30
             return {
                 'id': id, 
-                'joints': joints, # (2, 24, 3)
-                'points_3d': points_3d, # (57, 3)
-                'velocities_3d': velocities_3d, # (57, 3)
+                'joints': joints,  # (2, 24, 3)
+                'points_3d': points_3d,  # (57, 3)
+                'velocities_3d': velocities_3d,  # (57, 3)
             }
 
-class mmWaveSequenceDataset(Dataset):
+class mmWaveSequenceDataset(BaseDataset):
     """Dataset for millimeter wave time series data with captions"""
     
     def __init__(self, opt, split_path=None):
-        self.opt = opt
-        self.max_length = opt.get('max_length', 512)
-        self.mode = opt.get('mode', 'pose')  # 'pose' or 'feature'
+        super().__init__(opt, split_path)
         
-        # Load data paths
-        with open(split_path, 'r') as f:
-            self.data_dict = json.load(f)
+        # Load modality configuration
+        self.modalities = opt.get('modalities', {
+            'use_features': False,
+            'use_pred_pose': False,
+            'use_raw_pose': False,
+        })
+        self.feature_config = opt.get('feature_config', {
+            'feature_dim': 512,
+            'feature_dir': 'features'
+        })
+        self.pose_config = opt.get('pose_config', {
+            'pose_dir': 'pred_poses'
+        })
+        
+        # Validate modality settings
+        if not any(self.modalities.values()):
+            raise ValueError("At least one modality must be enabled")
             
         # Load captions if available
         caption_path = opt.get('caption_path', 'dataset/CSL_News_Labels_converted.json')
+        self.caption_dict = self._load_captions(caption_path)
+    
+    def _load_captions(self, caption_path):
+        """Load caption data from file"""
         if os.path.exists(caption_path):
             with open(caption_path, 'r') as f:
-                self.caption_dict = json.load(f)
-        else:
-            self.caption_dict = {id: "" for id in self.data_dict.keys()}
-
-    def __len__(self):
-        return len(self.data_dict)
+                return json.load(f)
+        return {id: "" for id in self.data_dict.keys()}
     
-    def load_pose_data(self, pose_path):
-        """Mode 1: Load and process pose data"""
-        # Load pose data
+    def load_features(self, pose_path):
+        """Load pre-computed features"""
+        feature_path = pose_path.replace('poses', self.feature_config['feature_dir'])
+        return np.load(feature_path)  # (T, feature_dim)
+    
+    def load_pred_pose(self, pose_path):
+        """Load predicted pose data"""
+        pred_pose_path = pose_path.replace('poses', self.pose_config['pose_dir'])
+        return np.load(pred_pose_path)  # (T, 2, 24, 3)
+    
+    def load_raw_pose(self, pose_path):
+        """Load raw pose data and compute velocities"""
         pose = np.load(pose_path)  # (T, 59, 3)
-        
-        # Calculate velocities
-        velocities_3d = (pose[1:] - pose[:-1]) * 30
-        velocities_3d = np.concatenate([velocities_3d, velocities_3d[-1:]], axis=0)
-        
-        # Process joints
-        def process_pose(pose):
-            return np.stack([
-                np.concatenate([pose[[5,7,9], :], pose[-42:-21, :]], axis=0),
-                np.concatenate([pose[[6,8,10], :], pose[-21:, :]], axis=0)
-            ], axis=-3)
-        
-        joints = np.array([process_pose(frame) for frame in pose])
-        
-        return pose, velocities_3d, joints
+        velocities = pose[1:] - pose[:-1]
+        return pose[:-1], velocities
     
-    def load_feature_data(self, pose_path):
-        """Mode 2: Load pre-computed features"""
-        feature_path = pose_path.replace('poses', 'features')
-        features = np.load(feature_path)  # (T, feature_dim)
-        return features
-    
-    def load_pred_pose_data(self, pose_path):
-        """Mode 3: Load pose prediction data"""
-        pred_pose_path = pose_path.replace('poses', 'pred_poses')
-        pred_pose = np.load(pred_pose_path)  # (T, 2, 24, 3)
-        return pred_pose
-
     def __getitem__(self, index):
         id, data_path = list(self.data_dict.items())[index]
+        output_dict = {
+            'id': id,
+            'caption': self.caption_dict.get(id, "")
+        }
         
-        if self.mode == 'pose':
-            # Mode 1: Load and process pose data
-            points_3d, velocities_3d, joints = self.load_pose_data(data_path)
-            valid_length = joints.shape[0]
-            
-            # Truncate or pad sequence
-            if valid_length > self.max_length:
-                joints = joints[:self.max_length]
-                points_3d = points_3d[:self.max_length]
-                velocities_3d = velocities_3d[:self.max_length]
-            else:
-                pad_width = ((0, self.max_length - joints.shape[0]), (0, 0), (0, 0), (0, 0))
-                joints = np.pad(joints, pad_width, mode='constant')
-                pad_width = ((0, self.max_length - points_3d.shape[0]), (0, 0), (0, 0))
-                points_3d = np.pad(points_3d, pad_width, mode='constant')
-                velocities_3d = np.pad(velocities_3d, pad_width, mode='constant')
-            
-            return {
-                'id': id,
-                'path': data_path, 
-                'valid_length': valid_length,
-                'joints': torch.from_numpy(joints).float(), # (T, 2, 24, 3)
-                'points_3d': torch.from_numpy(points_3d).float(), # (T, 57, 3)
-                'velocities_3d': torch.from_numpy(velocities_3d).float(), # (T, 57, 3)
-                'caption': self.caption_dict.get(id, "")
-            }
-        elif self.mode == 'feature': 
-            # Mode 2: Load pre-computed features
-            features = self.load_feature_data(data_path)
-            valid_length = features.shape[0]
-            
-            # Truncate or pad sequence
-            if valid_length > self.max_length:
-                features = features[:self.max_length]
-            else:
-                pad_width = ((0, self.max_length - valid_length), (0, 0))
-                features = np.pad(features, pad_width, mode='constant')
-            
-            return {
-                'id': id, 
-                'valid_length': valid_length,
-                'features': torch.from_numpy(features).float(),  # (T, feature_dim)
-                'caption': self.caption_dict.get(id, "")
-            }
-        elif self.mode == 'pred_pose':
-            # Mode 3: Load pose prediction data
-            pred_pose = self.load_pred_pose_data(data_path)
-            valid_length = pred_pose.shape[0]
-            
-            # Truncate or pad sequence
-            if valid_length > self.max_length:
-                pred_pose = pred_pose[:self.max_length]
-            else:
-                pad_width = ((0, self.max_length - valid_length), (0, 0), (0, 0), (0, 0))
-                pred_pose = np.pad(pred_pose, pad_width, mode='constant')
-            
-            return {
-                'id': id,
-                'valid_length': valid_length,
-                'joints': torch.from_numpy(pred_pose).float(), # (T, 2, 24, 3)
-                'caption': self.caption_dict.get(id, "")
-            }
+        valid_length = self.max_length
+        
+        # Load features if enabled
+        if self.modalities['use_features']:
+            features = self.load_features(data_path)
+            valid_length = min(valid_length, features.shape[0])
+            features = self.pad_sequence(features, valid_length, features.shape[1:])
+            output_dict['features'] = torch.from_numpy(features).float()
+        
+        # Load predicted poses if enabled
+        if self.modalities['use_pred_pose']:
+            pred_pose = self.load_pred_pose(data_path)
+            valid_length = min(valid_length, pred_pose.shape[0])
+            pred_pose = self.pad_sequence(pred_pose, valid_length, pred_pose.shape[1:])
+            output_dict['joints'] = torch.from_numpy(pred_pose).float()
+        
+        # Load raw pose data if enabled
+        if self.modalities['use_raw_pose']:
+            points_3d, velocities_3d = self.load_raw_pose(data_path)
+            valid_length = min(valid_length, points_3d.shape[0])
+            points_3d = self.pad_sequence(points_3d, valid_length, points_3d.shape[1:])
+            velocities_3d = self.pad_sequence(velocities_3d, valid_length, velocities_3d.shape[1:])
+            output_dict['points_3d'] = torch.from_numpy(points_3d).float()
+            output_dict['velocities_3d'] = torch.from_numpy(velocities_3d).float()
+        
+        output_dict['valid_length'] = valid_length
+        output_dict['path'] = data_path
+        return output_dict

@@ -8,9 +8,9 @@ data_cfg:
   params:
     cfg: 
       dataset: src.data.dataset.mmSingleImageDataset
-      train_split: 'dataset/csl-news-demo02/train.json'
-      val_split: 'dataset/csl-news-demo02/val.json'
-      test_split: 'dataset/csl-news-demo02/val.json'
+      train_split: 'dataset/csl-news-100/train.json'
+      val_split: 'dataset/csl-news-100/val.json'
+      test_split: 'dataset/csl-news-100/val.json'
       opt: 
         mode: 'pose'
       num_workers: 4
@@ -20,16 +20,17 @@ model_cfg:
   target: src.model.omnihand.OmniHand
   params:
     cfg:
+      learnable_weights: false
       backbone: 
-        target: src.model.cubenet.CubeNet
+        target: src.model.encoder.cubenet.CubeNet
         params: 
           input_dim: 32
           hidden_dims: [64, 128, 256, 512]
           num_blocks: [3, 4, 6, 3]
           strides: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [1, 1, 1]] 
-          block: src.model.cubenet.BasicBlock3D
+          block: src.model.encoder.cubenet.BasicBlock3D
           norm_layer: torch.nn.GroupNorm
-        pretrained: weights/cubenet
+        pretrained: weights/cubenet-base
         freeze: false
       training:
         lr: 1.0e-4

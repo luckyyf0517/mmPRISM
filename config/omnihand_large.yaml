@@ -1,0 +1,38 @@
+# Basic settings
+log_dir: 'log/omnihand'
+strategy: 'ddp'
+
+# Data configuration
+data_cfg:
+  target: src.data.data_interface.BaseDataInterface
+  params:
+    cfg: 
+      dataset: src.data.dataset.mmSingleImageDataset
+      train_split: 'dataset/csl-news-100/train.json'
+      val_split: 'dataset/csl-news-100/val.json'
+      test_split: 'dataset/csl-news-100/val.json'
+      opt: 
+        mode: 'pose'
+      num_workers: 4
+
+# Model configuration
+model_cfg:
+  target: src.model.omnihand.OmniHand
+  params:
+    cfg:
+      learnable_weights: true
+      backbone: 
+        target: src.model.encoder.cubenet.CubeNet
+        params: 
+          input_dim: 32
+          hidden_dims: [128, 256, 512, 1024]
+          num_blocks: [3, 4, 23, 3]
+          strides: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [1, 1, 1]] 
+          block: src.model.encoder.cubenet.BasicBlock3D
+          norm_layer: torch.nn.GroupNorm
+        pretrained: null
+        freeze: false
+      training:
+        lr: 1.0e-4
+        betas: [0.9, 0.999]
+        weight_decay: 0.01

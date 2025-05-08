@@ -98,6 +98,10 @@ def main():
     # Create model
     model_cfg = cfg.model_cfg
     model_cfg.params.cfg.training.batch_size = args.batch_size
+    model_cfg.params.cfg.modalities = data_cfg.params.cfg.opt.modalities
+    if args.test: 
+        assert args.resume_checkpoint is not None, "Please provide a checkpoint to test."
+        model_cfg.params.cfg.ckpt_path = args.resume_checkpoint
     model = instantiate_from_config(model_cfg)
     
     # Set logger
@@ -106,7 +110,7 @@ def main():
         project="mmwave-csl"
     )
     
-    if not args.resume_checkpoint and args.rank == 0: 
+    if not args.resume_checkpoint and args.rank == 0 and not args.test: 
         log_file_list = glob.glob(os.path.join(cfg.log_dir, args.version, '*.ckpt'))
         if len(log_file_list) > 0:
             if args.reset: 
@@ -162,8 +166,9 @@ def main():
         reload_dataloaders_every_n_epochs=1,
         log_every_n_steps=1,
         accumulate_grad_batches=args.gradient_accumulation_steps,
-        # limit_train_batches=10,  # Limit to 10 steps
-        # limit_val_batches=10  # Limit to 10 steps
+        # limit_train_batches=10,  
+        # limit_val_batches=10, 
+        limit_test_batches=10 
     )
     
     # Train model

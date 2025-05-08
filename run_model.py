@@ -118,7 +118,7 @@ def main():
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(cfg.log_dir, args.version),
         monitor='epoch',  # Monitor the epoch to save the latest checkpoints
-        filename='epoch_{epoch:02d}',
+        filename='epoch_{epoch:02d}_MPJPE_{valid/MPJPE:.4f}',
         save_top_k=5,  # Save the latest 5 checkpoints
         mode='max',  # Save based on the latest epochs
         auto_insert_metric_name=False, 
@@ -164,8 +164,10 @@ def main():
     )
 
     if not args.test:
+        data.setup('fit')
         trainer.fit(model, datamodule=data, ckpt_path=args.resume_checkpoint)
     else:
+        data.setup('test')
         trainer.test(model, datamodule=data, ckpt_path=args.resume_checkpoint)
 
 if __name__ == '__main__':

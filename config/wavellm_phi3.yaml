@@ -8,9 +8,9 @@ data_cfg:
   params:
     cfg:
       dataset: src.data.dataset.mmWaveSequenceDataset
-      train_split: 'dataset/csl-news-demo02/train.json'
-      val_split: 'dataset/csl-news-demo02/val.json'
-      test_split: 'dataset/csl-news-demo02/val.json'
+      train_split: 'dataset/csl-news-100/train.json'
+      val_split: 'dataset/csl-news-100/val.json'
+      test_split: 'dataset/csl-news-100/val.json'
       opt: 
         caption_path: "dataset/CSL_News_Labels_converted.json"
         max_length: 512

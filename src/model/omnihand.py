@@ -30,7 +30,7 @@ class OmniHand(LightningModule):
         self.cfg = cfg
         self.batch_size = cfg.batch_size
         
-        self.simulator = Simulation()
+        self.simulator = Simulation(learnable_weights=cfg.get('learnable_weights', False))
         
         # Initialize backbone (Vision Transformer)
         self.backbone = instantiate_from_config(cfg.backbone)
@@ -45,17 +45,7 @@ class OmniHand(LightningModule):
         self.feature_dim = cfg.backbone.params.hidden_dims[-1]
         self.relu = nn.ReLU()
         self.regressor = nn.ModuleDict({
-            # 'l': nn.Sequential(
-            #     nn.Linear(self.feature_dim, 512),
-            #     nn.ReLU(),
-            #     nn.Linear(512, 24 * 3)
-            # ),
             'l': nn.Linear(self.feature_dim, 24 * 3),
-            # 'r': nn.Sequential(
-            #     nn.Linear(self.feature_dim, 512),
-            #     nn.ReLU(),
-            #     nn.Linear(512, 24 * 3)
-            # ),
             'r': nn.Linear(self.feature_dim, 24 * 3)})
         
         # Training parameters
@@ -103,7 +93,7 @@ class OmniHand(LightningModule):
         loss_dict = self.compute_loss(results, batch)
         # Logging
         self._log_info(loss_dict, phase)
-        self._log_progress(batch_idx, loss_dict)
+        # self._log_progress(batch_idx, loss_dict)
         return loss_dict['loss']  
             
     def compute_loss(self, results, batch):

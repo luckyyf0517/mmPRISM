@@ -10,8 +10,10 @@ from transformers import get_cosine_schedule_with_warmup
 from peft import get_peft_model, LoraConfig
 from src.model.llm.model_factory import ModelFactory
 from src.model.llm.text_processor import *
+from src.model.encoder.pose_encoder import HandPoseEncoder
 from src.utils.tools import instantiate_from_config
 from termcolor import colored
+import json
 IGNORE_INDEX = -100
 
 
@@ -62,6 +64,7 @@ class WaveLLMTrainer(pl.LightningModule):
         # Print trainable parameters
         self._print_trainable_parameters()
         
+        self.modalities = cfg.modalities
     
     def _find_all_linear_names(self, exclude_keywords=None):
         """Find all linear layer names in the model"""
@@ -93,12 +96,45 @@ class WaveLLMTrainer(pl.LightningModule):
         trainable_percent_str = colored(f"trainable%: {100 * trainable_params / all_param:.2f}", 'blue')
         print(f"{trainable_params_str} || {all_params_str} || {trainable_percent_str}")
 
-    def forward(self, batch):
-        # Get wave embeddings
-        # wave_embeds = batch['features'].to(torch.bfloat16)  # [B, T, C]
+    def _get_wave_embeds(self, features, joints):
+        """Process and merge enabled modalities
+        Args:
+            features: [B, T, feature_dim] or None
+            joints: [B, T, 2, 24, 3] or None
+        Returns:
+            wave_embeds: [B, T, total_dim]
+        """
+        embeds_list = []
+        
+        # Process features if enabled
+        if self.modalities['use_features']:
+            if features is None:
+                raise ValueError("Features modality is enabled but no features provided")
+            feature_embeds = features.to(torch.bfloat16)  # [B, T, 512]
+            embeds_list.append(feature_embeds)
+        
+        # Process pose if enabled
+        if self.modalities['use_pred_pose']:
+            if joints is None:
+                raise ValueError("Pose modality is enabled but no joints provided")
+            pose_embeds = self.hand_pose_encoder(joints.to(torch.bfloat16))  # [B, T, 768]
+            embeds_list.append(pose_embeds)
+        
+        # Merge all enabled modalities
+        if len(embeds_list) == 0:
+            raise ValueError("No modalities enabled")
+        elif len(embeds_list) == 1:
+            wave_embeds = embeds_list[0]
+        else:
+            wave_embeds = torch.cat(embeds_list, dim=-1)  # [B, T, total_dim]
+        
+        return wave_embeds
 
-        poses = batch['joints'].to(torch.bfloat16)  # [B, T, 2, 24, 3]
-        wave_embeds = self.hand_pose_encoder(poses)  # [B, T, C]
+    def forward(self, batch):
+        # Get wave embeddings based on enabled modalities
+        features = batch.get('features', None)
+        joints = batch.get('joints', None)
+        wave_embeds = self._get_wave_embeds(features, joints)
         
         # Format conversations
         conversations = create_conversation(
@@ -179,92 +215,134 @@ class WaveLLMTrainer(pl.LightningModule):
             }
         }
 
+    def on_test_epoch_start(self):
+        """Initialize JSON file for results"""
+        # Initialize the results file
+        save_dir = os.path.join(self.cfg.ckpt_path, "evaluation")
+        os.makedirs(save_dir, exist_ok=True)
+        self.output_file = os.path.join(save_dir, f"results_rank_{self.global_rank}.json")
+        # Create an empty dictionary and write it to file
+        with open(self.output_file, 'w', encoding='utf-8') as f:
+            json.dump({}, f)
+        
+        print(f"Initialized results file: {self.output_file}")
 
-from src.model.stgcn_layers import Graph, get_stgcn_chain
-class HandPoseEncoder(nn.Module):
-    def __init__(self, hidden_dim=64):
-        super().__init__()
+    def test_step(self, batch, batch_idx):
+        """Generate translations and directly update JSON file"""
+        # Use the general inference function to get prediction results
+        preds = self._generate_translation(batch)
         
-        # Initialize graphs for body and hands
-        self.modes = ['body', 'left', 'right']
-        self.graph = {}
-        self.gcn_modules = nn.ModuleDict()
-        self.fusion_gcn_modules = nn.ModuleDict()
+        # Get the reference text
+        refs = batch['caption']
         
-        # Projection layer
-        self.proj_linear = nn.Linear(3, hidden_dim)
+        # Get sample ID
+        sample_ids = batch.get('id')
         
-        # Create graph and GCN for body and hands
-        for mode in self.modes:
-            if mode == 'body':
-                self.graph[mode] = Graph(layout='body', strategy='distance', max_hop=1)
-            else:
-                self.graph[mode] = Graph(layout='hand', strategy='distance', max_hop=1)
-            A = torch.tensor(self.graph[mode].A, dtype=torch.float32, requires_grad=False)
-            
-            # Create spatial and temporal GCN modules
-            spatial_kernel_size = A.size(0)
-            self.gcn_modules[mode], final_dim = get_stgcn_chain(
-                hidden_dim, 
-                'spatial', 
-                (1, spatial_kernel_size), 
-                A.clone(), 
-                True
-            )
-            self.fusion_gcn_modules[mode], _ = get_stgcn_chain(
-                final_dim,
-                'temporal',
-                (5, spatial_kernel_size),
-                A.clone(),
-                True
-            )
+        # Consistency check
+        assert len(preds) == len(refs) and len(preds) == len(sample_ids), \
+            f"Length mismatch in batch {batch_idx}. Predictions: {len(preds)}, References: {len(refs)}, IDs: {len(sample_ids)}"
+        
+        # Read current results
+        with open(self.output_file, 'r', encoding='utf-8') as f:
+            results = json.load(f)
+        
+        # Add new result
+        for i in range(len(sample_ids)):
+            results[sample_ids[i]] = {
+                "prediction": preds[i],
+                "reference": refs[i]
+            }
 
-    def forward(self, x):
-        """
-        Input: x [B, N, 2, 24, 3] - batch, frames, hands(left/right), joints, coords
-        Output: [B, N, C] - C is the final feature dimension
-        """
-        features = []
+            print('-' * 100)
+            print(colored("Ground truth:", "blue"), refs[i])
+            print(colored("Generated text:", "green"), preds[i])
         
-        # Reshape input data format
-        x = {
-            'body': torch.cat([x[:, :, 0, :3], x[:, :, 1, :3]], dim=2),  # Concatenate the first 3 points of both hands
-            'left': x[:, :, 0, 3:],  # All points of the left hand
-            'right': x[:, :, 1, 3:]  # All points of the right hand
-        }
+        # Write updated results
+        with open(self.output_file, 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
         
-        # Process body features first
-        body_data = x['body']  # [B, N, 6, 3]
-        body_proj = self.proj_linear(body_data)
-        body_proj = body_proj.permute(0, 3, 1, 2)  # [B, C, N, 6]
-        body_feat = self.gcn_modules['body'](body_proj)
-        body_feat = self.fusion_gcn_modules['body'](body_feat)
-        # Add body features to output
-        pool_body_feat = body_feat.mean(-1).transpose(1, 2)  # [B, N, C]
-        features.append(pool_body_feat)
-        # Process left and right hands
-        for mode in ['left', 'right']:
-            # Get data for one hand [B, N, 24, 3]
-            hand_data = x[mode]
-            # Project to hidden dim [B, N, 24, hidden_dim]
-            proj_feat = self.proj_linear(hand_data)
-            proj_feat = proj_feat.permute(0, 3, 1, 2)
-            # Forward pass through spatial GCN
-            spatial_feat = self.gcn_modules[mode](proj_feat)
-            # Add body reference features
-            if mode == 'left':
-                ref_feat = body_feat[..., [2]]
-            else:
-                ref_feat = body_feat[..., [5]]
-            spatial_feat = spatial_feat + ref_feat.detach()
-            # Forward pass through temporal GCN
-            temporal_feat = self.fusion_gcn_modules[mode](spatial_feat)
-            # Average pooling over node dimension [B, C, N]
-            pool_feat = temporal_feat.mean(-1)
-            # Rearrange dimensions to [B, N, C]
-            pool_feat = pool_feat.transpose(1, 2)
-            features.append(pool_feat)
+        # Return nothing to save memory
+        return None
+
+    def _generate_translation(self, batch):
+        """General translation generation function, can be called by test_step or inference script"""
+        # Get wave features
+        wave_embeds = self._get_wave_embeds(
+            batch.get('features', None), 
+            batch.get('joints', None)
+        )
         
-        # Merge features from both hands
-        output = torch.cat(features, dim=-1)  # [B, N, C*2]
-        return output
+        # Prepare input data
+        input_ids, attention_mask = self._prepare_inference_inputs(
+            wave_embeds, 
+            batch['valid_length']
+        )
+        
+        # Execute generation
+        return self._inference_generate(input_ids, attention_mask, wave_embeds)
+
+    def _prepare_inference_inputs(self, wave_embeds, valid_lengths):
+        """Prepare input data required for inference"""
+        # Construct conversation
+        conversations = create_conversation(
+            questions="Translate sign language signal to Chinese.",
+            answers=[''] * self.batch_size  # No answer provided during inference
+        )
+        
+        # Insert wave tokens
+        conversations = insert_wave_tokens(
+            conversations,
+            wave_token_lens=valid_lengths,
+            wave_patch_token=self.model.config.default_wave_patch_token,
+            wave_start_token=self.model.config.default_wave_start_token,
+            wave_end_token=self.model.config.default_wave_end_token
+        )
+        
+        # Process data based on conversation type
+        if self.conv_type == 'role':
+            processed = prepare_conversation_data(conversations, self.tokenizer)
+        elif self.conv_type == 'simple':
+            processed = prepare_simple_data(conversations, self.tokenizer)
+        else:
+            raise ValueError(f"Unknown conv_type: {self.conv_type}")
+        
+        # Move data to the correct device
+        input_ids = processed['input_ids'].to(wave_embeds.device)
+        attention_mask = processed['attention_mask'].to(wave_embeds.device)
+        
+        return input_ids, attention_mask
+
+    def _inference_generate(self, input_ids, attention_mask, wave_embeds):
+        """Execute model generation"""
+        with torch.no_grad(), torch.autocast('cuda', dtype=torch.bfloat16):
+            outputs = self.model.generate(
+                input_ids=input_ids,
+                input_wave_embeds=wave_embeds,
+                attention_mask=attention_mask,
+                do_sample=False,
+                max_new_tokens=128,
+                num_beams=5,
+                top_k=50,
+                top_p=0.95,
+            )
+        
+        # Decode and return ALL generated texts (don't just take index 0)
+        return self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+
+    def _save_predictions(self, preds, refs, save_dir="./outputs"):
+        """Save prediction and reference results to a file"""
+        # Create output directory
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Save predictions and references
+        pred_path = os.path.join(save_dir, "test_predictions.txt")
+        ref_path = os.path.join(save_dir, "test_references.txt")
+        
+        with open(pred_path, "w", encoding="utf-8") as f_pred, \
+             open(ref_path, "w", encoding="utf-8") as f_ref:
+            for pred, ref in zip(preds, refs):
+                f_pred.write(pred + "\n")
+                f_ref.write(ref + "\n")
+        
+        print(f"Predictions and references saved to {pred_path} and {ref_path}")
+

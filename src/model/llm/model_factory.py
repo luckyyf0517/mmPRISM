@@ -60,16 +60,35 @@ class ModelFactory:
         # Get model class
         model_class = cls.MODEL_TYPES[model_type]
         
+        # First load the original config
+        print(colored("[ModelFactory] Loading model config", "blue"))
+        original_config = AutoConfig.from_pretrained(
+            config.model_path,
+            cache_dir=config.get('cache_dir'),
+        )
+        
+        # Update config with our custom settings
+        print(colored("[ModelFactory] Updating config with custom settings", "blue"))
+        custom_config = {
+            'mm_input_dim': config.mm_input_dim,
+            'model_max_length': config.get('model_max_length', 2048),
+            'use_cache': config.get('use_cache', True),  
+        }
+        for key, value in custom_config.items():
+            if hasattr(original_config, key):
+                print(colored(f"[ModelFactory] Overriding {key}: {getattr(original_config, key)} -> {value}", "yellow"))
+                setattr(original_config, key, value)
+            else:
+                print(colored(f"[ModelFactory] Setting new attribute {key}: {value}", "yellow"))
+                setattr(original_config, key, value)
+        
         print(colored("[ModelFactory] Loading pretrained model", "blue"))
         model = model_class.from_pretrained(
             config.model_path,
+            config=original_config,
             cache_dir=config.get('cache_dir'),
-            torch_dtype=torch.bfloat16, 
-            # attn_implementation='flash_attention_2',
+            torch_dtype=torch.bfloat16,
         )
-
-        # Disable model cache for training
-        model.config.use_cache = False
         
         # Set model parameter type
         if config.get('torch_dtype'):
