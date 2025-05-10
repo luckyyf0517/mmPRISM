@@ -123,7 +123,8 @@ def main():
         mode='max',  # Save based on the latest epochs
         auto_insert_metric_name=False, 
         save_last=True,
-        save_weights_only=False,)
+        save_weights_only=False,
+        enable_version_counter=False)
     
     # Create DeepSpeed strategy
     strategy = DeepSpeedStrategy(

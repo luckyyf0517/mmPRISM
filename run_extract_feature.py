@@ -20,8 +20,8 @@ class FeatureExtractionOmniHand(OmniHand):
     def test_step(self, batch, batch_idx):
         # Get batch timestep data
         max_len = batch['valid_length'][0].item()
-        points_t = batch['points_3d'][0, :max_len]  # [T, 59, 3]
-        velocities_t = batch['velocities_3d'][0, :max_len]  # [T, 59, 3]
+        points_t = batch['joints'][0, :max_len]  # [T, 59, 3]
+        velocities_t = batch['velocities'][0, :max_len]  # [T, 59, 3]
         path = batch['path'][0]
         
         # Determine feature and pose paths
@@ -50,23 +50,6 @@ class FeatureExtractionOmniHand(OmniHand):
         
     def process_time_batch(self, points_t, velocities_t, time_batch_size=32):
         """Process a sequence in time batches"""
-        # T = points_t.shape[0]
-        # features_list = []
-        
-        # # Process in time batches
-        # for t_start in range(0, T, time_batch_size):
-        #     t_end = min(t_start + time_batch_size, T)
-        #     points_batch = points_t[t_start:t_end].to(self.device)
-        #     velocities_batch = velocities_t[t_start:t_end].to(self.device)
-            
-        #     # Get features for this time batch
-        #     with torch.no_grad():
-        #         features_batch = self.encode_feature(points_batch, velocities_batch)
-        #     features_list.append(features_batch.cpu())
-        
-        # # Concatenate all time batches
-        # return torch.cat(features_list, dim=0)
-        
         return self.encode_feature(points_t, velocities_t)
 
 def main():
@@ -74,7 +57,7 @@ def main():
     local_rank = int(os.environ["LOCAL_RANK"])
     world_size = int(os.environ["WORLD_SIZE"])
     torch.cuda.set_device(local_rank)
-    device = torch.device(f"cuda:{local_rank}")
+    datastage = 'daily'
     
     if local_rank == 0:
         print(colored("\n=== Feature Extraction Pipeline ===", "cyan", attrs=["bold"]))
@@ -82,28 +65,41 @@ def main():
         print(colored(f"- World size: {world_size}", "yellow"))
         print(colored(f"- GPU Memory: {torch.cuda.get_device_properties(local_rank).total_memory / 1024**3:.1f} GB", "yellow"))
     
-    # Load OmniHand model from checkpoint
-    args = edict({
-        'config': 'config/omnihand_base.yaml',
-        'resume_checkpoint': 'log/omnihand/omnihand-0427/last.ckpt',
-    })
-    cfg = load_yaml(args.config)
-    cfg.batch_size = 1
-    
     # Modify test split to use all data
-    data_cfg = cfg.data_cfg
-    data_cfg.params.cfg.dataset = 'src.data.dataset.mmWaveSequenceDataset'
-    data_cfg.params.cfg.batch_size = 1
-    data_cfg.params.cfg.test_split = 'dataset/csl-news-to-extract/all.json'
+    if datastage == 'news': 
+        # Load OmniHand model from checkpoint
+        args = edict({
+            'config': 'config/omnihand_base.yaml',
+            'resume_checkpoint': 'log/omnihand/omnihand-0427/last.ckpt',
+        })
+        cfg = load_yaml(args.config)
+        cfg.batch_size = 1
+        data_cfg = cfg.data_cfg
+        data_cfg.params.cfg.dataset = 'src.data.dataset.CslNewsDataset'
+        data_cfg.params.cfg.batch_size = 1
+        data_cfg.params.cfg.test_split = 'dataset/csl-news-to-extract/all.json'
+    elif datastage == 'daily':
+        # Load OmniHand model from checkpoint
+        args = edict({
+            'config': 'config/omnihand_base.yaml',
+            'resume_checkpoint': 'log/omnihand/omnihand-0509-daily/last.ckpt',
+        })
+        cfg = load_yaml(args.config)
+        cfg.batch_size = 1
+        data_cfg = cfg.data_cfg
+        data_cfg.params.cfg.dataset = 'src.data.dataset.CslDailyDataset'
+        data_cfg.params.cfg.batch_size = 1
+        data_cfg.params.cfg.test_split = 'dataset/csl-daily-demo01/all.json'
     data_cfg.params.cfg.opt = {
-        "caption_path": "dataset/CSL_News_Labels_converted.json",
-        "max_length": 512,
+        "annotation_path": 'data/CSL-Daily/sentence_label/csl2020ct_v2.pkl',
+        "max_length": 192,
         "modalities": {
             "use_features": False,
             "use_pred_pose": False,
             "use_raw_pose": True
         }
     }
+        
     data = instantiate_from_config(data_cfg)
     data.setup('test')
     

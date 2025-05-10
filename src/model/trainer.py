@@ -253,7 +253,7 @@ class WaveLLMTrainer(pl.LightningModule):
                 "reference": refs[i]
             }
 
-            print('-' * 100)
+            print('-' * 50)
             print(colored("Ground truth:", "blue"), refs[i])
             print(colored("Generated text:", "green"), preds[i])
         
@@ -286,7 +286,7 @@ class WaveLLMTrainer(pl.LightningModule):
         # Construct conversation
         conversations = create_conversation(
             questions="Translate sign language signal to Chinese.",
-            answers=[''] * self.batch_size  # No answer provided during inference
+            answers=[''] * wave_embeds.shape[0]  # No answer provided during inference
         )
         
         # Insert wave tokens

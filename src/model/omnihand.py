@@ -60,15 +60,15 @@ class OmniHand(LightningModule):
         Returns:
             joints: Predicted joint positions of shape [B, 2, 24, 3] (2 for l/r hands)
         """
-        features = self.encode_feature(input_data['points_3d'], input_data['velocities_3d'])
+        features = self.encode_feature(input_data['joints'], input_data['velocities'])
         joints = self.forward_feature(features)
         return {
             'joints': joints,
         }
         
-    def encode_feature(self, points_3d, velocities_3d):
+    def encode_feature(self, joints, velocities):
         """Encode input data into features"""
-        x = self.simulator(points_3d, velocities_3d)
+        x = self.simulator(joints, velocities)
         # Extract features using ViT
         features = self.backbone(x)  # [B, feature_dim, 4, 4, 4]
         # Global max pooling across spatial dimensions
@@ -93,7 +93,7 @@ class OmniHand(LightningModule):
         loss_dict = self.compute_loss(results, batch)
         # Logging
         self._log_info(loss_dict, phase)
-        # self._log_progress(batch_idx, loss_dict)
+        self._log_progress(batch_idx, loss_dict)
         return loss_dict['loss']  
             
     def compute_loss(self, results, batch):
@@ -107,10 +107,20 @@ class OmniHand(LightningModule):
         loss_dict = {}
         pred = results['joints'] * 1e3
         target = batch['joints'] * 1e3
-        # L1 loss on joint positions
-        loss_dict['loss_joints'] = F.l1_loss(pred, target)
-        # MPJPE (Mean Per Joint Position Error)
-        loss_dict['MPJPE'] = torch.norm(pred - target, dim=-1).mean()
+
+        # Check if any value in the last dimension (xyz) is NaN
+        valid_mask = ~torch.any(torch.isnan(target), dim=-1)
+
+        # Apply mask to both predictions and targets
+        pred_valid = pred[valid_mask]
+        target_valid = target[valid_mask]
+        
+        # L1 loss on valid joint positions
+        loss_dict['loss_joints'] = F.l1_loss(pred_valid, target_valid)
+        
+        # MPJPE (Mean Per Joint Position Error) on valid joints
+        loss_dict['MPJPE'] = torch.norm(pred_valid - target_valid, dim=-1).mean()
+        
         # Total loss
         loss_dict['loss'] = loss_dict['loss_joints']
         return loss_dict

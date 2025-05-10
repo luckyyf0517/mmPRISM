@@ -28,12 +28,11 @@ class WaveBaseModel(PreTrainedModel):
         cur_wave_idx = 0
         for cur_input_ids, cur_input_embeds in zip(input_ids, inputs_embeds):
             cur_wave_features = wave_features[cur_wave_idx].to(device=cur_input_embeds.device)
-            
             num_patches = (cur_input_ids == self.config.wave_patch_token).sum().item()
             cur_wave_features = cur_wave_features[:num_patches]
-            
             if (cur_input_ids == self.config.wave_start_token).sum() != (cur_input_ids == self.config.wave_end_token).sum():
-                raise ValueError("The number of wave start tokens and wave end tokens should be the same.")
+                raise ValueError(f"The number of wave start tokens and wave end tokens should be the same. "
+                                 f"start: {cur_input_ids == self.config.wave_start_token}.sum(), end: {cur_input_ids == self.config.wave_end_token}.sum()")
             wave_start_tokens = torch.where(cur_input_ids == self.config.wave_start_token)[0]
             assert len(wave_start_tokens) > 0, "No wave start token found."
             for wave_start_token_pos in wave_start_tokens:

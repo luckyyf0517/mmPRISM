@@ -56,13 +56,21 @@ class Simulation(nn.Module):
         batch_size = points_3d.shape[0]
         radar_signal_list = []
         
-        points_3d = process_point_cloud(points_3d)
-        velocities_3d = process_point_cloud(velocities_3d)
-        
+        # Process points_3d first and get the nan_mask
+        processed_velocities, nan_mask = process_point_cloud(velocities_3d)
+        # Process velocities_3d with the same nan_mask
+        processed_points, _ = process_point_cloud(points_3d, nan_mask)
+        assert torch.isnan(processed_points).any() == False, 'processed_points has NaN values'
+        assert torch.isnan(processed_velocities).any() == False, 'processed_velocities has NaN values'
+
         for b in range(batch_size):
-            path_dict = self.simulator.compute_paths_from_points(
-                points_3d=points_3d[b],
-                velocities_3d=velocities_3d[b])
+            try: 
+                path_dict = self.simulator.compute_paths_from_points(
+                    points_3d=processed_points[b],
+                    velocities_3d=processed_velocities[b])
+            except:
+                print(processed_points[b].shape, processed_velocities[b].shape)
+                raise ValueError('Invalid points or velocities')
             radar_frame = self.get_raw_radar_frame(path_dict)
             radar_signal = self.get_signal(radar_frame)
             radar_signal_list.append(radar_signal)
@@ -139,16 +147,24 @@ class mmSimulator(nn.Module):
         """
         Initialize the simulator with camera parameters
         """
-        self.radar_position = np.array([0.0, 0.0, -0.80])  # 更新雷达位置
+        # Set the radar position
+        self.radar_position = np.array([0.0, 0.0, -0.80])  
+        # Set the camera position
         self.camera_position = self.radar_position + np.array([0.0, 0.0, 0.0])
         
+        # Get the index of the radar
         self.D = np.array(get_index()) - np.array([43, 0])
-        d = (2.99792458e8 / self.frequency) / 2     # wave_length / 2
+        # Calculate the wavelength
+        d = (2.99792458e8 / self.frequency) / 2     
+        # Calculate the reference array
         rx_ref_array = np.column_stack((self.D[:, 0], self.D[:, 1], np.zeros(len(self.D))))
         rx_ref_array = rx_ref_array * d
         
+        # Register the tx position
         self.register_buffer('tx_position', torch.tensor(self.radar_position), persistent=False)
+        # Register the rx positions
         self.register_buffer('rx_positions', torch.tensor(self.radar_position[None] + rx_ref_array), persistent=False)
+        # Initialize the scatter pattern and radar pattern
         self.scat_pattern = None
         self.radar_pattern = None
         
@@ -166,19 +182,22 @@ class mmSimulator(nn.Module):
                 tau: [num_rx, max_num_paths]
                 vel: [num_rx, max_num_paths]
         """
-        # 计算发射路径
+        # Calculate the incident wave vector
         k_i = points_3d - self.tx_position  # [N, 3]
+        # Calculate the scattered wave vector
         k_s = (self.rx_positions[:, None] - points_3d)  # [num_rx, N, 3]
         
-        # 计算距离
+        # Calculate the distance
         k_i_length = torch.norm(k_i, dim=-1)  # [N]
         k_s_length = torch.norm(k_s, dim=-1)  # [num_rx, N]
         distances = k_i_length[None] + k_s_length  # [num_rx, N]
         
+        # Calculate the time delay
         tau = distances / 2.99792458e8  # [num_rx, N]
+        # Calculate the amplitude
         a = torch.ones_like(tau) / (distances / 2) ** 2
         
-        # 计算径向速度
+        # Calculate the radial velocity
         k_i = k_i / k_i_length.unsqueeze(-1)  # [N, 3]
         k_s = k_s / k_s_length.unsqueeze(-1)  # [num_rx, N, 3]
         vel = (torch.sum(velocities_3d * k_i, dim=-1)[None] - 
@@ -236,26 +255,38 @@ def get_index(return_index=False):
         return D_uni
 
 
-def process_point_cloud(data):
+def process_point_cloud(data, nan_mask=None):
     """
-    Process a point cloud data of shape [T, N, 3] and return a new point cloud of shape [T, N', 3].
+    Process a point cloud data of shape [T, 2, 24, 3] and return a new point cloud.
     
     Args:
-        data: torch.Tensor of shape [T, N, 3] representing the point cloud data.
+        data: torch.Tensor of shape [T, 2, 24, 3] representing the point cloud data.
+              Each side has 3 body points (arm) and 21 hand points.
+        nan_mask: Optional pre-computed NaN mask to apply. If None, a new mask is created.
         
     Returns:
-        torch.Tensor of shape [T, N', 3] representing the processed point cloud.
+        torch.Tensor representing the processed point cloud, and the NaN mask used.
     """
-    # Extract body and hand points
-    body = data[:, 5:11, :]
-    handl = data[:, -42:-21, :]
-    handr = data[:, -21:, :]
+    # Extract body and hand points for both sides
+    left_body = data[:, 0, :3, :]   # Left arm points
+    left_hand = data[:, 0, 3:, :]   # Left hand points
+    right_body = data[:, 1, :3, :]  # Right arm points
+    right_hand = data[:, 1, 3:, :]  # Right hand points
 
-    # Define body skeleton
-    body_skeleton = torch.tensor([
-        [0, 2], [2, 4],
-        [1, 3], [3, 5],
-        [0, 1]
+    # Define body skeleton for interpolation
+    # Connections within left arm
+    left_skeleton = torch.tensor([
+        [0, 1], [1, 2]
+    ], device=data.device)
+    
+    # Connections within right arm
+    right_skeleton = torch.tensor([
+        [0, 1], [1, 2]
+    ], device=data.device)
+    
+    # Connection between left and right sides
+    cross_skeleton = torch.tensor([
+        [0, 0]  # Connect first point of left arm to first point of right arm
     ], device=data.device)
 
     # Vectorized interpolation of points
@@ -264,13 +295,73 @@ def process_point_cloud(data):
         t_values = t_values.unsqueeze(0).unsqueeze(-1)  # Reshape t_values for broadcasting
         return p1.unsqueeze(1) + (p2 - p1).unsqueeze(1) * t_values
 
-    # Vectorized addition of body points and interpolated points
-    interpolated_points_list = []
-    for i, j in body_skeleton:
-        interpolated_points = interpolate_points_vectorized(body[:, i], body[:, j])
-        interpolated_points_list.append(interpolated_points)
-    interpolated_points = torch.cat(interpolated_points_list, dim=1)
-    all_body_points = torch.cat((body, interpolated_points, handl, handr), dim=1)
-    all_body_points[..., 2] *= 0.6
-    all_body_points[..., 1] -= 0.15
-    return all_body_points
+    # Interpolate points for left arm
+    left_interpolated = []
+    for i, j in left_skeleton:
+        interpolated_points = interpolate_points_vectorized(left_body[:, i], left_body[:, j])
+        left_interpolated.append(interpolated_points)
+    
+    # Interpolate points for right arm
+    right_interpolated = []
+    for i, j in right_skeleton:
+        interpolated_points = interpolate_points_vectorized(right_body[:, i], right_body[:, j])
+        right_interpolated.append(interpolated_points)
+    
+    # Interpolate points between left and right arms
+    cross_interpolated = []
+    for i, j in cross_skeleton:
+        interpolated_points = interpolate_points_vectorized(left_body[:, i], right_body[:, j])
+        cross_interpolated.append(interpolated_points)
+    
+    # Combine all interpolated points
+    interpolated_points = []
+    if left_interpolated:
+        interpolated_points.append(torch.cat(left_interpolated, dim=1))
+    if right_interpolated:
+        interpolated_points.append(torch.cat(right_interpolated, dim=1))
+    if cross_interpolated:
+        interpolated_points.append(torch.cat(cross_interpolated, dim=1))
+    
+    interpolated_points = torch.cat(interpolated_points, dim=1)
+    
+    # Combine all points: body points, interpolated points, and hand points
+    all_points = torch.cat([
+        left_body, right_body, 
+        interpolated_points,
+        left_hand, right_hand
+    ], dim=1)
+    
+    # Apply scaling and offset
+    all_points[..., 2] *= 0.6
+    all_points[..., 1] -= 0.15
+    
+    # Create mask for points with NaN values if not provided
+    if nan_mask is None:
+        nan_mask = ~torch.isnan(all_points).any(dim=-1)  # [T, N]
+    
+    # Vectorized filtering of NaN values
+    batch_size = all_points.shape[0]
+    
+    # If all points are filtered out, return a minimal valid tensor to avoid errors
+    if not nan_mask.any():
+        return torch.zeros((batch_size, 1, 3), device=data.device), nan_mask
+    
+    # Find the maximum number of valid points across batches
+    num_valid_per_batch = nan_mask.sum(dim=1)  # [T]
+    max_valid_points = num_valid_per_batch.max().item()
+    
+    if max_valid_points == 0:
+        return torch.zeros((batch_size, 1, 3), device=data.device), nan_mask
+    
+    # Create output tensor
+    padded_points = torch.zeros((batch_size, max_valid_points, 3), device=data.device)
+    
+    # Use a vectorized approach to filter and reshape
+    for t in range(batch_size):
+        # Get valid points for this batch item
+        valid_count = num_valid_per_batch[t].item()
+        if valid_count > 0:
+            # Extract valid points directly using the mask
+            padded_points[t, :valid_count] = all_points[t, nan_mask[t]]
+    
+    return padded_points, nan_mask

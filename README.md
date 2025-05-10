@@ -94,7 +94,7 @@ The implementation includes two main dataset classes:
    - Processes arm and hand joints
    - Handles 3D point data and velocities
 
-2. `mmWaveSequenceDataset`: For sequence data processing
+2. `CslNewsDataset`: For sequence data processing
    - Supports pose, feature, and pose prediction modes
    - Handles time series data with captions
    - Includes data augmentation and preprocessing

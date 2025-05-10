@@ -7,7 +7,7 @@ data_cfg:
   target: src.data.data_interface.BaseDataInterface
   params:
     cfg:
-      dataset: src.data.dataset.mmWaveSequenceDataset
+      dataset: src.data.dataset.CslNewsDataset
       train_split: 'dataset/csl-news-100/train.json'
       val_split: 'dataset/csl-news-100/val.json'
       test_split: 'dataset/csl-news-100/val.json'
@@ -17,6 +17,7 @@ data_cfg:
         modalities:  # Control which modalities to use
           use_features: false
           use_pred_pose: true
+          use_raw_pose: false
         feature_config:  # Feature modality specific settings
           feature_dim: 512
           feature_dir: "features"

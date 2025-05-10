@@ -15,56 +15,10 @@ import matplotlib.pyplot as plt
 from mmengine.logging import print_log
 from mmpose.apis import inference_topdown, init_model
 from mmpose.registry import VISUALIZERS
-from mmpose.visualization import Pose3dLocalVisualizer
-from src.fmcw.simulator import Simulation
 from scipy.ndimage import gaussian_filter1d
 
 
-def draw_2d_keypoints(frame, keypoints, color=(0, 255, 0), thickness=2):
-    """Draw 2D hand keypoints and connections exactly as MMPose visualizer
-    Args:
-        frame: Input image (H, W, 3)
-        keypoints: Hand keypoints with shape (21, 3)
-        color: BGR color
-        thickness: Line thickness
-    """
-    h, w = frame.shape[:2]
-    
-    # 定义手部骨架连接
-    skeleton = [
-        (0, 5), (5, 9), (9, 13), (13, 17), (17, 0),  # 手掌
-        (0, 1), (1, 2), (2, 3), (3, 4),      # 大拇指
-        (5, 6), (6, 7), (7, 8),              # 食指
-        (9, 10), (10, 11), (11, 12),         # 中指
-        (13, 14), (14, 15), (15, 16),        # 无名指
-        (17, 18), (18, 19), (19, 20)         # 小指
-    ]
-    
-    # 直接使用原始坐标
-    points = keypoints.copy()
-    points[:, 0] = points[:, 0]  # x坐标
-    points[:, 1] = points[:, 1]  # y坐标
-    points = points.astype(np.int32)
-    
-    # 绘制骨架连接
-    for start_idx, end_idx in skeleton:
-        pos1 = tuple(points[start_idx])
-        pos2 = tuple(points[end_idx])
-        
-        # 检查点是否在图像范围内
-        if (0 <= pos1[0] < w and 0 <= pos1[1] < h and 
-            0 <= pos2[0] < w and 0 <= pos2[1] < h):
-            cv2.line(frame, pos1, pos2, color, thickness)
-    
-    # 绘制关键点
-    for point in points:
-        if 0 <= point[0] < w and 0 <= point[1] < h:
-            cv2.circle(frame, tuple(point), radius=3, color=color, thickness=-1)
-    
-    return frame
-
-
-def process_single_image(frame, pose_estimator, visualizer, args):
+def process_single_image(frame, pose_estimator, args):
     """Process single image using RTMPose3D
     """
     h, w = frame.shape[:2]
@@ -75,7 +29,7 @@ def process_single_image(frame, pose_estimator, visualizer, args):
     return pose_results[0] 
 
 
-def process_sequence(args, video_path, pose_estimator, visualizer: Pose3dLocalVisualizer, simulator: Simulation):
+def process_sequence(args, video_path, pose_estimator):
     """Process video sequence using RTMPose3D
     """
 
@@ -109,7 +63,7 @@ def process_sequence(args, video_path, pose_estimator, visualizer: Pose3dLocalVi
     keypoints_all = []
     for frame_idx in tqdm(range(len(frames)), desc='    Processing', ncols=80):
         frame = frames[frame_idx].copy()
-        pose_results = process_single_image(frame, pose_estimator, visualizer, args)
+        pose_results = process_single_image(frame, pose_estimator, args)
         keypoints = pose_results.pred_instances.keypoints[0]
         keypoints_all.append(keypoints)
         
@@ -124,6 +78,14 @@ def process_sequence(args, video_path, pose_estimator, visualizer: Pose3dLocalVi
         keypoints_all[:, :17], # body
         keypoints_all[:, -42:], # hands
     ], axis=1) # [N, 59, 3]
+
+    def process_pose(pose):
+        """Extract arm and hand joints from pose data"""
+        return np.stack([
+            np.concatenate([pose[:, [5,7,9], :], pose[:, -42:-21, :]], axis=-2),
+            np.concatenate([pose[:, [6,8,10], :], pose[:, -21:, :]], axis=-2)
+        ], axis=-3) # [N, 2, 24, 3]
+    keypoints_all = process_pose(keypoints_all) # [N, 2, 24, 3]
     
     # Save results
     save_path = video_path.replace('.mp4', '.npy').replace('videos', 'poses')
@@ -132,7 +94,7 @@ def process_sequence(args, video_path, pose_estimator, visualizer: Pose3dLocalVi
     print(colored(f'    [OK] Results saved to: {save_path}', 'green'))
     
 
-def process_archive(args, archive_id, pose_estimator, visualizer, simulator):
+def process_archive(args, archive_id, pose_estimator):
     """Process a single archive
     """
     base_path = '/root/autodl-tmp/datasets/csl-news'
@@ -170,7 +132,7 @@ def process_archive(args, archive_id, pose_estimator, visualizer, simulator):
             continue
         
         try: 
-            process_sequence(args, video_path, pose_estimator, visualizer, simulator)
+            process_sequence(args, video_path, pose_estimator)
             processed_videos += 1
         except Exception as e:
             print(colored(f'    [ERROR] {os.path.basename(video_path)}: {e}', 'red'))
@@ -197,7 +159,6 @@ def main():
     parser.add_argument('--start', type=int, default=None, help='Start archive number')
     parser.add_argument('--end', type=int, default=None, help='End archive number')
     parser.add_argument('--gpu', type=int, dest='gpu_id', help='GPU ID')
-    # parser.add_argument('--device', default='cuda:0', help='Device for inference')
     parser.add_argument('--kpt-thr', type=float, default=0.3, help='Keypoint threshold')
     args = parser.parse_args()
     
@@ -214,21 +175,13 @@ def main():
     pose_estimator = init_model(pose_config, pose_checkpoint, device=args.device)
     print(colored('Model loaded successfully', 'green'))
     
-    # Initialize visualizer
-    visualizer = VISUALIZERS.build(pose_estimator.cfg.visualizer)
-    visualizer.set_dataset_meta(pose_estimator.dataset_meta)
-    
-    # Initialize simulator
-    simulator = Simulation()
-    simulator.simulator = simulator.simulator.to(args.device)
-    
     # Process each archive
     failed_seq_list = []
     for archive_id in args.id:
         print(colored(f'\nProcessing archive_{archive_id}', 'blue'))
         print(colored('=' * 50, 'blue'))
         
-        success = process_archive(args, archive_id, pose_estimator, visualizer, simulator)
+        success = process_archive(args, archive_id, pose_estimator)
         
         if success:
             print(colored(f'Successfully completed archive_{archive_id}', 'green'))

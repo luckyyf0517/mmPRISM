@@ -7,13 +7,13 @@ data_cfg:
   target: src.data.data_interface.BaseDataInterface
   params:
     cfg:
-      dataset: src.data.dataset.CslNewsDataset
-      train_split: 'dataset/csl-news-100/train.json'
-      val_split: 'dataset/csl-news-100/val.json'
-      test_split: 'dataset/csl-news-100/val.json'
+      dataset: src.data.dataset.CslDailyDataset
+      train_split: 'dataset/csl-daily-demo01/train.json'
+      val_split: 'dataset/csl-daily-demo01/val.json'
+      test_split: 'dataset/csl-daily-demo01/train.json'
       opt: 
-        caption_path: "dataset/CSL_News_Labels_converted.json"
-        max_length: 512
+        annotation_path: 'data/CSL-Daily/sentence_label/csl2020ct_v2.pkl'
+        max_length: 192
         modalities:  # Control which modalities to use
           use_features: true
           use_pred_pose: true

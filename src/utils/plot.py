@@ -9,34 +9,40 @@ import matplotlib.pyplot as plt
 def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=False, draw_skeleton=True):
     fx, fy, cx, cy = camera_intrinsic 
     
-    # 只需要计算相对于相机的位置
+    # Calculate positions relative to camera
     joints_camera = joints - camera_position
     
-    # 投影到图像平面
+    # Project to image plane
     joints_image = joints_camera.copy()
     joints_image[..., 0] = joints_image[..., 0] / joints_image[..., 2] * fx + cx
     joints_image[..., 1] = joints_image[..., 1] / joints_image[..., 2] * fy + cy
-    # 计算深度值用于着色
-    joints_depth = 1 - (joints_camera[..., 2] - joints_camera[:, 2].min()) / (joints_camera[:, 2].max() - joints_camera[:, 2].min())
+    # Calculate depth values for shading
+    valid_joints = ~np.isnan(joints_camera[:, 2])
+    joints_depth = np.zeros_like(joints_camera[:, 2])
+    if valid_joints.any():
+        joints_depth[valid_joints] = 1 - (joints_camera[valid_joints, 2] - joints_camera[valid_joints, 2].min()) / (joints_camera[valid_joints, 2].max() - joints_camera[valid_joints, 2].min())
 
-    # 骨架连接定义
+    # Skeleton connection definitions
     skeleton = [
-        # 手臂骨架 (0,1,2)
+        # Arm skeleton (0,1,2)
         (0, 1), (1, 2),
-        # 手部骨架 (从索引3开始，对应原来的0)
-        (2, 3),  # 手臂末端连接到手掌
-        (3, 8), (8, 12), (12, 16), (16, 20), (20, 3),  # 手掌
-        (3, 4), (4, 5), (5, 6), (6, 7),    # 拇指
-        (8, 9), (9, 10), (10, 11),         # 食指
-        (12, 13), (13, 14), (14, 15),      # 中指
-        (16, 17), (17, 18), (18, 19),      # 无名指
-        (20, 21), (21, 22), (22, 23)       # 小指
+        # Hand skeleton (starting from index 3, corresponding to original 0)
+        (2, 3),  # Arm endpoint connects to palm
+        (3, 8), (8, 12), (12, 16), (16, 20), (20, 3),  # Palm
+        (3, 4), (4, 5), (5, 6), (6, 7),    # Thumb
+        (8, 9), (9, 10), (10, 11),         # Index finger
+        (12, 13), (13, 14), (14, 15),      # Middle finger
+        (16, 17), (17, 18), (18, 19),      # Ring finger
+        (20, 21), (21, 22), (22, 23)       # Pinky finger
     ]
-    
+
     items_to_draw = []
     
     if draw_skeleton:
         for i, j in skeleton:
+            # Skip if either point is NaN
+            if np.isnan(joints_image[i]).any() or np.isnan(joints_image[j]).any():
+                continue
             pt1 = joints_image[i]
             pt2 = joints_image[j]
             items_to_draw.append([
@@ -46,6 +52,9 @@ def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=
             ])
     
     for i in range(len(joints_image)):
+        # Skip if point is NaN
+        if np.isnan(joints_image[i]).any():
+            continue
         pt = joints_image[i]
         color_depth = joints_depth[i]
         # 为手臂关节点使用不同的大小
@@ -57,18 +66,23 @@ def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=
         ])
         
     if boundary:
-        boundary = np.concatenate([joints_camera.min(0), joints_camera.max(0)], 0)
-        boundary_line = get_boundary(boundary)
-        boundary_line[..., 0] = boundary_line[..., 0] / boundary_line[..., 2] * fx + cx
-        boundary_line[..., 1] = boundary_line[..., 1] / boundary_line[..., 2] * fy + cy
-        for line in boundary_line:
-            pt1 = line[0]
-            pt2 = line[1]
-            items_to_draw.append([
-                (pt1[:2].astype(np.int32), pt2[:2].astype(np.int32)), 
-                'boundary', 
-                max(pt1[2], pt2[2])
-            ])
+        valid_joints = ~np.isnan(joints_camera).any(axis=1)
+        if valid_joints.any():
+            boundary = np.concatenate([
+                joints_camera[valid_joints].min(0), 
+                joints_camera[valid_joints].max(0)
+            ], 0)
+            boundary_line = get_boundary(boundary)
+            boundary_line[..., 0] = boundary_line[..., 0] / boundary_line[..., 2] * fx + cx
+            boundary_line[..., 1] = boundary_line[..., 1] / boundary_line[..., 2] * fy + cy
+            for line in boundary_line:
+                pt1 = line[0]
+                pt2 = line[1]
+                items_to_draw.append([
+                    (pt1[:2].astype(np.int32), pt2[:2].astype(np.int32)), 
+                    'boundary', 
+                    max(pt1[2], pt2[2])
+                ])
     
     # sort by z
     items_to_draw.sort(key=lambda x: x[2])

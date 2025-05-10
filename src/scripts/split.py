@@ -10,7 +10,7 @@ from glob import glob
 from termcolor import colored
 
 
-def split_data(raw_data_root, signals_list, subfolder='csl-news-demo01', val_ratio=0.1):
+def split_data(signals_list, subfolder='csl-news-demo01', val_ratio=0.1):
     """
     Split signal data into train and validation sets using deterministic hash-based splitting.
     This ensures that the same file will always be assigned to the same split regardless of execution order.
@@ -52,7 +52,7 @@ def split_data(raw_data_root, signals_list, subfolder='csl-news-demo01', val_rat
 if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--signals_root', type=str, default='/root/autodl-tmp/datasets/csl-news/poses',
+    parser.add_argument('--signals_root', type=str, default='/root/autodl-tmp/datasets/csl-news/poses/archive_*/',
                        help='Root directory containing signal data')
     parser.add_argument('--subfolder', type=str, default='csl-news-demo01',
                        help='Subfolder name for saving split files')
@@ -61,15 +61,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Collect all signal files
-    signals_list = sorted(glob(os.path.join(args.signals_root, 'archive_*/*.npy')))
+    signals_list = sorted(glob(os.path.join(args.signals_root, '*.npy')))
     
-    # signals_list_ = []
-    # for signal_path in signals_list:
-    #     if not os.path.exists(signal_path.replace('poses', 'pred_poses')):
-    #         signals_list_.append(signal_path)
-    # signals_list = signals_list_
+    signals_list_ = []
+    for signal_path in signals_list:
+        if not os.path.exists(signal_path.replace('poses', 'pred_poses')):
+            signals_list_.append(signal_path)
+    signals_list = signals_list_
     
     print(colored(f'Total number of signals: {len(signals_list)}', 'green'))
     
     # Perform data splitting
-    split_data(args.signals_root, signals_list, args.subfolder, args.val_ratio)
+    split_data(signals_list, args.subfolder, args.val_ratio)

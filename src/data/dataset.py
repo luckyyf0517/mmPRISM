@@ -39,21 +39,17 @@ class mmSingleImageDataset(BaseDataset):
         super().__init__(opt, split_path)
         self.mode = opt.get('mode', 'pose')  # 'pose' or 'feature'
     
-    def process_pose(self, pose):
-        """Extract arm and hand joints from pose data"""
-        return np.stack([
-            np.concatenate([pose[[5,7,9], :], pose[-42:-21, :]], axis=0),
-            np.concatenate([pose[[6,8,10], :], pose[-21:, :]], axis=0)
-        ], axis=-3)
-    
     def __getitem__(self, index):
         id, pose_path = list(self.data_dict.items())[index]
-        pose = np.load(pose_path)  # (T, 59, 3)
+        pose = np.load(pose_path)  # (T, 2, 24, 3)
         
         # Randomly select a frame
         frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
-        points_3d = pose[frame_idx]  # [17+21+21, 3]
-        joints = self.process_pose(points_3d)  # (2, 24, 3)
+        joints = pose[frame_idx]  # (2, 24, 3)
+
+        # todo: scale
+        if 'Daily' in pose_path:
+            joints = joints * 0.5 + np.array([0.0, -0.2, 0.0])
         
         if self.mode == 'feature':
             # Load pre-computed features
@@ -66,15 +62,14 @@ class mmSingleImageDataset(BaseDataset):
                 'features': features,  # (feature_dim)
             }
         else:
-            velocities_3d = (pose[frame_idx+1] - pose[frame_idx]) * 30
+            velocities = (pose[frame_idx+1] - pose[frame_idx]) * 30
             return {
                 'id': id, 
                 'joints': joints,  # (2, 24, 3)
-                'points_3d': points_3d,  # (57, 3)
-                'velocities_3d': velocities_3d,  # (57, 3)
+                'velocities': velocities,  # (2, 24, 3)
             }
 
-class mmWaveSequenceDataset(BaseDataset):
+class CslNewsDataset(BaseDataset):
     """Dataset for millimeter wave time series data with captions"""
     
     def __init__(self, opt, split_path=None):
@@ -121,8 +116,14 @@ class mmWaveSequenceDataset(BaseDataset):
     
     def load_raw_pose(self, pose_path):
         """Load raw pose data and compute velocities"""
-        pose = np.load(pose_path)  # (T, 59, 3)
-        velocities = pose[1:] - pose[:-1]
+        pose = np.load(pose_path)  # (T, 2, 24, 3)
+        velocities = (pose[1:] - pose[:-1]) * 30
+
+        # todo: scale 
+        if 'Daily' in pose_path:
+            pose = pose * 0.5 + np.array([0.0, -0.2, 0.0])
+            velocities = velocities * 0.5
+
         return pose[:-1], velocities
     
     def __getitem__(self, index):
@@ -150,13 +151,64 @@ class mmWaveSequenceDataset(BaseDataset):
         
         # Load raw pose data if enabled
         if self.modalities['use_raw_pose']:
-            points_3d, velocities_3d = self.load_raw_pose(data_path)
-            valid_length = min(valid_length, points_3d.shape[0])
-            points_3d = self.pad_sequence(points_3d, valid_length, points_3d.shape[1:])
-            velocities_3d = self.pad_sequence(velocities_3d, valid_length, velocities_3d.shape[1:])
-            output_dict['points_3d'] = torch.from_numpy(points_3d).float()
-            output_dict['velocities_3d'] = torch.from_numpy(velocities_3d).float()
+            joints, velocities = self.load_raw_pose(data_path)
+            valid_length = min(valid_length, joints.shape[0])
+            joints = self.pad_sequence(joints, valid_length, joints.shape[1:])
+            velocities = self.pad_sequence(velocities, valid_length, velocities.shape[1:])
+            output_dict['joints'] = torch.from_numpy(joints).float()
+            output_dict['velocities'] = torch.from_numpy(velocities).float()
         
         output_dict['valid_length'] = valid_length
         output_dict['path'] = data_path
         return output_dict
+
+class CslDailyDataset(CslNewsDataset):
+    """Dataset for CSL-Daily dataset with sentence annotations"""
+    
+    def __init__(self, opt, split_path=None):
+        # Change default caption_path to annotation_path
+        if 'annotation_path' in opt:
+            opt['caption_path'] = opt['annotation_path']
+        super().__init__(opt, split_path)
+    
+    def _load_captions(self, caption_path):
+        """Override _load_captions to load sentence annotations from pickle file"""
+        if not os.path.exists(caption_path):
+            raise FileNotFoundError(f"Annotation file not found: {caption_path}")
+            
+        import pickle
+        with open(caption_path, 'rb') as f:
+            data = pickle.load(f)
+            
+        # Create mapping from video ID to annotation
+        caption_dict = {}
+        for item in data['info']:
+            # Construct video ID: name_signer_time
+            video_id = item['name']
+            # Use character-level annotation as caption
+            caption = ''.join(item['label_char'])
+            caption_dict[video_id] = caption
+            
+        return caption_dict
+
+if __name__ == '__main__':
+    # Test configuration
+    opt = {
+        'max_length': 192,
+        'modalities': {
+            'use_features': False,
+            'use_pred_pose': False,
+            'use_raw_pose': True,
+        },
+        'annotation_path': 'data/CSL-Daily/sentence_label/csl2020ct_v2.pkl',
+    }
+    
+    # Initialize dataset
+    dataset = CslDailyDataset(opt, split_path='dataset/csl-daily-demo01/val.json')
+    print(f"Dataset size: {len(dataset)}")
+    
+    # Find maximum valid length in the dataset
+    max_length = 0
+    for i in range(len(dataset)):
+        sample = dataset[i]
+        print(sample['caption'])
