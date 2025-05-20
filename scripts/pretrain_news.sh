@@ -3,9 +3,9 @@ deepspeed --include localhost:0,1 \
     run_model.py \
     --config config/omnihand_base.yaml \
     --batch-size 32 \
-    --max-epochs 10 \
+    --max-epochs 15 \
     --gradient-accumulation-steps 1 \
-    --version "omnihand-0507-no-learnable-weights" \
+    --version "omnihand-0520" \
     --dtype fp32 \
     --zero_stage 2 \
     --reset

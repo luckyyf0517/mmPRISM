@@ -11,10 +11,31 @@ from collections import defaultdict
 from torch.utils.data import Dataset, DataLoader
 from scipy.ndimage import gaussian_filter1d
 
+
+data_stats = {
+    'csl-news/poses': {
+        'mean': np.array([0.00681697, 0.11669894, -0.30188322]),
+        'std': np.array([0.10176238, 0.11198849, 0.11414795]),
+    },
+    'csl-news/pred_poses': {
+        'mean': np.array([]),
+        'std': np.array([]),
+    },
+    'csl-daily/poses': {
+        'mean': np.array([0.02832265, 0.37857532, -0.21782798]),
+        'std': np.array([0.32808729, 0.3750018, 0.12171327]),
+    },
+    'csl-daily/pred_poses': {
+        'mean': np.array([0.02215466, 0.00844491, -0.11399521]),
+        'std': np.array([0.16437937, 0.19462036, 0.05043625]),
+    },
+}
+
 class BaseDataset(Dataset):
     """Base dataset class with common functionality"""
     def __init__(self, opt=None, split_path=None):
         self.opt = opt
+        self.norm_pose = opt.get('norm_pose', False)
         self.max_length = opt.get('max_length', 256)
         
         # Load data paths
@@ -24,43 +45,51 @@ class BaseDataset(Dataset):
     def __len__(self):
         return len(self.data_dict)
     
-    def pad_sequence(self, sequence, pad_shape):
-        """Pad or truncate sequences to max_length"""
-        valid_length = sequence.shape[0]
-        if valid_length > self.max_length:
-            # If sequence is longer than max_length, randomly sample a segment
-            valid_indices = sorted(random.sample(range(valid_length), k=self.max_length))
-            valid_length = self.max_length
-            return sequence[valid_indices], valid_length
-        else:
-            pad_width = tuple([(0, self.max_length - valid_length)] + 
-                            [(0, 0) for _ in range(len(pad_shape))])
-            return np.pad(sequence, pad_width, mode='constant'), valid_length
+    def load_and_normalize_pose(self, pose_path):
+        # load pose
+        pose = np.load(pose_path)  # (T, 2, 24, 3)
+        pose[np.isnan(pose)] = 0.0 
+
+        # normalize pose
+        if self.norm_pose:
+            if 'csl-daily' in pose_path:
+                if '/poses' in pose_path:
+                    mean = data_stats['csl-daily/poses']['mean']
+                    std = data_stats['csl-daily/poses']['std']
+                elif '/pred_poses' in pose_path:
+                    mean = data_stats['csl-daily/pred_poses']['mean']
+                    std = data_stats['csl-daily/pred_poses']['std']
+            elif 'csl-news' in pose_path:
+                if '/poses' in pose_path:
+                    mean = data_stats['csl-news/poses']['mean']
+                    std = data_stats['csl-news/poses']['std']
+                elif '/pred_poses' in pose_path:
+                    mean = data_stats['csl-news/pred_poses']['mean']
+                    std = data_stats['csl-news/pred_poses']['std']
+            else: 
+                raise ValueError(f"Unknown pose path: {pose_path}")
+            pose = (pose - mean) / std * 0.1
+        return pose
     
-class mmSingleImageDataset(BaseDataset):
+class SingleFrameDataset(BaseDataset):
     """Dataset for single frame pose/feature data"""
     
     def __init__(self, opt=None, split_path=None):
         super().__init__(opt, split_path)
-        self.mode = opt.get('mode', 'pose')  # 'pose' or 'feature'
+        self.load_feature = opt.get('load_feature', False)
     
     def __getitem__(self, index):
         id, pose_path = list(self.data_dict.items())[index]
-        pose = np.load(pose_path)  # (T, 2, 24, 3)
-        
+        pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
+
         # Randomly select a frame
         frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
         joints = pose[frame_idx]  # (2, 24, 3)
 
-        # todo: scale
-        if 'daily' in pose_path:
-            joints = joints * 0.5 + np.array([0.0, -0.2, 0.0])
-        
-        if self.mode == 'feature':
+        if self.load_feature:
             # Load pre-computed features
             feature_path = pose_path.replace('poses', 'features')
             features = np.load(feature_path)[frame_idx]  # (feature_dim)
-            
             return {
                 'id': id,
                 'joints': joints,  # (2, 24, 3)
@@ -101,6 +130,19 @@ class SequenceBaseDataset(BaseDataset):
         # Load captions/annotations
         caption_path = opt.get('caption_path', 'dataset/CSL_News_Labels_converted.json')
         self.caption_dict = self._load_captions(caption_path)
+
+    def pad_sequence(self, sequence, pad_shape):
+        """Pad or truncate sequences to max_length"""
+        valid_length = sequence.shape[0]
+        if valid_length > self.max_length:
+            # If sequence is longer than max_length, randomly sample a segment
+            valid_indices = sorted(random.sample(range(valid_length), k=self.max_length))
+            valid_length = self.max_length
+            return sequence[valid_indices], valid_length
+        else:
+            pad_width = tuple([(0, self.max_length - valid_length)] + 
+                            [(0, 0) for _ in range(len(pad_shape))])
+            return np.pad(sequence, pad_width, mode='constant'), valid_length
     
     def load_features(self, pose_path):
         """Load pre-computed features"""
@@ -110,26 +152,14 @@ class SequenceBaseDataset(BaseDataset):
     def load_pred_pose(self, pose_path):
         """Load predicted pose data"""
         pred_pose_path = pose_path.replace('poses', self.pose_config['pose_dir'])
-
-        # # randomly use the gt pose
-        # if self.pose_config['pose_dir'] == 'pred_poses':
-        #     if random.random() < 0.5:
-        #         pred_pose_path = pose_path.replace('pred_poses', 'poses')
-
-        pose = np.load(pred_pose_path)  # (T, 2, 24, 3)
-        pose[np.isnan(pose)] = 0.0 
-
-        # todo: scale
-        if 'csl-daily/poses' in pose_path:
-            pose = pose * 0.5 + np.array([0.0, -0.2, 0.0])
+        pose = self.load_and_normalize_pose(pred_pose_path) # (T, 2, 24, 3)
         if 'pred_poses' in pose_path:
             pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
-
         return pose
     
     def load_raw_pose(self, pose_path): 
         """Load raw pose data and compute velocities"""
-        pose = np.load(pose_path)  # (T, 2, 24, 3)
+        pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
         velocities = (pose[1:] - pose[:-1]) * 30
         return pose[:-1], velocities
     
@@ -204,27 +234,3 @@ class CslDailyDataset(SequenceBaseDataset):
             caption_dict[video_id] = caption
             
         return caption_dict
-
-if __name__ == '__main__':
-    # Test configuration
-    opt = {
-        'max_length': 256,
-        'modalities': {
-            'use_features': False,
-            'use_pred_pose': False,
-            'use_raw_pose': True,
-        },
-        'annotation_path': 'data/CSL-Daily/sentence_label/csl2020ct_v2.pkl',
-    }
-    
-    # Initialize dataset
-    dataset = CslDailyDataset(opt, split_path='dataset/csl-daily-demo01/all.json')
-    print(f"Dataset size: {len(dataset)}")
-    
-    # Find maximum valid length in the dataset
-    max_length = 0
-    for i in tqdm(range(len(dataset))):
-        sample = dataset[i]
-        print(sample['valid_length'])
-    #     max_length = max(max_length, sample['valid_length'])
-    # print(f"Maximum valid length: {max_length}")

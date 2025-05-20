@@ -7,12 +7,13 @@ data_cfg:
   target: src.data.data_interface.BaseDataInterface
   params:
     cfg: 
-      dataset: src.data.dataset.mmSingleImageDataset
-      train_split: 'dataset/csl-daily-demo01/train.json'
-      val_split: 'dataset/csl-daily-demo01/val.json'
-      test_split: 'dataset/csl-daily-demo01/val.json'
+      dataset: src.data.dataset.SingleFrameDataset
+      train_split: 'dataset/csl-daily/train.json'
+      val_split: 'dataset/csl-daily/val.json'
+      test_split: 'dataset/csl-daily/val.json'
       opt: 
-        mode: 'pose'
+        load_feature: false
+        norm_pose: true
       num_workers: 4
 
 # Model configuration

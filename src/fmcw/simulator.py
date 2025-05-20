@@ -331,9 +331,8 @@ def process_point_cloud(data, nan_mask=None):
         left_hand, right_hand
     ], dim=1)
     
-    # Apply scaling and offset
-    all_points[..., 2] *= 0.6
-    all_points[..., 1] -= 0.15
+    # # Apply scaling and offset
+    # all_points *= 0.1
     
     # Create mask for points with NaN values if not provided
     if nan_mask is None:

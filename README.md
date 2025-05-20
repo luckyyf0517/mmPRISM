@@ -89,7 +89,7 @@ pip install -r requirements.txt
 
 The implementation includes two main dataset classes:
 
-1. `mmSingleImageDataset`: For single frame processing
+1. `SingleFrameDataset`: For single frame processing
    - Supports pose and feature extraction modes
    - Processes arm and hand joints
    - Handles 3D point data and velocities

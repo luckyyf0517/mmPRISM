@@ -7,7 +7,7 @@ data_cfg:
   target: src.data.data_interface.BaseDataInterface
   params:
     cfg: 
-      dataset: src.data.dataset.mmSingleImageDataset
+      dataset: src.data.dataset.SingleFrameDataset
       train_split: 'dataset/csl-news-100/train.json'
       val_split: 'dataset/csl-news-100/val.json'
       test_split: 'dataset/csl-news-100/val.json'
