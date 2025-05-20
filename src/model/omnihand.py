@@ -93,7 +93,7 @@ class OmniHand(LightningModule):
         loss_dict = self.compute_loss(results, batch)
         # Logging
         self._log_info(loss_dict, phase)
-        self._log_progress(batch_idx, loss_dict)
+        # self._log_progress(batch_idx, loss_dict)
         return loss_dict['loss']  
             
     def compute_loss(self, results, batch):

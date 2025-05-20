@@ -5,8 +5,8 @@ deepspeed --include localhost:0,1 \
     --batch-size 8 \
     --max-epochs 15 \
     --gradient-accumulation-steps 8 \
-    --version "wavellm_mt5_daily_pose_0518_v1" \
+    --version "wavellm_mt5_daily_pose_0519_v1" \
     --dtype bf16 \
     --zero_stage 2 \
-    --resume-checkpoint "log/peft_finetune/wavellm_mt5_pose_0518/last.ckpt"
+    --resume-checkpoint "log/peft_finetune/wavellm_mt5_pose_0519_v1/last.ckpt"
     # --reset
