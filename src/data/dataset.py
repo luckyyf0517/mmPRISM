@@ -9,12 +9,13 @@ import random
 from tqdm import tqdm
 from collections import defaultdict
 from torch.utils.data import Dataset, DataLoader
+from scipy.ndimage import gaussian_filter1d
 
 class BaseDataset(Dataset):
     """Base dataset class with common functionality"""
     def __init__(self, opt=None, split_path=None):
         self.opt = opt
-        self.max_length = opt.get('max_length', 192)
+        self.max_length = opt.get('max_length', 256)
         
         # Load data paths
         with open(split_path, 'r') as f:
@@ -23,15 +24,19 @@ class BaseDataset(Dataset):
     def __len__(self):
         return len(self.data_dict)
     
-    def pad_sequence(self, sequence, valid_length, pad_shape):
+    def pad_sequence(self, sequence, pad_shape):
         """Pad or truncate sequences to max_length"""
+        valid_length = sequence.shape[0]
         if valid_length > self.max_length:
-            return sequence[:self.max_length]
+            # If sequence is longer than max_length, randomly sample a segment
+            valid_indices = sorted(random.sample(range(valid_length), k=self.max_length))
+            valid_length = self.max_length
+            return sequence[valid_indices], valid_length
         else:
             pad_width = tuple([(0, self.max_length - valid_length)] + 
                             [(0, 0) for _ in range(len(pad_shape))])
-            return np.pad(sequence, pad_width, mode='constant')
-
+            return np.pad(sequence, pad_width, mode='constant'), valid_length
+    
 class mmSingleImageDataset(BaseDataset):
     """Dataset for single frame pose/feature data"""
     
@@ -48,7 +53,7 @@ class mmSingleImageDataset(BaseDataset):
         joints = pose[frame_idx]  # (2, 24, 3)
 
         # todo: scale
-        if 'Daily' in pose_path:
+        if 'daily' in pose_path:
             joints = joints * 0.5 + np.array([0.0, -0.2, 0.0])
         
         if self.mode == 'feature':
@@ -69,8 +74,8 @@ class mmSingleImageDataset(BaseDataset):
                 'velocities': velocities,  # (2, 24, 3)
             }
 
-class CslNewsDataset(BaseDataset):
-    """Dataset for millimeter wave time series data with captions"""
+class SequenceBaseDataset(BaseDataset):
+    """Base class for sequence-based datasets with common functionality"""
     
     def __init__(self, opt, split_path=None):
         super().__init__(opt, split_path)
@@ -93,16 +98,9 @@ class CslNewsDataset(BaseDataset):
         if not any(self.modalities.values()):
             raise ValueError("At least one modality must be enabled")
             
-        # Load captions if available
+        # Load captions/annotations
         caption_path = opt.get('caption_path', 'dataset/CSL_News_Labels_converted.json')
         self.caption_dict = self._load_captions(caption_path)
-    
-    def _load_captions(self, caption_path):
-        """Load caption data from file"""
-        if os.path.exists(caption_path):
-            with open(caption_path, 'r') as f:
-                return json.load(f)
-        return {id: "" for id in self.data_dict.keys()}
     
     def load_features(self, pose_path):
         """Load pre-computed features"""
@@ -112,18 +110,27 @@ class CslNewsDataset(BaseDataset):
     def load_pred_pose(self, pose_path):
         """Load predicted pose data"""
         pred_pose_path = pose_path.replace('poses', self.pose_config['pose_dir'])
-        return np.load(pred_pose_path)  # (T, 2, 24, 3)
+
+        # # randomly use the gt pose
+        # if self.pose_config['pose_dir'] == 'pred_poses':
+        #     if random.random() < 0.5:
+        #         pred_pose_path = pose_path.replace('pred_poses', 'poses')
+
+        pose = np.load(pred_pose_path)  # (T, 2, 24, 3)
+        pose[np.isnan(pose)] = 0.0 
+
+        # todo: scale
+        if 'csl-daily/poses' in pose_path:
+            pose = pose * 0.5 + np.array([0.0, -0.2, 0.0])
+        if 'pred_poses' in pose_path:
+            pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
+
+        return pose
     
-    def load_raw_pose(self, pose_path):
+    def load_raw_pose(self, pose_path): 
         """Load raw pose data and compute velocities"""
         pose = np.load(pose_path)  # (T, 2, 24, 3)
         velocities = (pose[1:] - pose[:-1]) * 30
-
-        # todo: scale 
-        if 'Daily' in pose_path:
-            pose = pose * 0.5 + np.array([0.0, -0.2, 0.0])
-            velocities = velocities * 0.5
-
         return pose[:-1], velocities
     
     def __getitem__(self, index):
@@ -132,29 +139,24 @@ class CslNewsDataset(BaseDataset):
             'id': id,
             'caption': self.caption_dict.get(id, "")
         }
-        
-        valid_length = self.max_length
-        
+                
         # Load features if enabled
         if self.modalities['use_features']:
             features = self.load_features(data_path)
-            valid_length = min(valid_length, features.shape[0])
-            features = self.pad_sequence(features, valid_length, features.shape[1:])
+            features, valid_length = self.pad_sequence(features, features.shape[1:])
             output_dict['features'] = torch.from_numpy(features).float()
         
         # Load predicted poses if enabled
         if self.modalities['use_pred_pose']:
             pred_pose = self.load_pred_pose(data_path)
-            valid_length = min(valid_length, pred_pose.shape[0])
-            pred_pose = self.pad_sequence(pred_pose, valid_length, pred_pose.shape[1:])
+            pred_pose, valid_length = self.pad_sequence(pred_pose, pred_pose.shape[1:])
             output_dict['joints'] = torch.from_numpy(pred_pose).float()
         
         # Load raw pose data if enabled
         if self.modalities['use_raw_pose']:
             joints, velocities = self.load_raw_pose(data_path)
-            valid_length = min(valid_length, joints.shape[0])
-            joints = self.pad_sequence(joints, valid_length, joints.shape[1:])
-            velocities = self.pad_sequence(velocities, valid_length, velocities.shape[1:])
+            joints, _ = self.pad_sequence(joints, joints.shape[1:])
+            velocities, valid_length = self.pad_sequence(velocities, velocities.shape[1:])
             output_dict['joints'] = torch.from_numpy(joints).float()
             output_dict['velocities'] = torch.from_numpy(velocities).float()
         
@@ -162,7 +164,19 @@ class CslNewsDataset(BaseDataset):
         output_dict['path'] = data_path
         return output_dict
 
-class CslDailyDataset(CslNewsDataset):
+class CslNewsDataset(SequenceBaseDataset):
+    """Dataset for CSL-News dataset"""
+    def __init__(self, opt, split_path=None):
+        super().__init__(opt, split_path)
+    
+    def _load_captions(self, caption_path):
+        """Load caption/annotation data from file"""
+        if os.path.exists(caption_path):
+            with open(caption_path, 'r') as f:
+                return json.load(f)
+        return {id: "" for id in self.data_dict.keys()}
+
+class CslDailyDataset(SequenceBaseDataset):
     """Dataset for CSL-Daily dataset with sentence annotations"""
     
     def __init__(self, opt, split_path=None):
@@ -194,7 +208,7 @@ class CslDailyDataset(CslNewsDataset):
 if __name__ == '__main__':
     # Test configuration
     opt = {
-        'max_length': 192,
+        'max_length': 256,
         'modalities': {
             'use_features': False,
             'use_pred_pose': False,
@@ -204,11 +218,13 @@ if __name__ == '__main__':
     }
     
     # Initialize dataset
-    dataset = CslDailyDataset(opt, split_path='dataset/csl-daily-demo01/val.json')
+    dataset = CslDailyDataset(opt, split_path='dataset/csl-daily-demo01/all.json')
     print(f"Dataset size: {len(dataset)}")
     
     # Find maximum valid length in the dataset
     max_length = 0
-    for i in range(len(dataset)):
+    for i in tqdm(range(len(dataset))):
         sample = dataset[i]
-        print(sample['caption'])
+        print(sample['valid_length'])
+    #     max_length = max(max_length, sample['valid_length'])
+    # print(f"Maximum valid length: {max_length}")

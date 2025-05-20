@@ -97,18 +97,18 @@ class Simulation(nn.Module):
         vel = path_dict['vel']  # [max_num_paths]
         tau_velocity = vel * 2 / 2.99792458e8  # [max_num_paths]
         time_steps = self.time_steps[:, None, None]  # [num_chirps, 1]
-        # [num_chirps, num_rx, 1, max_num_paths]
+        # tau_chirp: [num_chirps, num_rx, 1, max_num_paths]
         tau_chirp = tau_velocity * time_steps.to(a.device)  
         tau_chirp = tau.unsqueeze(0) + tau_chirp
         tau_chirp = tau_chirp[:, :, None, :] 
-        # [1, 1, num_samples, 1]
+        # frequencies: [1, 1, num_samples, 1]
         frequencies = self.fs[None, None, :, None].to(a.device)
-        # [num_chirps, num_rx, num_samples, max_num_paths]
+        # ft_phase: [num_chirps, num_rx, num_samples, max_num_paths]
         ft_phase = 2 * np.pi * (frequencies + self.start_freq) * tau_chirp
         ft_phase %= (2 * np.pi)
-        # [1, num_rx, 1, max_num_paths]
+        # a: [1, num_rx, 1, max_num_paths]
         a = a[None, :, None, :]
-        # [num_chirps, num_rx, num_samples]
+        # radar_frame: [num_chirps, num_rx, num_samples]
         if save_cuda_memory: 
             a = a.to(torch.float16)
             ft_phase = ft_phase.to(torch.float16)

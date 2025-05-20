@@ -28,10 +28,10 @@ class FeatureExtractionOmniHand(OmniHand):
         feature_path = path.replace('poses', 'features')
         pose_path = path.replace('poses', 'pred_poses')
         
-        # Check if both files already exist
-        if os.path.exists(feature_path) and os.path.exists(pose_path):
-            self.skipped_count += 1
-            return
+        # # Check if both files already exist
+        # if os.path.exists(feature_path) and os.path.exists(pose_path):
+        #     self.skipped_count += 1
+        #     return
         
         # Process features in time batches
         features = self.process_time_batch(points_t, velocities_t)
@@ -91,8 +91,8 @@ def main():
         data_cfg.params.cfg.batch_size = 1
         data_cfg.params.cfg.test_split = 'dataset/csl-daily-demo01/all.json'
     data_cfg.params.cfg.opt = {
-        "annotation_path": 'data/CSL-Daily/sentence_label/csl2020ct_v2.pkl',
-        "max_length": 192,
+        "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
+        "max_length": 384,
         "modalities": {
             "use_features": False,
             "use_pred_pose": False,

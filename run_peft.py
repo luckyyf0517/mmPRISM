@@ -29,6 +29,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.strategies import DeepSpeedStrategy
+from deepspeed.utils.zero_to_fp32 import load_state_dict_from_zero_checkpoint
 
 from src.utils.io import load_yaml
 from src.utils.tools import instantiate_from_config
@@ -124,8 +125,10 @@ def main():
             dirpath=os.path.join(cfg.log_dir, args.version),
             filename="model-epoch-{epoch:02d}",
             auto_insert_metric_name=False,
+            enable_version_counter=False,
             every_n_epochs=5,
             save_top_k=-1,
+            save_weights_only=True,
             save_last=True
         ),
         LearningRateMonitor(logging_interval="step")
@@ -168,14 +171,16 @@ def main():
         accumulate_grad_batches=args.gradient_accumulation_steps,
         # limit_train_batches=10,  
         # limit_val_batches=10, 
-        limit_test_batches=10 
+        # limit_test_batches=10 
     )
     
     # Train model
+    if args.resume_checkpoint is not None:
+        model = load_state_dict_from_zero_checkpoint(model, args.resume_checkpoint)
     if not args.test:
-        trainer.fit(model, datamodule=data, ckpt_path=args.resume_checkpoint)
+        trainer.fit(model, datamodule=data)
     else:
-        trainer.test(model, datamodule=data, ckpt_path=args.resume_checkpoint)
+        trainer.test(model, datamodule=data)
     
 
 if __name__ == '__main__':

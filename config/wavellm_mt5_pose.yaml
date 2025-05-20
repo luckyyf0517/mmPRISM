@@ -8,19 +8,16 @@ data_cfg:
   params:
     cfg:
       dataset: src.data.dataset.CslNewsDataset
-      train_split: 'dataset/csl-news-100/train.json'
-      val_split: 'dataset/csl-news-100/val.json'
-      test_split: 'dataset/csl-news-100/val.json'
+      train_split: 'dataset/csl-news-200/train.json'
+      val_split: 'dataset/csl-news-200/val.json'
+      test_split: 'dataset/csl-news-200/val.json'
       opt: 
         caption_path: "dataset/CSL_News_Labels_converted.json"
-        max_length: 512
+        max_length: 256
         modalities:  # Control which modalities to use
           use_features: false
           use_pred_pose: true
           use_raw_pose: false
-        feature_config:  # Feature modality specific settings
-          feature_dim: 512
-          feature_dir: "features"
         pose_config:  # Pose modality specific settings
           pose_dir: "pred_poses"
       num_workers: 4
@@ -32,24 +29,23 @@ model_cfg:
     cfg:
       # LLM configuration
       model_type: "mt5"
-      conv_type: "simple" # "role" or "simple"
       model:
         model_path: "huggingface/mt5-pretrained"
-        mm_input_dim: 768  
         model_max_length: 2048
         
-        wave_start_token: "<wave>"
-        wave_end_token: "</wave>"
-        wave_patch_token: "<wave_patch>"
-      
       # PEFT configuration
       use_peft: false
       fix_llm: false
-      
+      peft_config:
+        r: 16
+        lora_alpha: 32
+        target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
+        lora_dropout: 0.05
+        bias: "none"
+
       # Training configuration
       training:
-        max_epochs: 10
-        learning_rate: 5.0e-4
+        learning_rate: 3.0e-4
         weight_decay: 1.0e-4
         warmup_steps: 100
       

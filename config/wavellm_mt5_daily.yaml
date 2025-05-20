@@ -8,12 +8,12 @@ data_cfg:
   params:
     cfg:
       dataset: src.data.dataset.CslDailyDataset
-      train_split: 'dataset/csl-daily-demo01/train.json'
-      val_split: 'dataset/csl-daily-demo01/val.json'
-      test_split: 'dataset/csl-daily-demo01/train.json'
+      train_split: 'dataset/csl-daily/train.json'
+      val_split: 'dataset/csl-daily/val.json'
+      test_split: 'dataset/csl-daily/val.json'
       opt: 
-        annotation_path: 'data/CSL-Daily/sentence_label/csl2020ct_v2.pkl'
-        max_length: 192
+        annotation_path: 'data/csl-daily/sentence_label/csl2020ct_v2.pkl'
+        max_length: 256
         modalities:  # Control which modalities to use
           use_features: true
           use_pred_pose: true
@@ -32,24 +32,23 @@ model_cfg:
     cfg:
       # LLM configuration
       model_type: "mt5"
-      conv_type: "simple" # "role" or "simple"
       model:
         model_path: "huggingface/mt5-pretrained"
-        mm_input_dim: 1280  
         model_max_length: 2048
         
-        wave_start_token: "<wave>"
-        wave_end_token: "</wave>"
-        wave_patch_token: "<wave_patch>"
-      
       # PEFT configuration
       use_peft: false
       fix_llm: false
-      
+      peft_config:
+        r: 16
+        lora_alpha: 32
+        target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
+        lora_dropout: 0.05
+        bias: "none"
+
       # Training configuration
       training:
-        max_epochs: 10
-        learning_rate: 5.0e-4
+        learning_rate: 8.0e-4
         weight_decay: 1.0e-4
         warmup_steps: 100
       

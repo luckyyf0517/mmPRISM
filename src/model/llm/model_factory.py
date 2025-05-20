@@ -5,39 +5,73 @@ from src.model.llm.mt5_model import MT5ForConditionalGeneration
 from easydict import EasyDict
 import os
 import torch
-from transformers import AutoConfig, AutoTokenizer
+from transformers import AutoConfig, AutoTokenizer, MT5Tokenizer
 from termcolor import colored
 
 class ModelFactory:
-    """Factory class for creating different models"""
+    """Factory class for creating different types of models and tokenizers"""
     
     MODEL_TYPES = {
         'phi3': Phi3ForCausalLM,
         'mt5': MT5ForConditionalGeneration,
     }
     
-    @classmethod
-    def create_tokenizer(cls, config: EasyDict):
+    @staticmethod
+    def create_model(model_type, model_config):
         """
-        Create a tokenizer based on configuration
-        
+        Create a model instance
         Args:
-            config: Configuration containing model_path and other settings
-            
+            model_type: Model type, e.g., "mt5"
+            model_config: Model configuration
         Returns:
-            Created tokenizer instance
+            Model instance
         """
-        print(colored(f"[ModelFactory] Creating tokenizer from: {config.model_path}", "blue"))
+        if model_type.lower() == "mt5":
+            # Get the pre-trained model path
+            model_path = model_config.get("model_path", "google/mt5-base")
+            
+            # Load the pre-trained model
+            if os.path.exists(model_path):
+                print(f"Loading model from local: {model_path}")
+                model = MT5ForConditionalGeneration.from_pretrained(model_path)
+            else:
+                print(f"Loading model from Hugging Face: {model_path}")
+                model = MT5ForConditionalGeneration.from_pretrained(model_path)
+            
+            return model
+        else:
+            raise ValueError(f"Unsupported model type: {model_type}")
+    
+    @staticmethod
+    def create_tokenizer(model_config):
+        """
+        Create a tokenizer instance
+        Args:
+            model_config: Model configuration
+        Returns:
+            Tokenizer instance
+        """
+        # Get the pre-trained model path
+        model_path = model_config.get("model_path", "google/mt5-base")
         
-        tokenizer = AutoTokenizer.from_pretrained(
-            config.model_path,
-            cache_dir=config.get('cache_dir'),
-            model_max_length=config.get('model_max_length', 2048),
-            padding_side="right",
-            use_fast=True,
-        )
+        # Get the model's maximum length configuration
+        model_max_length = model_config.get("model_max_length", 2048)
         
-        print(colored("[ModelFactory] Tokenizer creation completed", "green"))
+        # Load the tokenizer
+        if "mt5" in model_path.lower():
+            tokenizer = MT5Tokenizer.from_pretrained(
+                model_path,
+                model_max_length=model_max_length,
+                legacy=False
+            )
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path,
+                model_max_length=model_max_length,
+                padding_side="right",
+                use_fast=False
+            )
+            
         return tokenizer
 
     @classmethod
@@ -57,7 +91,7 @@ class ModelFactory:
         
         print(colored(f"[ModelFactory] Creating model of type: {model_type}", "green"))
         
-        # Get model class
+        # Get the model class
         model_class = cls.MODEL_TYPES[model_type]
         
         # First load the original config
@@ -67,10 +101,9 @@ class ModelFactory:
             cache_dir=config.get('cache_dir'),
         )
         
-        # Update config with our custom settings
+        # Update the config with our custom settings
         print(colored("[ModelFactory] Updating config with custom settings", "blue"))
         custom_config = {
-            'mm_input_dim': config.mm_input_dim,
             'model_max_length': config.get('model_max_length', 2048),
             'use_cache': config.get('use_cache', True),  
         }
@@ -88,9 +121,10 @@ class ModelFactory:
             config=original_config,
             cache_dir=config.get('cache_dir'),
             torch_dtype=torch.bfloat16,
+            ignore_mismatched_sizes=False,
         )
         
-        # Set model parameter type
+        # Set the model parameter type
         if config.get('torch_dtype'):
             print(colored(f"[ModelFactory] Converting model to dtype: {config.torch_dtype}", "blue"))
             model = model.to(dtype=config.torch_dtype)

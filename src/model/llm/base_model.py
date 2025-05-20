@@ -10,97 +10,49 @@ class WaveBaseModel(PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.config = config
-        # Initialize wave projection layer
-        self.mm_projection_layers = nn.Linear(self.config.mm_input_dim, self.config.hidden_size)
             
     def process_wave_features(
         self,
-        input_ids: torch.LongTensor,
         inputs_embeds: torch.FloatTensor,
-        input_wave_embeds: torch.Tensor,
+        wave_embeds: torch.Tensor,
     ) -> torch.FloatTensor:
-        """Process and merge wave features with text embeddings"""
-        orig_embeds_params = getattr(self, 'orig_embeds_params', None)
-        input_wave_embeds = nn.functional.relu(input_wave_embeds)
-        wave_features = self.mm_projection_layers(input_wave_embeds)
+        """
+        Simplified feature processing: directly concatenate text embeddings and modal features
+        Args:
+            inputs_embeds: Text embeddings [batch_size, seq_len, hidden_size]
+            wave_embeds: Pose modality features [batch_size, num_frames, hidden_size]
+        Returns:
+            Concatenated embeddings [batch_size, seq_len+num_frames, hidden_size]
+        """
+        # Ensure both have the same hidden_size dimension
+        assert inputs_embeds.shape[-1] == wave_embeds.shape[-1], \
+            f"Feature dimension mismatch: text={inputs_embeds.shape[-1]}, pose={wave_embeds.shape[-1]}"
+        
+        # Directly concatenate along sequence dimension
+        return torch.cat([inputs_embeds, wave_embeds], dim=1)
 
-        new_input_embeds = []
-        cur_wave_idx = 0
-        for cur_input_ids, cur_input_embeds in zip(input_ids, inputs_embeds):
-            cur_wave_features = wave_features[cur_wave_idx].to(device=cur_input_embeds.device)
-            num_patches = (cur_input_ids == self.config.wave_patch_token).sum().item()
-            cur_wave_features = cur_wave_features[:num_patches]
-            if (cur_input_ids == self.config.wave_start_token).sum() != (cur_input_ids == self.config.wave_end_token).sum():
-                raise ValueError(f"The number of wave start tokens and wave end tokens should be the same. "
-                                 f"start: {cur_input_ids == self.config.wave_start_token}.sum(), end: {cur_input_ids == self.config.wave_end_token}.sum()")
-            wave_start_tokens = torch.where(cur_input_ids == self.config.wave_start_token)[0]
-            assert len(wave_start_tokens) > 0, "No wave start token found."
-            for wave_start_token_pos in wave_start_tokens:
-                wave_end_token_pose = wave_start_token_pos + num_patches + 1
-                if cur_input_ids[wave_end_token_pose] != self.config.wave_end_token:
-                    raise ValueError("The wave end token should follow the wave start token.")
-                if orig_embeds_params is not None:
-                    cur_new_input_embeds = torch.cat((
-                        cur_input_embeds[:wave_start_token_pos].detach(),
-                        cur_input_embeds[wave_start_token_pos: wave_start_token_pos + 1],
-                        cur_wave_features,
-                        cur_input_embeds[wave_end_token_pose: wave_end_token_pose + 1],
-                        cur_input_embeds[wave_end_token_pose + 1:].detach()
-                    ), dim=0)
-                else:
-                    cur_new_input_embeds = torch.cat((
-                        cur_input_embeds[:wave_start_token_pos + 1],
-                        cur_wave_features,
-                        cur_input_embeds[wave_end_token_pose:]
-                    ), dim=0)
-                cur_wave_idx += 1
-            new_input_embeds.append(cur_new_input_embeds)
-            
-        return torch.stack(new_input_embeds, dim=0)
-
-    def initialize_wave_tokens(
+    def initialize_wave_modules(
         self,
-        tokenizer,
         device: str,
         fix_llm: bool = True
     ) -> None:
-        """Initialize wave-related tokens and embeddings"""
-        config = self.config
-        
-        # Add wave start/end tokens
-        default_wave_start_token = config.default_wave_start_token
-        default_wave_end_token = config.default_wave_end_token
-        default_wave_patch_token = config.default_wave_patch_token
-        self.config.default_wave_start_token = default_wave_start_token
-        self.config.default_wave_end_token = default_wave_end_token
-        self.config.default_wave_patch_token = default_wave_patch_token
-
-        num_new_tokens = tokenizer.add_tokens([default_wave_start_token, default_wave_end_token, default_wave_patch_token], special_tokens=True)
-        self.resize_token_embeddings(len(tokenizer))
-        self.config.wave_start_token = tokenizer.convert_tokens_to_ids([default_wave_start_token])[0]
-        self.config.wave_end_token = tokenizer.convert_tokens_to_ids([default_wave_end_token])[0]
-        self.config.wave_patch_token = tokenizer.convert_tokens_to_ids([default_wave_patch_token])[0]
-
-        if num_new_tokens > 0:
-            input_embeddings = self.get_input_embeddings().weight.data
-            output_embeddings = self.get_output_embeddings().weight.data
-
-            input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
-            output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
-
-            input_embeddings[-num_new_tokens:] = input_embeddings_avg
-            output_embeddings[-num_new_tokens:] = output_embeddings_avg
-
-            # Set embedding trainability
+        """
+        Simplified initialization: only set parameter trainability
+        """
+        # Set whether to freeze LLM parameters
+        if fix_llm:
+            # Freeze model parameters
+            for param in self.parameters():
+                param.requires_grad = False
+                
+            # Input embeddings are trainable
             for p in self.get_input_embeddings().parameters():
                 p.requires_grad = True
-            if fix_llm:
-                self.orig_embeds_params = [self.get_input_embeddings().weight.data.clone().to(device=device)]
-                for p in self.get_output_embeddings().parameters():
-                    p.requires_grad = False
-                print(f"Setting output embeddings fixed and {num_new_tokens} new tokens' input embeddings trainable.")
-            else:
-                self.orig_embeds_params = None
-                for p in self.get_output_embeddings().parameters():
-                    p.requires_grad = True
-                print("Setting output embeddings and all input embeddings trainable.")
+                
+            print("LLM parameters frozen, only input embeddings are trainable")
+        else:
+            # All parameters are trainable
+            for param in self.parameters():
+                param.requires_grad = True
+                
+            print("All LLM parameters are trainable")

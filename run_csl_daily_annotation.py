@@ -33,7 +33,7 @@ def process_sequence(args, seq_folder, pose_estimator):
     """Process image sequence using RTMPose3D
     """
     seq_id = os.path.basename(seq_folder)
-    save_path = f'/root/autodl-tmp/datasets/CSL-Daily/sentence/poses/{seq_id}.npy'
+    save_path = f'/root/autodl-tmp/datasets/csl-daily/sentence/poses/{seq_id}.npy'
     
     if os.path.exists(save_path) and not args.force:
         print(colored(f'    [SKIP] {seq_id}: {save_path} already exists', 'yellow'))
@@ -123,9 +123,9 @@ def process_sequence(args, seq_folder, pose_estimator):
     print(colored(f'    [OK] Results saved to: {save_path}', 'green'))
 
 def process_dataset(args, pose_estimator):
-    """Process the CSL-Daily dataset
+    """Process the csl-daily dataset
     """
-    base_path = '/root/autodl-tmp/datasets/CSL-Daily/sentence/images'
+    base_path = '/root/autodl-tmp/datasets/csl-daily/sentence/images'
     
     # Get all sequence folders
     seq_folders = []
@@ -160,7 +160,7 @@ def process_dataset(args, pose_estimator):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='RTMPose3D Body Pose Estimation for CSL-Daily')
+    parser = argparse.ArgumentParser(description='RTMPose3D Body Pose Estimation for csl-daily')
     parser.add_argument('--gpu', type=int, dest='gpu_id', help='GPU ID')
     parser.add_argument('--kpt-thr', type=float, default=0.5, help='Keypoint threshold')
     parser.add_argument('--force', action='store_true', help='Force reprocessing of existing results')

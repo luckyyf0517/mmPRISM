@@ -52,7 +52,7 @@ def split_data(signals_list, subfolder='csl-news-demo01', val_ratio=0.1):
 if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--signals_root', type=str, default='/root/autodl-tmp/datasets/csl-news/poses/archive_*/',
+    parser.add_argument('--signals_root', type=str, default='/root/autodl-tmp/datasets/csl-news/poses/archive_0*/',
                        help='Root directory containing signal data')
     parser.add_argument('--subfolder', type=str, default='csl-news-demo01',
                        help='Subfolder name for saving split files')
@@ -63,11 +63,11 @@ if __name__ == '__main__':
     # Collect all signal files
     signals_list = sorted(glob(os.path.join(args.signals_root, '*.npy')))
     
-    signals_list_ = []
-    for signal_path in signals_list:
-        if not os.path.exists(signal_path.replace('poses', 'pred_poses')):
-            signals_list_.append(signal_path)
-    signals_list = signals_list_
+    # signals_list_ = []
+    # for signal_path in signals_list:
+    #     if not os.path.exists(signal_path.replace('poses', 'pred_poses')):
+    #         signals_list_.append(signal_path)
+    # signals_list = signals_list_
     
     print(colored(f'Total number of signals: {len(signals_list)}', 'green'))
     

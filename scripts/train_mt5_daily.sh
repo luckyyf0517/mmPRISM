@@ -2,10 +2,11 @@
 deepspeed --include localhost:0,1 \
     run_peft.py \
     --config config/wavellm_mt5_daily_pose.yaml \
-    --batch-size 24 \
-    --max-epochs 20 \
+    --batch-size 8 \
+    --max-epochs 15 \
     --gradient-accumulation-steps 8 \
-    --version "wavellm_mt5_0510_daily_pose" \
+    --version "wavellm_mt5_daily_pose_0518_v1" \
     --dtype bf16 \
     --zero_stage 2 \
-    --reset
+    --resume-checkpoint "log/peft_finetune/wavellm_mt5_pose_0518/last.ckpt"
+    # --reset

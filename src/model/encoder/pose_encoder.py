@@ -3,24 +3,22 @@ import torch.nn as nn
 from src.model.stgcn_layers import Graph, get_stgcn_chain
 
 class HandPoseEncoder(nn.Module):
-    def __init__(self, hidden_dim=64):
+    def __init__(self, hidden_dim=256, output_dim=768):
         super().__init__()
         
         # Initialize graphs for body and hands
-        self.modes = ['body', 'left', 'right']
+        self.modes = ['body', 'hand']
         self.graph = {}
         self.gcn_modules = nn.ModuleDict()
         self.fusion_gcn_modules = nn.ModuleDict()
         
-        # Projection layer
-        self.proj_linear = nn.Linear(3, hidden_dim)
-        
-        # Create graph and GCN for body and hands
+        # Create graph and GCN for body and hand
         for mode in self.modes:
             if mode == 'body':
                 self.graph[mode] = Graph(layout='body', strategy='distance', max_hop=1)
-            else:
+            else:  # hand
                 self.graph[mode] = Graph(layout='hand', strategy='distance', max_hop=1)
+            
             A = torch.tensor(self.graph[mode].A, dtype=torch.float32, requires_grad=False)
             
             # Create spatial and temporal GCN modules
@@ -40,52 +38,87 @@ class HandPoseEncoder(nn.Module):
                 True
             )
 
+        # Projection layer for input coordinates
+        self.proj_linear = nn.Linear(3, hidden_dim)
+        
+        # Learnable parameters for part importance
+        self.part_para = nn.Parameter(torch.zeros(final_dim * 3), requires_grad=True)  # For body, left, right
+        
+        # Final projection to LLM hidden dimension
+        self.final_projection = nn.Linear(final_dim * 3, output_dim)  # For body, left, right
+        
     def forward(self, x):
         """
-        Input: x [B, N, 2, 24, 3] - batch, frames, hands(left/right), joints, coords
-        Output: [B, N, C] - C is the final feature dimension
-        """
-        features = []
+        Process pose data through GCN networks
         
-        # Reshape input data format
-        x = {
-            'body': torch.cat([x[:, :, 0, :3], x[:, :, 1, :3]], dim=2),  # Concatenate the first 3 points of both hands
-            'left': x[:, :, 0, 3:],  # All points of the left hand
-            'right': x[:, :, 1, 3:]  # All points of the right hand
+        Args:
+            x: Input pose data [B, N, 2, 24, 3] - batch, frames, hands(left/right), joints, coords
+        
+        Returns:
+            Feature tensor [B, N, C] aligned with LLM hidden dimension
+        """
+        # Prepare input data for each part
+        parts_data = {
+            'body': torch.cat([
+                (x[:, :, 0, 0] + x[:, :, 1, 0]).unsqueeze(-2) / 2,  # Average of first points
+                x[:, :, 0, :3],  # First 3 points from left
+                x[:, :, 1, :3],  # First 3 points from right
+            ], dim=-2),  # Total 7 points: 1 avg + 3 left + 3 right
+            'left': x[:, :, 0, 3:],  # Left hand points
+            'right': x[:, :, 1, 3:]  # Right hand points
         }
         
-        # Process body features first
-        body_data = x['body']  # [B, N, 6, 3]
-        body_proj = self.proj_linear(body_data)
-        body_proj = body_proj.permute(0, 3, 1, 2)  # [B, C, N, 6]
-        body_feat = self.gcn_modules['body'](body_proj)
-        body_feat = self.fusion_gcn_modules['body'](body_feat)
-        # Add body features to output
-        pool_body_feat = body_feat.mean(-1).transpose(1, 2)  # [B, N, C]
-        features.append(pool_body_feat)
-        # Process left and right hands
-        for mode in ['left', 'right']:
-            # Get data for one hand [B, N, 24, 3]
-            hand_data = x[mode]
-            # Project to hidden dim [B, N, 24, hidden_dim]
-            proj_feat = self.proj_linear(hand_data)
-            proj_feat = proj_feat.permute(0, 3, 1, 2)
+        # Define which GCN module to use for each part
+        part_to_mode = {
+            'body': 'body',
+            'left': 'hand',
+            'right': 'hand'
+        }
+        
+        # Reference points from body to hands
+        ref_points = {
+            'left': 3,  # Index of reference point for left hand
+            'right': 6  # Index of reference point for right hand
+        }
+        
+        features = []
+        spatial_features = {}
+        
+        # Process all parts in a single loop
+        for part in ['body', 'left', 'right']:
+            # Get data for current part
+            part_data = parts_data[part]
+            
+            # Project to hidden dim
+            proj_feat = self.proj_linear(part_data).permute(0, 3, 1, 2)  # [B, C, N, V]
+            
+            # Get the appropriate GCN module
+            mode = part_to_mode[part]
+            
             # Forward pass through spatial GCN
             spatial_feat = self.gcn_modules[mode](proj_feat)
-            # Add body reference features
-            if mode == 'left':
-                ref_feat = body_feat[..., [2]]
-            else:
-                ref_feat = body_feat[..., [5]]
-            spatial_feat = spatial_feat + ref_feat.detach()
+            
+            # Store spatial features for reference
+            spatial_features[part] = spatial_feat
+            
+            # Add body reference features for hands
+            if part != 'body':
+                ref_idx = ref_points[part]
+                ref_feat = spatial_features['body'][..., [ref_idx]]
+                spatial_feat = spatial_feat + ref_feat.detach()
+            
             # Forward pass through temporal GCN
             temporal_feat = self.fusion_gcn_modules[mode](spatial_feat)
-            # Average pooling over node dimension [B, C, N]
-            pool_feat = temporal_feat.mean(-1)
-            # Rearrange dimensions to [B, N, C]
-            pool_feat = pool_feat.transpose(1, 2)
+            
+            # Average pooling over node dimension and rearrange to [B, N, C]
+            pool_feat = temporal_feat.mean(-1).transpose(1, 2)
             features.append(pool_feat)
         
-        # Merge features from both hands
-        output = torch.cat(features, dim=-1)  # [B, N, C*2]
+        # Merge features from all parts
+        combined_features = torch.cat(features, dim=-1)
+        combined_features = combined_features + self.part_para
+        
+        # Project to LLM hidden dimension
+        output = self.final_projection(combined_features)  # [B, N, output_dim]
+        
         return output

@@ -13,7 +13,7 @@ data_cfg:
       test_split: 'dataset/csl-news-100/val.json'
       opt: 
         caption_path: "dataset/CSL_News_Labels_converted.json"
-        max_length: 512
+        max_length: 256
         modalities:  # Control which modalities to use
           use_features: true
           use_pred_pose: true
@@ -32,24 +32,17 @@ model_cfg:
     cfg:
       # LLM configuration
       model_type: "mt5"
-      conv_type: "simple" # "role" or "simple"
       model:
         model_path: "huggingface/mt5-pretrained"
-        mm_input_dim: 1280  
         model_max_length: 2048
         
-        wave_start_token: "<wave>"
-        wave_end_token: "</wave>"
-        wave_patch_token: "<wave_patch>"
-      
       # PEFT configuration
       use_peft: false
       fix_llm: false
       
       # Training configuration
       training:
-        max_epochs: 10
-        learning_rate: 5.0e-4
+        learning_rate: 3.0e-4
         weight_decay: 1.0e-4
         warmup_steps: 100
       

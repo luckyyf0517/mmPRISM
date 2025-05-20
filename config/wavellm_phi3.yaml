@@ -27,7 +27,6 @@ model_cfg:
       conv_type: "role" # "role" or "simple"
       model:
         model_path: "huggingface/Phi-3-mini-4k-instruct"
-        mm_input_dim: 512
         model_max_length: 2048
         wave_start_token: "<wave>"
         wave_end_token: "</wave>"

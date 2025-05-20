@@ -60,13 +60,12 @@ class Graph:
                 [17, 18], [18, 19], [19, 20]
             ]
         elif layout == 'body':
-            self.num_node = 6  # 6 body reference points
+            self.num_node = 7  # 7 body reference points
             self_link = [(i, i) for i in range(self.num_node)]
             # Fully connect body points
             neighbor_1base = [
-                [0, 1], [1, 2],
-                [3, 4], [4, 5],
-                [0, 3]
+                [0, 1], [1, 2], [2, 3], 
+                [0, 4], [4, 5], [5, 6],
             ]
         else:
             raise ValueError(f"Unsupported layout: {layout}")

@@ -25,11 +25,13 @@ def main():
                 results = json.load(f)
                 for sample_id, data in results.items():
                     prediction = data["prediction"]
+                    # if '对对对对' in prediction:
+                    #     # print('skip bad samples')
+                    #     continue
                     prediction = ' '.join(list(prediction.replace(" ",'').replace("\n",'')))
-                    all_predictions.append(prediction)
-                    
                     reference = data["reference"]
                     reference = ' '.join(list(reference.replace(" ",'').replace("\n",'')))
+                    all_predictions.append(prediction)
                     all_references.append(reference)
     
     print(f"Loaded {len(all_predictions)} samples for evaluation")
