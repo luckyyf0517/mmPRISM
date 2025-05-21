@@ -49,6 +49,7 @@ class BaseDataset(Dataset):
         # load pose
         pose = np.load(pose_path)  # (T, 2, 24, 3)
 
+
         # normalize pose
         if self.norm_pose:
             mean, std = None, None
