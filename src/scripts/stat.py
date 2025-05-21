@@ -4,10 +4,10 @@ from tqdm import tqdm
 
 
 if __name__ == '__main__':
-    file_pattern = '/root/autodl-tmp/datasets/csl-news/poses/archive_*/*.npy'
+    # file_pattern = '/root/autodl-tmp/datasets/csl-news/poses/archive_*/*.npy'
     # file_pattern = '/root/autodl-tmp/datasets/csl-news/pred_poses/archive_*/*.npy'
-    # file_pattern = '/root/autodl-tmp/datasets/csl-daily/sentence/poses/*.npy'
-    # file_pattern = '/root/autodl-tmp/datasets/csl-daily/sentence/pred_poses/*.npy'
+    file_pattern = '/root/autodl-tmp/datasets/csl-daily/sentence/poses/*.npy'
+    # file_pattern = '/root/autodl-tmp/datasets/csl-daily/sentence/pred_poses_0521/*.npy'
 
     sum_x = np.zeros(3)
     sum_x2 = np.zeros(3)

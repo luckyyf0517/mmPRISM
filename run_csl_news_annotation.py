@@ -90,7 +90,7 @@ def process_sequence(args, video_path, pose_estimator):
     # Save results
     save_path = video_path.replace('.mp4', '.npy').replace('videos', 'poses')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)  
-    np.save(save_path, keypoints_all)
+    np.save(save_path, keypoints_all.astype(np.float32))
     print(colored(f'    [OK] Results saved to: {save_path}', 'green'))
     
 
