@@ -21,13 +21,13 @@ data_stats = {
         'mean': np.array([]),
         'std': np.array([]),
     },
-    'csl-daily/poses': {
+    'csl-daily/sentence/poses': {
         'mean': np.array([0.02832265, 0.37857532, -0.21782798]),
         'std': np.array([0.32808729, 0.3750018, 0.12171327]),
     },
-    'csl-daily/pred_poses': {
-        'mean': np.array([0.02215466, 0.00844491, -0.11399521]),
-        'std': np.array([0.16437937, 0.19462036, 0.05043625]),
+    'csl-daily/sentence/pred_poses_0521': {
+        'mean': np.array([0.00402528, 0.01333136, -0.01058482]),
+        'std': np.array([0.10319765, 0.10940502, 0.08362551]),
     },
 }
 
@@ -48,27 +48,18 @@ class BaseDataset(Dataset):
     def load_and_normalize_pose(self, pose_path):
         # load pose
         pose = np.load(pose_path)  # (T, 2, 24, 3)
-        pose[np.isnan(pose)] = 0.0 
+
 
         # normalize pose
         if self.norm_pose:
-            if 'csl-daily' in pose_path:
-                if '/poses' in pose_path:
-                    mean = data_stats['csl-daily/poses']['mean']
-                    std = data_stats['csl-daily/poses']['std']
-                elif '/pred_poses' in pose_path:
-                    mean = data_stats['csl-daily/pred_poses']['mean']
-                    std = data_stats['csl-daily/pred_poses']['std']
-            elif 'csl-news' in pose_path:
-                if '/poses' in pose_path:
-                    mean = data_stats['csl-news/poses']['mean']
-                    std = data_stats['csl-news/poses']['std']
-                elif '/pred_poses' in pose_path:
-                    mean = data_stats['csl-news/pred_poses']['mean']
-                    std = data_stats['csl-news/pred_poses']['std']
-            else: 
-                raise ValueError(f"Unknown pose path: {pose_path}")
-            pose = (pose - mean) / std * 0.1
+            mean, std = None, None
+            for folder_name in data_stats.keys():
+                if folder_name in pose_path:
+                    mean = data_stats[folder_name]['mean']
+                    std = data_stats[folder_name]['std']
+                    break
+            assert mean is not None and std is not None, f"Unknown pose path: {pose_path}"
+            pose = (pose - mean) / std
         return pose
     
 class SingleFrameDataset(BaseDataset):
@@ -81,6 +72,7 @@ class SingleFrameDataset(BaseDataset):
     def __getitem__(self, index):
         id, pose_path = list(self.data_dict.items())[index]
         pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
+        pose = pose * 0.1 # scale to real-world scale
 
         # Randomly select a frame
         frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
@@ -159,7 +151,7 @@ class SequenceBaseDataset(BaseDataset):
     
     def load_raw_pose(self, pose_path): 
         """Load raw pose data and compute velocities"""
-        pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
+        pose = self.load_and_normalize_pose(pose_path) * 0.1 # (T, 2, 24, 3)
         velocities = (pose[1:] - pose[:-1]) * 30
         return pose[:-1], velocities
     
@@ -172,6 +164,7 @@ class SequenceBaseDataset(BaseDataset):
                 
         # Load features if enabled
         if self.modalities['use_features']:
+            raise NotImplementedError("Features are not implemented.")
             features = self.load_features(data_path)
             features, valid_length = self.pad_sequence(features, features.shape[1:])
             output_dict['features'] = torch.from_numpy(features).float()

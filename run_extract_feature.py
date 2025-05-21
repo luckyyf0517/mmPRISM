@@ -25,28 +25,34 @@ class FeatureExtractionOmniHand(OmniHand):
         path = batch['path'][0]
         
         # Determine feature and pose paths
-        feature_path = path.replace('poses', 'features')
-        pose_path = path.replace('poses', 'pred_poses')
+        # feature_path = path.replace('poses', 'features')
+        pose_path = path.replace('poses', 'pred_poses_0521')
         
-        # # Check if both files already exist
-        # if os.path.exists(feature_path) and os.path.exists(pose_path):
-        #     self.skipped_count += 1
-        #     return
+        # Check if both files already exist
+        if os.path.exists(pose_path):
+            self.skipped_count += 1
+            return
         
         # Process features in time batches
         features = self.process_time_batch(points_t, velocities_t)
         
-        # Save features
-        os.makedirs(os.path.dirname(feature_path), exist_ok=True)
-        np.save(feature_path, features.cpu().numpy())
+        # # Save features
+        # os.makedirs(os.path.dirname(feature_path), exist_ok=True)
+        # np.save(feature_path, features.cpu().numpy())
         
         # Generate and save predicted poses
         joints_pred = self.forward_feature(features.to(self.device))
-        joints_pred = joints_pred.cpu().numpy()
         os.makedirs(os.path.dirname(pose_path), exist_ok=True)
-        np.save(pose_path, joints_pred)
+        np.save(pose_path, joints_pred.cpu().numpy())
         
         self.processed_count += 1
+
+        # # print MPJPE
+        # valid_mask = ~torch.any(torch.isnan(points_t), dim=-1)
+        # pred_valid = joints_pred[valid_mask]
+        # target_valid = points_t[valid_mask]
+        # mpjpe = torch.norm(pred_valid - target_valid, dim=-1).mean() * 1e3
+        # print(f"MPJPE: {mpjpe.mean()}")
         
     def process_time_batch(self, points_t, velocities_t, time_batch_size=32):
         """Process a sequence in time batches"""
@@ -81,23 +87,24 @@ def main():
     elif datastage == 'daily':
         # Load OmniHand model from checkpoint
         args = edict({
-            'config': 'config/omnihand_base.yaml',
-            'resume_checkpoint': 'log/omnihand/omnihand-0509-daily/last.ckpt',
+            'config': 'config/omnihand_base_daily.yaml',
+            'resume_checkpoint': 'log/omnihand/omnihand-0521-daily/last.ckpt',
         })
         cfg = load_yaml(args.config)
         cfg.batch_size = 1
         data_cfg = cfg.data_cfg
         data_cfg.params.cfg.dataset = 'src.data.dataset.CslDailyDataset'
         data_cfg.params.cfg.batch_size = 1
-        data_cfg.params.cfg.test_split = 'dataset/csl-daily-demo01/all.json'
+        data_cfg.params.cfg.test_split = 'dataset/csl-daily/all.json'
     data_cfg.params.cfg.opt = {
         "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
-        "max_length": 384,
+        "max_length": 512,
         "modalities": {
             "use_features": False,
             "use_pred_pose": False,
             "use_raw_pose": True
-        }
+        },
+        "norm_pose": True,
     }
         
     data = instantiate_from_config(data_cfg)
