@@ -8,12 +8,12 @@ data_cfg:
   params:
     cfg:
       dataset: src.data.dataset.CslNewsDataset
-      train_split: 'dataset/csl-news-100/train.json'
-      val_split: 'dataset/csl-news-100/val.json'
-      test_split: 'dataset/csl-news-100/val.json'
+      train_split: 'dataset/csl-news-200/train.json'
+      val_split: 'dataset/csl-news-200/val.json'
+      test_split: 'dataset/csl-news-200/val.json'
       opt: 
         caption_path: "dataset/CSL_News_Labels_converted.json"
-        max_length: 256
+        max_length: 512
         modalities:  # Control which modalities to use
           use_features: true
           use_pred_pose: true
@@ -23,6 +23,7 @@ data_cfg:
           feature_dir: "features"
         pose_config:  # Pose modality specific settings
           pose_dir: "pred_poses"
+        norm_pose: true
       num_workers: 4
 
 # Model configuration
