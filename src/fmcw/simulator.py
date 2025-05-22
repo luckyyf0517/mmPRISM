@@ -12,12 +12,95 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
+class Processor(nn.Module):
+    """Signal processing module for radar data"""
+    def __init__(self, learnable_weights=False, dtype=torch.float32, ctype=torch.complex64):
+        super().__init__()
+        self.D, self.R, self.W, self.H = 32, 32, 32, 32
+        
+        # Initialize beamforming weights
+        azi_ele_id = torch.tensor(np.array(get_index()) - np.array([43, 0]))
+        azi_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.W)
+        ele_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.H)
+        bm_weights = build_steering_vector(azi_ele_id, azi_theta_grid, ele_theta_grid)
+        self.bm_weights = nn.Parameter(torch.view_as_real(bm_weights), requires_grad=learnable_weights)
+        
+        self.dtype = dtype
+        self.ctype = ctype
+
+    def process_range(self, radar_frame):
+        """Range FFT processing
+        Args:
+            radar_frame: [B, num_chirps, num_antenna, num_samples]
+        Returns:
+            radar_frame: [B, num_chirps, num_antenna, R]
+        """
+        B = radar_frame.shape[0]
+        num_samples = radar_frame.shape[-1]
+        window = torch.hann_window(num_samples, device=radar_frame.device)
+        window = window.view(1, 1, 1, -1).expand(B, -1, -1, -1)
+        
+        radar_frame = radar_frame * window
+        radar_frame = torch.fft.fft(radar_frame, dim=-1)
+        return radar_frame[..., :self.R]
+
+    def process_doppler(self, radar_frame):
+        """Doppler FFT processing
+        Args:
+            radar_frame: [B, num_chirps, num_antenna, R]
+        Returns:
+            radar_frame: [B, D, num_antenna, R]
+        """
+        B = radar_frame.shape[0]
+        num_chirps = radar_frame.shape[1]
+        # Expand window to match batch dimension
+        window = torch.hann_window(num_chirps, device=radar_frame.device)
+        window = window.view(1, -1, 1, 1).expand(B, -1, -1, -1)
+        
+        radar_frame = radar_frame * window
+        radar_frame = torch.fft.fftshift(torch.fft.fft(radar_frame, dim=1), dim=1)
+        return radar_frame
+
+    def process_beamforming(self, radar_frame):
+        """Beamforming processing
+        Args:
+            radar_frame: [B, D, num_antenna, R]
+        Returns:
+            radar_frame: [B, D, W*H, R]
+        """
+        bm_weights = self.bm_weights[..., 0] + 1j * self.bm_weights[..., 1]  # [num_antenna, W*H]
+        # Use einsum to process batch data
+        radar_frame = torch.einsum('bdar,aw->bdrw', radar_frame, bm_weights)
+        return radar_frame.abs() ** 2
+
+    def forward(self, raw_radar_frame):
+        """Convert radar frame to mmwave cube
+        
+        Args:
+            raw_radar_frame: [B, num_chirps, num_antenna, num_samples] Complex radar signals
+            
+        Returns:
+            radar_frame: [B, D, R, W, H] Processed radar signals
+        """
+        radar_frame = raw_radar_frame.clone()
+        
+        # Process step by step
+        radar_frame = self.process_range(radar_frame)    # [B, num_chirps, num_antenna, R]
+        radar_frame = self.process_doppler(radar_frame)  # [B, D, num_antenna, R]
+        radar_frame = self.process_beamforming(radar_frame)  # [B, D, W*H, R]
+        
+        # Reshape output dimensions
+        B = radar_frame.shape[0]
+        return radar_frame.view(B, self.D, self.R, self.W, self.H)
+
+
 class Simulation(nn.Module): 
-    def __init__(self, learnable_weights=False, dtype=torch.float32, ctype=torch.complex64): 
+    def __init__(self, dtype=torch.float32, ctype=torch.complex64): 
         super().__init__()
         self.radar_cfg = radar_cfg
         self.simulator = mmSimulator(radar_cfg, dtype=dtype, ctype=ctype)
         self.simulator.init()
+        
         self.window = torch.hann_window(radar_cfg.num_adc_samples, dtype=dtype)
         
         self.start_freq = radar_cfg.start_freq
@@ -32,15 +115,17 @@ class Simulation(nn.Module):
         self.time_steps = torch.arange(self.num_chirps, dtype=dtype) * self.chirp_period
         self.ramp_end_time = radar_cfg.ramp_end_time
         
-        self.D, self.R, self.W, self.H = 32, 32, 32, 32
-        azi_ele_id = torch.tensor(self.simulator.D)
-        azi_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.W)
-        ele_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.H)
-        bm_weights = build_steering_vector(azi_ele_id, azi_theta_grid, ele_theta_grid)
-        self.bm_weights = nn.Parameter(torch.view_as_real(bm_weights), requires_grad=learnable_weights)
-        
         self.dtype = dtype
         self.ctype = ctype
+
+    def simulate_batch(self, points_3d, velocities_3d):
+        """Process single batch data"""
+
+        path_dict = self.simulator.compute_paths_from_points(
+            points_3d=points_3d,
+            velocities_3d=velocities_3d)
+        
+        return self.get_raw_radar_frame(path_dict)
 
     def forward(self, points_3d, velocities_3d):
         """
@@ -51,32 +136,25 @@ class Simulation(nn.Module):
             velocities_3d: [B, N, 3] 3D velocities in m/s for batch
             
         Returns:
-            radar_signal: [B, doppler, range] radar signal
+            raw_radar_frames: [B, num_chirps, num_rx, num_samples] raw radar signals
         """
         batch_size = points_3d.shape[0]
-        radar_signal_list = []
+        radar_frame_list = []
         
-        # Process points_3d first and get the nan_mask
         processed_velocities, nan_mask = process_point_cloud(velocities_3d)
-        # Process velocities_3d with the same nan_mask
         processed_points, _ = process_point_cloud(points_3d, nan_mask)
         assert torch.isnan(processed_points).any() == False, 'processed_points has NaN values'
         assert torch.isnan(processed_velocities).any() == False, 'processed_velocities has NaN values'
 
         for b in range(batch_size):
-            try: 
-                path_dict = self.simulator.compute_paths_from_points(
-                    points_3d=processed_points[b],
-                    velocities_3d=processed_velocities[b])
+            try:
+                radar_frame = self.simulate_batch(processed_points[b], processed_velocities[b])
+                radar_frame_list.append(radar_frame)
             except:
-                print(processed_points[b].shape, processed_velocities[b].shape)
-                raise ValueError('Invalid points or velocities')
-            radar_frame = self.get_raw_radar_frame(path_dict)
-            radar_signal = self.get_signal(radar_frame)
-            radar_signal_list.append(radar_signal)
+                print(f"Error processing batch {b}")
+                raise
             
-        radar_signal_batch = torch.stack(radar_signal_list, dim=0)
-        return radar_signal_batch
+        return torch.stack(radar_frame_list, dim=0)
     
     def get_raw_radar_frame(self, path_dict, save_cuda_memory=True):
         """
@@ -115,25 +193,6 @@ class Simulation(nn.Module):
         radar_frame = (a * torch.exp(1j * ft_phase)).sum(dim=-1)
         return radar_frame.to(self.dtype)
     
-    def get_signal(self, raw_radar_frame):
-        """
-        Convert radar frame to mmwave cube
-        """
-        radar_frame = raw_radar_frame.clone()
-        num_chirps, num_antenna, num_samples = radar_frame.shape
-        # range fft
-        radar_frame = radar_frame * torch.hann_window(num_samples, device=radar_frame.device)
-        radar_frame = torch.fft.fft(radar_frame, dim=2)
-        radar_frame = radar_frame[:, :, :self.R]
-        # doppler fft
-        radar_frame = radar_frame * torch.hann_window(num_chirps, device=radar_frame.device)[:, None, None]
-        radar_frame = torch.fft.fftshift(torch.fft.fft(radar_frame, dim=0), dim=0)
-        # beamforming
-        bm_weights = self.bm_weights[..., 0] + 1j * self.bm_weights[..., 1]
-        radar_frame = torch.einsum('cd,acb->abd', bm_weights, radar_frame)
-        radar_frame = radar_frame.abs() ** 2
-        return radar_frame.reshape(self.D, self.R, self.W, self.H)
-
 
 class mmSimulator(nn.Module): 
     def __init__(self, radar_cfg, dtype=torch.float32, ctype=torch.complex64): 

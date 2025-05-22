@@ -3,7 +3,7 @@ import torch.nn as nn
 from src.model.stgcn_layers import Graph, get_stgcn_chain
 
 class HandPoseEncoder(nn.Module):
-    def __init__(self, hidden_dim=256, output_dim=768):
+    def __init__(self, hidden_dim=256, output_dim=768, additional_transformer=False):
         super().__init__()
         
         # Initialize graphs for body and hands
@@ -44,6 +44,14 @@ class HandPoseEncoder(nn.Module):
         # Learnable parameters for part importance
         self.part_para = nn.Parameter(torch.zeros(final_dim * 3), requires_grad=True)  # For body, left, right
         
+        if additional_transformer:
+            self.transformer = nn.TransformerEncoder(
+                nn.TransformerEncoderLayer(final_dim * 3, nhead=8),
+                num_layers=3
+            )
+        else: 
+            self.transformer = None
+
         # Final projection to LLM hidden dimension
         self.final_projection = nn.Linear(final_dim * 3, output_dim)  # For body, left, right
         
@@ -117,6 +125,9 @@ class HandPoseEncoder(nn.Module):
         # Merge features from all parts
         combined_features = torch.cat(features, dim=-1)
         combined_features = combined_features + self.part_para
+
+        if self.transformer is not None:
+            combined_features = self.transformer(combined_features)
         
         # Project to LLM hidden dimension
         output = self.final_projection(combined_features)  # [B, N, output_dim]

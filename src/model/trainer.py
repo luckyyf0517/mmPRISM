@@ -30,7 +30,7 @@ class WaveLLMTrainer(pl.LightningModule):
         self.model.train()
         
         # Create pose encoder
-        self.modalities = cfg.get('modalities', {})
+        self.modalities = cfg.get('modalities', {'use_features': False, 'use_pred_pose': True, 'use_raw_pose': False})
         if self.modalities.get('use_pred_pose', False):
             pose_enabled = True
             self.hand_pose_encoder = HandPoseEncoder(hidden_dim=64, output_dim=self.model.config.hidden_size) # output_dim = 768
@@ -119,6 +119,7 @@ class WaveLLMTrainer(pl.LightningModule):
             pose_embeds = self.hand_pose_encoder(joints.to(torch.bfloat16))
         
         if self.modalities.get('use_features', False):
+            raise NotImplementedError("Feature modality is not implemented")
             if features is None:
                 raise ValueError("Feature modality is enabled but no feature data is provided")
             # Convert features to bfloat16 for consistency
@@ -174,15 +175,15 @@ class WaveLLMTrainer(pl.LightningModule):
             labels=labels
         )
 
-        with torch.no_grad():
-            labels = labels.clone()
-            labels[labels == IGNORE_INDEX] = self.tokenizer.pad_token_id
-            references = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
-            predictions = self.tokenizer.batch_decode(outputs['logits'].argmax(dim=-1), skip_special_tokens=True)
-            for i in range(len(references)):
-                print('label: ', references[i])
-                print('pred: ', predictions[i])
-                print('-' * 50)
+        # with torch.no_grad():
+        #     labels = labels.clone()
+        #     labels[labels == IGNORE_INDEX] = self.tokenizer.pad_token_id
+        #     references = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+        #     predictions = self.tokenizer.batch_decode(outputs['logits'].argmax(dim=-1), skip_special_tokens=True)
+        #     for i in range(len(references)):
+        #         print('label: ', references[i])
+        #         print('pred: ', predictions[i])
+        #         print('-' * 50)
 
         return {
             'wave_embeds': wave_embeds, 

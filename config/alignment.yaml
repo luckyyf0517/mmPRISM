@@ -1,5 +1,5 @@
 # Basic settings
-log_dir: "log/peft_finetune"
+log_dir: "log/alignment"
 strategy: "deepspeed"
 
 # Data configuration
@@ -14,40 +14,26 @@ data_cfg:
       opt: 
         annotation_path: 'data/csl-daily/sentence_label/csl2020ct_v2.pkl'
         max_length: 256
-        modalities:  # Control which modalities to use
+        modalities:  
           use_features: false
           use_pred_pose: true
+          use_gt_pose: true
           use_raw_pose: false
-          use_gt_pose: false
-        pose_config:  # Pose modality specific settings
+        pose_config:  
           pose_dir: "pred_poses_0521"
           norm_pose: true
       num_workers: 4
 
 # Model configuration
 model_cfg:
-  target: src.model.trainer.WaveLLMTrainer
+  target: src.model.alignment.AlignmentTrainer
   params:
     cfg:
-      # LLM configuration
-      model_type: "mt5"
-      model:
-        model_path: "huggingface/mt5-pretrained"
-        model_max_length: 2048
-        
-      # PEFT configuration
-      use_peft: false
-      fix_llm: false
-      peft_config:
-        r: 16
-        lora_alpha: 32
-        target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
-        lora_dropout: 0.05
-        bias: "none"
-
+      # Encoder weights path
+      encoder_weights: "weights/hand_pose_encoder_from_wavellm_mt5_daily_pose_0521_v1.bin"
+      
       # Training configuration
       training:
-        learning_rate: 8.0e-4
+        batch_size: 32
+        learning_rate: 1.0e-4
         weight_decay: 1.0e-4
-        warmup_steps: 100
-      

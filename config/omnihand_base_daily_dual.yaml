@@ -18,7 +18,7 @@ data_cfg:
 
 # Model configuration
 model_cfg:
-  target: src.model.omnihand.OmniHand
+  target: src.model.omnihand.DualOmniHand
   params:
     cfg:
       learnable_weights: true
@@ -31,7 +31,7 @@ model_cfg:
           strides: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [1, 1, 1]] 
           block: src.model.encoder.cubenet.BasicBlock3D
           norm_layer: torch.nn.GroupNorm
-        pretrained: weights/cubenet-base
+        pretrained: null
         freeze: false
       training:
         lr: 1.0e-4

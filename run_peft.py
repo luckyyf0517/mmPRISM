@@ -62,6 +62,8 @@ def parse_args():
     parser.add_argument('--gradient-accumulation-steps', dest="gradient_accumulation_steps", 
                        default=1, type=int)
     parser.add_argument('--max-epochs', dest="max_epochs", default=10, type=int)
+    parser.add_argument('--use-pretrained-pose-encoder', dest="use_pretrained_pose_encoder", default=None, type=str, required=False)
+    parser.add_argument('--freeze-pose-encoder', dest="freeze_pose_encoder", action="store_true", default=False)
     # DeepSpeed related arguments
     parser = add_deepspeed_args(parser)
     
@@ -98,7 +100,7 @@ def main():
     
     # Create model
     model_cfg = cfg.model_cfg
-    model_cfg.data_cfg = data_cfg
+    model_cfg.params.cfg.data_cfg = data_cfg
     model_cfg.params.cfg.training.batch_size = args.batch_size
     model_cfg.params.cfg.modalities = data_cfg.params.cfg.opt.modalities
     if args.test: 
@@ -178,6 +180,14 @@ def main():
     # Train model
     if args.resume_checkpoint is not None:
         model = load_state_dict_from_zero_checkpoint(model, args.resume_checkpoint)
+    
+    # Load pretrained pose encoder
+    if args.use_pretrained_pose_encoder is not None:
+        model.hand_pose_encoder.load_state_dict(torch.load(args.use_pretrained_pose_encoder))
+    if args.freeze_pose_encoder:
+        for param in model.hand_pose_encoder.parameters():
+            param.requires_grad = False
+    
     if not args.test:
         trainer.fit(model, datamodule=data)
     else:

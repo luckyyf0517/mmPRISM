@@ -10,7 +10,7 @@ from tqdm import tqdm
 from collections import defaultdict
 from torch.utils.data import Dataset, DataLoader
 from scipy.ndimage import gaussian_filter1d
-
+from easydict import EasyDict as edict
 
 data_stats = {
     'csl-news/poses': {
@@ -74,7 +74,10 @@ class SingleFrameDataset(BaseDataset):
     def __init__(self, opt=None, split_path=None):
         super().__init__(opt, split_path)
         self.load_feature = opt.get('load_feature', False)
-    
+        # self.norm_pose = opt.get('norm_pose', False)
+        self.pose_config = edict(
+            norm_pose=opt.get('norm_pose', False))
+        
     def __getitem__(self, index):
         id, pose_path = list(self.data_dict.items())[index]
         pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
@@ -112,6 +115,7 @@ class SequenceBaseDataset(BaseDataset):
         self.modalities = opt.get('modalities', {
             'use_features': False,
             'use_pred_pose': False,
+            'use_gt_pose': False,
             'use_raw_pose': False,
         })
         self.feature_config = opt.get('feature_config', {
@@ -131,18 +135,19 @@ class SequenceBaseDataset(BaseDataset):
         caption_path = opt.get('caption_path', 'dataset/CSL_News_Labels_converted.json')
         self.caption_dict = self._load_captions(caption_path)
 
-    def pad_sequence(self, sequence, pad_shape):
+    def pad_sequence(self, sequence, pad_shape, valid_indices=None):
         """Pad or truncate sequences to max_length"""
         valid_length = sequence.shape[0]
         if valid_length > self.max_length:
-            # If sequence is longer than max_length, randomly sample a segment
-            valid_indices = sorted(random.sample(range(valid_length), k=self.max_length))
+            # Generate new random indices if not provided
+            if valid_indices is None:
+                valid_indices = sorted(random.sample(range(valid_length), k=self.max_length))
             valid_length = self.max_length
-            return sequence[valid_indices], valid_length
+            return sequence[valid_indices], valid_length, valid_indices
         else:
             pad_width = tuple([(0, self.max_length - valid_length)] + 
                             [(0, 0) for _ in range(len(pad_shape))])
-            return np.pad(sequence, pad_width, mode='constant'), valid_length
+            return np.pad(sequence, pad_width, mode='constant'), valid_length, None
     
     def load_features(self, pose_path):
         """Load pre-computed features"""
@@ -155,6 +160,11 @@ class SequenceBaseDataset(BaseDataset):
         pose = self.load_and_normalize_pose(pred_pose_path) # (T, 2, 24, 3)
         if 'pred_poses' in pred_pose_path:
             pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
+        return pose
+
+    def load_gt_pose(self, pose_path):
+        """Load gt pose data"""
+        pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
         return pose
     
     def load_raw_pose(self, pose_path): 
@@ -169,25 +179,40 @@ class SequenceBaseDataset(BaseDataset):
             'id': id,
             'caption': self.caption_dict.get(id, "")
         }
+        
+        # Store sampling indices shared across all modalities
+        shared_valid_indices = None
+        valid_length = None
                 
         # Load features if enabled
         if self.modalities['use_features']:
             raise NotImplementedError("Features are not implemented.")
             features = self.load_features(data_path)
-            features, valid_length = self.pad_sequence(features, features.shape[1:])
+            features, valid_length, shared_valid_indices = self.pad_sequence(
+                features, features.shape[1:])
             output_dict['features'] = torch.from_numpy(features).float()
         
         # Load predicted poses if enabled
         if self.modalities['use_pred_pose']:
             pred_pose = self.load_pred_pose(data_path)
-            pred_pose, valid_length = self.pad_sequence(pred_pose, pred_pose.shape[1:])
+            pred_pose, valid_length, shared_valid_indices = self.pad_sequence(
+                pred_pose, pred_pose.shape[1:], shared_valid_indices)
             output_dict['joints'] = torch.from_numpy(pred_pose).float()
+
+        # Load gt poses if enabled
+        if self.modalities['use_gt_pose']:
+            gt_pose = self.load_gt_pose(data_path)
+            gt_pose, valid_length, shared_valid_indices = self.pad_sequence(
+                gt_pose, gt_pose.shape[1:], shared_valid_indices)
+            output_dict['joints_gt'] = torch.from_numpy(gt_pose).float()
         
         # Load raw pose data if enabled
         if self.modalities['use_raw_pose']:
             joints, velocities = self.load_raw_pose(data_path)
-            joints, _ = self.pad_sequence(joints, joints.shape[1:])
-            velocities, valid_length = self.pad_sequence(velocities, velocities.shape[1:])
+            joints, _, shared_valid_indices = self.pad_sequence(
+                joints, joints.shape[1:], shared_valid_indices)
+            velocities, valid_length, _ = self.pad_sequence(
+                velocities, velocities.shape[1:], shared_valid_indices)
             output_dict['joints'] = torch.from_numpy(joints).float()
             output_dict['velocities'] = torch.from_numpy(velocities).float()
         

@@ -128,3 +128,11 @@ def plot_hand_subplot(position, camera_params, joints_l, joints_r, title):
     plt.gca().spines['bottom'].set_visible(True)
     plt.gca().spines['left'].set_visible(True)
     plt.xticks([]); plt.yticks([])
+
+
+def plot_hand_cv2(camera_params, joints_l, joints_r):
+    img = np.ones((512, 512, 3), dtype=np.uint8) * 255
+    img = plot_hand_camera(img, joints_l, **camera_params, boundary=True)
+    img = plot_hand_camera(img, joints_r, **camera_params, boundary=True)
+    return img
+
