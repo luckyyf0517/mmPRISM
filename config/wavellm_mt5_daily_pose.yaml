@@ -19,8 +19,8 @@ data_cfg:
           use_pred_pose: true
           use_raw_pose: false
         pose_config:  # Pose modality specific settings
-          pose_dir: "pred_poses_0521"
-          norm_pose: true
+          pose_dir: "pred_poses_0506"
+          norm_pose: false
       num_workers: 4
 
 # Model configuration
