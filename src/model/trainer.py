@@ -137,6 +137,9 @@ class WaveLLMTrainer(pl.LightningModule):
     def forward(self, batch):
         # Get pose embeddings
         joints = batch.get('joints', None)
+        valid_mask = ~torch.any(torch.isnan(joints), dim=-1)
+        joints[~valid_mask] = 0
+
         features = batch.get('features', None)
         wave_embeds = self._get_wave_embeds(joints, features)
         
@@ -170,6 +173,16 @@ class WaveLLMTrainer(pl.LightningModule):
             attention_mask=prompt_tokens['attention_mask'],
             labels=labels
         )
+
+        with torch.no_grad():
+            labels = labels.clone()
+            labels[labels == IGNORE_INDEX] = self.tokenizer.pad_token_id
+            references = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+            predictions = self.tokenizer.batch_decode(outputs['logits'].argmax(dim=-1), skip_special_tokens=True)
+            for i in range(len(references)):
+                print('label: ', references[i])
+                print('pred: ', predictions[i])
+                print('-' * 50)
 
         return {
             'wave_embeds': wave_embeds, 
@@ -259,6 +272,9 @@ class WaveLLMTrainer(pl.LightningModule):
         """General translation generation function, can be called by test_step or inference script"""
         # Get pose features
         joints = batch.get('joints', None)
+        valid_mask = ~torch.any(torch.isnan(joints), dim=-1)
+        joints[~valid_mask] = 0
+        
         features = batch.get('features', None)
         wave_embeds = self._get_wave_embeds(joints, features)
         

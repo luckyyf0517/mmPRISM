@@ -17,25 +17,29 @@ data_stats = {
         'mean': np.array([0.00681697, 0.11669894, -0.30188322]),
         'std': np.array([0.10176238, 0.11198849, 0.11414795]),
     },
-    'csl-news/pred_poses': {
-        'mean': np.array([]),
-        'std': np.array([]),
-    },
+    # 'csl-news/pred_poses': {
+    #     'mean': np.array([]),
+    #     'std': np.array([]),
+    # },
     'csl-daily/sentence/poses': {
         'mean': np.array([0.02832265, 0.37857532, -0.21782798]),
         'std': np.array([0.32808729, 0.3750018, 0.12171327]),
     },
+    'csl-daily/sentence/pred_poses_0506': {
+        'mean': np.array([0.02215466, 0.00844491, -0.11399521]),
+        'std': np.array([0.16437937, 0.19462036, 0.05043625]),
+    },
     'csl-daily/sentence/pred_poses_0521': {
-        'mean': np.array([0.00402528, 0.01333136, -0.01058482]),
-        'std': np.array([0.10319765, 0.10940502, 0.08362551]),
+        'mean': np.array([0.00473068, 0.00985472, -0.01287023]),
+        'std': np.array([0.1012681, 0.10213519, 0.08511207]),
     },
 }
+
 
 class BaseDataset(Dataset):
     """Base dataset class with common functionality"""
     def __init__(self, opt=None, split_path=None):
         self.opt = opt
-        self.norm_pose = opt.get('norm_pose', False)
         self.max_length = opt.get('max_length', 256)
         
         # Load data paths
@@ -46,12 +50,12 @@ class BaseDataset(Dataset):
         return len(self.data_dict)
     
     def load_and_normalize_pose(self, pose_path):
+
         # load pose
         pose = np.load(pose_path)  # (T, 2, 24, 3)
 
-
         # normalize pose
-        if self.norm_pose:
+        if self.pose_config.get('norm_pose', False):
             mean, std = None, None
             for folder_name in data_stats.keys():
                 if folder_name in pose_path:
@@ -60,8 +64,10 @@ class BaseDataset(Dataset):
                     break
             assert mean is not None and std is not None, f"Unknown pose path: {pose_path}"
             pose = (pose - mean) / std
+        
         return pose
     
+
 class SingleFrameDataset(BaseDataset):
     """Dataset for single frame pose/feature data"""
     
@@ -95,6 +101,7 @@ class SingleFrameDataset(BaseDataset):
                 'velocities': velocities,  # (2, 24, 3)
             }
 
+
 class SequenceBaseDataset(BaseDataset):
     """Base class for sequence-based datasets with common functionality"""
     
@@ -112,7 +119,8 @@ class SequenceBaseDataset(BaseDataset):
             'feature_dir': 'features'
         })
         self.pose_config = opt.get('pose_config', {
-            'pose_dir': 'pred_poses'
+            'pose_dir': 'pred_poses', 
+            'norm_pose': False,
         })
         
         # Validate modality settings
@@ -145,7 +153,7 @@ class SequenceBaseDataset(BaseDataset):
         """Load predicted pose data"""
         pred_pose_path = pose_path.replace('poses', self.pose_config['pose_dir'])
         pose = self.load_and_normalize_pose(pred_pose_path) # (T, 2, 24, 3)
-        if 'pred_poses' in pose_path:
+        if 'pred_poses' in pred_pose_path:
             pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
         return pose
     
@@ -187,6 +195,7 @@ class SequenceBaseDataset(BaseDataset):
         output_dict['path'] = data_path
         return output_dict
 
+
 class CslNewsDataset(SequenceBaseDataset):
     """Dataset for CSL-News dataset"""
     def __init__(self, opt, split_path=None):
@@ -198,6 +207,7 @@ class CslNewsDataset(SequenceBaseDataset):
             with open(caption_path, 'r') as f:
                 return json.load(f)
         return {id: "" for id in self.data_dict.keys()}
+
 
 class CslDailyDataset(SequenceBaseDataset):
     """Dataset for CSL-Daily dataset with sentence annotations"""

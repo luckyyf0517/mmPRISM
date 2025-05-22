@@ -22,8 +22,8 @@ data_cfg:
           feature_dim: 512
           feature_dir: "features"
         pose_config:  # Pose modality specific settings
-          pose_dir: "pred_poses"
-        norm_pose: true
+          pose_dir: "pred_poses_0521"
+          norm_pose: true
       num_workers: 4
 
 # Model configuration

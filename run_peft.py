@@ -98,6 +98,7 @@ def main():
     
     # Create model
     model_cfg = cfg.model_cfg
+    model_cfg.data_cfg = data_cfg
     model_cfg.params.cfg.training.batch_size = args.batch_size
     model_cfg.params.cfg.modalities = data_cfg.params.cfg.opt.modalities
     if args.test: 

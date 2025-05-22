@@ -3,6 +3,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from copy import deepcopy
 from easydict import EasyDict as edict
 from scipy.ndimage import gaussian_filter1d
 from make_video import make_video
@@ -10,8 +11,8 @@ from src.utils.plot import plot_hand_subplot
 from src.data.dataset import CslDailyDataset
 
 camera_params = {
-    'camera_position': [0, 0, -2000],
-    'camera_intrinsic': [1000, 1000, 256.0, 256.0]
+    'camera_position': [0, 0, -1000],
+    'camera_intrinsic': [800, 800, 256.0, 256.0]
 }
 
 if __name__ == '__main__':
@@ -32,11 +33,13 @@ if __name__ == '__main__':
     # Initialize dataset
     dataset_gt = CslDailyDataset(opt, split_path='dataset/csl-daily/all.json')
 
-    opt.pose_config.pose_dir = 'pred_poses_0521'
-    dataset_pred = CslDailyDataset(opt, split_path='dataset/csl-daily/all.json')
+    opt_pred = deepcopy(opt)
+    opt_pred.pose_config.pose_dir = 'pred_poses_0521'
+    dataset_pred = CslDailyDataset(opt_pred, split_path='dataset/csl-daily/all.json')
 
     # Randomly select a sample
-    idx = random.randint(0, len(dataset_gt) - 1)
+    # idx = random.randint(0, len(dataset_gt) - 1)
+    idx = 2963
     sample_gt = dataset_gt[idx]
     sample_pred = dataset_pred[idx]
     assert sample_gt['id'] == sample_pred['id'], f"File ID mismatch: {sample_gt['id']} != {sample_pred['id']}"
