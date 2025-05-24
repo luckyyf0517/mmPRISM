@@ -40,8 +40,9 @@ def main():
     bleu_dict, rouge_score = translation_performance(all_references, all_predictions)
     
     # Print the results
-    print("\nEvaluation Results:")
-    print(f"BLEU: {bleu_dict}")
+    print(bleu_dict.keys())
+    print(f"BLEU 1: {bleu_dict['bleu1']:.2f}")
+    print(f"BLEU 4: {bleu_dict['bleu4']:.2f}")
     print(f"ROUGE-L F1: {rouge_score:.2f}")
     
     # If an output directory is specified, save the detailed results

@@ -4,10 +4,8 @@ deepspeed --include localhost:0,1 \
     run_peft.py \
     --config config/wavellm_mt5_daily.yaml \
     --batch-size 24 \
-    --max-epochs 10 \
-    --gradient-accumulation-steps 8 \
-    --version "wavellm_mt5_daily_pose_0521_v2.1_eval" \
-    --resume-checkpoint "log/peft_finetune/wavellm_mt5_daily_pose_0521_v2.1/last.ckpt" \
+    --version "wavellm_mt5_daily_pose_0521_v2.2_eval" \
+    --resume-checkpoint "log/peft_finetune/wavellm_mt5_daily_gt_pose_0521_v1.2/model-epoch-59.ckpt" \
     --dtype bf16 \
     --zero_stage 2 \
     --test 

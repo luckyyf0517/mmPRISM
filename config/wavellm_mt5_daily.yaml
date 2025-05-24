@@ -20,7 +20,7 @@ data_cfg:
           use_raw_pose: false
           use_gt_pose: false
         pose_config:  # Pose modality specific settings
-          pose_dir: "pred_poses_0521"
+          pose_dir: "poses"
           norm_pose: true
       num_workers: 4
 
@@ -48,6 +48,6 @@ model_cfg:
       # Training configuration
       training:
         learning_rate: 8.0e-4
-        weight_decay: 1.0e-4
+        weight_decay: 1.0e-2
         warmup_steps: 100
       
