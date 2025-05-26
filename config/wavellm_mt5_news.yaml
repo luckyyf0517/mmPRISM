@@ -15,7 +15,6 @@ data_cfg:
         caption_path: "dataset/CSL_News_Labels_converted.json"
         max_length: 256
         modalities:  # Control which modalities to use
-          use_features: false
           use_pred_pose: true
           use_raw_pose: false
           use_gt_pose: false

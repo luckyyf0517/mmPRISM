@@ -93,15 +93,15 @@ class SingleFrameDataset(BaseDataset):
             features = np.load(feature_path)[frame_idx]  # (feature_dim)
             return {
                 'id': id,
-                'joints': joints,  # (2, 24, 3)
+                'joints': joints.astype(np.float32),  # (2, 24, 3)
                 'features': features,  # (feature_dim)
             }
         else:
             velocities = (pose[frame_idx+1] - pose[frame_idx]) * 30
             return {
                 'id': id, 
-                'joints': joints,  # (2, 24, 3)
-                'velocities': velocities,  # (2, 24, 3)
+                'joints': joints.astype(np.float32),  # (2, 24, 3)
+                'velocities': velocities.astype(np.float32),  # (2, 24, 3)
             }
 
 
@@ -113,7 +113,6 @@ class SequenceBaseDataset(BaseDataset):
         
         # Load modality configuration
         self.modalities = opt.get('modalities', {
-            'use_features': False,
             'use_pred_pose': False,
             'use_gt_pose': False,
             'use_raw_pose': False,
@@ -184,17 +183,23 @@ class SequenceBaseDataset(BaseDataset):
         shared_valid_indices = None
         valid_length = None
                 
-        # Load features if enabled
-        if self.modalities['use_features']:
-            raise NotImplementedError("Features are not implemented.")
-            features = self.load_features(data_path)
-            features, valid_length, shared_valid_indices = self.pad_sequence(
-                features, features.shape[1:])
-            output_dict['features'] = torch.from_numpy(features).float()
+        # # Load features if enabled
+        # if self.modalities['use_features']:
+        #     raise NotImplementedError("Features are not implemented.")
+        #     features = self.load_features(data_path)
+        #     features, valid_length, shared_valid_indices = self.pad_sequence(
+        #         features, features.shape[1:])
+        #     output_dict['features'] = torch.from_numpy(features).float()
         
         # Load predicted poses if enabled
         if self.modalities['use_pred_pose']:
             pred_pose = self.load_pred_pose(data_path)
+            
+            # if self.enable_flow:
+            #     assert not np.any(np.isnan(pred_pose)), f"Predicted pose contains NaNs: {data_path}"
+            #     flow_vector = pred_pose[1:] - pred_pose[:-1]
+            #     pred_pose = np.concatenate([pred_pose[:-1], flow_vector], axis=-1)  # (T, 2, 24, 6)
+            
             pred_pose, valid_length, shared_valid_indices = self.pad_sequence(
                 pred_pose, pred_pose.shape[1:], shared_valid_indices)
             output_dict['joints'] = torch.from_numpy(pred_pose).float()

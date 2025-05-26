@@ -16,8 +16,8 @@ from easydict import EasyDict as edict
 
 if __name__ == "__main__":
     args = edict()
-    args.config = 'config/wavellm_mt5_news_pose.yaml'
-    args.checkpoint = 'log/peft_finetune/wavellm_mt5_pose_0515_continue/last.ckpt'
+    args.config = 'config/wavellm_mt5_news.yaml'
+    args.checkpoint = 'log/archived/wavellm_mt5_gt_pose_0523/last.ckpt'
 
     # Load model from checkpoint
     model_cfg = load_yaml(args.config).model_cfg
@@ -26,4 +26,4 @@ if __name__ == "__main__":
     model = load_state_dict_from_zero_checkpoint(model, args.checkpoint)
 
     llm = model.model
-    torch.save(llm.cpu().state_dict(), 'huggingface/mt5-pretrained-news-pose/pytorch_model.bin', _use_new_zipfile_serialization=True)
+    torch.save(llm.cpu().state_dict(), 'huggingface/mt5-pretrained-news/pytorch_model.bin', _use_new_zipfile_serialization=True)

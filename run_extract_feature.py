@@ -101,7 +101,6 @@ def main():
         "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
         "max_length": 512,
         "modalities": {
-            "use_features": False,
             "use_pred_pose": False,
             "use_raw_pose": True, 
             "use_gt_pose": False

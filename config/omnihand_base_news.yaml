@@ -33,7 +33,13 @@ model_cfg:
           norm_layer: torch.nn.GroupNorm
         pretrained: weights/cubenet-base
         freeze: false
+      discriminator:
+        pretrained: null
+        freeze: false
       training:
+        use_discriminator: true
+        disc_lr: 1.0e-6
+        lambda_gan: 1.0
         lr: 1.0e-4
         betas: [0.9, 0.999]
         weight_decay: 0.01

@@ -15,7 +15,6 @@ data_cfg:
         annotation_path: 'data/csl-daily/sentence_label/csl2020ct_v2.pkl'
         max_length: 256
         modalities:  # Control which modalities to use
-          use_features: false
           use_pred_pose: true
           use_raw_pose: false
           use_gt_pose: false
@@ -48,6 +47,6 @@ model_cfg:
       # Training configuration
       training:
         learning_rate: 8.0e-4
-        weight_decay: 1.0e-2
+        weight_decay: 1.0e-4
         warmup_steps: 100
       

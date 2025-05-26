@@ -22,7 +22,6 @@ if __name__ == '__main__':
         "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
         "max_length": 512,
         "modalities": {
-            "use_features": False,
             "use_pred_pose": True,
             "use_gt_pose": True,
             "use_raw_pose": False

@@ -30,19 +30,13 @@ class WaveLLMTrainer(pl.LightningModule):
         self.model.train()
         
         # Create pose encoder
-        self.modalities = cfg.get('modalities', {'use_features': False, 'use_pred_pose': True, 'use_raw_pose': False})
+        self.modalities = cfg.get('modalities', {'use_pred_pose': True, 'use_raw_pose': False})
         if self.modalities.get('use_pred_pose', False):
-            pose_enabled = True
-            self.hand_pose_encoder = HandPoseEncoder(hidden_dim=64, output_dim=self.model.config.hidden_size) # output_dim = 768
+            input_dim = 3 if not self.enable_flow else 6
+            self.hand_pose_encoder = HandPoseEncoder(input_dim=input_dim, hidden_dim=64, output_dim=self.model.config.hidden_size) # output_dim = 768
         else: 
-            pose_enabled = False
-        if self.modalities.get('use_features', False):
-            if pose_enabled:
-                self.mm_projection = nn.Linear(self.modalities.get('feature_dim', 512) + 
-                                               self.model.config.hidden_size, self.model.config.hidden_size)
-            else: 
-                self.mm_projection = nn.Linear(self.modalities.get('feature_dim', 512), self.model.config.hidden_size)
-        
+            raise ValueError("Pose modality is not enabled")
+
         # Create tokenizer
         self.tokenizer = ModelFactory.create_tokenizer(self.cfg.model)
         
@@ -102,47 +96,34 @@ class WaveLLMTrainer(pl.LightningModule):
         trainable_percent_str = colored(f"trainable%: {100 * trainable_params / all_param:.2f}", 'blue')
         print(f"{trainable_params_str} || {all_params_str} || {trainable_percent_str}")
     
-    def _get_wave_embeds(self, joints, features=None):
+    def _get_wave_embeds(self, joints):
         """
         Process pose data and generate embeddings. Optionally, concatenate with feature embeddings.
         Args:
             joints: [B, T, 2, 24, 3] Pose data
-            features: [B, T, feature_dim] Feature data (optional)
         Returns:
             wave_embeds: [B, T, hidden_size] Pose feature embeddings or concatenated embeddings
         """
-        pose_embeds = None
         if self.modalities.get('use_pred_pose', False):
             if joints is None:
                 raise ValueError("Pose modality is enabled but no pose data is provided")
             # Directly use HandPoseEncoder to encode pose, output aligned features
             pose_embeds = self.hand_pose_encoder(joints.to(torch.bfloat16))
-        
-        if self.modalities.get('use_features', False):
-            raise NotImplementedError("Feature modality is not implemented")
-            if features is None:
-                raise ValueError("Feature modality is enabled but no feature data is provided")
-            # Convert features to bfloat16 for consistency
-            features = features.to(torch.bfloat16)
-            if pose_embeds is not None:
-                # Concatenate features and pose embeddings
-                return self.mm_projection(torch.cat([features, pose_embeds], dim=-1))
-            else:
-                # Directly project features
-                return self.mm_projection(features)
-        elif pose_embeds is not None:
-            return pose_embeds
         else:
             raise ValueError("Neither pose nor feature modality is enabled")
-
-    def forward(self, batch):
-        # Get pose embeddings
+        return pose_embeds
+    
+    def _prepare_batch(self, batch):
         joints = batch.get('joints', None)
         valid_mask = ~torch.any(torch.isnan(joints), dim=-1)
         joints[~valid_mask] = 0
+        batch['joints'] = joints
+        return batch
 
-        features = batch.get('features', None)
-        wave_embeds = self._get_wave_embeds(joints, features)
+    def forward(self, batch):
+        # Get pose embeddings
+        batch = self._prepare_batch(batch)
+        wave_embeds = self._get_wave_embeds(batch['joints'])
         
         # Prepare prompt texts
         prompts = [f"Translate hand sign language videos to Chinese:" for _ in range(len(batch['caption']))]
@@ -272,12 +253,8 @@ class WaveLLMTrainer(pl.LightningModule):
     def _generate_translation(self, batch):
         """General translation generation function, can be called by test_step or inference script"""
         # Get pose features
-        joints = batch.get('joints', None)
-        valid_mask = ~torch.any(torch.isnan(joints), dim=-1)
-        joints[~valid_mask] = 0
-        
-        features = batch.get('features', None)
-        wave_embeds = self._get_wave_embeds(joints, features)
+        batch = self._prepare_batch(batch)
+        wave_embeds = self._get_wave_embeds(batch['joints'])
         
         # Prepare prompt texts
         prompts = [f"Translate hand sign language videos to Chinese:" for _ in range(wave_embeds.shape[0])]

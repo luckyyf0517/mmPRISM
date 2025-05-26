@@ -19,6 +19,7 @@ from copy import deepcopy
 
 from src.utils.tools import get_obj_from_str, instantiate_from_config
 from src.fmcw.simulator import Simulation, Processor
+from src.model.discriminator import KeypointDiscriminator
 
 
 class OmniHand(LightningModule):
@@ -26,6 +27,9 @@ class OmniHand(LightningModule):
     
     def __init__(self, cfg=None):
         super().__init__()
+        # Tell lightning to not handle the optimization
+        self.automatic_optimization = False
+        
         self.save_hyperparameters()
         self.cfg = cfg
         self.batch_size = cfg.batch_size
@@ -48,11 +52,32 @@ class OmniHand(LightningModule):
         self.regressor = nn.ModuleDict({
             'l': nn.Linear(self.feature_dim, 24 * 3),
             'r': nn.Linear(self.feature_dim, 24 * 3)})
+            
+        # Initialize discriminator if enabled
+        self.use_discriminator = cfg.training.get('use_discriminator', False)
+        if self.use_discriminator:
+            self.discriminator = KeypointDiscriminator(
+                hidden_dim=256,
+                num_heads=8,
+                num_layers=3
+            )
+            if cfg.discriminator.pretrained is not None:
+                self.discriminator.load_state_dict(torch.load(
+                    os.path.join(cfg.discriminator.pretrained, 'model.pth'), weights_only=True), strict=False)
+            if cfg.discriminator.freeze:
+                for param in self.discriminator.parameters():
+                    param.requires_grad = False
         
         # Training parameters
         self.lr = cfg.training.lr
         self.betas = cfg.training.betas
         self.weight_decay = cfg.training.weight_decay
+        self.disc_lr = cfg.training.get('disc_lr', self.lr)
+        
+        # Loss weights and GAN training schedule
+        self.lambda_gan = cfg.training.get('lambda_gan', 0.1)
+        # Number of iterations before starting generator GAN training
+        self.gan_start_iter = cfg.training.get('gan_start_iter', 1000)
 
     def load_state_dict(self, state_dict, strict=False):
             """Override load_state_dict to handle weight migration
@@ -100,47 +125,85 @@ class OmniHand(LightningModule):
         # Stack l and r hand joints
         joints = torch.stack([joints_l, joints_r], dim=1)  # [B, 2, 24, 3]
         return joints
-
-    def shared_step(self, batch, batch_idx, phase='train'):
-        """Shared training/validation/test step"""
-        # Forward pass
-        results = self.forward(batch)  # [B, 2, 24, 3]
-        # Compute losses
-        loss_dict = self.compute_loss(results, batch)
-        # Logging
-        self._log_info(loss_dict, phase)
-        self._log_progress(batch_idx, loss_dict)
-        return loss_dict['loss']  
             
     def compute_loss(self, results, batch):
-        """Calculate training losses
+        """Calculate reconstruction losses
         Args:
             pred: Predicted joint positions [B, 2, 24, 3]
             target: Ground truth joint positions [B, 2, 24, 3]
         Returns:
-            Dictionary containing losses
+            Dictionary containing reconstruction losses
         """
         loss_dict = {}
-        pred = results['joints'] * 1e3
-        target = batch['joints'] * 1e3
+        pred = results['joints'] * 1e3  # [B, 2, 24, 3]
+        target = batch['joints'] * 1e3  # [B, 2, 24, 3]
+
+        # Merge batch and hand dimensions for full joint set
+        B = pred.shape[0]
+        pred_full = pred.reshape(-1, 24, 3)  # [B*2, 24, 3]
+        target_full = target.reshape(-1, 24, 3)
 
         # Check if any value in the last dimension (xyz) is NaN
-        valid_mask = ~torch.any(torch.isnan(target), dim=-1)
+        valid_mask = ~torch.any(torch.isnan(target_full), dim=-1)  # [B*2, 24]
 
         # Apply mask to both predictions and targets
-        pred_valid = pred[valid_mask]
-        target_valid = target[valid_mask]
+        pred_valid = pred_full[valid_mask]  # [N, 3]
+        target_valid = target_full[valid_mask]  # [N, 3]
         
-        # L1 loss on valid joint positions
+        # L1 loss on valid joint positions (using all 24 joints)
         loss_dict['loss_joints'] = F.l1_loss(pred_valid, target_valid)
         
-        # MPJPE (Mean Per Joint Position Error) on valid joints
+        # MPJPE (Mean Per Joint Position Error) on valid joints (using all 24 joints)
         loss_dict['MPJPE'] = torch.norm(pred_valid - target_valid, dim=-1).mean()
         
-        # Total loss
         loss_dict['loss'] = loss_dict['loss_joints']
         return loss_dict
     
+    def compute_disc_loss(self, results, batch):
+        """Calculate discriminator and adversarial losses
+        Args:
+            pred: Predicted joint positions [B, 2, 24, 3]
+            target: Ground truth joint positions [B, 2, 24, 3]
+        Returns:
+            Dictionary containing GAN losses
+        """
+        loss_dict = {}
+        pred = results['joints']  # [B, 2, 24, 3]
+        target = batch['joints']  # [B, 2, 24, 3]
+        
+        # Extract last 21 joints for discriminator
+        pred_disc = pred[..., 3:, :].reshape(-1, 21, 3)  # [B*2, 21, 3]
+        target_disc = target[..., 3:, :].reshape(-1, 21, 3)
+
+        # Discriminator outputs
+        d_pred_detach = self.discriminator(pred_disc.detach())
+        d_pred = self.discriminator(pred_disc)
+        d_target = self.discriminator(target_disc)
+        
+        # Add margin to help discriminator training
+        margin = 0.5
+        target_real = 1.0 + margin  # Target for real samples
+        target_fake = 0.0 - margin  # Target for fake samples
+        
+        # Generator loss - do not detach
+        loss_dict['loss_gan_g'] = ((d_pred - target_real) ** 2).mean()
+        
+        # Discriminator loss - detached
+        d_loss_real = ((d_target - target_real) ** 2).mean()  # Make discriminator output 1+margin for real samples
+        d_loss_fake = ((d_pred_detach - target_fake) ** 2).mean()  # Make discriminator output 0-margin for fake samples
+        loss_dict['loss_gan_d'] = d_loss_real + d_loss_fake
+        loss_dict['loss_gan_d_real'] = d_loss_real
+        loss_dict['loss_gan_d_fake'] = d_loss_fake
+        
+        # Add discriminator accuracy for monitoring
+        with torch.no_grad():
+            d_real_acc = (d_target > 0.5).float().mean()
+            d_fake_acc = (d_pred <= 0.5).float().mean()
+            loss_dict['acc_real'] = d_real_acc
+            loss_dict['acc_fake'] = d_fake_acc
+        
+        return loss_dict
+
     def _log_info(self, info_dict, phase='train'):
         """Log losses to logger"""
         for k, v in info_dict.items():
@@ -160,90 +223,72 @@ class OmniHand(LightningModule):
                   f'MPJPE: {loss_dict["MPJPE"].item():.4f}')
 
     def configure_optimizers(self):
-        """Configure optimizer"""
-        optimizer = torch.optim.AdamW(
-            self.parameters(),
+        """Configure optimizers for generator and discriminator"""
+        # Generator optimizer (backbone + regressor)
+        g_params = list(self.backbone.parameters()) + \
+                   list(self.regressor.parameters()) + \
+                   list(self.processor.parameters())
+        g_opt = torch.optim.AdamW(
+            g_params,
             lr=self.lr,
             betas=self.betas,
             weight_decay=self.weight_decay
         )
-        return optimizer
+        
+        if self.use_discriminator:
+            # Discriminator optimizer
+            d_opt = torch.optim.AdamW(
+                self.discriminator.parameters(),
+                lr=self.disc_lr,
+                betas=self.betas,
+                weight_decay=0.0
+            )
+            return [g_opt, d_opt]
+        else:
+            return [g_opt]
 
     def training_step(self, batch, batch_idx):
-        return self.shared_step(batch, batch_idx, phase='train')
+        # Forward pass once
+        results = self.forward(batch)
+        
+        # Calculate reconstruction loss
+        rec_loss_dict = self.compute_loss(results, batch)
+
+        # Train generator
+        if self.use_discriminator:
+            g_opt, d_opt = self.optimizers()
+        
+            # Calculate GAN losses
+            gan_loss_dict = self.compute_disc_loss(results, batch)
+            rec_loss_dict.update(gan_loss_dict)
+            
+            # Add GAN loss to total loss only after warm-up period
+            if self.global_step >= self.gan_start_iter:
+                rec_loss_dict['loss'] = rec_loss_dict['loss'] + self.lambda_gan * gan_loss_dict['loss_gan_g']
+        else:
+            g_opt = self.optimizers()
+
+        g_opt.zero_grad()
+        self.manual_backward(rec_loss_dict['loss'])
+        g_opt.step()
+        
+        if self.use_discriminator:
+            # Train discriminator
+            d_opt.zero_grad()
+            self.manual_backward(gan_loss_dict['loss_gan_d'])
+            d_opt.step()
+            
+        # Logging
+        self._log_info(rec_loss_dict, phase='train')
+        self._log_progress(batch_idx, rec_loss_dict)
     
     def validation_step(self, batch, batch_idx):
-        return self.shared_step(batch, batch_idx, phase='valid')
+        # Forward pass
+        results = self.forward(batch)  # [B, 2, 24, 3]
+        # Compute losses
+        loss_dict = self.compute_loss(results, batch)
+        # Logging
+        self._log_info(loss_dict, phase='valid')
+        self._log_progress(batch_idx, loss_dict)
+        return loss_dict['loss']  
     
-    def test_step(self, batch, batch_idx):
-        return self.shared_step(batch, batch_idx, phase='test')
-
-
-class DualOmniHand(OmniHand):
-    def __init__(self, cfg=None):
-        super().__init__(cfg)
-        # Initialize two processors
-        self.processor_l = Processor(learnable_weights=cfg.get('learnable_weights', False))
-        self.processor_r = Processor(learnable_weights=cfg.get('learnable_weights', False))
-        del self.processor
-        
-        # Initialize two backbones
-        self.backbone_l = instantiate_from_config(cfg.backbone)
-        self.backbone_r = instantiate_from_config(cfg.backbone)
-        del self.backbone
-        
-        # Load pretrained weights if available
-        if cfg.backbone.pretrained is not None:
-            pretrained_weights = torch.load(
-                os.path.join(cfg.backbone.pretrained, 'model.pth'), 
-                weights_only=True
-            )
-            self.backbone_l.load_state_dict(pretrained_weights, strict=False)
-            self.backbone_r.load_state_dict(pretrained_weights, strict=False)
-        
-        # Freeze backbone if needed
-        if cfg.backbone.freeze:
-            for param in self.backbone_l.parameters():
-                param.requires_grad = False
-            for param in self.backbone_r.parameters():
-                param.requires_grad = False
-        
-        # Initialize regressors for left and right hands
-        self.regressor = nn.ModuleDict({
-            'l': nn.Linear(self.feature_dim, 24 * 3),
-            'r': nn.Linear(self.feature_dim, 24 * 3)
-        })
-
-    def encode_feature(self, joints, velocities):
-        """Encode features for left and right hands separately"""
-        # Split left and right hand data
-        x = self.simulator(joints, velocities)
-
-        # Process left hand
-        x_l = self.processor_l(x)
-        features_l = self.backbone_l(x_l)
-        features_l = F.adaptive_max_pool3d(features_l, 1).squeeze(-1).squeeze(-1).squeeze(-1)
-
-        # Process right hand
-        x_r = self.processor_r(x)
-        features_r = self.backbone_r(x_r)
-        features_r = F.adaptive_max_pool3d(features_r, 1).squeeze(-1).squeeze(-1).squeeze(-1)
-
-        return {
-            'l': features_l,
-            'r': features_r
-        }
-
-    def forward_feature(self, features):
-        """Decode joint positions for left and right hands separately"""
-        # Apply ReLU to features
-        features_l = self.relu(features['l'])
-        features_r = self.relu(features['r'])
-
-        # Predict joint positions for each hand
-        joints_l = self.regressor['l'](features_l).view(-1, 24, 3)
-        joints_r = self.regressor['r'](features_r).view(-1, 24, 3)
-
-        # Combine results from both hands
-        joints = torch.stack([joints_l, joints_r], dim=1)  # [B, 2, 24, 3]
-        return joints

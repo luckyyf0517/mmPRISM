@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
 
+import sys
+sys.path.append('.')
+
+from src.model.encoder.pose_encoder import StaticPoseEncoder
 
 class KeypointDiscriminator(nn.Module):
     def __init__(self, num_joints=21, hidden_dim=256, num_heads=8, num_layers=3):

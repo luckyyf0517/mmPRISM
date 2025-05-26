@@ -1,9 +1,13 @@
 import torch
 import torch.nn as nn
+
+import sys
+sys.path.append('.')
+
 from src.model.stgcn_layers import Graph, get_stgcn_chain
 
 class HandPoseEncoder(nn.Module):
-    def __init__(self, hidden_dim=256, output_dim=768, additional_transformer=False):
+    def __init__(self, input_dim=3, hidden_dim=256, output_dim=768):
         super().__init__()
         
         # Initialize graphs for body and hands
@@ -39,22 +43,14 @@ class HandPoseEncoder(nn.Module):
             )
 
         # Projection layer for input coordinates
-        self.proj_linear = nn.Linear(3, hidden_dim)
+        self.proj_linear = nn.Linear(input_dim, hidden_dim)
         
         # Learnable parameters for part importance
         self.part_para = nn.Parameter(torch.zeros(final_dim * 3), requires_grad=True)  # For body, left, right
         
-        if additional_transformer:
-            self.transformer = nn.TransformerEncoder(
-                nn.TransformerEncoderLayer(final_dim * 3, nhead=8),
-                num_layers=3
-            )
-        else: 
-            self.transformer = None
-
         # Final projection to LLM hidden dimension
         self.final_projection = nn.Linear(final_dim * 3, output_dim)  # For body, left, right
-        
+
     def forward(self, x):
         """
         Process pose data through GCN networks
@@ -125,11 +121,58 @@ class HandPoseEncoder(nn.Module):
         # Merge features from all parts
         combined_features = torch.cat(features, dim=-1)
         combined_features = combined_features + self.part_para
-
-        if self.transformer is not None:
-            combined_features = self.transformer(combined_features)
         
         # Project to LLM hidden dimension
         output = self.final_projection(combined_features)  # [B, N, output_dim]
+        
+        return output
+
+
+class StaticPoseEncoder(nn.Module):
+    def __init__(self, input_dim=3, hidden_dim=256, output_dim=768):
+        super().__init__()
+        
+        # Initialize graph for hand
+        self.graph = Graph(layout='hand', strategy='distance', max_hop=1)
+        A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
+        
+        # Create spatial GCN modules
+        spatial_kernel_size = A.size(0)
+        self.gcn_module, final_dim = get_stgcn_chain(
+            hidden_dim, 
+            'spatial', 
+            (1, spatial_kernel_size), 
+            A.clone(), 
+            True
+        )
+
+        # Projection layer for input coordinates
+        self.proj_linear = nn.Linear(input_dim, hidden_dim)
+        
+        # Final projection to output dimension
+        self.final_projection = nn.Linear(final_dim, output_dim)
+    
+    def forward(self, x):
+        """
+        Process single hand pose data
+        
+        Args:
+            x: Input pose data [B, 21, 3] - batch, joints, coords
+        
+        Returns:
+            Feature tensor [B, C] aligned with output dimension
+        """
+        # Project to hidden dim and add time dimension
+        proj_feat = self.proj_linear(x).permute(0, 2, 1)  # [B, C, V]
+        proj_feat = proj_feat.unsqueeze(2)  # [B, C, 1, V] - add time dimension
+        
+        # Forward pass through spatial GCN
+        spatial_feat = self.gcn_module(proj_feat)
+        
+        # Average pooling over node dimension and rearrange to [B, C]
+        pool_feat = spatial_feat.mean(-1).squeeze(2)  # Remove time dimension and pool over nodes
+        
+        # Project to output dimension
+        output = self.final_projection(pool_feat)  # [B, output_dim]
         
         return output
