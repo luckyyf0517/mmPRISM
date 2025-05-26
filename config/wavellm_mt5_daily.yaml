@@ -20,7 +20,7 @@ data_cfg:
           use_raw_pose: false
           use_gt_pose: false
         pose_config:  # Pose modality specific settings
-          pose_dir: "poses"
+          pose_dir: "pred_poses_0525"
           norm_pose: true
       num_workers: 4
 

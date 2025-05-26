@@ -28,7 +28,7 @@ if __name__ == '__main__':
             "use_raw_pose": False
         },
         "pose_config": {
-            "pose_dir": "pred_poses_0521", 
+            "pose_dir": "pred_poses_0525", 
             "norm_pose": True
         },
     })

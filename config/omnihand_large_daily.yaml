@@ -26,8 +26,8 @@ model_cfg:
         target: src.model.encoder.cubenet.CubeNet
         params: 
           input_dim: 32
-          hidden_dims: [64, 128, 256, 512]
-          num_blocks: [3, 4, 6, 3]
+          hidden_dims: [128, 256, 512, 1024]
+          num_blocks: [3, 4, 23, 3]
           strides: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [1, 1, 1]] 
           block: src.model.encoder.cubenet.BasicBlock3D
           norm_layer: torch.nn.GroupNorm

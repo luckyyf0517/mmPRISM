@@ -129,8 +129,8 @@ def main():
             filename="model-epoch-{epoch:02d}",
             auto_insert_metric_name=False,
             enable_version_counter=False,
-            every_n_epochs=5,
-            save_top_k=-1,
+            # every_n_epochs=5,
+            save_top_k=0,
             save_weights_only=True,
             save_last=True
         ),

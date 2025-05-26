@@ -17,10 +17,6 @@ data_stats = {
         'mean': np.array([0.00681697, 0.11669894, -0.30188322]),
         'std': np.array([0.10176238, 0.11198849, 0.11414795]),
     },
-    # 'csl-news/pred_poses': {
-    #     'mean': np.array([]),
-    #     'std': np.array([]),
-    # },
     'csl-daily/sentence/poses': {
         'mean': np.array([0.02832265, 0.37857532, -0.21782798]),
         'std': np.array([0.32808729, 0.3750018, 0.12171327]),
@@ -32,6 +28,10 @@ data_stats = {
     'csl-daily/sentence/pred_poses_0521': {
         'mean': np.array([0.00473068, 0.00985472, -0.01287023]),
         'std': np.array([0.1012681, 0.10213519, 0.08511207]),
+    },
+    'csl-daily/sentence/pred_poses_0525': {
+        'mean': np.array([0.00545881, 0.00916435, -0.01287592]),
+        'std': np.array([0.10056931, 0.1028068, 0.0844123]),
     },
 }
 

@@ -4,8 +4,8 @@ deepspeed --include localhost:0,1 \
     run_peft.py \
     --config config/wavellm_mt5_daily.yaml \
     --batch-size 24 \
-    --version "wavellm_mt5_daily_pose_0521_v2.2_eval" \
-    --resume-checkpoint "log/peft_finetune/wavellm_mt5_daily_gt_pose_0521_v1.2/model-epoch-59.ckpt" \
+    --version "wavellm_mt5_daily_pred_pose_0525_eval" \
+    --resume-checkpoint "log/peft_finetune/wavellm_mt5_daily_pred_pose_0525/last.ckpt" \
     --dtype bf16 \
     --zero_stage 2 \
     --test 

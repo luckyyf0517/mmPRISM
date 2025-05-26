@@ -26,7 +26,7 @@ class FeatureExtractionOmniHand(OmniHand):
         
         # Determine feature and pose paths
         # feature_path = path.replace('poses', 'features')
-        pose_path = path.replace('poses', 'pred_poses_0521')
+        pose_path = path.replace('poses', 'pred_poses_0525')
         
         # Check if both files already exist
         if os.path.exists(pose_path):
@@ -52,7 +52,7 @@ class FeatureExtractionOmniHand(OmniHand):
         # pred_valid = joints_pred[valid_mask]
         # target_valid = points_t[valid_mask]
         # mpjpe = torch.norm(pred_valid - target_valid, dim=-1).mean() * 1e3
-        # print(f"MPJPE: {mpjpe.mean()}")
+        # self.print(f"MPJPE: {mpjpe.mean()}")
         
     def process_time_batch(self, points_t, velocities_t, time_batch_size=32):
         """Process a sequence in time batches"""
@@ -73,6 +73,7 @@ def main():
     
     # Modify test split to use all data
     if datastage == 'news': 
+        raise NotImplementedError("News dataset is not implemented yet")
         # Load OmniHand model from checkpoint
         args = edict({
             'config': 'config/omnihand_base.yaml',
@@ -87,8 +88,8 @@ def main():
     elif datastage == 'daily':
         # Load OmniHand model from checkpoint
         args = edict({
-            'config': 'config/omnihand_base_daily.yaml',
-            'resume_checkpoint': 'log/omnihand/omnihand-0521-daily/last.ckpt',
+            'config': 'config/omnihand_large_daily.yaml',
+            'resume_checkpoint': 'log/omnihand/omnihand-large-daily-0525/last.ckpt',
         })
         cfg = load_yaml(args.config)
         cfg.batch_size = 1
@@ -102,9 +103,13 @@ def main():
         "modalities": {
             "use_features": False,
             "use_pred_pose": False,
-            "use_raw_pose": True
+            "use_raw_pose": True, 
+            "use_gt_pose": False
         },
-        "norm_pose": True,
+        "pose_config": {
+            "pose_dir": "poses", 
+            "norm_pose": True,
+        },
     }
         
     data = instantiate_from_config(data_cfg)
