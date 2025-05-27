@@ -32,8 +32,7 @@ class WaveLLMTrainer(pl.LightningModule):
         # Create pose encoder
         self.modalities = cfg.get('modalities', {'use_pred_pose': True, 'use_raw_pose': False})
         if self.modalities.get('use_pred_pose', False):
-            input_dim = 3 if not self.enable_flow else 6
-            self.hand_pose_encoder = HandPoseEncoder(input_dim=input_dim, hidden_dim=64, output_dim=self.model.config.hidden_size) # output_dim = 768
+            self.hand_pose_encoder = HandPoseEncoder(input_dim=3, hidden_dim=64, output_dim=self.model.config.hidden_size) # output_dim = 768
         else: 
             raise ValueError("Pose modality is not enabled")
 

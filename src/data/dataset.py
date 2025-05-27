@@ -33,6 +33,10 @@ data_stats = {
         'mean': np.array([0.00545881, 0.00916435, -0.01287592]),
         'std': np.array([0.10056931, 0.1028068, 0.0844123]),
     },
+    'csl-daily/sentence/pred_poses_0527_disc': {
+        'mean': np.array([0.00145401, 0.00957028, -0.0038756]),
+        'std': np.array([0.10702937, 0.11010554, 0.11340554]),
+    },
 }
 
 
@@ -62,7 +66,7 @@ class BaseDataset(Dataset):
                     mean = data_stats[folder_name]['mean']
                     std = data_stats[folder_name]['std']
                     break
-            assert mean is not None and std is not None, f"Unknown pose path: {pose_path}"
+            assert mean is not None and std is not None, f"Missing data stats for {pose_path}"
             pose = (pose - mean) / std
         
         return pose
@@ -83,7 +87,15 @@ class SingleFrameDataset(BaseDataset):
         pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
         pose = pose * 0.1 # scale to real-world scale
 
-        # Randomly select a frame
+        # # Randomly select a frame
+        # max_attempt = 8
+        # while True:
+        #     frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
+        #     if not np.isnan(pose[frame_idx]).any() and not np.isnan(pose[frame_idx+1]).any():
+        #         break
+        #     max_attempt -= 1
+        #     if max_attempt == 0:
+        #         break
         frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
         joints = pose[frame_idx]  # (2, 24, 3)
 

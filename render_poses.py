@@ -27,7 +27,7 @@ if __name__ == '__main__':
             "use_raw_pose": False
         },
         "pose_config": {
-            "pose_dir": "pred_poses_0525", 
+            "pose_dir": "pred_poses_0527_disc", 
             "norm_pose": True
         },
     })
@@ -35,8 +35,13 @@ if __name__ == '__main__':
     dataset = CslDailyDataset(opt, split_path='dataset/csl-daily/all.json')
 
     # Select a sample
-    idx = random.randint(0, len(dataset) - 1)
-    sample = dataset[idx]
+    while True:
+        try: 
+            idx = random.randint(0, len(dataset) - 1)
+            sample = dataset[idx]
+            break
+        except: 
+            continue
 
     length = sample['valid_length']
     

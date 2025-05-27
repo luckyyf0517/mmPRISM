@@ -168,11 +168,29 @@ class StaticPoseEncoder(nn.Module):
         
         # Forward pass through spatial GCN
         spatial_feat = self.gcn_module(proj_feat)
-        
-        # Average pooling over node dimension and rearrange to [B, C]
-        pool_feat = spatial_feat.mean(-1).squeeze(2)  # Remove time dimension and pool over nodes
+
+        # Average pooling over node dimension and rearrange to [B, C, N]
+        pool_feat = spatial_feat.squeeze(2)  # Remove time dimension and pool over nodes
+        pool_feat = torch.permute(pool_feat, (0, 2, 1))
         
         # Project to output dimension
-        output = self.final_projection(pool_feat)  # [B, output_dim]
-        
+        output = self.final_projection(pool_feat)  # [B, N, C]
         return output
+
+if __name__ == '__main__':
+    # Test StaticPoseEncoder
+    batch_size = 2
+    num_joints = 21
+    num_coords = 3
+    
+    # Create random input tensor
+    x = torch.randn(batch_size, num_joints, num_coords)
+    
+    # Initialize encoder
+    encoder = StaticPoseEncoder()
+    
+    # Forward pass
+    output = encoder(x)
+    print(f"\nStatic Encoder:")
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {output.shape}")

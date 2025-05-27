@@ -43,7 +43,7 @@ class BasicBlock3D(nn.Module):
 
 class CubeNet(nn.Module):
     def __init__(self, 
-                 block='src.model.cubenet.BasicBlock3D', 
+                 block='src.model.encoder.cubenet.BasicBlock3D', 
                  input_dim=128, 
                  hidden_dims=None, 
                  num_blocks=None, 
@@ -80,4 +80,4 @@ class CubeNet(nn.Module):
         x = self.relu(self.bn0(self.conv0(x)))
         x = self.layers(x)
         x = self.last_norm(x)
-        return x
+        return F.adaptive_max_pool3d(x, 1).squeeze(-1).squeeze(-1).squeeze(-1)  # [B, feature_dim]

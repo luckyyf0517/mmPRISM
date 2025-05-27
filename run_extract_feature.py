@@ -4,10 +4,8 @@ import numpy as np
 from tqdm import tqdm
 from termcolor import colored
 from pytorch_lightning import Trainer
-from pytorch_lightning.strategies import DeepSpeedStrategy
 from src.utils.io import load_yaml
 from src.utils.tools import instantiate_from_config
-from deepspeed.utils.zero_to_fp32 import load_state_dict_from_zero_checkpoint
 from easydict import EasyDict as edict
 from src.model.omnihand import OmniHand
 
@@ -25,8 +23,7 @@ class FeatureExtractionOmniHand(OmniHand):
         path = batch['path'][0]
         
         # Determine feature and pose paths
-        # feature_path = path.replace('poses', 'features')
-        pose_path = path.replace('poses', 'pred_poses_0525')
+        pose_path = path.replace('poses', 'pred_poses_0527_disc')
         
         # Check if both files already exist
         if os.path.exists(pose_path):
@@ -35,10 +32,6 @@ class FeatureExtractionOmniHand(OmniHand):
         
         # Process features in time batches
         features = self.process_time_batch(points_t, velocities_t)
-        
-        # # Save features
-        # os.makedirs(os.path.dirname(feature_path), exist_ok=True)
-        # np.save(feature_path, features.cpu().numpy())
         
         # Generate and save predicted poses
         joints_pred = self.forward_feature(features.to(self.device))
@@ -74,7 +67,6 @@ def main():
     # Modify test split to use all data
     if datastage == 'news': 
         raise NotImplementedError("News dataset is not implemented yet")
-        # Load OmniHand model from checkpoint
         args = edict({
             'config': 'config/omnihand_base.yaml',
             'resume_checkpoint': 'log/omnihand/omnihand-0427/last.ckpt',
@@ -86,10 +78,9 @@ def main():
         data_cfg.params.cfg.batch_size = 1
         data_cfg.params.cfg.test_split = 'dataset/csl-news-to-extract/all.json'
     elif datastage == 'daily':
-        # Load OmniHand model from checkpoint
         args = edict({
-            'config': 'config/omnihand_large_daily.yaml',
-            'resume_checkpoint': 'log/omnihand/omnihand-large-daily-0525/last.ckpt',
+            'config': 'config/omnihand_base_daily.yaml',
+            'resume_checkpoint': 'log/omnihand/omnihand-base-daily-disc-0526/last.ckpt',
         })
         cfg = load_yaml(args.config)
         cfg.batch_size = 1
@@ -97,6 +88,7 @@ def main():
         data_cfg.params.cfg.dataset = 'src.data.dataset.CslDailyDataset'
         data_cfg.params.cfg.batch_size = 1
         data_cfg.params.cfg.test_split = 'dataset/csl-daily/all.json'
+    
     data_cfg.params.cfg.opt = {
         "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
         "max_length": 512,
@@ -119,19 +111,11 @@ def main():
     model_cfg.params.cfg.batch_size = 1
     model = FeatureExtractionOmniHand(model_cfg.params.cfg)
     
-    # Create DeepSpeed strategy
-    strategy = DeepSpeedStrategy(
-        stage=2,
-        offload_optimizer=False,
-        offload_parameters=False,
-        precision_plugin=None,
-    )
-    
-    # Initialize trainer
+    # Initialize trainer with DDP strategy
     trainer = Trainer(
         accelerator='gpu',
         devices=world_size,
-        strategy=strategy,
+        strategy='ddp',
         precision='32',
         enable_progress_bar=True,
     )

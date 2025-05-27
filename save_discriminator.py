@@ -16,18 +16,19 @@ from easydict import EasyDict as edict
 
 if __name__ == "__main__":
     args = edict()
-    args.config = 'config/wavellm_mt5_daily.yaml'
-    args.checkpoint = 'log/peft_finetune/wavellm_mt5_daily_pose_0521_v1/last.ckpt'
+    args.config = 'config/omnihand_base_news.yaml'
+    args.checkpoint = 'log/omnihand/omnihand-base-news-disc-0526/last.ckpt'
 
     # Load model from checkpoint
     cfg = load_yaml(args.config)
     model_cfg = cfg.model_cfg
-    model_cfg.params.cfg.modalities = cfg.data_cfg.params.cfg.opt.modalities
-    model_cfg.params.cfg.training.batch_size = 1
+    model_cfg.params.cfg.batch_size = 1
     model = instantiate_from_config(model_cfg)
-    model = load_state_dict_from_zero_checkpoint(model, args.checkpoint)
+    model.load_state_dict(torch.load(args.checkpoint, weights_only=False)['state_dict'])
 
     from IPython import embed; embed()
 
     # pose_encoder = model.hand_pose_encoder
     # torch.save(pose_encoder.cpu().state_dict(), 'weights/hand_pose_encoder_from_wavellm_mt5_daily_pose_0521_v1.bin', _use_new_zipfile_serialization=True)
+    discriminator = model.discriminator
+    torch.save(discriminator.cpu().state_dict(), 'weights/discriminator_from_omnihand-base-news-disc-0526.bin', _use_new_zipfile_serialization=True)
