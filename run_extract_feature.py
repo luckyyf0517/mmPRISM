@@ -23,7 +23,7 @@ class FeatureExtractionOmniHand(OmniHand):
         path = batch['path'][0]
         
         # Determine feature and pose paths
-        pose_path = path.replace('poses', 'pred_poses_0527_disc')
+        pose_path = path.replace('poses', 'pred_poses_0528_rtm')
         
         # Check if both files already exist
         if os.path.exists(pose_path):

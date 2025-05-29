@@ -2,9 +2,9 @@
 torchrun --nproc_per_node=2 \
     --master_port 12345 \
     run_model.py \
-    --config config/omnihand_base_news.yaml \
+    --config config/omnihand_rtm_news.yaml \
     --batch-size 32 \
-    --max-epochs 15 \
-    --version "omnihand-base-news-0527" \
+    --max-epochs 20 \
+    --version "omnihand-rtm-news-0528" \
     --precision 32 \
     --reset

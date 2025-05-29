@@ -41,16 +41,16 @@ class OmniHand(LightningModule):
         self.backbone = instantiate_from_config(cfg.backbone)
         if cfg.backbone.pretrained is not None:
             self.backbone.load_state_dict(torch.load(
-                os.path.join(cfg.backbone.pretrained, 'model.pth'), weights_only=True), strict=False)
+                os.path.join(cfg.backbone.pretrained, 'model.pth'), weights_only=True), strict=True)
         if cfg.backbone.freeze:
             for param in self.backbone.parameters():
                 param.requires_grad = False
         
-        # Get feature dimension from backbone params (support both CubeNet and RTMEncoder3D)
+        # Get feature dimension from backbone params (support both CubeNet and CSPEncoder3D)
         if hasattr(cfg.backbone.params, 'hidden_dims'):
             self.feature_dim = cfg.backbone.params.hidden_dims[-1]  # For CubeNet
         elif hasattr(cfg.backbone.params, 'stage_channels'):
-            self.feature_dim = cfg.backbone.params.stage_channels[-1]  # For RTMEncoder3D
+            self.feature_dim = cfg.backbone.params.stage_channels[-1]  # For CSPEncoder3D
         else:
             raise ValueError("Backbone params must have either 'hidden_dims' or 'stage_channels'")
         

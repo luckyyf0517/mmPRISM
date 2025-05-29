@@ -24,22 +24,56 @@ def get_norm_layer(norm_layer, num_features):
         raise ValueError(f"{norm_layer} is not supported")
 
 
-class RepVGGBlock3D(nn.Module):
-    """RepVGG-style 3D convolution block with identity mapping"""
-    def __init__(self, channels, norm_layer=nn.BatchNorm3d):
+class DepthwiseSeparableConv3d(nn.Module):
+    """Depthwise separable convolution for 3D inputs.
+    
+    Args:
+        in_channels (int): The input channels of this Module.
+        out_channels (int): The output channels of this Module.
+        kernel_size (int): The kernel size of the depthwise conv.
+        stride (int): The stride of the depthwise conv. Default: 1.
+        padding (int): The padding of the depthwise conv. Default: 0.
+        norm_layer (nn.Module): Normalization layer. Default: nn.BatchNorm3d.
+    """
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 kernel_size: int,
+                 stride: int = 1,
+                 padding: int = 0,
+                 norm_layer=nn.BatchNorm3d):
         super().__init__()
-        self.conv1 = nn.Conv3d(channels, channels, 3, padding=1)
-        self.conv2 = nn.Conv3d(channels, channels, 1)
-        self.bn1 = get_norm_layer(norm_layer, channels)
-        self.bn2 = get_norm_layer(norm_layer, channels)
-        self.act = nn.SiLU(inplace=True)
         
+        self.depthwise = ConvBNAct3D(
+            in_channels,
+            in_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            norm_layer=norm_layer
+        )
+        
+        self.pointwise = ConvBNAct3D(
+            in_channels,
+            out_channels,
+            kernel_size=1,
+            norm_layer=norm_layer
+        )
+    
     def forward(self, x):
-        return self.act(self.bn1(self.conv1(x)) + self.bn2(self.conv2(x)))
-
+        """Forward function."""
+        x = self.depthwise(x)
+        x = self.pointwise(x)
+        return x
+    
 
 class ChannelAttention3D(nn.Module):
-    """Channel attention module for 3D tensors"""
+    """Channel attention module for 3D tensors.
+    
+    Args:
+        channels (int): Number of input channels.
+        reduction_ratio (int): Channel reduction ratio. Default: 16.
+    """
     def __init__(self, channels, reduction_ratio=16):
         super().__init__()
         self.avg_pool = nn.AdaptiveAvgPool3d(1)
@@ -51,13 +85,24 @@ class ChannelAttention3D(nn.Module):
         )
     
     def forward(self, x):
+        """Forward function."""
         att = self.avg_pool(x)
         att = self.fc(att)
         return x * att
 
 
 class ConvBNAct3D(nn.Module):
-    """Basic 3D convolution block with BatchNorm and activation"""
+    """Basic 3D convolution block with BatchNorm and activation.
+    
+    Args:
+        in_channels (int): The input channels of this Module.
+        out_channels (int): The output channels of this Module.
+        kernel_size (int): Size of the convolving kernel. Default: 3.
+        stride (int): Stride of the convolution. Default: 1.
+        padding (int, optional): Zero-padding added to both sides of the input.
+            Default: None (kernel_size // 2).
+        norm_layer (nn.Module): Normalization layer. Default: nn.BatchNorm3d.
+    """
     def __init__(self, in_channels, out_channels, kernel_size=3, 
                  stride=1, padding=None, norm_layer=nn.BatchNorm3d):
         super().__init__()
@@ -68,47 +113,182 @@ class ConvBNAct3D(nn.Module):
         self.act = nn.SiLU(inplace=True)
     
     def forward(self, x):
+        """Forward function."""
         return self.act(self.bn(self.conv(x)))
 
 
-class CSPBlock3D(nn.Module):
-    """Cross Stage Partial Block for 3D tensors with RepVGG-style blocks"""
-    def __init__(self, in_channels, out_channels, num_blocks, 
-                 expansion=0.5, add_identity=True, 
-                 use_attention=True,
+class DarknetBottleneck3D(nn.Module):
+    """The basic bottleneck block used in Darknet for 3D inputs.
+
+    Each ResBlock consists of two ConvModules and the input is added to the
+    final output. Each ConvModule is composed of Conv3d, BN3d, and SiLU.
+    The first convLayer has filter size of 1x1x1 and the second one has the
+    filter size of 3x3x3.
+
+    Args:
+        in_channels (int): The input channels of this Module.
+        out_channels (int): The output channels of this Module.
+        expandsion (float): The kernel size of the convolution. Defaults to 0.5.
+        add_identity (bool): Whether to add identity to the out. Defaults to True.
+        use_depthwise (bool): Whether to use depthwise separable convolution.
+            Defaults to False.
+        norm_layer (nn.Module): Normalization layer. Defaults to nn.BatchNorm3d.
+    """
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 expandsion: float = 0.5,
+                 add_identity: bool = True,
+                 use_depthwise: bool = False,
                  norm_layer=nn.BatchNorm3d):
         super().__init__()
-        hidden_channels = int(out_channels * expansion)
+        hidden_channels = int(out_channels * expandsion)
+        conv = DepthwiseSeparableConv3d if use_depthwise else ConvBNAct3D
         
-        self.conv1 = ConvBNAct3D(in_channels, hidden_channels, 1, 1, 0, norm_layer)
-        self.conv2 = ConvBNAct3D(in_channels, hidden_channels, 1, 1, 0, norm_layer)
+        self.conv1 = ConvBNAct3D(in_channels, hidden_channels, 1,
+                                norm_layer=norm_layer)
+        self.conv2 = conv(hidden_channels, out_channels, 3,
+                         stride=1, padding=1,
+                         norm_layer=norm_layer)
+        self.add_identity = add_identity and in_channels == out_channels
+
+    def forward(self, x):
+        """Forward function."""
+        identity = x
+        out = self.conv1(x)
+        out = self.conv2(out)
+
+        if self.add_identity:
+            return out + identity
+        else:
+            return out
+
+
+class CSPNeXtBlock3D(nn.Module):
+    """The basic bottleneck block used in CSPNeXt for 3D inputs.
+
+    Args:
+        in_channels (int): The input channels of this Module.
+        out_channels (int): The output channels of this Module.
+        expandsion (float): Expand ratio of the hidden channel. Defaults to 0.5.
+        add_identity (bool): Whether to add identity to the out. Only works
+            when in_channels == out_channels. Defaults to True.
+        use_depthwise (bool): Whether to use depthwise separable convolution.
+            Defaults to False.
+        kernel_size (int): The kernel size of the second convolution layer.
+            Defaults to 5.
+        norm_layer (nn.Module): Normalization layer. Defaults to nn.BatchNorm3d.
+    """
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 expandsion: float = 0.5,
+                 add_identity: bool = True,
+                 use_depthwise: bool = False,
+                 kernel_size: int = 5,
+                 norm_layer=nn.BatchNorm3d):
+        super().__init__()
+        hidden_channels = int(out_channels * expandsion)
+        conv = DepthwiseSeparableConv3d if use_depthwise else ConvBNAct3D
         
+        self.conv1 = conv(in_channels, hidden_channels, 3,
+                         stride=1, padding=1,
+                         norm_layer=norm_layer)
+        self.conv2 = DepthwiseSeparableConv3d(
+            hidden_channels, out_channels, kernel_size,
+            stride=1, padding=kernel_size // 2,
+            norm_layer=norm_layer)
+        self.add_identity = add_identity and in_channels == out_channels
+
+    def forward(self, x):
+        """Forward function."""
+        identity = x
+        out = self.conv1(x)
+        out = self.conv2(out)
+
+        if self.add_identity:
+            return out + identity
+        else:
+            return out
+
+
+class CSPBlock3D(nn.Module):
+    """Cross Stage Partial Block for 3D inputs.
+
+    Args:
+        in_channels (int): The input channels of the CSP layer.
+        out_channels (int): The output channels of the CSP layer.
+        expandsion (float): Ratio to adjust the number of channels of the
+            hidden layer. Defaults to 0.5.
+        num_blocks (int): Number of blocks. Defaults to 1.
+        add_identity (bool): Whether to add identity in blocks.
+            Defaults to True.
+        use_depthwise (bool): Whether to use depthwise separable convolution in
+            blocks. Defaults to False.
+        use_cspnext_block (bool): Whether to use CSPNeXt block.
+            Defaults to False.
+        channel_attention (bool): Whether to add channel attention in each
+            stage. Defaults to True.
+        norm_layer (nn.Module): Normalization layer. Defaults to nn.BatchNorm3d.
+    """
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 expandsion: float = 0.5,
+                 num_blocks: int = 1,
+                 add_identity: bool = True,
+                 use_depthwise: bool = False,
+                 use_cspnext_block: bool = True,
+                 channel_attention: bool = False,
+                 norm_layer=nn.BatchNorm3d):
+        super().__init__()
+        block = CSPNeXtBlock3D if use_cspnext_block else DarknetBottleneck3D
+        mid_channels = int(out_channels * expandsion)
+        self.channel_attention = channel_attention
+        
+        # Main conv and short conv
+        self.main_conv = ConvBNAct3D(in_channels, mid_channels, 1,
+                                    norm_layer=norm_layer)
+        self.short_conv = ConvBNAct3D(in_channels, mid_channels, 1,
+                                     norm_layer=norm_layer)
+        
+        # Final conv
+        self.final_conv = ConvBNAct3D(2 * mid_channels, out_channels, 1,
+                                     norm_layer=norm_layer)
+
+        # Sequential blocks
         self.blocks = nn.Sequential(*[
-            RepVGGBlock3D(hidden_channels, norm_layer)
-            for _ in range(num_blocks)
+            block(
+                mid_channels,
+                mid_channels,
+                expandsion=1.0,
+                add_identity=add_identity,
+                use_depthwise=use_depthwise,
+                norm_layer=norm_layer
+            ) for _ in range(num_blocks)
         ])
         
-        self.conv3 = ConvBNAct3D(hidden_channels * 2, out_channels, 1, 
-                                norm_layer=norm_layer)
-        self.attention = ChannelAttention3D(out_channels) if use_attention else None
-        self.add_identity = add_identity and in_channels == out_channels
-        
+        # Channel attention module
+        if channel_attention:
+            self.attention = ChannelAttention3D(2 * mid_channels)
+
     def forward(self, x):
-        identity = x if self.add_identity else None
-        
-        x1 = self.conv1(x)
-        x2 = self.blocks(self.conv2(x))
-        
-        x = torch.cat([x1, x2], dim=1)
-        x = self.conv3(x)
-        
-        if self.attention is not None:
-            x = self.attention(x)
+        """Forward function."""
+        # Short path
+        x_short = self.short_conv(x)
+
+        # Main path
+        x_main = self.main_conv(x)
+        x_main = self.blocks(x_main)
+
+        # Feature fusion
+        x_final = torch.cat((x_main, x_short), dim=1)
+
+        # Apply channel attention if enabled
+        if self.channel_attention:
+            x_final = self.attention(x_final)
             
-        if identity is not None:
-            x = x + identity
-            
-        return x
+        return self.final_conv(x_final)
 
 
 class SPP3D(nn.Module):
@@ -135,7 +315,7 @@ class CSPPAFPN3D(nn.Module):
                  out_channels=None,
                  out_indices=(1, 2),
                  num_csp_blocks=2,
-                 expand_ratio=0.5,
+                 expandsion=0.5,
                  norm_layer=nn.BatchNorm3d):
         super().__init__()
         
@@ -156,7 +336,8 @@ class CSPPAFPN3D(nn.Module):
                 ConvBNAct3D(in_channels[idx], in_channels[idx-1], 1, norm_layer=norm_layer))
             self.top_down_blocks.append(
                 CSPBlock3D(in_channels[idx-1] * 2, in_channels[idx-1],
-                          num_csp_blocks, expansion=expand_ratio,
+                          num_blocks=num_csp_blocks,
+                          expandsion=expandsion,
                           norm_layer=norm_layer))
         
         # Bottom-up path
@@ -180,7 +361,8 @@ class CSPPAFPN3D(nn.Module):
             
             self.bottom_up_blocks.append(
                 CSPBlock3D(next_channels, next_channels,
-                          num_csp_blocks, expansion=expand_ratio,
+                          num_blocks=num_csp_blocks,
+                          expandsion=expandsion,
                           norm_layer=norm_layer))
     
     def forward(self, inputs):
@@ -220,14 +402,14 @@ class CSPPAFPN3D(nn.Module):
         return tuple(outputs[i] for i in self.out_indices)
 
 
-class RTMEncoder3D(nn.Module):
-    """RTMEncoder3D with CSPNeXt architecture for 3D inputs"""
+class CSPEncoder3D(nn.Module):
+    """CSPEncoder3D with CSPNeXt architecture for 3D inputs"""
     def __init__(self, 
                  in_channels=32,
                  base_channels=64,
                  stage_channels=[128, 256, 512, 1024],
                  stage_blocks=[2, 4, 4, 2],  # Changed to standard P5 architecture
-                 expansion=0.5,
+                 expandsion=0.5,
                  channel_attention=True,
                  norm_layer='torch.nn.BatchNorm3d',
                  **kwargs):
@@ -258,9 +440,10 @@ class RTMEncoder3D(nn.Module):
             
             # CSP blocks with RepVGG structure
             csp_block = CSPBlock3D(
-                out_ch, out_ch, num_blocks, 
-                expansion=expansion,
-                use_attention=channel_attention and i >= 2,  # Only use attention in later stages
+                out_ch, out_ch, 
+                num_blocks=num_blocks,
+                expandsion=expandsion,
+                channel_attention=channel_attention and i >= 2,  # Only use attention in later stages
                 norm_layer=norm_layer
             )
             
@@ -274,7 +457,7 @@ class RTMEncoder3D(nn.Module):
             out_channels=None,
             out_indices=(1, 2),  # Output last two levels
             num_csp_blocks=2,
-            expand_ratio=expansion,
+            expandsion=expandsion,
             norm_layer=norm_layer
         )
         
@@ -327,214 +510,3 @@ class RTMEncoder3D(nn.Module):
         global_feat = self.global_pool(x).flatten(1)
         
         return global_feat
-
-
-class PoseDecoderSimCC3D(nn.Module):
-    def __init__(self, 
-                 input_feature_dim, 
-                 output_kpts=42,
-                 input_spatial_dims=(32, 32, 32), 
-                 simcc_split_ratio=[2.0, 2.0, 2.0],
-                 shared_mlp_hidden_dim=512,
-                 dropout_rate=0.1,
-                 **kwargs):
-        super().__init__()
-        self.output_kpts = output_kpts
-        self.input_spatial_dims = input_spatial_dims
-        self.simcc_split_ratio = simcc_split_ratio
-
-        # Calculate SimCC dimensions
-        self.simcc_x = int(input_spatial_dims[2] * simcc_split_ratio[2])  # Width
-        self.simcc_y = int(input_spatial_dims[1] * simcc_split_ratio[1])  # Height  
-        self.simcc_z = int(input_spatial_dims[0] * simcc_split_ratio[0])  # Depth
-
-        # Calculate resolution: total range 1.0 (-0.5~0.5) divided by number of grids
-        self.res_x = 1.0 / self.simcc_x  # Size of each grid cell
-        self.res_y = 1.0 / self.simcc_y
-        self.res_z = 1.0 / self.simcc_z
-
-        # Shared MLP for feature processing
-        self.shared_mlp = nn.Sequential(
-            nn.Linear(input_feature_dim, shared_mlp_hidden_dim),
-            nn.ReLU(inplace=True),
-            nn.Dropout(dropout_rate),
-            nn.Linear(shared_mlp_hidden_dim, shared_mlp_hidden_dim),
-            nn.ReLU(inplace=True),
-            nn.Dropout(dropout_rate)
-        )
-
-        # SimCC heads for X, Y, Z coordinates
-        self.head_x = nn.Linear(shared_mlp_hidden_dim, output_kpts * self.simcc_x)
-        self.head_y = nn.Linear(shared_mlp_hidden_dim, output_kpts * self.simcc_y)
-        self.head_z = nn.Linear(shared_mlp_hidden_dim, output_kpts * self.simcc_z)
-
-        self._init_weights()
-
-    def _init_weights(self):
-        """Initialize weights"""
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-
-    def forward(self, features):
-        """
-        Args:
-            features: Global feature vector [B, feature_dim]
-        
-        Returns:
-            simcc_x: [B, output_kpts, simcc_x] - X coordinate logits
-            simcc_y: [B, output_kpts, simcc_y] - Y coordinate logits
-            simcc_z: [B, output_kpts, simcc_z] - Z coordinate logits
-        """
-        # Shared feature processing
-        shared_feat = self.shared_mlp(features)
-        
-        # SimCC predictions
-        pred_x = self.head_x(shared_feat)  # [B, output_kpts * simcc_x]
-        pred_y = self.head_y(shared_feat)  # [B, output_kpts * simcc_y]
-        pred_z = self.head_z(shared_feat)  # [B, output_kpts * simcc_z]
-        
-        # Reshape to [B, output_kpts, simcc_dim]
-        batch_size = pred_x.size(0)
-        simcc_x = pred_x.view(batch_size, self.output_kpts, self.simcc_x)
-        simcc_y = pred_y.view(batch_size, self.output_kpts, self.simcc_y)
-        simcc_z = pred_z.view(batch_size, self.output_kpts, self.simcc_z)
-        
-        return simcc_x, simcc_y, simcc_z
-
-    def decode_keypoints(self, simcc_x, simcc_y, simcc_z):
-        """Decode using resolution for normalized coordinate space [-0.5, 0.5]"""
-        batch_size = simcc_x.size(0)
-        
-        # Get probability distributions
-        prob_x = F.softmax(simcc_x, dim=-1)  # [B, output_kpts, simcc_x]
-        prob_y = F.softmax(simcc_y, dim=-1)  # [B, output_kpts, simcc_y]
-        prob_z = F.softmax(simcc_z, dim=-1)  # [B, output_kpts, simcc_z]
-        
-        # Create grid coordinates (start from -0.5, increment by resolution)
-        device = simcc_x.device
-        x_grid = torch.arange(self.simcc_x, dtype=torch.float32, device=device) * self.res_x - 0.5
-        y_grid = torch.arange(self.simcc_y, dtype=torch.float32, device=device) * self.res_y - 0.5
-        z_grid = torch.arange(self.simcc_z, dtype=torch.float32, device=device) * self.res_z - 0.5
-        
-        # Calculate expected coordinates using soft-argmax
-        x_coords = torch.sum(prob_x * x_grid.view(1, 1, -1), dim=-1)  # [B, output_kpts]
-        y_coords = torch.sum(prob_y * y_grid.view(1, 1, -1), dim=-1)  # [B, output_kpts]
-        z_coords = torch.sum(prob_z * z_grid.view(1, 1, -1), dim=-1)  # [B, output_kpts]
-        
-        # Stack coordinates
-        keypoints = torch.stack([x_coords, y_coords, z_coords], dim=-1)  # [B, output_kpts, 3]
-        
-        # Calculate confidence scores (average of max probabilities)
-        scores_x = torch.max(prob_x, dim=-1)[0]
-        scores_y = torch.max(prob_y, dim=-1)[0]
-        scores_z = torch.max(prob_z, dim=-1)[0]
-        scores = (scores_x + scores_y + scores_z) / 3.0
-        
-        return keypoints, scores
-    
-    def decode_keypoints_from_indices(self, indices):
-        """Decode using resolution for normalized coordinate space [-0.5, 0.5]"""
-        x_coords = indices[..., 0] * self.res_x - 0.5
-        y_coords = indices[..., 1] * self.res_y - 0.5
-        z_coords = indices[..., 2] * self.res_z - 0.5
-        keypoints = torch.stack([x_coords, y_coords, z_coords], dim=-1)  # [B, output_kpts, 3]
-        return keypoints
-        
-
-    def encode_keypoints(self, keypoints, valid_mask=None):
-        """Encode using resolution for normalized coordinate space [-0.5, 0.5]"""
-        # Extract coordinates
-        x_coords = keypoints[..., 0]  # [B, output_kpts]
-        y_coords = keypoints[..., 1]  # [B, output_kpts]
-        z_coords = keypoints[..., 2]  # [B, output_kpts]
-        
-        # Clamp coordinates to normalized range [-0.5, 0.5]
-        x_coords = torch.clamp(x_coords, -0.5, 0.5 - 1e-6)
-        y_coords = torch.clamp(y_coords, -0.5, 0.5 - 1e-6)
-        z_coords = torch.clamp(z_coords, -0.5, 0.5 - 1e-6)
-        
-        # Convert coordinates to grid indices: shift to [0,1] range then divide by resolution
-        target_x_idx = ((x_coords + 0.5) / self.res_x).long()  # [B, output_kpts]
-        target_y_idx = ((y_coords + 0.5) / self.res_y).long()  # [B, output_kpts]
-        target_z_idx = ((z_coords + 0.5) / self.res_z).long()  # [B, output_kpts]
-        
-        # Clamp indices to valid range
-        target_x_idx = torch.clamp(target_x_idx, 0, self.simcc_x - 1)
-        target_y_idx = torch.clamp(target_y_idx, 0, self.simcc_y - 1)
-        target_z_idx = torch.clamp(target_z_idx, 0, self.simcc_z - 1)
-        
-        # Create or update validity mask
-        if valid_mask is None:
-            # Create mask for valid keypoints (non-NaN)
-            valid_mask = ~torch.any(torch.isnan(keypoints), dim=-1)  # [B, output_kpts]
-        
-        # Set indices of invalid keypoints to -1
-        target_x_idx[~valid_mask] = -1
-        target_y_idx[~valid_mask] = -1
-        target_z_idx[~valid_mask] = -1
-
-        return target_x_idx, target_y_idx, target_z_idx, valid_mask
-
-
-if __name__ == "__main__":
-    # Test RTMEncoder3D with GroupNorm
-    model = RTMEncoder3D(
-        in_channels=32,
-        base_channels=64,
-        stage_channels=[128, 256, 512, 1024],
-        stage_blocks=[2, 4, 4, 2],  # Standard P5 architecture
-        expansion=0.5,
-        channel_attention=True,
-        norm_layer='torch.nn.GroupNorm'
-    )
-    
-    # Test input shape: [batch_size, channels, height, width, depth]
-    batch_size = 2
-    input_tensor = torch.randn(batch_size, 32, 32, 32, 32)
-    
-    # Forward pass through encoder
-    global_feat = model(input_tensor)
-    print("=== RTMEncoder3D Test ===")
-    print(f"Input shape: {input_tensor.shape}")
-    print(f"Global feature shape: {global_feat.shape}")
-    
-    # Test PoseDecoderSimCC3D
-    decoder = PoseDecoderSimCC3D(
-        input_feature_dim=1024,  # Should match encoder's output dimension
-        output_kpts=48,  # 24 keypoints per hand × 2 hands
-        input_spatial_dims=(32, 32, 32),
-        simcc_split_ratio=[2.0, 2.0, 2.0],
-        shared_mlp_hidden_dim=512
-    )
-    
-    # Forward pass through decoder
-    simcc_x, simcc_y, simcc_z = decoder(global_feat)
-    print("\n=== PoseDecoderSimCC3D Test ===")
-    print(f"SimCC output shapes:")
-    print(f"X: {simcc_x.shape}")
-    print(f"Y: {simcc_y.shape}")
-    print(f"Z: {simcc_z.shape}")
-    
-    # Test keypoint decoding
-    keypoints, scores = decoder.decode_keypoints(simcc_x, simcc_y, simcc_z)
-    print("\n=== Keypoint Decoding Test ===")
-    print(f"Decoded keypoints shape: {keypoints.shape}")
-    print(f"Confidence scores shape: {scores.shape}")
-    
-    # Test keypoint encoding
-    target_keypoints = torch.rand(batch_size, 48, 3) - 0.5  # Random keypoints in [-0.5, 0.5]
-    target_x_idx, target_y_idx, target_z_idx, valid_mask = decoder.encode_keypoints(target_keypoints)
-    print("\n=== Keypoint Encoding Test ===")
-    print(f"Encoded indices shapes:")
-    print(f"X indices: {target_x_idx.shape}")
-    print(f"Y indices: {target_y_idx.shape}")
-    print(f"Z indices: {target_z_idx.shape}")
-    print(f"Valid mask shape: {valid_mask.shape}")
-    
-    print("\n=== Test Completed Successfully! ===")
-    print("RTMEncoder3D with complete CSPNeXt + PAFPN architecture is working correctly.")
-
-
