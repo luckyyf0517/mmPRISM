@@ -16,6 +16,8 @@ sys.path.append('.')
 import torch
 torch.set_float32_matmul_precision('high')
 torch.autograd.set_detect_anomaly(True)
+torch.backends.cuda.enable_flash_sdp(False)
+torch.backends.cuda.enable_mem_efficient_sdp(False)
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)

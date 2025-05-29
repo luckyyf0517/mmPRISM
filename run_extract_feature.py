@@ -23,7 +23,7 @@ class FeatureExtractionOmniHand(OmniHand):
         path = batch['path'][0]
         
         # Determine feature and pose paths
-        pose_path = path.replace('poses', 'pred_poses_0528_rtm')
+        pose_path = path.replace('poses', 'pred_poses_0529_rtm')
         
         # Check if both files already exist
         if os.path.exists(pose_path):
@@ -79,8 +79,8 @@ def main():
         data_cfg.params.cfg.test_split = 'dataset/csl-news-to-extract/all.json'
     elif datastage == 'daily':
         args = edict({
-            'config': 'config/omnihand_base_daily.yaml',
-            'resume_checkpoint': 'log/omnihand/omnihand-base-daily-disc-0526/last.ckpt',
+            'config': 'config/omnihand_rtm_daily.yaml',
+            'resume_checkpoint': 'log/omnihand/omnihand-rtm-daily-0529/last.ckpt',
         })
         cfg = load_yaml(args.config)
         cfg.batch_size = 1

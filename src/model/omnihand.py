@@ -82,6 +82,7 @@ class OmniHand(LightningModule):
         
         # Loss weights and GAN training schedule
         self.lambda_gan = cfg.training.get('lambda_gan', 0.1)
+        self.lambda_gp = cfg.training.get('lambda_gp', 10.0)
         # Number of iterations before starting generator GAN training
         self.gan_start_iter = cfg.training.get('gan_start_iter', 0)
 
@@ -98,7 +99,8 @@ class OmniHand(LightningModule):
             g_opt, d_opt = self.optimizers()
         
             # Calculate GAN losses
-            gan_loss_dict = self.compute_disc_loss(results, batch)
+            # gan_loss_dict = self.compute_gan_loss_wgan_gp(results, batch)
+            gan_loss_dict = self.compute_gan_loss(results, batch)
             rec_loss_dict.update(gan_loss_dict)
             
             # Add GAN loss to total loss only after warm-up period
@@ -142,18 +144,9 @@ class OmniHand(LightningModule):
         """
         features = self.encode_feature(input_data['joints'], input_data['velocities'])
         regressor_output = self.forward_feature(features)
-        
-        # Check if using RTM decoder (SimCC) or traditional decoder
-        if isinstance(regressor_output, tuple) and len(regressor_output) == 3:
-            # RTM decoder: returns (simcc_x, simcc_y, simcc_z)
-            return {
-                'simcc_logits': regressor_output,
-            }
-        else:
-            # Traditional decoder: returns joint coordinates
-            return {
-                'joints': regressor_output,
-            }
+        return {
+            'joints': regressor_output,
+        }
         
     def encode_feature(self, joints, velocities):
         """Encode input data into features"""
@@ -166,17 +159,8 @@ class OmniHand(LightningModule):
     def forward_feature(self, features):
         """Forward pass for feature extraction"""
         features = self.relu(features)
-        
-        # Check if using RTM decoder (SimCC) or traditional decoder
         regressor_output = self.regressor(features)
-        
-        if isinstance(regressor_output, tuple) and len(regressor_output) == 3:
-            # RTM decoder: returns (simcc_x, simcc_y, simcc_z)
-            return regressor_output
-        else:
-            # Traditional decoder: returns joint coordinates
-            joints = regressor_output.view(-1, 2, 24, 3)
-            return joints
+        return regressor_output.view(-1, 2, 24, 3)
             
     def compute_loss(self, results, batch):
         """Calculate reconstruction losses
@@ -188,111 +172,11 @@ class OmniHand(LightningModule):
         """
         loss_dict = {}
         
-        # Check if using RTM decoder (SimCC) or traditional decoder
-        if 'simcc_logits' in results:
-            # RTM decoder: SimCC loss
-            loss_dict = self._compute_simcc_loss(results, batch)
-        else:
-            # Traditional decoder: coordinate loss
-            loss_dict = self._compute_coordinate_loss(results, batch)
+        # Traditional decoder: coordinate loss
+        loss_dict = self._compute_coordinate_loss(results, batch)
         
         return loss_dict
-    
-    def _discretize_gt_poses(self, batch):
-        """Discretize ground truth poses to SimCC grid indices
-        Args:
-            batch: Dictionary containing 'joints' [B, 2, 24, 3]
-        Returns:
-            batch: Updated batch with 'joints_grid' containing discretized indices
-        """
-        target = batch['joints']  # [B, 2, 24, 3]
-        
-        # Reshape target to match output format [B, 48, 3]
-        B = target.shape[0]
-        target_reshaped = target.reshape(B, -1, 3)  # [B, 48, 3]
-        
-        # Use regressor's encode_keypoints method if available (for SimCC decoder)
-        target_x_idx, target_y_idx, target_z_idx, valid_mask = self.regressor.encode_keypoints(target_reshaped)
-        
-        # Stack indices into a single tensor [B, 48, 3]
-        joints_indices = torch.stack([target_x_idx, target_y_idx, target_z_idx], dim=-1)
-        joints_grid = self.regressor.decode_keypoints_from_indices(joints_indices)
-        joints_grid = joints_grid.reshape(-1, 2, 24, 3)
-            
-        # Add to batch
-        batch['joints_grid'] = joints_grid # [B, 2, 24, 3]
-        batch['joints_indices'] = joints_indices # [B, 48, 3]   
-        batch['joints_valid_mask'] = valid_mask # [B, 48]
-        return batch
-    
-    def _compute_simcc_loss(self, results, batch):
-        """Calculate SimCC losses for RTM decoder
-        Args:
-            results: Contains 'simcc_logits' = (simcc_x, simcc_y, simcc_z)
-            batch: Ground truth data with 'joints' [B, 2, 24, 3] and 'joints_grid' [B, 48, 3]
-        Returns:
-            Dictionary containing SimCC losses
-        """
-        def compute_dim_loss(pred, target, valid_mask, dim_name):
-            """Compute loss for single dimension
-            Args:
-                pred: Prediction logits [B, 48, simcc_dim]
-                target: Target indices [B, 48]
-                valid_mask: Valid keypoint mask [B, 48]
-                dim_name: Dimension name for logging ('x', 'y', 'z')
-            Returns:
-                loss: Cross entropy loss for this dimension
-            """
-            # Flatten for loss calculation
-            pred_flat = pred[valid_mask]  # [N_valid, simcc_dim]
-            target_flat = target[valid_mask]  # [N_valid]
-            
-            # Cross-entropy loss
-            loss = F.cross_entropy(pred_flat, target_flat)
-            return loss
 
-        loss_dict = {}
-        simcc_x, simcc_y, simcc_z = results['simcc_logits']  # Each: [B, 48, simcc_dim]
-        
-        joints_indices = batch['joints_indices']  # [B, 48, 3]
-        valid_mask = batch['joints_valid_mask']  # [B, 48]
-        
-        # Extract target indices
-        target_x_idx = joints_indices[..., 0]  # [B, 48]
-        target_y_idx = joints_indices[..., 1]  # [B, 48]
-        target_z_idx = joints_indices[..., 2]  # [B, 48]
-        
-        # Calculate cross-entropy losses only for valid keypoints
-        if valid_mask.sum() > 0:
-            # Compute losses for each dimension
-            loss_dict['loss_simcc_x'] = compute_dim_loss(simcc_x, target_x_idx, valid_mask, 'x')
-            loss_dict['loss_simcc_y'] = compute_dim_loss(simcc_y, target_y_idx, valid_mask, 'y')
-            loss_dict['loss_simcc_z'] = compute_dim_loss(simcc_z, target_z_idx, valid_mask, 'z')
-            
-            # Total SimCC loss
-            loss_dict['loss_simcc'] = (loss_dict['loss_simcc_x'] + 
-                                      loss_dict['loss_simcc_y'] + 
-                                      loss_dict['loss_simcc_z'])
-            
-            # For evaluation: decode coordinates and calculate MPJPE
-            with torch.no_grad():
-                pred_coords, _ = self.regressor.decode_keypoints(simcc_x, simcc_y, simcc_z)  # [B, 48, 3]
-                target_coords = batch['joints_grid'].reshape(batch['joints_grid'].shape[0], -1, 3)  # [B, 48, 3]
-                
-                # Convert to millimeters for MPJPE calculation
-                pred_coords = pred_coords * 1e3
-                target_coords = target_coords * 1e3
-                
-                # Calculate MPJPE for valid keypoints only
-                pred_valid = pred_coords[valid_mask]
-                target_valid = target_coords[valid_mask]
-                loss_dict['MPJPE'] = torch.norm(pred_valid - target_valid, dim=-1).mean()
-        else:
-            raise ValueError("No valid keypoints, please check the input data")
-
-        loss_dict['loss'] = loss_dict['loss_simcc']
-        return loss_dict
-    
     def _compute_coordinate_loss(self, results, batch):
         """Calculate coordinate losses for traditional decoder
         Args:
@@ -326,7 +210,88 @@ class OmniHand(LightningModule):
         loss_dict['loss'] = loss_dict['loss_joints']
         return loss_dict
     
-    def compute_disc_loss(self, results, batch):
+    def compute_gan_loss_wgan_gp(self, results, batch):
+        """Calculate WGAN-GP critic and generator losses
+        Args:
+            results: Dictionary containing generator outputs, e.g., results['joints']
+            batch: Dictionary containing ground truth data, e.g., batch['joints']
+        Returns:
+            Dictionary containing WGAN-GP losses
+        """
+        loss_dict = {}
+        pred = results['joints']  # Predicted joint positions [B, 2, 24, 3]
+        target = batch['joints']  # Ground truth joint positions [B, 2, 24, 3]
+
+        # Extract last 21 joints for discriminator (critic)
+        # pred_disc shape becomes [B*2, 21, 3]
+        pred_disc = pred[..., 3:, :].reshape(-1, 21, 3)
+        # target_disc shape also becomes [B*2, 21, 3]
+        target_disc = target[..., 3:, :].reshape(-1, 21, 3)
+
+        # Get critic scores
+        # For critic's loss on fake data, we use detached generator outputs
+        d_pred_detach = self.discriminator(pred_disc.detach())
+        # For generator's loss, we need gradients through the critic for generated samples
+        d_pred = self.discriminator(pred_disc)
+        # Critic scores for real data
+        d_target = self.discriminator(target_disc)
+
+        # --------------------
+        # Generator Loss
+        # --------------------
+        # Generator aims to maximize the critic's score for its fake samples,
+        # which is equivalent to minimizing the negative score.
+        loss_dict['loss_gan_g'] = -d_pred.mean()
+
+        # --------------------
+        # Critic (Discriminator) Loss
+        # --------------------
+        # WGAN critic loss: D(G(z)) - D(x)
+        loss_d_real = -d_target.mean()  # Maximize D(x) -> Minimize -D(x)
+        loss_d_fake = d_pred_detach.mean()   # Minimize D(G(z))
+
+        # Gradient Penalty calculation
+        # Randomly sample points along the straight lines between real and fake samples
+        effective_batch_size = target_disc.size(0) # Should be B*2
+        # Alpha for interpolation, shape [effective_batch_size, 1, 1] for broadcasting
+        alpha = torch.rand(effective_batch_size, 1, 1, device=target_disc.device)
+
+        # Create interpolated samples
+        # interpolates shape: [effective_batch_size, 21, 3]
+        # Use .data to avoid tracking history for alpha and inputs during interpolation itself,
+        # but .requires_grad_(True) to track gradients for d_interpolates w.r.t. interpolates.
+        interpolates = (alpha * target_disc.data + (1 - alpha) * pred_disc.detach().data).requires_grad_(True)
+        d_interpolates = self.discriminator(interpolates)
+
+        # Calculate gradients of critic scores w.r.t. interpolated samples
+        gradients = torch.autograd.grad(
+            outputs=d_interpolates,
+            inputs=interpolates,
+            grad_outputs=torch.ones_like(d_interpolates, requires_grad=False), # Gradient w.r.t. each output element
+            create_graph=True,  # Create graph for higher-order derivatives if needed by critic updates
+            retain_graph=True,  # Retain graph for further backward passes (e.g., critic update)
+        )[0] # Get the first element, which corresponds to gradients w.r.t. 'inputs'
+
+        # Reshape gradients to [effective_batch_size, -1] to compute L2 norm per sample
+        gradients = gradients.view(effective_batch_size, -1)
+        # Calculate gradient penalty: (||gradient||_2 - 1)^2
+        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+
+        # Total critic loss
+        loss_dict['loss_gan_d'] = loss_d_real + loss_d_fake + self.lambda_gp * gradient_penalty
+        # Store individual components for monitoring if desired
+        loss_dict['loss_gan_d_real'] = loss_d_real
+        loss_dict['loss_gan_d_fake'] = loss_d_fake
+        loss_dict['gradient_penalty'] = gradient_penalty
+
+        # Monitoring: WGANs typically don't use "accuracy" in the same way as classifier GANs.
+        # Instead, you can monitor the mean scores from the critic.
+        with torch.no_grad():
+            loss_dict['critic_score'] = (d_target - d_pred_detach).mean()
+
+        return loss_dict
+
+    def compute_gan_loss(self, results, batch):
         """Calculate discriminator and adversarial losses
         Args:
             pred: Predicted joint positions [B, 2, 24, 3]

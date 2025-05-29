@@ -27,7 +27,7 @@ if __name__ == '__main__':
             "use_raw_pose": False
         },
         "pose_config": {
-            "pose_dir": "pred_poses_0527_disc", 
+            "pose_dir": "pred_poses_0529_rtm", 
             "norm_pose": True
         },
     })
@@ -40,7 +40,8 @@ if __name__ == '__main__':
             idx = random.randint(0, len(dataset) - 1)
             sample = dataset[idx]
             break
-        except: 
+        except Exception as e: 
+            print(e)
             continue
 
     length = sample['valid_length']

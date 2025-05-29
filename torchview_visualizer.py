@@ -23,7 +23,10 @@ except ImportError:
     TORCHVIEW_AVAILABLE = False
 
 # 导入模型
-from src.model.encoder.cubenet_rtm import CSPEncoder3D, RepVGGBlock3D, CSPBlock3D, ChannelAttention3D, CSPPAFPN3D
+from src.model.encoder.cubenet_rtm import (
+    CSPEncoder3D, CSPNeXtBlock3D, CSPBlock3D, 
+    ChannelAttention3D, CSPPAFPN3D, DepthwiseSeparableConv3d, SPP3D
+)
 from src.utils.tools import get_obj_from_str
 
 class TorchviewVisualizer:
@@ -59,8 +62,8 @@ class TorchviewVisualizer:
             in_channels=32,
             base_channels=64,
             stage_channels=[128, 256, 512, 1024],
-            stage_blocks=[3, 6, 6, 3],
-            expansion=0.5,
+            stage_blocks=[2, 4, 4, 2],
+            expandsion=0.5,
             channel_attention=True,
             norm_layer='torch.nn.GroupNorm'
         )
@@ -86,46 +89,107 @@ class TorchviewVisualizer:
             print(f"CSPEncoder3D架构图已保存到: {save_path}")
         return model_graph
 
-    def visualize_repvgg_block(self,
-                              channels: int = 128,
-                              save_path: Optional[str] = None):
-        """可视化RepVGG Block详细结构"""
-        print("正在创建RepVGG Block模型...")
+    def visualize_depthwise_separable_conv3d(self,
+                                            in_channels: int = 128,
+                                            out_channels: int = 256,
+                                            kernel_size: int = 3,
+                                            save_path: Optional[str] = None):
+        """可视化DepthwiseSeparableConv3d模块"""
+        print("正在创建DepthwiseSeparableConv3d模型...")
         
-        class NamedRepVGGBlock3D(nn.Module):
+        class NamedDepthwiseSeparableConv3d(nn.Module):
             def __init__(self, base_model):
                 super().__init__()
-                self.conv1 = base_model.conv1  # 3x3 conv
-                self.conv2 = base_model.conv2  # 1x1 conv
-                self.bn1 = base_model.bn1
-                self.bn2 = base_model.bn2
-                self.act = base_model.act
+                self.depthwise = base_model.depthwise
+                self.pointwise = base_model.pointwise
             
             def forward(self, x):
-                return self.act(self.bn1(self.conv1(x)) + self.bn2(self.conv2(x)))
+                x = self.depthwise(x)
+                x = self.pointwise(x)
+                return x
         
-        # 创建基础模型并包装
-        base_model = RepVGGBlock3D(channels=channels, norm_layer=nn.GroupNorm)
-        model = NamedRepVGGBlock3D(base_model)
+        base_model = DepthwiseSeparableConv3d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=1,
+            padding=kernel_size // 2,
+            norm_layer=nn.GroupNorm
+        )
+        model = NamedDepthwiseSeparableConv3d(base_model)
         model.eval()
         
-        input_tensor = torch.randn(2, channels, 8, 8, 8)
+        input_tensor = torch.randn(2, in_channels, 8, 8, 8)
         print(f"输入形状: {input_tensor.shape}")
-        print("正在生成RepVGG Block架构图...")
+        print("正在生成DepthwiseSeparableConv3d架构图...")
         
         model_graph = draw_graph(
-            model, 
+            model,
             input_data=input_tensor,
             save_graph=bool(save_path),
-            filename=save_path or "repvgg_block_architecture",
+            filename=save_path or "depthwise_separable_conv3d_architecture",
             directory="./",
             expand_nested=True,
-            depth=1,
-            graph_name="RepVGG Block 3D Architecture"
+            depth=2,
+            graph_name="DepthwiseSeparableConv3d Architecture"
         )
         
         if save_path:
-            print(f"RepVGG Block架构图已保存到: {save_path}")
+            print(f"DepthwiseSeparableConv3d架构图已保存到: {save_path}")
+        return model_graph
+
+    def visualize_cspnext_block(self,
+                               in_channels: int = 256,
+                               out_channels: int = 256,
+                               kernel_size: int = 5,
+                               save_path: Optional[str] = None):
+        """可视化CSPNeXtBlock3D详细结构"""
+        print("正在创建CSPNeXtBlock3D模型...")
+        
+        class NamedCSPNeXtBlock3D(nn.Module):
+            def __init__(self, base_model):
+                super().__init__()
+                self.conv1 = base_model.conv1
+                self.conv2 = base_model.conv2
+                self.add_identity = base_model.add_identity
+            
+            def forward(self, x):
+                identity = x
+                out = self.conv1(x)
+                out = self.conv2(out)
+                if self.add_identity:
+                    return out + identity
+                return out
+        
+        base_model = CSPNeXtBlock3D(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            expandsion=0.5,
+            add_identity=True,
+            use_depthwise=True,
+            kernel_size=kernel_size,
+            norm_layer=nn.GroupNorm
+        )
+        model = NamedCSPNeXtBlock3D(base_model)
+        model.eval()
+        
+        input_tensor = torch.randn(2, in_channels, 8, 8, 8)
+        print(f"输入形状: {input_tensor.shape}")
+        print("正在生成CSPNeXtBlock3D架构图...")
+        
+        model_graph = draw_graph(
+            model,
+            input_data=input_tensor,
+            save_graph=bool(save_path),
+            filename=save_path or "cspnext_block_architecture",
+            directory="./",
+            expand_nested=True,
+            depth=2,
+            graph_name="CSPNeXtBlock3D Architecture"
+        )
+        
+        if save_path:
+            print(f"CSPNeXtBlock3D架构图已保存到: {save_path}")
         return model_graph
 
     def visualize_csp_block(self,
@@ -139,39 +203,32 @@ class TorchviewVisualizer:
         class NamedCSPBlock3D(nn.Module):
             def __init__(self, base_model):
                 super().__init__()
-                self.conv1 = base_model.conv1  # 第一个1x1卷积
-                self.conv2 = base_model.conv2  # 第二个1x1卷积
-                self.blocks = base_model.blocks  # RepVGG blocks
-                self.conv3 = base_model.conv3  # 最后的1x1卷积
-                if hasattr(base_model, 'attention'):
+                self.main_conv = base_model.main_conv
+                self.short_conv = base_model.short_conv
+                self.final_conv = base_model.final_conv
+                self.blocks = base_model.blocks
+                self.channel_attention = base_model.channel_attention
+                if self.channel_attention:
                     self.attention = base_model.attention
-                self.add_identity = base_model.add_identity
             
             def forward(self, x):
-                identity = x if self.add_identity else None
-                
-                x1 = self.conv1(x)
-                x2 = self.blocks(self.conv2(x))
-                
-                x = torch.cat([x1, x2], dim=1)
-                x = self.conv3(x)
-                
-                if hasattr(self, 'attention'):
-                    x = self.attention(x)
-                    
-                if identity is not None:
-                    x = x + identity
-                    
-                return x
+                x_short = self.short_conv(x)
+                x_main = self.main_conv(x)
+                x_main = self.blocks(x_main)
+                x_final = torch.cat((x_main, x_short), dim=1)
+                if self.channel_attention:
+                    x_final = self.attention(x_final)
+                return self.final_conv(x_final)
         
-        # 创建基础模型并包装
         base_model = CSPBlock3D(
             in_channels=in_channels,
             out_channels=out_channels,
+            expandsion=0.5,
             num_blocks=num_blocks,
-            expansion=0.5,
             add_identity=True,
-            use_attention=True,
+            use_depthwise=True,
+            use_cspnext_block=True,
+            channel_attention=True,
             norm_layer=nn.GroupNorm
         )
         model = NamedCSPBlock3D(base_model)
@@ -188,7 +245,7 @@ class TorchviewVisualizer:
             filename=save_path or "csp_block_architecture",
             directory="./",
             expand_nested=True,
-            depth=1,
+            depth=2,
             graph_name="CSP Block 3D Architecture"
         )
         
@@ -206,14 +263,13 @@ class TorchviewVisualizer:
             def __init__(self, base_model):
                 super().__init__()
                 self.avg_pool = base_model.avg_pool
-                self.fc = base_model.fc  # fc是一个Sequential模块
+                self.fc = base_model.fc
             
             def forward(self, x):
                 att = self.avg_pool(x)
                 att = self.fc(att)
                 return x * att
         
-        # 创建基础模型并包装
         base_model = ChannelAttention3D(channels=channels, reduction_ratio=16)
         model = NamedChannelAttention3D(base_model)
         model.eval()
@@ -229,7 +285,7 @@ class TorchviewVisualizer:
             filename=save_path or "channel_attention_architecture",
             directory="./",
             expand_nested=True,
-            depth=1,
+            depth=2,
             graph_name="Channel Attention 3D Architecture"
         )
         
@@ -257,7 +313,6 @@ class TorchviewVisualizer:
             
             def forward(self, x):
                 # 将输入按通道和空间尺寸拆分
-                # x的形状应该是 [B, C1+C2+C3, H1, W1, D1]
                 B = x.shape[0]
                 
                 # 创建三个不同尺寸的特征图
@@ -267,7 +322,6 @@ class TorchviewVisualizer:
                     x[:, 768:, :8, :8, :8]                        # P5 [B, 1024, 8, 8, 8]
                 ]
                 
-                # 原始CSPPAFPN3D的forward逻辑
                 inputs[-1] = self.spp(inputs[-1])
                 
                 feat = inputs[-1]
@@ -293,21 +347,18 @@ class TorchviewVisualizer:
                 
                 return tuple(outputs[i] for i in self.out_indices)
         
-        # 创建基础模型
         base_model = CSPPAFPN3D(
             in_channels=in_channels,
             out_channels=None,
             out_indices=(1, 2),
             num_csp_blocks=2,
-            expand_ratio=0.5,
+            expandsion=0.5,
             norm_layer=nn.GroupNorm
         )
         model = NamedCSPPAFPN3D(base_model)
         model.eval()
         
-        # 创建输入tensor，考虑不同尺寸的特征图
         input_tensor = torch.randn(2, sum(in_channels), 32, 32, 32)
-        
         print(f"输入形状: {input_tensor.shape}")
         print("正在生成CSPPAFPN3D架构图...")
         
@@ -318,12 +369,60 @@ class TorchviewVisualizer:
             filename=save_path or "csppafpn_3d_architecture",
             directory="./",
             expand_nested=True,
-            depth=2,
+            depth=1,
             graph_name="CSPPAFPN3D Architecture"
         )
         
         if save_path:
             print(f"CSPPAFPN3D架构图已保存到: {save_path}")
+        return model_graph
+
+    def visualize_spp_3d(self,
+                         in_channels: int = 256,
+                         out_channels: int = 256,
+                         save_path: Optional[str] = None):
+        """可视化SPP3D模块"""
+        print("正在创建SPP3D模型...")
+        
+        class NamedSPP3D(nn.Module):
+            def __init__(self, base_model):
+                super().__init__()
+                self.conv1 = base_model.conv1
+                self.pools = base_model.pools
+                self.conv2 = base_model.conv2
+            
+            def forward(self, x):
+                x = self.conv1(x)
+                pool_outs = [x] + [pool(x) for pool in self.pools]
+                x = torch.cat(pool_outs, dim=1)
+                return self.conv2(x)
+        
+        base_model = SPP3D(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_sizes=(5, 9, 13),
+            norm_layer=nn.GroupNorm
+        )
+        model = NamedSPP3D(base_model)
+        model.eval()
+        
+        input_tensor = torch.randn(2, in_channels, 32, 32, 32)
+        print(f"输入形状: {input_tensor.shape}")
+        print("正在生成SPP3D架构图...")
+        
+        model_graph = draw_graph(
+            model,
+            input_data=input_tensor,
+            save_graph=bool(save_path),
+            filename=save_path or "spp_3d_architecture",
+            directory="./",
+            expand_nested=True,
+            depth=2,
+            graph_name="SPP3D Architecture"
+        )
+        
+        if save_path:
+            print(f"SPP3D架构图已保存到: {save_path}")
         return model_graph
 
 def demo_all_visualizations():
@@ -350,15 +449,26 @@ def demo_all_visualizations():
     #     show_layer_names=True
     # )
     
-    # # 2. 可视化RepVGG Block
-    # print("\n2. 可视化RepVGG Block详细结构...")
-    # visualizer.visualize_repvgg_block(
-    #     channels=128,
-    #     save_path="results/repvgg_block_torchview"
+    # # 2. 可视化DepthwiseSeparableConv3d
+    # print("\n2. 可视化DepthwiseSeparableConv3d模块...")
+    # visualizer.visualize_depthwise_separable_conv3d(
+    #     in_channels=128,
+    #     out_channels=256,
+    #     kernel_size=3,
+    #     save_path="results/depthwise_separable_conv3d_torchview"
     # )
     
-    # # 3. 可视化CSP Block
-    # print("\n3. 可视化CSP Block详细结构...")
+    # # 3. 可视化CSPNeXtBlock3D
+    # print("\n3. 可视化CSPNeXtBlock3D详细结构...")
+    # visualizer.visualize_cspnext_block(
+    #     in_channels=256,
+    #     out_channels=256,
+    #     kernel_size=5,
+    #     save_path="results/cspnext_block_torchview"
+    # )
+    
+    # # 4. 可视化CSP Block
+    # print("\n4. 可视化CSP Block详细结构...")
     # visualizer.visualize_csp_block(
     #     in_channels=256,
     #     out_channels=256,
@@ -366,27 +476,37 @@ def demo_all_visualizations():
     #     save_path="results/csp_block_torchview"
     # )
     
-    # # 4. 可视化Channel Attention
-    # print("\n4. 可视化Channel Attention模块...")
+    # # 5. 可视化Channel Attention
+    # print("\n5. 可视化Channel Attention模块...")
     # visualizer.visualize_channel_attention(
     #     channels=256,
     #     save_path="results/channel_attention_torchview"
     # )
     
-    # 5. 可视化CSPPAFPN3D
-    print("\n5. 可视化CSPPAFPN3D模块...")
+    # 6. 可视化CSPPAFPN3D
+    print("\n6. 可视化CSPPAFPN3D模块...")
     visualizer.visualize_csppafpn_3d(
         in_channels=[256, 512, 1024],
         save_path="results/csppafpn_3d_torchview"
     )
     
+    # 7. 可视化SPP3D
+    print("\n7. 可视化SPP3D模块...")
+    visualizer.visualize_spp_3d(
+        in_channels=256,
+        out_channels=256,
+        save_path="results/spp_3d_torchview"
+    )
+    
     print("\n=== 所有架构图已生成完成！ ===")
     print("生成的文件:")
     print("- results/rtm_encoder_3d_torchview.png: CSPEncoder3D整体架构")
-    print("- results/repvgg_block_torchview.png: RepVGG Block详细结构")
+    print("- results/depthwise_separable_conv3d_torchview.png: DepthwiseSeparableConv3d模块")
+    print("- results/cspnext_block_torchview.png: CSPNeXtBlock3D详细结构")
     print("- results/csp_block_torchview.png: CSP Block详细结构")
     print("- results/channel_attention_torchview.png: Channel Attention模块")
     print("- results/csppafpn_3d_torchview.png: CSPPAFPN3D模块")
+    print("- results/spp_3d_torchview.png: SPP3D模块")
 
 
 def install_torchview():

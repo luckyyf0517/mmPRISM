@@ -177,6 +177,7 @@ class StaticPoseEncoder(nn.Module):
         output = self.final_projection(pool_feat)  # [B, N, C]
         return output
 
+
 if __name__ == '__main__':
     # Test StaticPoseEncoder
     batch_size = 2
