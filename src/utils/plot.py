@@ -57,7 +57,6 @@ def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=
             continue
         pt = joints_image[i]
         color_depth = joints_depth[i]
-        # 为手臂关节点使用不同的大小
         radius = 7 if i < 3 else 5
         items_to_draw.append([
             (pt[:2].astype(np.int32), radius), 

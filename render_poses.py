@@ -35,14 +35,15 @@ if __name__ == '__main__':
     dataset = CslDailyDataset(opt, split_path='dataset/csl-daily/all.json')
 
     # Select a sample
-    while True:
-        try: 
-            idx = random.randint(0, len(dataset) - 1)
-            sample = dataset[idx]
-            break
-        except Exception as e: 
-            print(e)
-            continue
+    # while True:
+    #     try: 
+    #         idx = random.randint(0, len(dataset) - 1)
+    #         sample = dataset[idx]
+    #         break
+    #     except Exception as e: 
+    #         print(e)
+    #         continue
+    sample = dataset[1024]
 
     length = sample['valid_length']
     
