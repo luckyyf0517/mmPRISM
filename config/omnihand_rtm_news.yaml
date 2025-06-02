@@ -28,11 +28,12 @@ model_cfg:
           in_channels: 32  # mmWave data channels
           base_channels: 64
           stage_channels: [128, 256, 512, 1024]  # Increased channel progression for better feature extraction
-          stage_blocks: [3, 6, 6, 3]  # More blocks for deeper feature learning
+          stage_blocks: [2, 4, 4, 2]  # More blocks for deeper feature learning
+          spp_kernel_sizes: [3, 5, 7]
           expansion: 0.5  # Standard expansion ratio
           channel_attention: true  # Enable channel attention for better feature refinement
           norm_layer: torch.nn.GroupNorm  # GroupNorm for better regularization
-        pretrained: weights/rtm  
+        pretrained: null  
         freeze: false
       regressor:
         target: torch.nn.Linear
@@ -43,7 +44,7 @@ model_cfg:
         pretrained: null
         freeze: false
       training:
-        use_discriminator: true
+        use_discriminator: false
         disc_lr: 1.0e-4
         gan_start_iter: 1000
         lambda_gp: 0.0

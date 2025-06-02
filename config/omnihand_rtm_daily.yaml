@@ -29,6 +29,7 @@ model_cfg:
           base_channels: 64
           stage_channels: [128, 256, 512, 1024]  # Increased channel progression for better feature extraction
           stage_blocks: [3, 6, 6, 3]  # More blocks for deeper feature learning
+          spp_kernel_sizes: [5, 9, 13]
           expansion: 0.5  # Standard expansion ratio
           channel_attention: true  # Enable channel attention for better feature refinement
           norm_layer: torch.nn.GroupNorm  # GroupNorm for better regularization
@@ -40,10 +41,10 @@ model_cfg:
           in_features: 1024
           out_features: 144
       discriminator:
-        pretrained: null
-        freeze: false
+        pretrained: 'weights/discriminator_from_omnihand-rtm-news-disc-0529.pth'
+        freeze: true
       training:
-        use_discriminator: false
+        use_discriminator: true
         disc_lr: 1.0e-4
         disc_start_iter: 0
         lambda_gp: 10.0

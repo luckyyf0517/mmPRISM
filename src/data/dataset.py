@@ -21,21 +21,13 @@ data_stats = {
         'mean': np.array([0.02832265, 0.37857532, -0.21782798]),
         'std': np.array([0.32808729, 0.3750018, 0.12171327]),
     },
-    'csl-daily/sentence/pred_poses_0506': {
-        'mean': np.array([0.02215466, 0.00844491, -0.11399521]),
-        'std': np.array([0.16437937, 0.19462036, 0.05043625]),
-    },
-    'csl-daily/sentence/pred_poses_0521': {
+    'csl-daily/sentence/pred_poses_0521_base': {
         'mean': np.array([0.00473068, 0.00985472, -0.01287023]),
         'std': np.array([0.1012681, 0.10213519, 0.08511207]),
     },
-    'csl-daily/sentence/pred_poses_0525': {
+    'csl-daily/sentence/pred_poses_0525_large': {
         'mean': np.array([0.00545881, 0.00916435, -0.01287592]),
         'std': np.array([0.10056931, 0.1028068, 0.0844123]),
-    },
-    'csl-daily/sentence/pred_poses_0527_disc': {
-        'mean': np.array([0.00145401, 0.00957028, -0.0038756]),
-        'std': np.array([0.10702937, 0.11010554, 0.11340554]),
     },
     'csl-daily/sentence/pred_poses_0529_rtm': {
         'mean': np.array([0.00361779, 0.00950573, -0.01211531]),

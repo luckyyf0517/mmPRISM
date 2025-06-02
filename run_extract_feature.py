@@ -23,15 +23,17 @@ class FeatureExtractionOmniHand(OmniHand):
         path = batch['path'][0]
         
         # Determine feature and pose paths
-        pose_path = path.replace('poses', 'pred_poses_0529_rtm')
+        pose_path = path.replace('poses', 'pred_poses_0601_rtm_disc')
         
         # Check if both files already exist
         if os.path.exists(pose_path):
             self.skipped_count += 1
             return
         
-        # Process features in time batches
-        features = self.process_time_batch(points_t, velocities_t)
+        # Process doppler data
+        mmwave = self.simulator(points_t, velocities_t)
+        mmwave = self.processor(mmwave)
+        features = self.backbone(mmwave)
         
         # Generate and save predicted poses
         joints_pred = self.forward_feature(features.to(self.device))
@@ -47,10 +49,6 @@ class FeatureExtractionOmniHand(OmniHand):
         # mpjpe = torch.norm(pred_valid - target_valid, dim=-1).mean() * 1e3
         # self.print(f"MPJPE: {mpjpe.mean()}")
         
-    def process_time_batch(self, points_t, velocities_t, time_batch_size=32):
-        """Process a sequence in time batches"""
-        return self.encode_feature(points_t, velocities_t)
-
 def main():
     # Initialize distributed training
     local_rank = int(os.environ["LOCAL_RANK"])
@@ -65,29 +63,17 @@ def main():
         print(colored(f"- GPU Memory: {torch.cuda.get_device_properties(local_rank).total_memory / 1024**3:.1f} GB", "yellow"))
     
     # Modify test split to use all data
-    if datastage == 'news': 
-        raise NotImplementedError("News dataset is not implemented yet")
-        args = edict({
-            'config': 'config/omnihand_base.yaml',
-            'resume_checkpoint': 'log/omnihand/omnihand-0427/last.ckpt',
-        })
-        cfg = load_yaml(args.config)
-        cfg.batch_size = 1
-        data_cfg = cfg.data_cfg
-        data_cfg.params.cfg.dataset = 'src.data.dataset.CslNewsDataset'
-        data_cfg.params.cfg.batch_size = 1
-        data_cfg.params.cfg.test_split = 'dataset/csl-news-to-extract/all.json'
-    elif datastage == 'daily':
-        args = edict({
-            'config': 'config/omnihand_rtm_daily.yaml',
-            'resume_checkpoint': 'log/omnihand/omnihand-rtm-daily-0529/last.ckpt',
-        })
-        cfg = load_yaml(args.config)
-        cfg.batch_size = 1
-        data_cfg = cfg.data_cfg
-        data_cfg.params.cfg.dataset = 'src.data.dataset.CslDailyDataset'
-        data_cfg.params.cfg.batch_size = 1
-        data_cfg.params.cfg.test_split = 'dataset/csl-daily/all.json'
+    assert datastage == 'daily'
+    args = edict({
+        'config': 'config/omnihand_rtm_daily.yaml',
+        'resume_checkpoint': 'log/omnihand/omnihand-rtm-daily-disc-0601/last.ckpt',
+    })
+    cfg = load_yaml(args.config)
+    cfg.batch_size = 1
+    data_cfg = cfg.data_cfg
+    data_cfg.params.cfg.dataset = 'src.data.dataset.CslDailyDataset'
+    data_cfg.params.cfg.batch_size = 1
+    data_cfg.params.cfg.test_split = 'dataset/csl-daily/all.json'
     
     data_cfg.params.cfg.opt = {
         "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
@@ -109,6 +95,7 @@ def main():
     # Initialize model
     model_cfg = cfg.model_cfg
     model_cfg.params.cfg.batch_size = 1
+    model_cfg.params.cfg.training.use_discriminator = True
     model = FeatureExtractionOmniHand(model_cfg.params.cfg)
     
     # Initialize trainer with DDP strategy

@@ -1,5 +1,6 @@
 import os
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
+os.environ["WANDB_MODE"] = "offline"
 
 import yaml
 import glob
@@ -135,7 +136,10 @@ def main():
         num_sanity_val_steps=2,
         reload_dataloaders_every_n_epochs=1, 
         callbacks=[checkpoint_callback],
-        enable_progress_bar=True
+        enable_progress_bar=True,
+        # limit_train_batches=10,  
+        # limit_val_batches=10, 
+        # limit_test_batches=10 
     )
 
     # Run training or testing

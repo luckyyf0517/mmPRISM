@@ -5,6 +5,6 @@ torchrun --nproc_per_node=2 \
     --config config/omnihand_rtm_news.yaml \
     --batch-size 32 \
     --max-epochs 20 \
-    --version "omnihand-rtm-news-disc-0529" \
+    --version "omnihand-rtm-news-0602" \
     --precision 32 \
     --reset

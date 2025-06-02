@@ -50,14 +50,15 @@ class DepthwiseSeparableConv3d(nn.Module):
             kernel_size=kernel_size,
             stride=stride,
             padding=padding,
-            norm_layer=norm_layer
+            norm_layer=norm_layer,
+            groups=in_channels
         )
         
         self.pointwise = ConvBNAct3D(
             in_channels,
             out_channels,
             kernel_size=1,
-            norm_layer=norm_layer
+            norm_layer=norm_layer, 
         )
     
     def forward(self, x):
@@ -101,14 +102,15 @@ class ConvBNAct3D(nn.Module):
         stride (int): Stride of the convolution. Default: 1.
         padding (int, optional): Zero-padding added to both sides of the input.
             Default: None (kernel_size // 2).
+        groups (int): Number of blocked connections from input channels to output channels. Default: 1.
         norm_layer (nn.Module): Normalization layer. Default: nn.BatchNorm3d.
     """
     def __init__(self, in_channels, out_channels, kernel_size=3, 
-                 stride=1, padding=None, norm_layer=nn.BatchNorm3d):
+                 stride=1, padding=None, groups=1, norm_layer=nn.BatchNorm3d):
         super().__init__()
         padding = padding or kernel_size // 2
         self.conv = nn.Conv3d(in_channels, out_channels, kernel_size, 
-                             stride, padding, bias=False)
+                             stride, padding, groups=groups, bias=False)
         self.bn = get_norm_layer(norm_layer, out_channels)
         self.act = nn.SiLU(inplace=True)
     
@@ -293,7 +295,7 @@ class CSPBlock3D(nn.Module):
 
 class SPP3D(nn.Module):
     """3D Spatial Pyramid Pooling"""
-    def __init__(self, in_channels, out_channels, kernel_sizes=(5, 9, 13), norm_layer=nn.BatchNorm3d):
+    def __init__(self, in_channels, out_channels, kernel_sizes=(3, 5, 7), norm_layer=nn.BatchNorm3d):
         super().__init__()
         self.conv1 = ConvBNAct3D(in_channels, in_channels // 2, 1, 1, 0, norm_layer)
         self.pools = nn.ModuleList([
@@ -316,7 +318,8 @@ class CSPPAFPN3D(nn.Module):
                  out_indices=(1, 2),
                  num_csp_blocks=2,
                  expandsion=0.5,
-                 norm_layer=nn.BatchNorm3d):
+                 norm_layer=nn.BatchNorm3d,
+                 spp_kernel_sizes=(3, 5, 7)):
         super().__init__()
         
         self.out_indices = out_indices
@@ -324,7 +327,7 @@ class CSPPAFPN3D(nn.Module):
         self.in_channels = in_channels
         
         # SPP block on the last input
-        self.spp = SPP3D(in_channels[-1], in_channels[-1], norm_layer=norm_layer)
+        self.spp = SPP3D(in_channels[-1], in_channels[-1], norm_layer=norm_layer, kernel_sizes=spp_kernel_sizes)
         
         # Top-down path
         self.upsample = nn.Upsample(scale_factor=2, mode='trilinear', align_corners=False)
@@ -407,8 +410,9 @@ class CSPEncoder3D(nn.Module):
     def __init__(self, 
                  in_channels=32,
                  base_channels=64,
-                 stage_channels=[128, 256, 512, 1024],
+                 stage_channels=[128, 256, 512, 1024], 
                  stage_blocks=[2, 4, 4, 2],  # Changed to standard P5 architecture
+                 spp_kernel_sizes=(3, 5, 7),
                  expandsion=0.5,
                  channel_attention=True,
                  norm_layer='torch.nn.BatchNorm3d',
@@ -425,9 +429,9 @@ class CSPEncoder3D(nn.Module):
         
         # Stem layer with focus-like structure
         self.stem = nn.Sequential(
-            ConvBNAct3D(in_channels, base_channels // 2, 3, 1, 1, norm_layer),
-            ConvBNAct3D(base_channels // 2, base_channels, 3, 2, 1, norm_layer),
-            ConvBNAct3D(base_channels, base_channels, 3, 1, 1, norm_layer)
+            ConvBNAct3D(in_channels, base_channels // 2, 3, 1, 1, norm_layer=norm_layer),
+            ConvBNAct3D(base_channels // 2, base_channels, 3, 2, 1, norm_layer=norm_layer),
+            ConvBNAct3D(base_channels, base_channels, 3, 1, 1, norm_layer=norm_layer)
         )
         
         # Build stages
@@ -436,7 +440,7 @@ class CSPEncoder3D(nn.Module):
         
         for i, (out_ch, num_blocks) in enumerate(zip(stage_channels, stage_blocks)):
             # Downsample
-            downsample = ConvBNAct3D(in_ch, out_ch, 3, 2, 1, norm_layer)
+            downsample = ConvBNAct3D(in_ch, out_ch, 3, 2, 1, norm_layer=norm_layer)
             
             # CSP blocks with RepVGG structure
             csp_block = CSPBlock3D(
@@ -458,7 +462,8 @@ class CSPEncoder3D(nn.Module):
             out_indices=(1, 2),  # Output last two levels
             num_csp_blocks=2,
             expandsion=expandsion,
-            norm_layer=norm_layer
+            norm_layer=norm_layer, 
+            spp_kernel_sizes=spp_kernel_sizes
         )
         
         # Global average pooling for final feature
