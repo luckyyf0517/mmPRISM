@@ -88,8 +88,6 @@ class OmniHand(LightningModule):
 
     def training_step(self, batch, batch_idx):
         # Forward pass once
-        if hasattr(self.regressor, 'encode_keypoints'): 
-            batch = self._discretize_gt_poses(batch)
         results = self.forward(batch)
         
         # Calculate reconstruction loss
@@ -125,13 +123,21 @@ class OmniHand(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         # Forward pass
-        if hasattr(self.regressor, 'encode_keypoints'): 
-            batch = self._discretize_gt_poses(batch)
         results = self.forward(batch)  # [B, 2, 24, 3]
         # Compute losses
         loss_dict = self.compute_loss(results, batch)
         # Logging
         self._log_info(loss_dict, phase='valid')
+        self._log_progress(batch_idx, loss_dict)
+        return loss_dict['loss']  
+    
+    def test_step(self, batch, batch_idx):
+        # Forward pass
+        results = self.forward(batch)  # [B, 2, 24, 3]
+        # Compute losses
+        loss_dict = self.compute_loss(results, batch)
+        # Logging
+        self._log_info(loss_dict, phase='test')
         self._log_progress(batch_idx, loss_dict)
         return loss_dict['loss']  
 

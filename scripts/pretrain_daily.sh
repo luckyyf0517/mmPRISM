@@ -4,7 +4,7 @@ torchrun --nproc_per_node=2 \
     --config config/omnihand_rtm_daily.yaml \
     --batch-size 32 \
     --max-epochs 50 \
-    --version "omnihand-rtm-daily-disc-0601" \
-    --resume-checkpoint "log/omnihand/omnihand-rtm-news-disc-0529/last.ckpt" \
+    --version "omnihand-rtm-daily-0602" \
+    --resume-checkpoint "log/omnihand/omnihand-rtm-news-0602/last.ckpt" \
     --precision 32 \
     --reset

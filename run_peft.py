@@ -1,5 +1,6 @@
 import os
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
+os.environ["WANDB_MODE"] = "offline"
 
 import yaml
 import glob

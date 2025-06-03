@@ -33,6 +33,10 @@ data_stats = {
         'mean': np.array([0.00361779, 0.00950573, -0.01211531]),
         'std': np.array([0.10205246, 0.1025732, 0.08511592]),
     },
+    'csl-daily/sentence/pred_poses_0602_rtm': {
+        'mean': np.array([0.00491593, 0.01073456, -0.0108644]),
+        'std': np.array([0.10114002, 0.10167552, 0.08443051]),
+    },
 }
 
 
@@ -191,22 +195,16 @@ class SequenceBaseDataset(BaseDataset):
         shared_valid_indices = None
         valid_length = None
                 
-        # # Load features if enabled
-        # if self.modalities['use_features']:
-        #     raise NotImplementedError("Features are not implemented.")
-        #     features = self.load_features(data_path)
-        #     features, valid_length, shared_valid_indices = self.pad_sequence(
-        #         features, features.shape[1:])
-        #     output_dict['features'] = torch.from_numpy(features).float()
+        # Load features if enabled
+        if self.modalities['use_features']:
+            features = self.load_features(data_path)
+            features, valid_length, shared_valid_indices = self.pad_sequence(
+                features, features.shape[1:])
+            output_dict['features'] = torch.from_numpy(features).float()
         
         # Load predicted poses if enabled
         if self.modalities['use_pred_pose']:
             pred_pose = self.load_pred_pose(data_path)
-            
-            # if self.enable_flow:
-            #     assert not np.any(np.isnan(pred_pose)), f"Predicted pose contains NaNs: {data_path}"
-            #     flow_vector = pred_pose[1:] - pred_pose[:-1]
-            #     pred_pose = np.concatenate([pred_pose[:-1], flow_vector], axis=-1)  # (T, 2, 24, 6)
             
             pred_pose, valid_length, shared_valid_indices = self.pad_sequence(
                 pred_pose, pred_pose.shape[1:], shared_valid_indices)
@@ -275,3 +273,29 @@ class CslDailyDataset(SequenceBaseDataset):
             caption_dict[video_id] = caption
             
         return caption_dict
+
+
+if __name__ == "__main__":
+    opt = {
+        "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
+        "max_length": 512,
+        "modalities": {
+            "use_pred_pose": True,
+            "use_features": True,
+            "use_raw_pose": False, 
+            "use_gt_pose": False
+        },
+        "feature_config": {
+            "feature_dim": 512,
+            "feature_dir": "features_0602_rtm",
+        },
+        "pose_config": {
+            "pose_dir": "pred_poses_0602_rtm", 
+            "norm_pose": True,
+        },
+    }
+
+    dataset = CslDailyDataset(opt, split_path='dataset/csl-daily/all.json')
+    item = dataset[0]
+    print(item['features'].shape)
+    print(item['joints'].shape)

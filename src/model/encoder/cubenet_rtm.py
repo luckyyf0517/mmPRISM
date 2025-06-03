@@ -297,11 +297,11 @@ class SPP3D(nn.Module):
     """3D Spatial Pyramid Pooling"""
     def __init__(self, in_channels, out_channels, kernel_sizes=(3, 5, 7), norm_layer=nn.BatchNorm3d):
         super().__init__()
-        self.conv1 = ConvBNAct3D(in_channels, in_channels // 2, 1, 1, 0, norm_layer)
+        self.conv1 = ConvBNAct3D(in_channels, in_channels // 2, 1, 1, 0, norm_layer=norm_layer)
         self.pools = nn.ModuleList([
             nn.MaxPool3d(k, stride=1, padding=k//2) for k in kernel_sizes
         ])
-        self.conv2 = ConvBNAct3D(in_channels // 2 * (len(kernel_sizes) + 1), out_channels, 1, 1, 0, norm_layer)
+        self.conv2 = ConvBNAct3D(in_channels // 2 * (len(kernel_sizes) + 1), out_channels, 1, 1, 0, norm_layer=norm_layer)
     
     def forward(self, x):
         x = self.conv1(x)

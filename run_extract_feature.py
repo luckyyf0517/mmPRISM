@@ -23,20 +23,27 @@ class FeatureExtractionOmniHand(OmniHand):
         path = batch['path'][0]
         
         # Determine feature and pose paths
-        pose_path = path.replace('poses', 'pred_poses_0601_rtm_disc')
+        pose_path = path.replace('poses', 'pred_poses_0602_rtm')
+        feature_path = path.replace('poses', 'features_0602_rtm')
+        
+        # Process doppler data
+        mmwave = self.simulator(points_t, velocities_t)
+        mmwave = self.processor(mmwave)
+        features = self.backbone(mmwave)
+
+        # Save features
+        os.makedirs(os.path.dirname(feature_path), exist_ok=True)
+        np.save(feature_path, features.cpu().numpy())
         
         # Check if both files already exist
         if os.path.exists(pose_path):
             self.skipped_count += 1
             return
         
-        # Process doppler data
-        mmwave = self.simulator(points_t, velocities_t)
-        mmwave = self.processor(mmwave)
-        features = self.backbone(mmwave)
-        
         # Generate and save predicted poses
         joints_pred = self.forward_feature(features.to(self.device))
+        
+        # Save predicted poses
         os.makedirs(os.path.dirname(pose_path), exist_ok=True)
         np.save(pose_path, joints_pred.cpu().numpy())
         
@@ -66,7 +73,7 @@ def main():
     assert datastage == 'daily'
     args = edict({
         'config': 'config/omnihand_rtm_daily.yaml',
-        'resume_checkpoint': 'log/omnihand/omnihand-rtm-daily-disc-0601/last.ckpt',
+        'resume_checkpoint': 'log/omnihand/omnihand-rtm-daily-0602/last.ckpt',
     })
     cfg = load_yaml(args.config)
     cfg.batch_size = 1
@@ -95,7 +102,6 @@ def main():
     # Initialize model
     model_cfg = cfg.model_cfg
     model_cfg.params.cfg.batch_size = 1
-    model_cfg.params.cfg.training.use_discriminator = True
     model = FeatureExtractionOmniHand(model_cfg.params.cfg)
     
     # Initialize trainer with DDP strategy
