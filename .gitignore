@@ -4,11 +4,13 @@
 data
 dataset/
 demo/
+figures/
 huggingface/
 lightning_logs/
 log/
 outputs/
 pack/
+pretrained_models/
 results/
 temp/
 wandb/

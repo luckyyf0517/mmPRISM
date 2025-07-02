@@ -55,11 +55,19 @@ class BaseDataInterface(LightningDataModule):
             )
         
         if stage == 'test' or stage is None:
-            self.test_dataset = self.dataset_cls(
-                opt=self.cfg.opt,
-                split_path=self.test_split
-            )
-    
+            if isinstance(self.test_split, list):
+                self.test_dataset = [self.dataset_cls(
+                    opt=self.cfg.opt,
+                    split_path=split
+                ) for split in self.test_split]
+            elif isinstance(self.test_split, str):
+                self.test_dataset = self.dataset_cls(
+                    opt=self.cfg.opt,
+                    split_path=self.test_split
+                )
+            else:
+                raise ValueError(f"Invalid test split type: {type(self.test_split)}")
+        
     def _get_dataloader(self, dataset, shuffle: bool = False) -> DataLoader:
         """Get dataloader for dataset
         
@@ -85,4 +93,7 @@ class BaseDataInterface(LightningDataModule):
         return self._get_dataloader(self.val_dataset, shuffle=False)
     
     def test_dataloader(self) -> DataLoader:
-        return self._get_dataloader(self.test_dataset, shuffle=False)
+        if isinstance(self.test_dataset, list):
+            return [self._get_dataloader(dataset, shuffle=False) for dataset in self.test_dataset]
+        else:
+            return self._get_dataloader(self.test_dataset, shuffle=False)

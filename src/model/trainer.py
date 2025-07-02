@@ -4,6 +4,7 @@ sys.path.append('.')
 import os
 import torch
 import torch.nn as nn
+from einops.layers.torch import Rearrange
 from pprint import pprint
 import pytorch_lightning as pl
 from transformers import get_cosine_schedule_with_warmup
@@ -33,13 +34,23 @@ class WaveLLMTrainer(pl.LightningModule):
         self.modalities = cfg.get('modalities', {'use_pred_pose': True, 'use_raw_pose': False, 'use_features': False})
         if self.modalities.get('use_pred_pose', False):
             self.hand_pose_encoder = HandPoseEncoder(input_dim=3, hidden_dim=64, output_dim=self.model.config.hidden_size) # output_dim = 768
-        else: 
-            raise ValueError("Pose modality is not enabled")
         
         if self.modalities.get('use_features', False):
-            self.feature_projection = nn.Linear(1024, self.model.config.hidden_size)
-        else:
-            raise ValueError("Feature modality is not enabled")
+            self.feature_projection = nn.Sequential(
+                Rearrange('b t d -> b d t'),
+                nn.Conv1d(1024, 1024, kernel_size=5, padding=2),
+                nn.ReLU(),
+                nn.Conv1d(1024, 1024, kernel_size=3, padding=1),
+                nn.ReLU(), 
+                nn.Conv1d(1024, self.model.config.hidden_size, kernel_size=3, padding=1),
+                Rearrange('b d t -> b t d')
+            )
+            if self.modalities.get('use_pred_pose', False):
+                self.feature_gate = nn.Sequential(
+                    nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size),
+                    nn.LayerNorm(self.model.config.hidden_size),
+                    nn.Sigmoid()
+                )
 
         # Create tokenizer
         self.tokenizer = ModelFactory.create_tokenizer(self.cfg.model)
@@ -120,6 +131,7 @@ class WaveLLMTrainer(pl.LightningModule):
         if use_features:
             assert batch.get('features') is not None, "Feature modality is enabled but no feature data provided"
             features = batch['features']
+            features = nn.functional.relu(features)
             feature_embeds = self.feature_projection(features.to(torch.bfloat16))
         
         # Process pose modality
@@ -131,17 +143,19 @@ class WaveLLMTrainer(pl.LightningModule):
         
         # Return combined results
         if feature_embeds is not None and pose_embeds is not None:
-            return feature_embeds + pose_embeds
+            gate_value = self.feature_gate(feature_embeds)
+            return feature_embeds * gate_value + pose_embeds
         elif feature_embeds is not None:
             return feature_embeds
         else:
             return pose_embeds
         
     def _prepare_batch(self, batch):
-        joints = batch.get('joints', None)
-        valid_mask = ~torch.any(torch.isnan(joints), dim=-1)
-        joints[~valid_mask] = 0
-        batch['joints'] = joints
+        if self.modalities.get('use_pred_pose', False):
+            joints = batch.get('joints', None)
+            valid_mask = ~torch.any(torch.isnan(joints), dim=-1)
+            joints[~valid_mask] = 0
+            batch['joints'] = joints
         return batch
 
     def forward(self, batch):
@@ -179,16 +193,6 @@ class WaveLLMTrainer(pl.LightningModule):
             attention_mask=prompt_tokens['attention_mask'],
             labels=labels
         )
-
-        # with torch.no_grad():
-        #     labels = labels.clone()
-        #     labels[labels == IGNORE_INDEX] = self.tokenizer.pad_token_id
-        #     references = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
-        #     predictions = self.tokenizer.batch_decode(outputs['logits'].argmax(dim=-1), skip_special_tokens=True)
-        #     for i in range(len(references)):
-        #         print('label: ', references[i])
-        #         print('pred: ', predictions[i])
-        #         print('-' * 50)
 
         return {
             'wave_embeds': wave_embeds, 

@@ -27,6 +27,7 @@ warnings.filterwarnings("ignore", ".*Checkpoint directory*")
 
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
+from swanlab.integration.pytorch_lightning import SwanLabLogger
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.strategies import DDPStrategy
 
@@ -97,7 +98,10 @@ def main():
     data = instantiate_from_config(cfg.data_cfg)
     
     # Setup wandb logger
-    logger = WandbLogger(name=args.version, project='omniHand')
+    logger = SwanLabLogger(
+        project="omnihand",
+        experiment_name=args.version,
+    )
     if not args.resume_checkpoint and args.rank == 0: 
         log_file_list = glob.glob(os.path.join(cfg.log_dir, args.version, '*.ckpt'))
         if len(log_file_list) > 0:
@@ -113,7 +117,7 @@ def main():
         filename='epoch_{epoch:02d}_MPJPE_{valid/MPJPE:.4f}',
         save_top_k=5,
         mode='max',
-        auto_insert_metric_name=False, 
+        auto_insert_metric_name=False,
         save_last=True,
         save_weights_only=False,
         enable_version_counter=False)

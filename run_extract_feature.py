@@ -26,6 +26,11 @@ class FeatureExtractionOmniHand(OmniHand):
         pose_path = path.replace('poses', 'pred_poses_0602_rtm')
         feature_path = path.replace('poses', 'features_0602_rtm')
         
+        # Check if both files already exist
+        if os.path.exists(pose_path):
+            self.skipped_count += 1
+            return
+        
         # Process doppler data
         mmwave = self.simulator(points_t, velocities_t)
         mmwave = self.processor(mmwave)
@@ -34,11 +39,6 @@ class FeatureExtractionOmniHand(OmniHand):
         # Save features
         os.makedirs(os.path.dirname(feature_path), exist_ok=True)
         np.save(feature_path, features.cpu().numpy())
-        
-        # Check if both files already exist
-        if os.path.exists(pose_path):
-            self.skipped_count += 1
-            return
         
         # Generate and save predicted poses
         joints_pred = self.forward_feature(features.to(self.device))

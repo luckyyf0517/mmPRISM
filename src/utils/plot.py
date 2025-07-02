@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=False, draw_skeleton=True):
+def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=False, draw_skeleton=True, colors=None):
     fx, fy, cx, cy = camera_intrinsic 
     
     # Calculate positions relative to camera
@@ -21,6 +21,10 @@ def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=
     joints_depth = np.zeros_like(joints_camera[:, 2])
     if valid_joints.any():
         joints_depth[valid_joints] = 1 - (joints_camera[valid_joints, 2] - joints_camera[valid_joints, 2].min()) / (joints_camera[valid_joints, 2].max() - joints_camera[valid_joints, 2].min())
+
+    # Normalize colors to 0-1 range if provided
+    if colors is not None:
+        colors = [c / max(colors) * 255 for c in colors]
 
     # Skeleton connection definitions
     skeleton = [
@@ -59,7 +63,7 @@ def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=
         color_depth = joints_depth[i]
         radius = 7 if i < 3 else 5
         items_to_draw.append([
-            (pt[:2].astype(np.int32), radius), 
+            (pt[:2].astype(np.int32), radius, i), 
             'point', 
             joints_camera[i, 2]
         ])
@@ -89,8 +93,14 @@ def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=
         if item[1] == 'line':
             cv2.line(image, tuple(item[0][0]), tuple(item[0][1]), (0, 0, 0), 2)
         elif item[1] == 'point':
-            color = (0, 0, int(255 * item[2]))
-            cv2.circle(image, tuple(item[0][0]), item[0][1], color, -1)
+            if colors is not None:
+                # Use colors array for joint coloring
+                color = colors[item[0][2]]  # item[0][2] contains the joint index
+                cv2.circle(image, tuple(item[0][0]), item[0][1], color, -1)
+            else:
+                # Use depth-based coloring as before
+                color = (0, 0, int(255 * item[2]))
+                cv2.circle(image, tuple(item[0][0]), item[0][1], color, -1)
         elif item[1] == 'boundary':
             cv2.line(image, tuple(item[0][0]), tuple(item[0][1]), (0, 0, 0), 1)
     return image
@@ -115,11 +125,11 @@ def get_boundary(boundary):
     return boundary_line
 
 
-def plot_hand_subplot(position, camera_params, joints_l, joints_r, title):
+def plot_hand_subplot(position, camera_params, joints_l, joints_r, title, colors=None):
     plt.subplot(position)
     img = np.ones((512, 512, 3), dtype=np.uint8) * 255
-    img = plot_hand_camera(img, joints_l, **camera_params, boundary=True)
-    img = plot_hand_camera(img, joints_r, **camera_params, boundary=True)
+    img = plot_hand_camera(img, joints_l, **camera_params, boundary=True, colors=colors[0])
+    img = plot_hand_camera(img, joints_r, **camera_params, boundary=True, colors=colors[1])
     plt.imshow(img)
     plt.title(title)
     plt.gca().spines['top'].set_visible(True)
@@ -129,9 +139,9 @@ def plot_hand_subplot(position, camera_params, joints_l, joints_r, title):
     plt.xticks([]); plt.yticks([])
 
 
-def plot_hand_cv2(camera_params, joints_l, joints_r):
+def plot_hand_cv2(camera_params, joints_l, joints_r, colors=None):
     img = np.ones((512, 512, 3), dtype=np.uint8) * 255
-    img = plot_hand_camera(img, joints_l, **camera_params, boundary=True)
-    img = plot_hand_camera(img, joints_r, **camera_params, boundary=True)
+    img = plot_hand_camera(img, joints_l, **camera_params, boundary=True, colors=colors)
+    img = plot_hand_camera(img, joints_r, **camera_params, boundary=True, colors=colors)
     return img
 

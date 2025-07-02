@@ -29,6 +29,7 @@ warnings.filterwarnings('ignore', '.*0NCCL_AVOID_RECORD_STREAMS=1 has no effect 
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
+from swanlab.integration.pytorch_lightning import SwanLabLogger
 from pytorch_lightning.strategies import DeepSpeedStrategy
 from deepspeed.utils.zero_to_fp32 import load_state_dict_from_zero_checkpoint
 
@@ -110,10 +111,10 @@ def main():
     model = instantiate_from_config(model_cfg)
     
     # Set logger
-    logger = WandbLogger(
-        name=args.version, 
-        project="mmwave-csl"
-    )
+    logger = SwanLabLogger(
+        project="mmwave-csl",
+        experiment_name=args.version,
+    ) if not args.test else None
     
     if not args.resume_checkpoint and args.rank == 0 and not args.test: 
         log_file_list = glob.glob(os.path.join(cfg.log_dir, args.version, '*.ckpt'))

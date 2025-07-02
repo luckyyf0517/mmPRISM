@@ -34,7 +34,9 @@ class OmniHand(LightningModule):
         self.cfg = cfg
         self.batch_size = cfg.batch_size
         
-        self.simulator = Simulation()
+        self.use_simulator = cfg.get('use_simulator', True)
+        if self.use_simulator:
+            self.simulator = Simulation()
         self.processor = Processor(learnable_weights=cfg.get('learnable_weights', False))
         
         # Initialize backbone (Vision Transformer)
@@ -56,6 +58,7 @@ class OmniHand(LightningModule):
         
         self.relu = nn.ReLU()
         self.regressor = instantiate_from_config(cfg.regressor)
+        self.error_regressor = nn.Linear(cfg.regressor.params.in_features, 48)
             
         # Initialize discriminator if enabled
         self.use_discriminator = cfg.training.get('use_discriminator', False)
@@ -136,11 +139,33 @@ class OmniHand(LightningModule):
         results = self.forward(batch)  # [B, 2, 24, 3]
         # Compute losses
         loss_dict = self.compute_loss(results, batch)
+        
+        # Calculate 3DPCK@40mm in this step, just like MPJPE
+        pred = results['joints'] * 1e3  # [B, 2, 24, 3] Convert to mm
+        target = batch['joints'] * 1e3  # [B, 2, 24, 3] Convert to mm
+        
+        # Merge batch and hand dimensions for full joint set
+        pred_full = pred.reshape(-1, 24, 3)  # [B*2, 24, 3]
+        target_full = target.reshape(-1, 24, 3)
+
+        # Check if any value in the last dimension (xyz) is NaN
+        valid_mask = ~torch.any(torch.isnan(target_full), dim=-1)  # [B*2, 24]
+
+        # Apply mask to both predictions and targets
+        pred_valid = pred_full[valid_mask]  # [N, 3]
+        target_valid = target_full[valid_mask]  # [N, 3]
+        
+        if len(pred_valid) > 0:
+            # Calculate 3DPCK@40mm
+            distances = torch.norm(pred_valid - target_valid, dim=-1)  # [N]
+            pck_results = (distances <= 40.0).float()  # [N] - 1 if within threshold, 0 otherwise
+            loss_dict['3DPCK@40mm'] = pck_results.mean()  # Average across all valid joints
+        
         # Logging
         self._log_info(loss_dict, phase='test')
         self._log_progress(batch_idx, loss_dict)
-        return loss_dict['loss']  
-
+        return loss_dict['loss']
+    
     def forward(self, input_data):
         """Forward pass
         Args:
@@ -148,15 +173,21 @@ class OmniHand(LightningModule):
         Returns:
             Dictionary containing either 'joints' or 'simcc_logits'
         """
-        features = self.encode_feature(input_data['joints'], input_data['velocities'])
+        features = self.encode_feature(input_data)
         regressor_output = self.forward_feature(features)
         return {
-            'joints': regressor_output,
+            'joints': regressor_output[..., :3],
+            'error': regressor_output[..., -1],
         }
         
-    def encode_feature(self, joints, velocities):
+    def encode_feature(self, input_data):
         """Encode input data into features"""
-        x = self.simulator(joints, velocities)
+        if self.use_simulator:
+            joints = input_data['joints']
+            velocities = input_data['velocities']
+            x = self.simulator(joints, velocities)
+        else:
+            x = input_data['mmwave']
         x = self.processor(x)
         # Extract features using backbone
         features = self.backbone(x)
@@ -166,7 +197,11 @@ class OmniHand(LightningModule):
         """Forward pass for feature extraction"""
         features = self.relu(features)
         regressor_output = self.regressor(features)
-        return regressor_output.view(-1, 2, 24, 3)
+        error_output = self.error_regressor(features)
+        return torch.cat([
+            regressor_output.view(-1, 2, 24, 3), 
+            error_output.view(-1, 2, 24, 1)], 
+        dim=-1) # [B, 2, 24, 4]
             
     def compute_loss(self, results, batch):
         """Calculate reconstruction losses
@@ -193,12 +228,14 @@ class OmniHand(LightningModule):
         """
         loss_dict = {}
         pred = results['joints'] * 1e3  # [B, 2, 24, 3]
+        pred_error = results['error'] * 1e3  # [B, 2, 24]
         target = batch['joints'] * 1e3  # [B, 2, 24, 3]
 
         # Merge batch and hand dimensions for full joint set
         B = pred.shape[0]
         pred_full = pred.reshape(-1, 24, 3)  # [B*2, 24, 3]
         target_full = target.reshape(-1, 24, 3)
+        pred_error_full = pred_error.reshape(-1, 24)  # [B*2, 24]
 
         # Check if any value in the last dimension (xyz) is NaN
         valid_mask = ~torch.any(torch.isnan(target_full), dim=-1)  # [B*2, 24]
@@ -206,97 +243,19 @@ class OmniHand(LightningModule):
         # Apply mask to both predictions and targets
         pred_valid = pred_full[valid_mask]  # [N, 3]
         target_valid = target_full[valid_mask]  # [N, 3]
+        pred_error_valid = pred_error_full[valid_mask]  # [N]
         
         # L1 loss on valid joint positions (using all 24 joints)
         loss_dict['loss_joints'] = F.l1_loss(pred_valid, target_valid)
         
         # MPJPE (Mean Per Joint Position Error) on valid joints (using all 24 joints)
-        loss_dict['MPJPE'] = torch.norm(pred_valid - target_valid, dim=-1).mean()
+        mpjpe = torch.norm(pred_valid - target_valid, dim=-1) # [N]
+        loss_dict['MPJPE'] = mpjpe.mean()  
+        loss_dict['loss_error'] = F.l1_loss(pred_error_valid, mpjpe.detach())
         
-        loss_dict['loss'] = loss_dict['loss_joints']
+        loss_dict['loss'] = loss_dict['loss_joints'] + loss_dict['loss_error']
         return loss_dict
     
-    def compute_gan_loss_wgan_gp(self, results, batch):
-        """Calculate WGAN-GP critic and generator losses
-        Args:
-            results: Dictionary containing generator outputs, e.g., results['joints']
-            batch: Dictionary containing ground truth data, e.g., batch['joints']
-        Returns:
-            Dictionary containing WGAN-GP losses
-        """
-        loss_dict = {}
-        pred = results['joints']  # Predicted joint positions [B, 2, 24, 3]
-        target = batch['joints']  # Ground truth joint positions [B, 2, 24, 3]
-
-        # Extract last 21 joints for discriminator (critic)
-        # pred_disc shape becomes [B*2, 21, 3]
-        pred_disc = pred[..., 3:, :].reshape(-1, 21, 3)
-        # target_disc shape also becomes [B*2, 21, 3]
-        target_disc = target[..., 3:, :].reshape(-1, 21, 3)
-
-        # Get critic scores
-        # For critic's loss on fake data, we use detached generator outputs
-        d_pred_detach = self.discriminator(pred_disc.detach())
-        # For generator's loss, we need gradients through the critic for generated samples
-        d_pred = self.discriminator(pred_disc)
-        # Critic scores for real data
-        d_target = self.discriminator(target_disc)
-
-        # --------------------
-        # Generator Loss
-        # --------------------
-        # Generator aims to maximize the critic's score for its fake samples,
-        # which is equivalent to minimizing the negative score.
-        loss_dict['loss_gan_g'] = -d_pred.mean()
-
-        # --------------------
-        # Critic (Discriminator) Loss
-        # --------------------
-        # WGAN critic loss: D(G(z)) - D(x)
-        loss_d_real = -d_target.mean()  # Maximize D(x) -> Minimize -D(x)
-        loss_d_fake = d_pred_detach.mean()   # Minimize D(G(z))
-
-        # Gradient Penalty calculation
-        # Randomly sample points along the straight lines between real and fake samples
-        effective_batch_size = target_disc.size(0) # Should be B*2
-        # Alpha for interpolation, shape [effective_batch_size, 1, 1] for broadcasting
-        alpha = torch.rand(effective_batch_size, 1, 1, device=target_disc.device)
-
-        # Create interpolated samples
-        # interpolates shape: [effective_batch_size, 21, 3]
-        # Use .data to avoid tracking history for alpha and inputs during interpolation itself,
-        # but .requires_grad_(True) to track gradients for d_interpolates w.r.t. interpolates.
-        interpolates = (alpha * target_disc.data + (1 - alpha) * pred_disc.detach().data).requires_grad_(True)
-        d_interpolates = self.discriminator(interpolates)
-
-        # Calculate gradients of critic scores w.r.t. interpolated samples
-        gradients = torch.autograd.grad(
-            outputs=d_interpolates,
-            inputs=interpolates,
-            grad_outputs=torch.ones_like(d_interpolates, requires_grad=False), # Gradient w.r.t. each output element
-            create_graph=True,  # Create graph for higher-order derivatives if needed by critic updates
-            retain_graph=True,  # Retain graph for further backward passes (e.g., critic update)
-        )[0] # Get the first element, which corresponds to gradients w.r.t. 'inputs'
-
-        # Reshape gradients to [effective_batch_size, -1] to compute L2 norm per sample
-        gradients = gradients.view(effective_batch_size, -1)
-        # Calculate gradient penalty: (||gradient||_2 - 1)^2
-        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-
-        # Total critic loss
-        loss_dict['loss_gan_d'] = loss_d_real + loss_d_fake + self.lambda_gp * gradient_penalty
-        # Store individual components for monitoring if desired
-        loss_dict['loss_gan_d_real'] = loss_d_real
-        loss_dict['loss_gan_d_fake'] = loss_d_fake
-        loss_dict['gradient_penalty'] = gradient_penalty
-
-        # Monitoring: WGANs typically don't use "accuracy" in the same way as classifier GANs.
-        # Instead, you can monitor the mean scores from the critic.
-        with torch.no_grad():
-            loss_dict['critic_score'] = (d_target - d_pred_detach).mean()
-
-        return loss_dict
-
     def compute_gan_loss(self, results, batch):
         """Calculate discriminator and adversarial losses
         Args:

@@ -56,12 +56,13 @@ if __name__ == '__main__':
                        help='Root directory containing signal data')
     parser.add_argument('--subfolder', type=str, default='csl-news-demo01',
                        help='Subfolder name for saving split files')
-    parser.add_argument('--val_ratio', type=float, default=0.01,
+    parser.add_argument('--val_ratio', type=float, default=0.1,
                        help='Proportion of data to use for validation (between 0 and 1)')
     args = parser.parse_args()
 
     # Collect all signal files
     signals_list = sorted(glob(os.path.join(args.signals_root, '*.npy')))
+    # signals_list = signals_list[:8000]
     
     # signals_list_ = []
     # for signal_path in signals_list:

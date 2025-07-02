@@ -13,11 +13,12 @@ data_cfg:
       test_split: 'dataset/csl-news-200/val.json'
       opt: 
         caption_path: "dataset/CSL_News_Labels_converted.json"
-        max_length: 256
+        max_length: 1024
         modalities:  # Control which modalities to use
           use_pred_pose: true
           use_raw_pose: false
           use_gt_pose: false
+          use_features: false
         pose_config:  # Pose modality specific settings
           pose_dir: "poses"
           norm_pose: true

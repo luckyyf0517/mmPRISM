@@ -16,7 +16,7 @@ class Processor(nn.Module):
     """Signal processing module for radar data"""
     def __init__(self, learnable_weights=False, dtype=torch.float32, ctype=torch.complex64):
         super().__init__()
-        self.D, self.R, self.W, self.H = 32, 32, 32, 32
+        self.D, self.R, self.W, self.H = 64, 32, 32, 32
         
         # Initialize beamforming weights
         azi_ele_id = torch.tensor(np.array(get_index()) - np.array([43, 0]))
@@ -27,6 +27,9 @@ class Processor(nn.Module):
         
         self.dtype = dtype
         self.ctype = ctype
+
+        self.if_process_range = False
+        self.if_process_doppler = True
 
     def process_range(self, radar_frame):
         """Range FFT processing
@@ -53,6 +56,10 @@ class Processor(nn.Module):
         """
         B = radar_frame.shape[0]
         num_chirps = radar_frame.shape[1]
+        
+        # Remove DC component by subtracting mean across chirps
+        radar_frame = radar_frame - radar_frame.mean(dim=1, keepdim=True)
+        
         # Expand window to match batch dimension
         window = torch.hann_window(num_chirps, device=radar_frame.device)
         window = window.view(1, -1, 1, 1).expand(B, -1, -1, -1)
@@ -85,8 +92,10 @@ class Processor(nn.Module):
         radar_frame = raw_radar_frame.clone()
         
         # Process step by step
-        radar_frame = self.process_range(radar_frame)    # [B, num_chirps, num_antenna, R]
-        radar_frame = self.process_doppler(radar_frame)  # [B, D, num_antenna, R]
+        if self.if_process_range:
+            radar_frame = self.process_range(radar_frame)    # [B, num_chirps, num_antenna, R]
+        if self.if_process_doppler:
+            radar_frame = self.process_doppler(radar_frame)  # [B, D, num_antenna, R]
         radar_frame = self.process_beamforming(radar_frame)  # [B, D, W*H, R]
         
         # Reshape output dimensions
@@ -389,9 +398,6 @@ def process_point_cloud(data, nan_mask=None):
         interpolated_points,
         left_hand, right_hand
     ], dim=1)
-    
-    # # Apply scaling and offset
-    # all_points *= 0.1
     
     # Create mask for points with NaN values if not provided
     if nan_mask is None:

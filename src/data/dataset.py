@@ -21,21 +21,17 @@ data_stats = {
         'mean': np.array([0.02832265, 0.37857532, -0.21782798]),
         'std': np.array([0.32808729, 0.3750018, 0.12171327]),
     },
-    'csl-daily/sentence/pred_poses_0521_base': {
-        'mean': np.array([0.00473068, 0.00985472, -0.01287023]),
-        'std': np.array([0.1012681, 0.10213519, 0.08511207]),
-    },
     'csl-daily/sentence/pred_poses_0525_large': {
         'mean': np.array([0.00545881, 0.00916435, -0.01287592]),
         'std': np.array([0.10056931, 0.1028068, 0.0844123]),
     },
-    'csl-daily/sentence/pred_poses_0529_rtm': {
-        'mean': np.array([0.00361779, 0.00950573, -0.01211531]),
-        'std': np.array([0.10205246, 0.1025732, 0.08511592]),
-    },
     'csl-daily/sentence/pred_poses_0602_rtm': {
         'mean': np.array([0.00491593, 0.01073456, -0.0108644]),
         'std': np.array([0.10114002, 0.10167552, 0.08443051]),
+    },
+    'collected_base/poses': {
+        'mean': np.array([-0.05493037, -0.32715766, -0.17995592]),
+        'std': np.array([0.5, 0.5, 0.5]),
     },
 }
 
@@ -53,10 +49,15 @@ class BaseDataset(Dataset):
     def __len__(self):
         return len(self.data_dict)
     
-    def load_and_normalize_pose(self, pose_path):
+    def load_and_normalize_pose(self, pose_path, target_frames=None):
 
         # load pose
         pose = np.load(pose_path)  # (T, 2, 24, 3)
+
+        # sample frames if target_frames is specified
+        if target_frames is not None and pose.shape[0] > target_frames:
+            indices = np.linspace(0, pose.shape[0] - 1, target_frames, dtype=int)
+            pose = pose[indices]
 
         # normalize pose
         if self.pose_config.get('norm_pose', False):
@@ -77,46 +78,64 @@ class SingleFrameDataset(BaseDataset):
     
     def __init__(self, opt=None, split_path=None):
         super().__init__(opt, split_path)
-        self.load_feature = opt.get('load_feature', False)
-        # self.norm_pose = opt.get('norm_pose', False)
         self.pose_config = edict(
             norm_pose=opt.get('norm_pose', False))
         
     def __getitem__(self, index):
         id, pose_path = list(self.data_dict.items())[index]
-        pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
+        pose = self.load_and_normalize_pose(pose_path, target_frames=None) # (T, 2, 24, 3)
         pose = pose * 0.1 # scale to real-world scale
 
-        # # Randomly select a frame
-        # max_attempt = 8
-        # while True:
-        #     frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
-        #     if not np.isnan(pose[frame_idx]).any() and not np.isnan(pose[frame_idx+1]).any():
-        #         break
-        #     max_attempt -= 1
-        #     if max_attempt == 0:
-        #         break
-        frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
+        # frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
+        frame_idx = 0
         joints = pose[frame_idx]  # (2, 24, 3)
+        velocities = (pose[frame_idx+1] - pose[frame_idx]) * 30
 
-        if self.load_feature:
-            # Load pre-computed features
-            feature_path = pose_path.replace('poses', 'features')
-            features = np.load(feature_path)[frame_idx]  # (feature_dim)
-            return {
-                'id': id,
-                'joints': joints.astype(np.float32),  # (2, 24, 3)
-                'features': features,  # (feature_dim)
-            }
-        else:
-            velocities = (pose[frame_idx+1] - pose[frame_idx]) * 30
-            return {
-                'id': id, 
-                'joints': joints.astype(np.float32),  # (2, 24, 3)
-                'velocities': velocities.astype(np.float32),  # (2, 24, 3)
-            }
+        return {
+            'id': id, 
+            'joints': joints.astype(np.float32),  # (2, 24, 3)
+            'velocities': velocities.astype(np.float32),  # (2, 24, 3)
+        }
+    
 
+class CollectedSingleFrameDataset(BaseDataset):
+    """Dataset for collected single frame pose/feature data"""
+    
+    def __init__(self, opt=None, split_path=None):
+        super().__init__(opt, split_path)
+        self.pose_config = edict(
+            norm_pose=opt.get('norm_pose', False))
+        
+        self.num_frames = 99
+        
+        # build data list
+        self.data_list = []
+        for seq_id in self.data_dict.keys():
+            for frame_id in range(self.num_frames):
+                self.data_list.append((seq_id, frame_id))
 
+    def __len__(self):
+        return len(self.data_list)
+        
+    def __getitem__(self, index):
+        id, frame_idx = self.data_list[index]
+        pose_path = self.data_dict[id]
+        pose = self.load_and_normalize_pose(pose_path, target_frames=None) # (T, 2, 24, 3)
+        pose = pose * 0.1 # scale to real-world scale
+
+        joints = pose[frame_idx]  # (2, 24, 3)
+        
+        mmwave_path = pose_path.replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
+        mmwave = np.load(mmwave_path) 
+        mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+
+        return {
+            'id': id, 
+            'joints': joints.astype(np.float32),  # (2, 24, 3)
+            'mmwave': mmwave.astype(np.complex64), 
+            'frame_idx': frame_idx,
+        }
+    
 class SequenceBaseDataset(BaseDataset):
     """Base class for sequence-based datasets with common functionality"""
     
@@ -168,19 +187,19 @@ class SequenceBaseDataset(BaseDataset):
     def load_pred_pose(self, pose_path):
         """Load predicted pose data"""
         pred_pose_path = pose_path.replace('poses', self.pose_config['pose_dir'])
-        pose = self.load_and_normalize_pose(pred_pose_path) # (T, 2, 24, 3)
+        pose = self.load_and_normalize_pose(pred_pose_path, target_frames=None) # (T, 2, 24, 3)
         if 'pred_poses' in pred_pose_path:
             pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
         return pose
 
     def load_gt_pose(self, pose_path):
         """Load gt pose data"""
-        pose = self.load_and_normalize_pose(pose_path) # (T, 2, 24, 3)
+        pose = self.load_and_normalize_pose(pose_path, target_frames=None) # (T, 2, 24, 3)
         return pose
     
     def load_raw_pose(self, pose_path): 
         """Load raw pose data and compute velocities"""
-        pose = self.load_and_normalize_pose(pose_path) * 0.1 # (T, 2, 24, 3)
+        pose = self.load_and_normalize_pose(pose_path, target_frames=None) * 0.1 # (T, 2, 24, 3)
         velocities = (pose[1:] - pose[:-1]) * 30
         return pose[:-1], velocities
     
@@ -199,13 +218,12 @@ class SequenceBaseDataset(BaseDataset):
         if self.modalities['use_features']:
             features = self.load_features(data_path)
             features, valid_length, shared_valid_indices = self.pad_sequence(
-                features, features.shape[1:])
+                features, features.shape[1:], shared_valid_indices)
             output_dict['features'] = torch.from_numpy(features).float()
         
         # Load predicted poses if enabled
         if self.modalities['use_pred_pose']:
             pred_pose = self.load_pred_pose(data_path)
-            
             pred_pose, valid_length, shared_valid_indices = self.pad_sequence(
                 pred_pose, pred_pose.shape[1:], shared_valid_indices)
             output_dict['joints'] = torch.from_numpy(pred_pose).float()
@@ -277,25 +295,9 @@ class CslDailyDataset(SequenceBaseDataset):
 
 if __name__ == "__main__":
     opt = {
-        "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
-        "max_length": 512,
-        "modalities": {
-            "use_pred_pose": True,
-            "use_features": True,
-            "use_raw_pose": False, 
-            "use_gt_pose": False
-        },
-        "feature_config": {
-            "feature_dim": 512,
-            "feature_dir": "features_0602_rtm",
-        },
-        "pose_config": {
-            "pose_dir": "pred_poses_0602_rtm", 
-            "norm_pose": True,
-        },
+        "load_feature": False,
+        "norm_pose": True,
     }
 
-    dataset = CslDailyDataset(opt, split_path='dataset/csl-daily/all.json')
+    dataset = CollectedSingleFrameDataset(opt, split_path='dataset/collected-100/train.json')
     item = dataset[0]
-    print(item['features'].shape)
-    print(item['joints'].shape)

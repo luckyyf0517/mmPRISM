@@ -7,12 +7,11 @@ data_cfg:
   target: src.data.data_interface.BaseDataInterface
   params:
     cfg: 
-      dataset: src.data.dataset.SingleFrameDataset
-      train_split: 'dataset/csl-news-demo01/train.json'
-      val_split: 'dataset/csl-news-demo01/val.json'
-      test_split: 'dataset/csl-news-demo01/val.json'
+      dataset: src.data.dataset.CollectedSingleFrameDataset
+      train_split: 'dataset/collected-200/train.json'
+      val_split: 'dataset/collected-200/val.json'
+      test_split: 'dataset/collected-200/val.json'
       opt: 
-        load_feature: false
         norm_pose: true
       num_workers: 4
 
@@ -21,6 +20,7 @@ model_cfg:
   target: src.model.omnihand.OmniHand
   params:
     cfg:
+      use_simulator: false
       learnable_weights: true
       backbone: 
         target: src.model.encoder.cubenet_rtm.CSPEncoder3D
@@ -33,7 +33,7 @@ model_cfg:
           expansion: 0.5  # Standard expansion ratio
           channel_attention: true  # Enable channel attention for better feature refinement
           norm_layer: torch.nn.GroupNorm  # GroupNorm for better regularization
-        pretrained: null
+        pretrained: null  
         freeze: false
       regressor:
         target: torch.nn.Linear
