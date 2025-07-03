@@ -48,9 +48,9 @@ class OmniHand(LightningModule):
             for param in self.backbone.parameters():
                 param.requires_grad = False
         
-        # Get feature dimension from backbone params (support both CubeNet and CSPEncoder3D)
+        # Get feature dimension from backbone params (support CubeNet, CSPEncoder3D, and MMHandEncoder)
         if hasattr(cfg.backbone.params, 'hidden_dims'):
-            self.feature_dim = cfg.backbone.params.hidden_dims[-1]  # For CubeNet
+            self.feature_dim = cfg.backbone.params.hidden_dims[-1]  # For CubeNet and MMHandEncoder
         elif hasattr(cfg.backbone.params, 'stage_channels'):
             self.feature_dim = cfg.backbone.params.stage_channels[-1]  # For CSPEncoder3D
         else:
@@ -140,24 +140,28 @@ class OmniHand(LightningModule):
         # Compute losses
         loss_dict = self.compute_loss(results, batch)
         
-        # Calculate 3DPCK@40mm in this step, just like MPJPE
+        # Calculate 3DPCK@40mm
         pred = results['joints'] * 1e3  # [B, 2, 24, 3] Convert to mm
         target = batch['joints'] * 1e3  # [B, 2, 24, 3] Convert to mm
         
-        # Merge batch and hand dimensions for full joint set
-        pred_full = pred.reshape(-1, 24, 3)  # [B*2, 24, 3]
-        target_full = target.reshape(-1, 24, 3)
-
-        # Check if any value in the last dimension (xyz) is NaN
-        valid_mask = ~torch.any(torch.isnan(target_full), dim=-1)  # [B*2, 24]
-
-        # Apply mask to both predictions and targets
-        pred_valid = pred_full[valid_mask]  # [N, 3]
-        target_valid = target_full[valid_mask]  # [N, 3]
+        # Only use palm joints (last 21 joints)
+        pred_palm = pred[..., 3:, :]  # [B, 2, 21, 3]
+        target_palm = target[..., 3:, :]  # [B, 2, 21, 3]
         
-        if len(pred_valid) > 0:
-            # Calculate 3DPCK@40mm
-            distances = torch.norm(pred_valid - target_valid, dim=-1)  # [N]
+        # Get wrist positions for normalization
+        pred_wrist = pred_palm.mean(dim=-2, keepdim=True)  # [B, 2, 1, 3]
+        target_wrist = target_palm.mean(dim=-2, keepdim=True)  # [B, 2, 1, 3]
+        
+        # Normalize by subtracting wrist position
+        pred_norm = pred_palm - pred_wrist  # [B, 2, 21, 3]
+        target_norm = target_palm - target_wrist  # [B, 2, 21, 3]
+
+        # Check if any value in the target is NaN
+        valid_mask = ~torch.any(torch.isnan(target_norm), dim=-1)  # [B, 2, 21]
+        
+        if valid_mask.sum() > 0:
+            # Calculate distances for valid joints
+            distances = torch.norm(pred_norm[valid_mask] - target_norm[valid_mask], dim=-1)  # [N]
             pck_results = (distances <= 40.0).float()  # [N] - 1 if within threshold, 0 otherwise
             loss_dict['3DPCK@40mm'] = pck_results.mean()  # Average across all valid joints
         

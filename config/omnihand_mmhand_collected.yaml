@@ -1,0 +1,50 @@
+# Basic settings
+log_dir: 'log/omnihand'
+strategy: 'ddp'
+
+# Data configuration
+data_cfg:
+  target: src.data.data_interface.BaseDataInterface
+  params:
+    cfg: 
+      dataset: src.data.dataset.CollectedSingleFrameDataset
+      train_split: 'dataset/collected-200/train.json'
+      val_split: 'dataset/collected-200/val.json'
+      test_split: 'dataset/collected-200/val.json'
+      opt: 
+        norm_pose: true
+      num_workers: 4
+
+# Model configuration
+model_cfg:
+  target: src.model.omnihand.OmniHand
+  params:
+    cfg:
+      use_simulator: false
+      learnable_weights: false
+      backbone: 
+        target: src.model.encoder.mmhand_encoder.MMHandEncoder
+        params: 
+          input_dim: 64  # mmWave data channels
+          hidden_dims: [64, 128, 256, 512]  # MMHandEncoder uses hidden_dims instead of stage_channels
+          num_blocks: [2, 2, 2, 2]  # Number of attention residual blocks in each stage
+          reduction_ratio: 16  # Channel reduction ratio for attention mechanisms
+        pretrained: null  # No pretrained weights for MMHandEncoder initially
+        freeze: false
+      regressor:
+        target: torch.nn.Linear
+        params:
+          in_features: 512  # Updated to match MMHandEncoder output dimension
+          out_features: 144
+      discriminator:
+        pretrained: null
+        freeze: false
+      training:
+        use_discriminator: false
+        disc_lr: 1.0e-4
+        gan_start_iter: 1000
+        lambda_gp: 0.0
+        lambda_gan: 0.1
+        lr: 1.0e-4
+        betas: [0.9, 0.999]
+        weight_decay: 0.01

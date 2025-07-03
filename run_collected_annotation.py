@@ -22,6 +22,8 @@ from src.utils.plot import plot_hand_cv2
 def process_single_image(frame, pose_estimator, args):
     """Process single image using RTMPose3D
     """
+    # Mirror the frame horizontally
+    frame = cv2.flip(frame, 1)
     h, w = frame.shape[:2]
     bbox = np.array([[0, 0, w, h]])  # Single bbox covering the whole frame
     
@@ -38,9 +40,9 @@ def process_sequence(args, video_path, pose_estimator):
     
     # Define save path
     save_path = video_path.replace('videos', 'poses')
-    if os.path.exists(save_path) and not args.save_video:
-        print(colored(f'    [SKIP] {seq_id}: {save_path} already exists', 'yellow'))
-        return
+    # if os.path.exists(save_path):
+    #     print(colored(f'    [SKIP] {seq_id}: {save_path} already exists', 'yellow'))
+    #     return
 
     if not os.path.exists(video_path):
         print(colored(f'Video file {video_path} does not exist', 'red'))
@@ -100,19 +102,40 @@ def process_sequence(args, video_path, pose_estimator):
             'camera_intrinsic': [800, 800, 256.0, 256.0]
         }
         
-        # Setup video writer 
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(video_save_path, fourcc, 10.0, (512, 512))
+        # Setup video writer with H.264 codec for VSCode compatibility
+        # Try different codecs in order of preference
+        codecs = ['mp4v', 'avc1', 'XVID']
+        out = None
+        for codec in codecs:
+            try:
+                fourcc = cv2.VideoWriter_fourcc(*codec)
+                out = cv2.VideoWriter(video_save_path, fourcc, 30.0, (512, 512))
+                if out.isOpened():
+                    break
+            except:
+                continue
+        # Interpolate keypoints from 10fps to 30fps using scipy
+        from scipy.interpolate import interp1d
         
+        # Create time points for original and interpolated sequences
+        t_orig = np.arange(len(keypoints_all))
+        t_interp = np.linspace(0, len(keypoints_all)-1, len(keypoints_all)*3)
+        # Reshape keypoints for interpolation [N,2,24,3] -> [N, 144]
+        keypoints_flat = keypoints_all.reshape(len(keypoints_all), -1)
+        # Create interpolation function
+        interp_func = interp1d(t_orig, keypoints_flat, axis=0, kind='linear')
+        # Get interpolated keypoints and reshape back
+        keypoints_interp = interp_func(t_interp).reshape(-1, 2, 24, 3)
+                
         # Write frames with annotations
-        for frame_idx in tqdm(range(len(keypoints_all)), desc='    Writing video', ncols=80):
+        for frame_idx in tqdm(range(len(keypoints_interp)), desc='    Writing video', ncols=80):
             joints_l = np.concatenate([
-                keypoints_all[frame_idx, 0, :3],  # left arm 3 points
-                keypoints_all[frame_idx, 0, 3:]   # left hand 21 points
+                keypoints_interp[frame_idx, 0, :3],  # left arm 3 points
+                keypoints_interp[frame_idx, 0, 3:]   # left hand 21 points
             ])
             joints_r = np.concatenate([
-                keypoints_all[frame_idx, 1, :3],  # right arm 3 points
-                keypoints_all[frame_idx, 1, 3:]   # right hand 21 points
+                keypoints_interp[frame_idx, 1, :3],  # right arm 3 points
+                keypoints_interp[frame_idx, 1, 3:]   # right hand 21 points
             ])
             
             # plot hand
@@ -124,7 +147,7 @@ def process_sequence(args, video_path, pose_estimator):
             
             # Write frame
             out.write(frame_vis)
-        
+            
         # Release video writer
         out.release()
         print(colored(f'    [OK] Video saved to: {video_save_path}', 'green'))
@@ -133,8 +156,7 @@ def process_sequence(args, video_path, pose_estimator):
 def process_archive(args, archive_id, pose_estimator):
     """Process a single archive
     """
-    base_path = 'data/collected_base'
-    video_path = os.path.join(base_path, 'videos', f'{archive_id}.npy')
+    video_path = os.path.join(args.base_path, 'videos', f'{archive_id}.npy')
     
     try:
         process_sequence(args, video_path, pose_estimator)
@@ -152,6 +174,7 @@ def main():
     parser.add_argument('--gpu', type=int, dest='gpu_id', help='GPU ID')
     parser.add_argument('--kpt-thr', type=float, default=0.3, help='Keypoint threshold')
     parser.add_argument('--save-video', action='store_true', help='Save video with annotations')
+    parser.add_argument('--base-path', type=str, default='data/collected_base', help='Base path for data')
     args = parser.parse_args()
     
     if args.id is None:

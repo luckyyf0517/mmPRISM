@@ -17,7 +17,7 @@ from easydict import EasyDict as edict
 if __name__ == "__main__":
     args = edict()
     args.config = 'config/wavellm_mt5_daily.yaml'
-    args.checkpoint = 'log/peft_finetune/wavellm_mt5_daily_pose_0521_v1/last.ckpt'
+    args.checkpoint = 'log/archived/wavellm_mt5_gt_pose_0523/last.ckpt'
 
     # Load model from checkpoint
     cfg = load_yaml(args.config)
@@ -27,7 +27,5 @@ if __name__ == "__main__":
     model = instantiate_from_config(model_cfg)
     model = load_state_dict_from_zero_checkpoint(model, args.checkpoint)
 
-    from IPython import embed; embed()
-
-    # pose_encoder = model.hand_pose_encoder
-    # torch.save(pose_encoder.cpu().state_dict(), 'weights/hand_pose_encoder_from_wavellm_mt5_daily_pose_0521_v1.bin', _use_new_zipfile_serialization=True)
+    pose_encoder = model.hand_pose_encoder
+    torch.save(pose_encoder.cpu().state_dict(), 'weights/hand_pose_encoder_from_wavellm_mt5_daily_pose_0521_v1.bin', _use_new_zipfile_serialization=True)

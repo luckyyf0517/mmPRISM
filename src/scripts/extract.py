@@ -24,7 +24,7 @@ def extract_collected_data(collected_root):
     # Define file types and their corresponding output folders (excluding pose.npy)
     file_types = {
         'color.npy': 'videos',
-        'mmwave.npy': 'mmwave'
+        # 'mmwave.npy': 'mmwave'
     }
 
     # Get all subdirectories in collected folder (0000, 0001, etc.)
@@ -41,7 +41,9 @@ def extract_collected_data(collected_root):
         if subdir.startswith('S'):
             current_output_root = '/root/autodl-tmp/datasets/collected_csl'
         else:
-            current_output_root = '/root/autodl-tmp/datasets/collected_base'
+            print('Warning: DEBUG MODE')
+            current_output_root = '/root/autodl-tmp/datasets/collected_demo'
+            # current_output_root = '/root/autodl-tmp/datasets/collected_base'
         
         # Create output directory and subdirectories for current subfolder
         os.makedirs(current_output_root, exist_ok=True)
@@ -90,6 +92,8 @@ def extract_collected_data(collected_root):
                 else:
                     dst_path = os.path.join(current_output_root, target_folder, new_filename)
                     try:
+                        if os.path.exists(dst_path):
+                            os.remove(dst_path)
                         shutil.move(src_path, dst_path)
                         print(colored(f'Moved {filename} -> {target_folder}/{new_filename}', 'green'))
                     except Exception as e:
@@ -107,7 +111,7 @@ def extract_collected_data(collected_root):
     print(colored(f'Extraction completed!', 'cyan'))
     
     # Print summary for both output directories
-    for output_dir in ['/root/autodl-tmp/datasets/collected_csl', '/root/autodl-tmp/datasets/collected_base']:
+    for output_dir in ['/root/autodl-tmp/datasets/collected_csl', '/root/autodl-tmp/datasets/collected_base', '/root/autodl-tmp/datasets/collected_demo']:
         if os.path.exists(output_dir):
             print(colored(f'\nSummary for {output_dir}:', 'cyan'))
             for folder_name in file_types.values():
@@ -125,4 +129,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Extract collected data
-    extract_collected_data(args.collected_root, args.output_root)
+    extract_collected_data(args.collected_root)

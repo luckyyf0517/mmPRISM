@@ -8,9 +8,9 @@ data_cfg:
   params:
     cfg:
       dataset: src.data.dataset.CslDailyDataset
-      train_split: 'dataset/csl-daily/train.json'
-      val_split: 'dataset/csl-daily/val.json'
-      test_split: 'dataset/csl-daily/val.json'
+      train_split: 'dataset/tmp/test.json'
+      val_split: 'dataset/tmp/test.json'
+      test_split: 'dataset/tmp/test.json'
       opt: 
         annotation_path: 'data/csl-daily/sentence_label/csl2020ct_v2.pkl'
         max_length: 256

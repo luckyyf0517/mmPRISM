@@ -1,0 +1,9 @@
+# 1ABC, A: individual, B: type, C: id. 
+0. come
+1. hello
+2. good
+3. clip
+4. up (two hands)
+5. left
+6. right
+7. hold on

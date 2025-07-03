@@ -9,7 +9,7 @@ from easydict import EasyDict as edict
 from scipy.ndimage import gaussian_filter1d
 from make_video import make_video
 from src.utils.plot import plot_hand_cv2
-from src.data.dataset import CslDailyDataset
+from src.data.dataset import CslDailyDataset, CollectedDailyDataset
 
 camera_params = {
     'camera_position': [0, 0, -1000],
@@ -24,33 +24,42 @@ if __name__ == '__main__':
         "modalities": {
             "use_pred_pose": True,
             "use_gt_pose": True,
-            "use_raw_pose": False
+            "use_raw_pose": False, 
+            "use_features": False,
         },
         "pose_config": {
-            "pose_dir": "pred_poses_0529_rtm", 
+            "pose_dir": "pred_poses", 
             "norm_pose": True
         },
     })
     # Initialize dataset
-    dataset = CslDailyDataset(opt, split_path='dataset/csl-daily/all.json')
-
-    # Select a sample
-    # while True:
-    #     try: 
-    #         idx = random.randint(0, len(dataset) - 1)
-    #         sample = dataset[idx]
-    #         break
-    #     except Exception as e: 
-    #         print(e)
-    #         continue
-    sample = dataset[1024]
+    # dataset = CslDailyDataset(opt, split_path='dataset/csl-daily/all.json')
+    dataset = CollectedDailyDataset(opt, split_path='dataset/tmp/test_demo.json')
+    sample = dataset[0]
 
     length = sample['valid_length']
     
     # Get predicted poses and ground truth poses
     data_gt = sample['joints_gt'].numpy() * 0.1
-    data_pred = sample['joints'].numpy() * 0.1
+    data_pred = sample['joints'].numpy() # * 0.1
 
+    # Create time points for original and interpolated sequences
+    t_orig = np.arange(length)
+    t_interp = np.linspace(0, length-1, length*3)
+    
+    # Interpolate ground truth poses
+    from scipy.interpolate import interp1d
+    interp_func_gt = interp1d(t_orig, data_gt[:length], axis=0, kind='linear')
+    data_gt = interp_func_gt(t_interp)
+    
+    # Interpolate predicted poses 
+    interp_func_pred = interp1d(t_orig, data_pred[:length], axis=0, kind='linear')
+    data_pred = interp_func_pred(t_interp)
+    
+    # Update sequence length after interpolation
+    length = len(data_gt)
+    
+    # Get sequence ID
     file_id = sample['id']
     
     # Create output directory

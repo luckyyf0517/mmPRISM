@@ -33,6 +33,18 @@ data_stats = {
         'mean': np.array([-0.05493037, -0.32715766, -0.17995592]),
         'std': np.array([0.5, 0.5, 0.5]),
     },
+    'collected_demo/poses': {
+        'mean': np.array([-0.32624024, -0.11011549, -0.28252611]),
+        'std': np.array([0.5, 0.5, 0.5]),
+    },
+    'collected_demo/pred_poses': {
+        'mean': np.array([0.0, 0.0, 0.0]),
+        'std': np.array([1.0, 1.0, 1.0]),
+    },
+    'collected_csl/poses': {
+        'mean': np.array([-0.19711676, -0.1889512, -0.22599903]),
+        'std': np.array([0.32612011, 0.34238776, 0.11730845]),
+    },
 }
 
 
@@ -41,8 +53,10 @@ class BaseDataset(Dataset):
     def __init__(self, opt=None, split_path=None):
         self.opt = opt
         self.max_length = opt.get('max_length', 256)
+        self.upsample_factor = opt.get('upsample_factor', 1)
         
         # Load data paths
+        self.split_path = split_path
         with open(split_path, 'r') as f:
             self.data_dict = json.load(f)
             
@@ -69,7 +83,29 @@ class BaseDataset(Dataset):
                     break
             assert mean is not None and std is not None, f"Missing data stats for {pose_path}"
             pose = (pose - mean) / std
+            
+        if 'train' in self.split_path:
+            # add random noise (turn off when evaluating)
+            pose = pose + np.random.normal(0, 0.01, pose.shape)
+            
+            # Add random global translation and scaling (turn off when evaluating)
+            global_scale = np.random.uniform(0.8, 1.2, (1, 1, 1, 3))  # Random scaling per xyz dimension
+            pose = pose * global_scale
         
+        pose = pose - pose[:, :, [0], :].mean(1, keepdims=True) # remove global translation
+
+        if self.upsample_factor > 1.0:
+            # Directly interpolate along time dimension
+            from scipy.interpolate import interp1d
+            # Original time points
+            t = np.arange(pose.shape[0])
+            # New time points after upsampling
+            t_new = np.linspace(0, pose.shape[0]-1, pose.shape[0]*self.upsample_factor)
+            # Interpolate along time dimension for all other dimensions
+            f = interp1d(t, pose, axis=0, kind='linear')
+            # Get interpolated sequence
+            pose = f(t_new)
+
         return pose
     
 
@@ -84,7 +120,7 @@ class SingleFrameDataset(BaseDataset):
     def __getitem__(self, index):
         id, pose_path = list(self.data_dict.items())[index]
         pose = self.load_and_normalize_pose(pose_path, target_frames=None) # (T, 2, 24, 3)
-        pose = pose * 0.1 # scale to real-world scale
+        pose = pose * np.array([0.1, 0.1, 0.03]) # scale to real-world scale
 
         # frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
         frame_idx = 0
@@ -121,7 +157,7 @@ class CollectedSingleFrameDataset(BaseDataset):
         id, frame_idx = self.data_list[index]
         pose_path = self.data_dict[id]
         pose = self.load_and_normalize_pose(pose_path, target_frames=None) # (T, 2, 24, 3)
-        pose = pose * 0.1 # scale to real-world scale
+        pose = pose * np.array([0.1, 0.1, 0.03]) # scale to real-world scale
 
         joints = pose[frame_idx]  # (2, 24, 3)
         
@@ -146,7 +182,8 @@ class SequenceBaseDataset(BaseDataset):
         self.modalities = opt.get('modalities', {
             'use_pred_pose': False,
             'use_gt_pose': False,
-            'use_raw_pose': False,
+            'use_raw_pose': False, 
+            'use_features': False,
         })
         self.feature_config = opt.get('feature_config', {
             'feature_dim': 512,
@@ -188,8 +225,8 @@ class SequenceBaseDataset(BaseDataset):
         """Load predicted pose data"""
         pred_pose_path = pose_path.replace('poses', self.pose_config['pose_dir'])
         pose = self.load_and_normalize_pose(pred_pose_path, target_frames=None) # (T, 2, 24, 3)
-        if 'pred_poses' in pred_pose_path:
-            pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
+        # if 'pred_poses' in pred_pose_path:
+        #     pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
         return pose
 
     def load_gt_pose(self, pose_path):
@@ -274,8 +311,9 @@ class CslDailyDataset(SequenceBaseDataset):
     
     def _load_captions(self, caption_path):
         """Override _load_captions to load sentence annotations from pickle file"""
-        if not os.path.exists(caption_path):
-            raise FileNotFoundError(f"Annotation file not found: {caption_path}")
+        if caption_path is None or not os.path.exists(caption_path):
+            # raise FileNotFoundError(f"Annotation file not found: {caption_path}")
+            return {}
             
         import pickle
         with open(caption_path, 'rb') as f:
@@ -291,13 +329,31 @@ class CslDailyDataset(SequenceBaseDataset):
             caption_dict[video_id] = caption
             
         return caption_dict
+    
 
+class CollectedDailyDataset(CslDailyDataset):
+    def __init__(self, opt, split_path=None):
+        super().__init__(opt, split_path)
+    
+    def __getitem__(self, index):
+        output_dict = super().__getitem__(index)
+        
+        # # Load mmwave data for the entire sequence
+        # mmwave_sequence = []
+        # for frame_idx in range(output_dict['valid_length'] - 1):
+        #     mmwave_path = output_dict['path'].replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
+        #     mmwave = np.load(mmwave_path) 
+        #     mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+        #     mmwave_sequence.append(mmwave)
+        # output_dict['mmwave'] = np.array(mmwave_sequence)
 
+        return output_dict
+    
 if __name__ == "__main__":
     opt = {
         "load_feature": False,
         "norm_pose": True,
     }
 
-    dataset = CollectedSingleFrameDataset(opt, split_path='dataset/collected-100/train.json')
+    dataset = CollectedDailyDataset(opt, split_path='dataset/collected-200/train.json')
     item = dataset[0]

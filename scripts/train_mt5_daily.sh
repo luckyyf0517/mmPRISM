@@ -4,11 +4,11 @@ deepspeed --include localhost:0,1 \
     run_peft.py \
     --config config/wavellm_mt5_daily.yaml \
     --batch-size 64 \
-    --max-epochs 30 \
+    --max-epochs 100 \
     --gradient-accumulation-steps 8 \
-    --version "wavellm_mt5_daily_0617_no_pretrain" \
+    --version "wavellm_mt5_daily_0702_gt_augmentation" \
     --dtype bf16 \
     --seed 42 \
     --zero_stage 2 \
-    --reset
-    # --resume-checkpoint "log/archived/wavellm_mt5_gt_pose_0523/last.ckpt" 
+    --resume-checkpoint "log/archived/wavellm_mt5_gt_pose_0523/last.ckpt" 
+    --reset 
