@@ -14,13 +14,15 @@ data_cfg:
       opt: 
         annotation_path: 'data/csl-daily/sentence_label/csl2020ct_v2.pkl'
         max_length: 256
+        downsample_factor: 1
+        upsample_factor: 1
         modalities:  # Control which modalities to use
           use_pred_pose: true
           use_features: false
           use_raw_pose: false
           use_gt_pose: false
         pose_config:  # Pose modality specific settings
-          pose_dir: "poses"
+          pose_dir: "pred_poses_0602_rtm"
           norm_pose: true
       num_workers: 4
 

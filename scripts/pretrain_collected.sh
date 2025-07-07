@@ -5,6 +5,8 @@ torchrun --nproc_per_node=2 \
     --config config/omnihand_rtm_collected.yaml \
     --batch-size 32 \
     --max-epochs 300 \
-    --version "omnihand-rtm-collected-0703" \
+    --version "omnihand-rtm-collected-0704-disc" \
     --precision 32 \
-    --reset
+    --resume-checkpoint log/omnihand/omnihand-rtm-collected-0704/last.ckpt 
+    # --test
+    # --reset

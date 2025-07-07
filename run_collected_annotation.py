@@ -57,13 +57,22 @@ def process_sequence(args, video_path, pose_estimator):
     # Estimate poses
     print(colored('[2] Estimating poses...', 'blue'))
     keypoints_all = []
+    keypointscores_all = []
     for frame_idx in tqdm(range(len(frames)), desc='    Processing', ncols=80):
         frame = frames[frame_idx].copy()
         pose_results = process_single_image(frame, pose_estimator, args)
         keypoints = pose_results.pred_instances.keypoints[0]
+        keypointscores = pose_results.pred_instances.keypoint_scores[0]
+        
+        # Set low confidence keypoints to NaN
+        low_conf_mask = keypointscores < args.kpt_thr
+        keypoints[low_conf_mask] = np.nan
+        
         keypoints_all.append(keypoints)
+        keypointscores_all.append(keypointscores)
         
     keypoints_all = np.array(keypoints_all)
+    keypointscores_all = np.array(keypointscores_all)
     print(colored('    [OK] Pose estimation completed', 'green'))
     
     # Process keypoints

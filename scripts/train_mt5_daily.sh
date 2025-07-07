@@ -6,9 +6,9 @@ deepspeed --include localhost:0,1 \
     --batch-size 64 \
     --max-epochs 100 \
     --gradient-accumulation-steps 8 \
-    --version "wavellm_mt5_daily_0702_gt_augmentation" \
+    --version "wavellm_mt5_daily_0704_rtm_augmentation" \
     --dtype bf16 \
     --seed 42 \
     --zero_stage 2 \
-    --resume-checkpoint "log/archived/wavellm_mt5_gt_pose_0523/last.ckpt" 
+    --resume-checkpoint "log/archived/wavellm_mt5_gt_pose_0523/last.ckpt" \
     --reset 

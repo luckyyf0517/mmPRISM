@@ -18,10 +18,9 @@ class MPJPEEvaluator(OmniHand):
     def test_step(self, batch, batch_idx):
         # Get batch timestep data
         max_len = batch['valid_length'][0].item()
-        points_t = batch['joints'][0, :max_len]  # [T, 59, 3]
+        points_t = batch['joints'][0, :max_len]  # [T, 2, 24, 3]
         mmwave_t = batch['mmwave'][0, :max_len]  # [T, 64, 32, 32]
-        path = batch['path'][0]
-        
+
         # Process doppler data
         mmwave = self.processor(mmwave_t)
         features = self.backbone(mmwave)
@@ -55,20 +54,20 @@ def main():
     assert datastage == 'daily'
     args = edict({
         'config': 'config/omnihand_rtm_collected.yaml',
-        'resume_checkpoint': 'log/omnihand/omnihand-rtm-collected-0703/last.ckpt',
+        'resume_checkpoint': 'log/omnihand/omnihand-rtm-collected-0704/last.ckpt',
     })
     cfg = load_yaml(args.config)
     cfg.batch_size = 1
     data_cfg = cfg.data_cfg
     data_cfg.params.cfg.dataset = 'src.data.dataset.CollectedDailyDataset'
     data_cfg.params.cfg.batch_size = 1
-    data_cfg.params.cfg.test_split = 'dataset/collected-500/val.json'
+    data_cfg.params.cfg.test_split = 'dataset/collected-700/val.json'
     data_cfg.params.cfg.opt = {
         "annotation_path": None,
-        "max_length": 100,
+        "max_length": 100, 
         "modalities": {
-            "use_pred_pose": False,
-            "use_raw_pose": True, 
+            "use_pred_pose": True,
+            "use_raw_pose": False, 
             "use_gt_pose": False, 
             "use_features": False,
         },
@@ -92,7 +91,7 @@ def main():
         devices=world_size,
         strategy='ddp',
         precision='32',
-        enable_progress_bar=True,
+        enable_progress_bar=False,
     )
     
     # Run MPJPE evaluation

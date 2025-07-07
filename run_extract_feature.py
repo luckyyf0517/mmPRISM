@@ -19,7 +19,6 @@ class FeatureExtractionOmniHand(OmniHand):
         # Get batch timestep data
         max_len = batch['valid_length'][0].item()
         points_t = batch['joints'][0, :max_len]  # [T, 59, 3]
-        velocities_t = batch['velocities'][0, :max_len]  # [T, 59, 3]
         path = batch['path'][0]
         
         # Determine feature and pose paths
@@ -32,6 +31,7 @@ class FeatureExtractionOmniHand(OmniHand):
         
         # Extract features using encode_feature method
         if self.use_simulator:
+            velocities_t = batch['velocities'][0, :max_len]  # [T, 59, 3]
             input_data = {
                 'joints': points_t,
                 'velocities': velocities_t
@@ -55,6 +55,12 @@ class FeatureExtractionOmniHand(OmniHand):
         
         self.processed_count += 1
 
+        # print MPJPE
+        valid_mask = ~torch.any(torch.isnan(points_t), dim=-1)
+        pred_valid = joints_pred[valid_mask]
+        target_valid = points_t[valid_mask]
+        mpjpe = torch.norm(pred_valid - target_valid, dim=-1).mean() * 1e3
+        self.print(f"MPJPE: {mpjpe.mean()}")
         
 def main():
     # Initialize distributed training
@@ -73,24 +79,24 @@ def main():
     assert datastage == 'daily'
     args = edict({
         'config': 'config/omnihand_rtm_collected.yaml',
-        'resume_checkpoint': 'log/omnihand/omnihand-rtm-collected-0703/last.ckpt',
+        'resume_checkpoint': 'log/omnihand/omnihand-rtm-collected-0704-demo/last.ckpt',
     })
     cfg = load_yaml(args.config)
     cfg.batch_size = 1
     data_cfg = cfg.data_cfg
     data_cfg.params.cfg.dataset = 'src.data.dataset.CollectedDailyDataset'
     data_cfg.params.cfg.batch_size = 1
-    # data_cfg.params.cfg.test_split = 'dataset/csl-daily/all.json'
-    data_cfg.params.cfg.test_split = 'dataset/tmp/test_demo.json'
+    data_cfg.params.cfg.test_split = 'dataset/collected-demo/all.json'
     
     data_cfg.params.cfg.opt = {
         "annotation_path": 'data/csl-daily/sentence_label/csl2020ct_v2.pkl',
         "max_length": 512,
         "modalities": {
-            "use_pred_pose": False,
-            "use_raw_pose": True, 
+            "use_pred_pose": True,
+            "use_raw_pose": False, 
             "use_gt_pose": False, 
             "use_features": False,
+            "use_mmwave": True,
         },
         "pose_config": {
             "pose_dir": "poses", 

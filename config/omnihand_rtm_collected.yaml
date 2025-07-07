@@ -8,9 +8,12 @@ data_cfg:
   params:
     cfg: 
       dataset: src.data.dataset.CollectedSingleFrameDataset
-      train_split: 'dataset/collected-500/train.json'
-      val_split: 'dataset/collected-500/val.json'
-      test_split: 'dataset/collected-500/val.json'
+      train_split: 'dataset/collected-700/train.json'
+      val_split: 'dataset/collected-700/val.json'
+      test_split: 'dataset/collected-700/val.json'
+      # train_split: 'dataset/collected-demo/train.json'
+      # val_split: 'dataset/collected-demo/val.json'
+      # test_split: 'dataset/collected-demo/val.json'
       opt: 
         norm_pose: true
       num_workers: 4
@@ -33,8 +36,7 @@ model_cfg:
           expansion: 0.5  # Standard expansion ratio
           channel_attention: true  # Enable channel attention for better feature refinement
           norm_layer: torch.nn.GroupNorm  # GroupNorm for better regularization
-        pretrained: null
-        # pretrained: 'weights/rtm_0701'  
+        pretrained: 'weights/rtm_0703'  
         freeze: false
       regressor:
         target: torch.nn.Linear
@@ -45,7 +47,7 @@ model_cfg:
         pretrained: null
         freeze: false
       training:
-        use_discriminator: false
+        use_discriminator: true
         disc_lr: 1.0e-4
         gan_start_iter: 1000
         lambda_gp: 0.0

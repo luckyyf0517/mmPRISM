@@ -53,6 +53,7 @@ class BaseDataset(Dataset):
     def __init__(self, opt=None, split_path=None):
         self.opt = opt
         self.max_length = opt.get('max_length', 256)
+        self.downsample_factor = opt.get('downsample_factor', 1)
         self.upsample_factor = opt.get('upsample_factor', 1)
         
         # Load data paths
@@ -67,6 +68,22 @@ class BaseDataset(Dataset):
 
         # load pose
         pose = np.load(pose_path)  # (T, 2, 24, 3)
+        pose = pose[::self.downsample_factor]
+
+        if self.upsample_factor > 1.0:
+            # Directly interpolate along time dimension
+            from scipy.interpolate import interp1d
+            # Original time points
+            t = np.arange(pose.shape[0])
+            # New time points after upsampling
+            t_new = np.linspace(0, pose.shape[0]-1, pose.shape[0]*self.upsample_factor)
+            # Interpolate along time dimension for all other dimensions
+            f = interp1d(t, pose, axis=0, kind='linear')
+            # Get interpolated sequence
+            pose = f(t_new)
+
+            if 'collected' in pose_path:
+                pose = pose[3:]
 
         # sample frames if target_frames is specified
         if target_frames is not None and pose.shape[0] > target_frames:
@@ -93,19 +110,6 @@ class BaseDataset(Dataset):
             pose = pose * global_scale
         
         pose = pose - pose[:, :, [0], :].mean(1, keepdims=True) # remove global translation
-
-        if self.upsample_factor > 1.0:
-            # Directly interpolate along time dimension
-            from scipy.interpolate import interp1d
-            # Original time points
-            t = np.arange(pose.shape[0])
-            # New time points after upsampling
-            t_new = np.linspace(0, pose.shape[0]-1, pose.shape[0]*self.upsample_factor)
-            # Interpolate along time dimension for all other dimensions
-            f = interp1d(t, pose, axis=0, kind='linear')
-            # Get interpolated sequence
-            pose = f(t_new)
-
         return pose
     
 
@@ -338,15 +342,19 @@ class CollectedDailyDataset(CslDailyDataset):
     def __getitem__(self, index):
         output_dict = super().__getitem__(index)
         
-        # # Load mmwave data for the entire sequence
-        # mmwave_sequence = []
-        # for frame_idx in range(output_dict['valid_length'] - 1):
-        #     mmwave_path = output_dict['path'].replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
-        #     mmwave = np.load(mmwave_path) 
-        #     mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
-        #     mmwave_sequence.append(mmwave)
-        # output_dict['mmwave'] = np.array(mmwave_sequence)
+        # Load mmwave data for the entire sequence
+        if self.modalities.get('use_mmwave', False):
+            mmwave_sequence = []
+            for frame_idx in range(output_dict['valid_length']):
+                mmwave_path = output_dict['path'].replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
+                mmwave = np.load(mmwave_path) 
+                mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+                mmwave_sequence.append(mmwave)
+            output_dict['mmwave'] = np.array(mmwave_sequence)
 
+        # scale to real-world scale
+        output_dict['joints'] = output_dict['joints'] * torch.tensor([0.1, 0.1, 0.03])
+        
         return output_dict
     
 if __name__ == "__main__":

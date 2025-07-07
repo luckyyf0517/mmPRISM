@@ -24,7 +24,7 @@ def extract_collected_data(collected_root):
     # Define file types and their corresponding output folders (excluding pose.npy)
     file_types = {
         'color.npy': 'videos',
-        # 'mmwave.npy': 'mmwave'
+        'mmwave.npy': 'mmwave'
     }
 
     # Get all subdirectories in collected folder (0000, 0001, etc.)
@@ -41,9 +41,9 @@ def extract_collected_data(collected_root):
         if subdir.startswith('S'):
             current_output_root = '/root/autodl-tmp/datasets/collected_csl'
         else:
-            print('Warning: DEBUG MODE')
-            current_output_root = '/root/autodl-tmp/datasets/collected_demo'
-            # current_output_root = '/root/autodl-tmp/datasets/collected_base'
+            # print('Warning: DEBUG MODE')
+            # current_output_root = '/root/autodl-tmp/datasets/collected_demo'
+            current_output_root = '/root/autodl-tmp/datasets/collected_base'
         
         # Create output directory and subdirectories for current subfolder
         os.makedirs(current_output_root, exist_ok=True)

@@ -14,6 +14,8 @@ data_cfg:
       opt: 
         annotation_path: 'data/csl-daily/sentence_label/csl2020ct_v2.pkl'
         max_length: 256
+        downsample_factor: 1
+        upsample_factor: 3
         modalities:  # Control which modalities to use
           use_pred_pose: true
           use_features: false
