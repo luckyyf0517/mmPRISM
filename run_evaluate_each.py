@@ -53,15 +53,17 @@ def main():
     # Modify test split to use all data
     assert datastage == 'daily'
     args = edict({
-        'config': 'config/omnihand_rtm_collected.yaml',
-        'resume_checkpoint': 'log/omnihand/omnihand-rtm-collected-0704/last.ckpt',
+        # 'config': 'config/omnihand_rtm_collected.yaml',
+        # 'resume_checkpoint': 'log/omnihand/omnihand-rtm-collected-0704/last.ckpt',
+        'config': 'config/omnihand_mmhand_collected.yaml',
+        'resume_checkpoint': 'log/omnihand/omnihand-mmhand-collected-0707/last.ckpt',
     })
     cfg = load_yaml(args.config)
     cfg.batch_size = 1
     data_cfg = cfg.data_cfg
     data_cfg.params.cfg.dataset = 'src.data.dataset.CollectedDailyDataset'
     data_cfg.params.cfg.batch_size = 1
-    data_cfg.params.cfg.test_split = 'dataset/collected-700/val.json'
+    data_cfg.params.cfg.test_split = 'dataset/collected-500/val.json'
     data_cfg.params.cfg.opt = {
         "annotation_path": None,
         "max_length": 100, 
@@ -70,6 +72,7 @@ def main():
             "use_raw_pose": False, 
             "use_gt_pose": False, 
             "use_features": False,
+            "use_mmwave": True,
         },
         "pose_config": {
             "pose_dir": "poses", 
