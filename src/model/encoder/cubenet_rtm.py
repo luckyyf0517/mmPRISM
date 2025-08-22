@@ -406,16 +406,26 @@ class CSPPAFPN3D(nn.Module):
 
 
 class CSPEncoder3D(nn.Module):
-    """CSPEncoder3D with CSPNeXt architecture for 3D inputs"""
+    """CSPEncoder3D with CSPNeXt architecture for 3D inputs
+    
+    Supports ablation study with component switches:
+    - use_csp: Enable/disable Cross-Stage Partial structure
+    - use_channel_attention: Enable/disable Channel Attention modules  
+    - use_pafpn: Enable/disable Path Aggregation Feature Pyramid Network
+    """
     def __init__(self, 
                  in_channels=32,
                  base_channels=64,
                  stage_channels=[128, 256, 512, 1024], 
-                 stage_blocks=[2, 4, 4, 2],  # Changed to standard P5 architecture
+                 stage_blocks=[2, 4, 4, 2],
                  spp_kernel_sizes=(3, 5, 7),
                  expandsion=0.5,
-                 channel_attention=True,
+                 channel_attention=True,  # Keep for backward compatibility but not used
                  norm_layer='torch.nn.BatchNorm3d',
+                 # Ablation study switches
+                 use_csp=True,
+                 use_channel_attention=True, 
+                 use_pafpn=True,
                  **kwargs):
         super().__init__()
         
@@ -424,53 +434,91 @@ class CSPEncoder3D(nn.Module):
         
         self.in_channels = in_channels
         self.base_channels = base_channels
-        self.stage_channels = stage_channels
-        self.stage_blocks = stage_blocks
+        self.use_csp = use_csp
+        self.use_channel_attention = use_channel_attention  # Only use this parameter
+        self.use_pafpn = use_pafpn
+        
+        # Adjust architecture complexity based on configuration
+        if self.use_csp:
+            # Full complexity for CSP-based models
+            self.stage_channels = stage_channels
+            self.stage_blocks = stage_blocks
+        else:
+            # Simplified architecture for baseline
+            # Reduce channels and blocks for true baseline comparison
+            self.stage_channels = [ch // 2 for ch in stage_channels]  # Half the channels
+            self.stage_blocks = [1, 1, 1, 1]  # Single block per stage
         
         # Stem layer with focus-like structure
-        self.stem = nn.Sequential(
-            ConvBNAct3D(in_channels, base_channels // 2, 3, 1, 1, norm_layer=norm_layer),
-            ConvBNAct3D(base_channels // 2, base_channels, 3, 2, 1, norm_layer=norm_layer),
-            ConvBNAct3D(base_channels, base_channels, 3, 1, 1, norm_layer=norm_layer)
-        )
+        if self.use_csp:
+            # Advanced stem for CSP-based models
+            self.stem = nn.Sequential(
+                ConvBNAct3D(in_channels, base_channels // 2, 3, 1, 1, norm_layer=norm_layer),
+                ConvBNAct3D(base_channels // 2, base_channels, 3, 2, 1, norm_layer=norm_layer),
+                ConvBNAct3D(base_channels, base_channels, 3, 1, 1, norm_layer=norm_layer)
+            )
+        else:
+            # Simple stem for baseline CNN
+            self.stem = nn.Sequential(
+                ConvBNAct3D(in_channels, base_channels // 2, 3, 2, 1, norm_layer=norm_layer)
+            )
+            # Adjust base channels for baseline
+            base_channels = base_channels // 2
         
         # Build stages
         self.stages = nn.ModuleList()
         in_ch = base_channels
         
-        for i, (out_ch, num_blocks) in enumerate(zip(stage_channels, stage_blocks)):
+        for i, (out_ch, num_blocks) in enumerate(zip(self.stage_channels, self.stage_blocks)):
             # Downsample
             downsample = ConvBNAct3D(in_ch, out_ch, 3, 2, 1, norm_layer=norm_layer)
             
-            # CSP blocks with RepVGG structure
-            csp_block = CSPBlock3D(
-                out_ch, out_ch, 
-                num_blocks=num_blocks,
-                expandsion=expandsion,
-                channel_attention=channel_attention and i >= 2,  # Only use attention in later stages
-                norm_layer=norm_layer
-            )
+            if self.use_csp:
+                # Use CSP blocks when CSP is enabled
+                csp_block = CSPBlock3D(
+                    out_ch, out_ch, 
+                    num_blocks=num_blocks,
+                    expandsion=expandsion,
+                    channel_attention=self.use_channel_attention and i >= 2,
+                    norm_layer=norm_layer
+                )
+                stage = nn.Sequential(downsample, csp_block)
+            else:
+                # Use basic 3D CNN blocks when CSP is disabled (baseline)
+                # Simplified baseline: fewer blocks and simpler structure
+                basic_blocks = []
+                # Only use 1 block per stage for true baseline (vs multiple blocks in CSP)
+                simple_block_count = 1 if num_blocks > 1 else num_blocks
+                for j in range(simple_block_count):
+                    basic_blocks.append(ConvBNAct3D(out_ch, out_ch, 3, 1, 1, norm_layer=norm_layer))
+                    if self.use_channel_attention and i >= 2:
+                        basic_blocks.append(ChannelAttention3D(out_ch))
+                
+                stage = nn.Sequential(downsample, *basic_blocks)
             
-            stage = nn.Sequential(downsample, csp_block)
             self.stages.append(stage)
             in_ch = out_ch
         
-        # Add PAFPN
-        self.neck = CSPPAFPN3D(
-            in_channels=stage_channels[-3:],  # Use features from last 3 stages [256, 512, 1024]
-            out_channels=None,
-            out_indices=(1, 2),  # Output last two levels
-            num_csp_blocks=2,
-            expandsion=expandsion,
-            norm_layer=norm_layer, 
-            spp_kernel_sizes=spp_kernel_sizes
-        )
+        if self.use_pafpn:
+            # Add PAFPN when enabled
+            self.neck = CSPPAFPN3D(
+                in_channels=self.stage_channels[-3:],  # Use features from last 3 stages
+                out_channels=None,
+                out_indices=(1, 2),  # Output last two levels
+                num_csp_blocks=2,
+                expandsion=expandsion,
+                norm_layer=norm_layer, 
+                spp_kernel_sizes=spp_kernel_sizes
+            )
+        else:
+            # No neck processing when PAFPN is disabled - direct to global pooling
+            self.neck = None
         
         # Global average pooling for final feature
         self.global_pool = nn.AdaptiveAvgPool3d(1)
         
         # Feature dimension output
-        self.feature_dim = stage_channels[-1]
+        self.feature_dim = self.stage_channels[-1]
         
         self._init_weights()
     
@@ -505,11 +553,15 @@ class CSPEncoder3D(nn.Module):
             if i >= 1:  # Collect features from stage2 onwards for FPN
                 features.append(x)
         
-        # Apply PAFPN
-        neck_outs = self.neck(features)
-        
-        # Use the last feature map for global pooling
-        x = neck_outs[-1]
+        if self.use_pafpn:
+            # Apply PAFPN
+            neck_outs = self.neck(features)
+            # Use the last feature map for global pooling
+            x = neck_outs[-1]
+        else:
+            # No neck processing - use final stage output directly
+            # x is already the output from the last stage
+            pass
         
         # Global feature
         global_feat = self.global_pool(x).flatten(1)

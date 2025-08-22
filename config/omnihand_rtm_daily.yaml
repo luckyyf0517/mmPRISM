@@ -31,7 +31,6 @@ model_cfg:
           stage_blocks: [2, 4, 4, 2]  # More blocks for deeper feature learning
           spp_kernel_sizes: [3, 5, 7]
           expansion: 0.5  # Standard expansion ratio
-          channel_attention: true  # Enable channel attention for better feature refinement
           norm_layer: torch.nn.GroupNorm  # GroupNorm for better regularization
         pretrained: null  
         freeze: false
