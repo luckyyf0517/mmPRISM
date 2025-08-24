@@ -36,6 +36,7 @@ from src.utils.tools import instantiate_from_config
 
 def set_seed(seed, n_gpu):
     """Set random seeds for reproducibility"""
+    seed = int(seed)  # Ensure seed is an integer
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

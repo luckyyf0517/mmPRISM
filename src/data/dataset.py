@@ -146,6 +146,10 @@ class CollectedSingleFrameDataset(BaseDataset):
         self.pose_config = edict(
             norm_pose=opt.get('norm_pose', False))
         
+        # Add temporal configuration
+        self.use_temporal = opt.get('use_temporal', False)
+        self.num_temporal_frames = opt.get('num_temporal_frames', 5)  # Default to 5 frames
+        
         self.num_frames = 99
         
         # build data list
@@ -163,18 +167,57 @@ class CollectedSingleFrameDataset(BaseDataset):
         pose = self.load_and_normalize_pose(pose_path, target_frames=None) # (T, 2, 24, 3)
         pose = pose * np.array([0.1, 0.1, 0.03]) # scale to real-world scale
 
-        joints = pose[frame_idx]  # (2, 24, 3)
-        
-        mmwave_path = pose_path.replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
-        mmwave = np.load(mmwave_path) 
-        mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+        if self.use_temporal:
+            # For temporal processing, load multiple consecutive frames
+            # Create a window of frames centered around the current frame
+            start_frame = max(0, frame_idx - self.num_temporal_frames // 2)
+            end_frame = min(pose.shape[0], start_frame + self.num_temporal_frames)
+            start_frame = max(0, end_frame - self.num_temporal_frames)  # Adjust if needed
+            
+            # Load temporal sequence of mmwave data
+            mmwave_sequence = []
+            
+            for t in range(start_frame, end_frame):
+                # Load mmwave data for frame t
+                mmwave_path = pose_path.replace('poses', 'mmwave').replace('.npy', f'/{t:04d}.npy')
+                if os.path.exists(mmwave_path):
+                    mmwave = np.load(mmwave_path) 
+                    mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+                    mmwave_sequence.append(mmwave)
+                else:
+                    # If file doesn't exist, pad with zeros
+                    mmwave_sequence.append(np.zeros((128, 86, 256), dtype=np.complex64))
+            
+            # Stack frames to create temporal dimension: [T, ...]
+            if mmwave_sequence:
+                mmwave_temporal = np.stack(mmwave_sequence, axis=0)  # [T, num_chirps, num_antenna, num_samples]
+            else:
+                # Fallback if no frames were loaded
+                mmwave_temporal = np.zeros((self.num_temporal_frames, 128, 86, 256), dtype=np.complex64)
+            
+            # For joints, we still return a single frame as the target
+            joints = pose[frame_idx]  # (2, 24, 3)
+            
+            return {
+                'id': id, 
+                'joints': joints.astype(np.float32),  # (2, 24, 3) - single frame for training target
+                'mmwave': mmwave_temporal.astype(np.complex64),  # [T, num_chirps, num_antenna, num_samples] - temporal for TVAN
+                'frame_idx': frame_idx,
+            }
+        else:
+            # Original single frame behavior
+            joints = pose[frame_idx]  # (2, 24, 3)
+            
+            mmwave_path = pose_path.replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
+            mmwave = np.load(mmwave_path) 
+            mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
 
-        return {
-            'id': id, 
-            'joints': joints.astype(np.float32),  # (2, 24, 3)
-            'mmwave': mmwave.astype(np.complex64), 
-            'frame_idx': frame_idx,
-        }
+            return {
+                'id': id, 
+                'joints': joints.astype(np.float32),  # (2, 24, 3)
+                'mmwave': mmwave.astype(np.complex64), 
+                'frame_idx': frame_idx,
+            }
     
 class SequenceBaseDataset(BaseDataset):
     """Base class for sequence-based datasets with common functionality"""
@@ -338,6 +381,9 @@ class CslDailyDataset(SequenceBaseDataset):
 class CollectedDailyDataset(CslDailyDataset):
     def __init__(self, opt, split_path=None):
         super().__init__(opt, split_path)
+        # Add temporal configuration
+        self.use_temporal = opt.get('use_temporal', False)
+        self.num_temporal_frames = opt.get('num_temporal_frames', 5)  # Default to 5 frames
     
     def __getitem__(self, index):
         output_dict = super().__getitem__(index)
@@ -345,12 +391,42 @@ class CollectedDailyDataset(CslDailyDataset):
         # Load mmwave data for the entire sequence
         if self.modalities.get('use_mmwave', False):
             mmwave_sequence = []
-            for frame_idx in range(output_dict['valid_length']):
+            valid_length = output_dict['valid_length']
+            
+            if self.use_temporal:
+                # For temporal processing, load multiple frames
+                # We'll use a sliding window approach or take the last N frames
+                start_frame = max(0, valid_length - self.num_temporal_frames)
+                end_frame = valid_length
+                
+                for frame_idx in range(start_frame, end_frame):
+                    mmwave_path = output_dict['path'].replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
+                    if os.path.exists(mmwave_path):
+                        mmwave = np.load(mmwave_path) 
+                        mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+                        mmwave_sequence.append(mmwave)
+                    else:
+                        # If file doesn't exist, pad with zeros
+                        # Assuming typical shape based on existing data
+                        mmwave_sequence.append(np.zeros((128, 86, 256), dtype=np.complex64))
+                        
+                # Stack frames to create temporal dimension: [T, num_chirps, num_antenna, num_samples]
+                if mmwave_sequence:
+                    output_dict['mmwave'] = np.stack(mmwave_sequence, axis=0)
+                else:
+                    # Fallback if no frames were loaded
+                    output_dict['mmwave'] = np.zeros((self.num_temporal_frames, 128, 86, 256), dtype=np.complex64)
+            else:
+                # Original behavior - load single frame (typically the first or a random frame)
+                frame_idx = min(valid_length - 1, 0)  # Use first frame
                 mmwave_path = output_dict['path'].replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
-                mmwave = np.load(mmwave_path) 
-                mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
-                mmwave_sequence.append(mmwave)
-            output_dict['mmwave'] = np.array(mmwave_sequence)
+                if os.path.exists(mmwave_path):
+                    mmwave = np.load(mmwave_path) 
+                    mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+                    output_dict['mmwave'] = mmwave
+                else:
+                    # Fallback if file doesn't exist
+                    output_dict['mmwave'] = np.zeros((128, 86, 256), dtype=np.complex64)
 
         # scale to real-world scale
         output_dict['joints'] = output_dict['joints'] * torch.tensor([0.1, 0.1, 0.03])

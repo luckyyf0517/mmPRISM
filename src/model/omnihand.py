@@ -32,7 +32,8 @@ class OmniHand(LightningModule):
         
         self.save_hyperparameters()
         self.cfg = cfg
-        self.batch_size = cfg.batch_size
+        # Handle batch_size from training config or top level
+        self.batch_size = cfg.training.get('batch_size', cfg.get('batch_size', 8))
         
         self.use_simulator = cfg.get('use_simulator', True)
         if self.use_simulator:
@@ -48,17 +49,43 @@ class OmniHand(LightningModule):
             for param in self.backbone.parameters():
                 param.requires_grad = False
         
-        # Get feature dimension from backbone params (support CubeNet, CSPEncoder3D, and MMHandEncoder)
+        # Get feature dimension from backbone params (support CubeNet, CSPEncoder3D, MMHandEncoder, and TVAN)
         if hasattr(cfg.backbone.params, 'hidden_dims'):
             self.feature_dim = cfg.backbone.params.hidden_dims[-1]  # For CubeNet and MMHandEncoder
         elif hasattr(cfg.backbone.params, 'stage_channels'):
             self.feature_dim = cfg.backbone.params.stage_channels[-1]  # For CSPEncoder3D
+        elif 'tvan' in cfg.backbone.target.lower() or hasattr(cfg.backbone.params, 'temporal_frames'):
+            # For TVAN - use fixed feature dimension
+            self.feature_dim = 64  # TVAN outputs 64-dimensional features
         else:
             raise ValueError("Backbone params must have either 'hidden_dims' or 'stage_channels'")
         
         self.relu = nn.ReLU()
-        self.regressor = instantiate_from_config(cfg.regressor)
-        self.error_regressor = nn.Linear(cfg.regressor.params.in_features, 48)
+        
+        # Handle Sequential regressor with custom layer building
+        if cfg.regressor.target == 'torch.nn.Sequential' and hasattr(cfg.regressor.params, 'layers'):
+            # Build Sequential module manually from layers configuration
+            layers = []
+            for layer_config in cfg.regressor.params.layers:
+                layer_class = get_obj_from_str(layer_config.target)
+                layer_instance = layer_class(**layer_config.params)
+                layers.append(layer_instance)
+            self.regressor = nn.Sequential(*layers)
+        else:
+            # Use standard instantiation
+            self.regressor = instantiate_from_config(cfg.regressor)
+            
+        # Determine input dimension for error regressor
+        if hasattr(cfg.regressor.params, 'in_features'):
+            error_input_dim = cfg.regressor.params.in_features
+        elif hasattr(cfg.regressor.params, 'layers') and len(cfg.regressor.params.layers) > 0:
+            # Get input dimension from first layer
+            first_layer_params = cfg.regressor.params.layers[0].get('params', {})
+            error_input_dim = first_layer_params.get('in_features', self.feature_dim)
+        else:
+            error_input_dim = self.feature_dim
+            
+        self.error_regressor = nn.Linear(error_input_dim, 48)
             
         # Initialize discriminator if enabled
         self.use_discriminator = cfg.training.get('use_discriminator', False)
@@ -201,7 +228,38 @@ class OmniHand(LightningModule):
             x = self.simulator(joints, velocities)
         else:
             x = input_data['mmwave']
-        x = self.processor(x)
+            
+            # Check if we have temporal data (5D or 6D tensor: [B, T, ...])
+            if (x.dim() == 5 or x.dim() == 6) and hasattr(self.backbone, 'temporal_frames'):
+                # Temporal processing: check if data is already processed or raw
+                B, T = x.shape[:2]
+                
+                # Check if this is already processed data for TVAN ([B, T, 64, 32, 32, 32])
+                # or raw mmwave data ([B, T, num_chirps, num_antenna, num_samples])
+                if x.dim() == 6 and x.shape[2] == 64 and x.shape[3] == 32 and x.shape[4] == 32 and x.shape[5] == 32:
+                    # Already processed data for TVAN - bypass processor
+                    x_temporal = x  # [B, T, 64, 32, 32, 32]
+                else:
+                    # Raw mmwave data - process through Processor first
+                    # x is [B, T, num_chirps, num_antenna, num_samples]
+                    processed_frames = []
+                    
+                    for t in range(T):
+                        # Process individual frame: [B, num_chirps, num_antenna, num_samples]
+                        frame = x[:, t, :, :, :]
+                        processed_frame = self.processor(frame)  # [B, 64, 32, 32, 32]
+                        processed_frames.append(processed_frame.unsqueeze(1))  # Add time dimension
+                    
+                    # Stack processed frames: [B, T, 64, 32, 32, 32]
+                    x_temporal = torch.cat(processed_frames, dim=1)
+                
+                # Extract features using temporal backbone
+                features = self.backbone(x_temporal)
+                return features
+            else:
+                # Standard processing: x is [B, num_chirps, num_antenna, num_samples]
+                x = self.processor(x)
+        
         # Extract features using backbone
         features = self.backbone(x)
         return features
@@ -211,10 +269,24 @@ class OmniHand(LightningModule):
         features = self.relu(features)
         regressor_output = self.regressor(features)
         error_output = self.error_regressor(features)
-        return torch.cat([
-            regressor_output.view(-1, 2, 24, 3), 
-            error_output.view(-1, 2, 24, 1)], 
-        dim=-1) # [B, 2, 24, 4]
+        
+        B = features.shape[0]
+        
+        # Reshape for concatenation
+        # Regressor outputs [B, 288] where we need first 144 for joints
+        joint_features = regressor_output[:, :144]  # [B, 144] 
+        reshaped_regressor = joint_features.view(B, 2, 24, 3)  # [B, 2, 24, 3]
+        
+        # Error outputs [B, 48] for error values
+        reshaped_error = error_output.view(B, 2, 24, 1)  # [B, 2, 24, 1]
+        
+        # Concatenate along last dimension: [B, 2, 24, 4]
+        result = torch.cat([
+            reshaped_regressor,
+            reshaped_error], 
+        dim=-1)
+        
+        return result
             
     def compute_loss(self, results, batch):
         """Calculate reconstruction losses
