@@ -1,5 +1,5 @@
 # Basic settings
-log_dir: "log/peft_finetune"
+log_dir: "log/exp"
 strategy: "deepspeed"
 
 # Data configuration

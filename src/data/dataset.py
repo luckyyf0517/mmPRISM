@@ -101,13 +101,13 @@ class BaseDataset(Dataset):
             assert mean is not None and std is not None, f"Missing data stats for {pose_path}"
             pose = (pose - mean) / std
             
-        if 'train' in self.split_path:
-            # add random noise (turn off when evaluating)
-            pose = pose + np.random.normal(0, 0.01, pose.shape)
+        # if 'train' in self.split_path:
+        #     # add random noise (turn off when evaluating)
+        #     pose = pose + np.random.normal(0, 0.01, pose.shape)
             
-            # Add random global translation and scaling (turn off when evaluating)
-            global_scale = np.random.uniform(0.8, 1.2, (1, 1, 1, 3))  # Random scaling per xyz dimension
-            pose = pose * global_scale
+        #     # Add random global translation and scaling (turn off when evaluating)
+        #     global_scale = np.random.uniform(0.8, 1.2, (1, 1, 1, 3))  # Random scaling per xyz dimension
+        #     pose = pose * global_scale
         
         pose = pose - pose[:, :, [0], :].mean(1, keepdims=True) # remove global translation
         return pose
@@ -126,8 +126,7 @@ class SingleFrameDataset(BaseDataset):
         pose = self.load_and_normalize_pose(pose_path, target_frames=None) # (T, 2, 24, 3)
         pose = pose * np.array([0.1, 0.1, 0.03]) # scale to real-world scale
 
-        # frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
-        frame_idx = 0
+        frame_idx = random.randint(0, min(pose.shape[0] - 2, self.max_length - 1))
         joints = pose[frame_idx]  # (2, 24, 3)
         velocities = (pose[frame_idx+1] - pose[frame_idx]) * 30
 
@@ -212,13 +211,13 @@ class CollectedSingleFrameDataset(BaseDataset):
             mmwave = np.load(mmwave_path) 
             mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
 
-            return {
-                'id': id, 
-                'joints': joints.astype(np.float32),  # (2, 24, 3)
-                'mmwave': mmwave.astype(np.complex64), 
-                'frame_idx': frame_idx,
-            }
-    
+        return {
+            'id': id, 
+            'joints': joints.astype(np.float32),  # (2, 24, 3)
+            'mmwave': mmwave.astype(np.complex64), 
+            'frame_idx': frame_idx,
+        }
+
 class SequenceBaseDataset(BaseDataset):
     """Base class for sequence-based datasets with common functionality"""
     
@@ -381,54 +380,24 @@ class CslDailyDataset(SequenceBaseDataset):
 class CollectedDailyDataset(CslDailyDataset):
     def __init__(self, opt, split_path=None):
         super().__init__(opt, split_path)
-        # Add temporal configuration
-        self.use_temporal = opt.get('use_temporal', False)
-        self.num_temporal_frames = opt.get('num_temporal_frames', 5)  # Default to 5 frames
     
     def __getitem__(self, index):
         output_dict = super().__getitem__(index)
         
-        # Load mmwave data for the entire sequence
+        # Load mmwave data for the current frame (no temporal support)
         if self.modalities.get('use_mmwave', False):
-            mmwave_sequence = []
             valid_length = output_dict['valid_length']
-            
-            if self.use_temporal:
-                # For temporal processing, load multiple frames
-                # We'll use a sliding window approach or take the last N frames
-                start_frame = max(0, valid_length - self.num_temporal_frames)
-                end_frame = valid_length
-                
-                for frame_idx in range(start_frame, end_frame):
-                    mmwave_path = output_dict['path'].replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
-                    if os.path.exists(mmwave_path):
-                        mmwave = np.load(mmwave_path) 
-                        mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
-                        mmwave_sequence.append(mmwave)
-                    else:
-                        # If file doesn't exist, pad with zeros
-                        # Assuming typical shape based on existing data
-                        mmwave_sequence.append(np.zeros((128, 86, 256), dtype=np.complex64))
-                        
-                # Stack frames to create temporal dimension: [T, num_chirps, num_antenna, num_samples]
-                if mmwave_sequence:
-                    output_dict['mmwave'] = np.stack(mmwave_sequence, axis=0)
-                else:
-                    # Fallback if no frames were loaded
-                    output_dict['mmwave'] = np.zeros((self.num_temporal_frames, 128, 86, 256), dtype=np.complex64)
+            frame_idx = min(valid_length - 1, 0)  # Use first frame
+            mmwave_path = output_dict['path'].replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
+            if os.path.exists(mmwave_path):
+                mmwave = np.load(mmwave_path) 
+                mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+                output_dict['mmwave'] = mmwave
             else:
-                # Original behavior - load single frame (typically the first or a random frame)
-                frame_idx = min(valid_length - 1, 0)  # Use first frame
-                mmwave_path = output_dict['path'].replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
-                if os.path.exists(mmwave_path):
-                    mmwave = np.load(mmwave_path) 
-                    mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
-                    output_dict['mmwave'] = mmwave
-                else:
-                    # Fallback if file doesn't exist
-                    output_dict['mmwave'] = np.zeros((128, 86, 256), dtype=np.complex64)
+                # Fallback if file doesn't exist
+                output_dict['mmwave'] = np.zeros((128, 86, 256), dtype=np.complex64)
 
-        # scale to real-world scale
+        # Scale to real-world scale
         output_dict['joints'] = output_dict['joints'] * torch.tensor([0.1, 0.1, 0.03])
         
         return output_dict

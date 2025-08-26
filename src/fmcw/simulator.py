@@ -165,7 +165,7 @@ class Simulation(nn.Module):
             
         return torch.stack(radar_frame_list, dim=0)
     
-    def get_raw_radar_frame(self, path_dict, save_cuda_memory=True):
+    def get_raw_radar_frame(self, path_dict, save_cuda_memory=False):
         """
         Generate raw radar frame from path information
         

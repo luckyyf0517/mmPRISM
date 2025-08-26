@@ -1,5 +1,5 @@
 # Basic settings
-log_dir: 'log/omnihand_transformer'
+log_dir: 'log/omnihand_transformer_enhanced'
 strategy: 'ddp'
 
 # Data configuration with temporal support
@@ -14,11 +14,11 @@ data_cfg:
       opt: 
         # Enable temporal processing
         use_temporal: true
-        num_temporal_frames: 5  # Process 5 consecutive frames
+        num_temporal_frames: 8  # Increased from 5 for better temporal modeling
         norm_pose: true
       num_workers: 4
 
-# Model configuration with Transformer-based temporal backbone
+# Model configuration with Enhanced Transformer-based temporal backbone
 model_cfg:
   target: src.model.omnihand.OmniHand
   params:
@@ -35,27 +35,31 @@ model_cfg:
           stage_blocks: [2, 4, 4, 2]  # Number of blocks per stage
           spp_kernel_sizes: [3, 5, 7]  # Spatial Pyramid Pooling kernel sizes
           expansion: 0.5  # CSP expansion ratio
-          norm_layer: torch.nn.BatchNorm3d  # Normalization layer
+          norm_layer: torch.nn.GroupNorm  # Normalization layer
           
           # Pretrained spatial encoder settings
           spatial_encoder_pretrained: weights/rtm_0824/model.pth  # Path to pretrained CSPEncoder3D weights
-          spatial_encoder_freeze: false  # Whether to freeze spatial encoder (set true for transfer learning)
+          spatial_encoder_freeze: false  # Whether to freeze spatial encoder
           
-          # Temporal transformer parameters
-          temporal_frames: 5  # Must match dataset configuration
-          transformer_layers: 6  # Number of transformer encoder layers
-          transformer_heads: 8  # Number of attention heads
-          transformer_dim_feedforward: 2048  # Feedforward dimension in transformer
+          # Enhanced temporal transformer parameters
+          temporal_frames: 8  # Must match dataset configuration
+          transformer_layers: 8  # Increased layers for better modeling capacity
+          transformer_heads: 16  # More attention heads for richer feature interactions (must divide 1024)
+          transformer_dim_feedforward: 3072  # Larger feedforward for better feature transformation
           transformer_dropout: 0.1  # Dropout rate in transformer
           
+          # Advanced temporal modeling features
+          temporal_kernel_size: 3  # Kernel size for temporal convolutions
+          use_cross_attention: true  # Enable cross-attention for spatial-temporal fusion
+          
           # Output parameters
-          output_dim: 256  # Final feature dimension
+          output_dim: 512  # Increased output dimension for richer representations
         pretrained: null
         freeze: false
       regressor:
         target: torch.nn.Linear
         params:
-          in_features: 256  # Must match backbone output_dim
+          in_features: 512  # Must match backbone output_dim
           out_features: 144  # 21 joints × 3 coordinates + 21 joints × 3 rotations
       discriminator:
         pretrained: null
@@ -66,49 +70,10 @@ model_cfg:
         gan_start_iter: 1000
         lambda_gp: 0.0
         lambda_gan: 0.1
-        lr: 1.0e-4  # Learning rate
+        lr: 8.0e-5  # Slightly reduced learning rate for enhanced model
         betas: [0.9, 0.999]  # Adam optimizer betas
-        weight_decay: 0.01  # Weight decay for regularization
-
-# Training configuration
-trainer_cfg:
-  max_epochs: 100
-  check_val_every_n_epoch: 1
-  gradient_clip_val: 1.0  # Gradient clipping for transformer stability
-  accumulate_grad_batches: 1
-  precision: 16  # Mixed precision training for efficiency
-  
-# Callbacks
-callbacks:
-  - target: pytorch_lightning.callbacks.ModelCheckpoint
-    params:
-      monitor: 'val_loss'
-      mode: 'min'
-      save_top_k: 3
-      save_last: true
-      filename: 'transformer-{epoch:02d}-{val_loss:.4f}'
-  
-  - target: pytorch_lightning.callbacks.EarlyStopping
-    params:
-      monitor: 'val_loss'
-      mode: 'min'
-      patience: 15
-      min_delta: 0.001
-  
-  - target: pytorch_lightning.callbacks.LearningRateMonitor
-    params:
-      logging_interval: 'step'
-
-# Optimizer and scheduler
-optimizer_cfg:
-  target: torch.optim.AdamW
-  params:
-    lr: 1.0e-4
-    weight_decay: 0.01
-    betas: [0.9, 0.999]
-
-scheduler_cfg:
-  target: torch.optim.lr_scheduler.CosineAnnealingLR
-  params:
-    T_max: 100  # Match max_epochs
-    eta_min: 1.0e-6 
+        weight_decay: 0.02  # Increased weight decay for better regularization
+        
+        # Enhanced training schedule
+        warmup_steps: 1000  # Warmup steps for learning rate
+        lr_schedule: 'cosine'  # Cosine annealing learning rate schedule

@@ -54,9 +54,6 @@ class OmniHand(LightningModule):
             self.feature_dim = cfg.backbone.params.hidden_dims[-1]  # For CubeNet and MMHandEncoder
         elif hasattr(cfg.backbone.params, 'stage_channels'):
             self.feature_dim = cfg.backbone.params.stage_channels[-1]  # For CSPEncoder3D
-        elif 'tvan' in cfg.backbone.target.lower() or hasattr(cfg.backbone.params, 'temporal_frames'):
-            # For TVAN - use fixed feature dimension
-            self.feature_dim = 64  # TVAN outputs 64-dimensional features
         else:
             raise ValueError("Backbone params must have either 'hidden_dims' or 'stage_channels'")
         

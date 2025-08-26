@@ -32,7 +32,7 @@ model_cfg:
           spp_kernel_sizes: [3, 5, 7]
           expansion: 0.5  # Standard expansion ratio
           norm_layer: torch.nn.GroupNorm  # GroupNorm for better regularization
-        pretrained: null
+        pretrained: weights/rtm_0824
         freeze: false
       regressor:
         target: torch.nn.Linear
@@ -43,7 +43,7 @@ model_cfg:
         pretrained: null
         freeze: false
       training:
-        use_discriminator: true
+        use_discriminator: false
         disc_lr: 1.0e-4
         gan_start_iter: 1000
         lambda_gp: 0.0
