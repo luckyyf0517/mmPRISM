@@ -16,7 +16,7 @@ from easydict import EasyDict as edict
 
 if __name__ == "__main__":
     args = edict()
-    args.config = 'config/wavellm_mt5_daily.yaml'
+    args.config = 'config/wavellm/wavellm_mt5_daily.yaml'
     args.checkpoint = 'log/archived/wavellm_mt5_gt_pose_0523/last.ckpt'
 
     # Load model from checkpoint

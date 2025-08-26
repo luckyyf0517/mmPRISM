@@ -53,9 +53,9 @@ def main():
     # Modify test split to use all data
     assert datastage == 'daily'
     args = edict({
-        # 'config': 'config/omnihand_rtm_collected.yaml',
+        # 'config': 'config/omnihand/omnihand_rtm_collected.yaml',
         # 'resume_checkpoint': 'log/omnihand/omnihand-rtm-collected-0704/last.ckpt',
-        'config': 'config/omnihand_mmhand_collected.yaml',
+        'config': 'config/omnihand/omnihand_mmhand_collected.yaml',
         'resume_checkpoint': 'log/omnihand/omnihand-mmhand-collected-0707/last.ckpt',
     })
     cfg = load_yaml(args.config)

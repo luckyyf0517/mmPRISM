@@ -112,7 +112,7 @@ The model is trained using the script:
 torchrun --nproc_per_node=2 \
     --master_port 12349 \
     run_model.py \
-    --config config/omnihand_rtm_collected_transformer.yaml \
+    --config config/omnihand/omnihand_rtm_collected_transformer.yaml \
     --batch-size 8 \
     --max-epochs 30 \
     --version "omnihand_rtm_collected_transformer_exp" \

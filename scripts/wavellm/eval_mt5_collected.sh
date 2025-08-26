@@ -2,7 +2,7 @@
 deepspeed --include localhost:0 \
     --master_port 12346 \
     run_peft.py \
-    --config config/wavellm_mt5_collected.yaml \
+    --config config/wavellm/wavellm_mt5_collected.yaml \
     --batch-size 24 \
     --max-epochs 10 \
     --gradient-accumulation-steps 8 \

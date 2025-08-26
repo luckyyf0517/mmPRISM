@@ -16,7 +16,7 @@ from easydict import EasyDict as edict
 
 if __name__ == "__main__":
     args = edict()
-    args.config = 'config/omnihand_base_news.yaml'
+    args.config = 'config/omnihand/omnihand_base_news.yaml'
     args.checkpoint = 'log/omnihand/omnihand-base-news-disc-0526/last.ckpt'
 
     # Load model from checkpoint

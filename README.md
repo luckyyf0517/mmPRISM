@@ -67,7 +67,7 @@ pip install -r requirements.txt
   ```bash
   # Example usage with DeepSpeed on 2 GPUs
   deepspeed --include localhost:0,1 run_peft.py \
-      --config config/wavellm_mt5.yaml \
+      --config config/wavellm/wavellm_mt5.yaml \
       --batch-size 24 \
       --max-epochs 10
   ```

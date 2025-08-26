@@ -235,7 +235,7 @@ Training is executed through shell scripts that call `run_peft.py`:
 ```bash
 deepspeed --include localhost:0,1 \
     run_peft.py \
-    --config config/wavellm_mt5_daily_features.yaml \
+    --config config/wavellm/wavellm_mt5_daily_features.yaml \
     --batch-size 64 \
     --max-epochs 10 \
     --gradient-accumulation-steps 8 \
@@ -256,7 +256,7 @@ deepspeed --include localhost:0,1 \
 ### Test Mode
 ```bash
 python run_peft.py \
-    --config config/wavellm_mt5_daily_features.yaml \
+    --config config/wavellm/wavellm_mt5_daily_features.yaml \
     --batch-size 24 \
     --version "experiment_name_eval" \
     --resume-checkpoint "path/to/checkpoint" \
@@ -303,7 +303,7 @@ python run_peft.py \
 ```bash
 deepspeed --include localhost:0,1,2,3 \
     run_peft.py \
-    --config config/wavellm_mt5_daily.yaml \
+    --config config/wavellm/wavellm_mt5_daily.yaml \
     --batch-size 64 \
     --max-epochs 10 \
     --gradient-accumulation-steps 8 \
@@ -319,7 +319,7 @@ deepspeed --include localhost:0,1,2,3 \
 ```bash
 deepspeed --include localhost:0,1 \
     run_peft.py \
-    --config config/wavellm_mt5_daily_features.yaml \
+    --config config/wavellm/wavellm_mt5_daily_features.yaml \
     --batch-size 24 \
     --version "wavellm_mt5_daily_features_0813_eval" \
     --resume-checkpoint "log/peft_finetune/wavellm_mt5_daily_features_0813/last.ckpt"  \

@@ -185,7 +185,7 @@ Training is executed through shell scripts that call `run_model.py`:
 torchrun --nproc_per_node=2 \
     --master_port 12349 \
     run_model.py \
-    --config config/omnihand_rtm_collected_temporal.yaml \
+    --config config/omnihand/omnihand_rtm_collected_temporal.yaml \
     --batch-size 32 \
     --max-epochs 30 \
     --version "experiment_name" \

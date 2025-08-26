@@ -17,16 +17,13 @@ data_cfg:
         downsample_factor: 1
         upsample_factor: 1
         modalities:  # Control which modalities to use
-          use_pred_pose: false
-          use_features: true
+          use_pred_pose: true
+          use_features: false
           use_raw_pose: false
           use_gt_pose: false
         pose_config:  # Pose modality specific settings
           pose_dir: "pred_poses_0602_rtm"
           norm_pose: true
-        feature_config:  # Feature modality specific settings
-          feature_dir: "features_0602_rtm"
-          feature_dim: 1024
       num_workers: 4
 
 # Model configuration
