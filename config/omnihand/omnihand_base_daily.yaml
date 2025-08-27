@@ -38,13 +38,7 @@ model_cfg:
         params:
           in_features: 512
           out_features: 144
-        discriminator:
-        pretrained: 'weights/discriminator_from_omnihand-base-news-disc-0526.bin'
-        freeze: true
       training:
-        use_discriminator: true
-        disc_lr: 1.0e-6
-        lambda_gan: 1.0
         lr: 1.0e-4
         betas: [0.9, 0.999]
         weight_decay: 0.01

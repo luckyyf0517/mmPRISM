@@ -101,13 +101,14 @@ class BaseDataset(Dataset):
             assert mean is not None and std is not None, f"Missing data stats for {pose_path}"
             pose = (pose - mean) / std
             
-        # if 'train' in self.split_path:
-        #     # add random noise (turn off when evaluating)
-        #     pose = pose + np.random.normal(0, 0.01, pose.shape)
-            
-        #     # Add random global translation and scaling (turn off when evaluating)
-        #     global_scale = np.random.uniform(0.8, 1.2, (1, 1, 1, 3))  # Random scaling per xyz dimension
-        #     pose = pose * global_scale
+        if 'train' in self.split_path:
+            # Add random noise to the whole sequence (same noise for each frame in the sequence)
+            noise = np.random.normal(0, 0.01, (1, 2, 1, 3))  # shape: (1, 2, 24, 3)
+            pose = pose + noise
+
+            # Add random global scaling (same scaling for the whole sequence)
+            global_scale = np.random.uniform(0.8, 1.2, (1, 1, 1, 3))  # shape: (1, 1, 1, 3)
+            pose = pose * global_scale
         
         pose = pose - pose[:, :, [0], :].mean(1, keepdims=True) # remove global translation
         return pose
@@ -271,8 +272,8 @@ class SequenceBaseDataset(BaseDataset):
         """Load predicted pose data"""
         pred_pose_path = pose_path.replace('poses', self.pose_config['pose_dir'])
         pose = self.load_and_normalize_pose(pred_pose_path, target_frames=None) # (T, 2, 24, 3)
-        # if 'pred_poses' in pred_pose_path:
-        #     pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
+        if 'pred_poses' in pred_pose_path:
+            pose = gaussian_filter1d(pose, sigma=1.0, axis=0)
         return pose
 
     def load_gt_pose(self, pose_path):
@@ -402,11 +403,3 @@ class CollectedDailyDataset(CslDailyDataset):
         
         return output_dict
     
-if __name__ == "__main__":
-    opt = {
-        "load_feature": False,
-        "norm_pose": True,
-    }
-
-    dataset = CollectedDailyDataset(opt, split_path='dataset/collected-200/train.json')
-    item = dataset[0]

@@ -139,12 +139,6 @@ def training_step(self, batch, batch_idx):
     # Calculate reconstruction loss
     rec_loss_dict = self.compute_loss(results, batch)
     
-    # Add GAN losses if enabled
-    if self.use_discriminator:
-        gan_loss_dict = self.compute_gan_loss(results, batch)
-        rec_loss_dict.update(gan_loss_dict)
-        rec_loss_dict['loss'] = rec_loss_dict['loss'] + self.lambda_gan * gan_loss_dict['loss_gan_g']
-    
     # Manual optimization
     g_opt = self.optimizers()
     g_opt.zero_grad()
@@ -153,8 +147,7 @@ def training_step(self, batch, batch_idx):
 ```
 
 ### Optimization
-- **Generator Optimizer**: AdamW with configurable learning rate and weight decay
-- **Discriminator Optimizer**: Separate AdamW optimizer (when GAN enabled)
+- **Optimizer**: AdamW with configurable learning rate and weight decay
 - **Learning Rate Scheduling**: Implicit through epoch-based training
 
 ## Evaluation Metrics
@@ -174,7 +167,6 @@ Percentage of joints within 40mm of ground truth:
 ### 3. Loss Components
 - Joint position loss (L1)
 - Error prediction loss
-- GAN losses (when enabled)
 
 ## Training Execution
 

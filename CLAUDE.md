@@ -170,7 +170,6 @@ The OmniHand system has been recently enhanced with temporal processing capabili
    - PyTorch Lightning module for 3D hand pose estimation
    - Supports both simulated and real mmwave data
    - Integrates with various backbone encoders
-   - Optional GAN-based discriminator for improved realism
 
 2. **Encoders**:
    - **MMHand Encoder (src/model/encoder/mmhand_encoder.py)**: Simplified architecture with attention mechanisms
@@ -272,4 +271,3 @@ The evaluation pipeline includes:
 ### OmniHand Evaluation
 - 3D Pose estimation metrics (MPJPE, 3DPCK@40mm)
 - Reconstruction loss monitoring
-- GAN discriminator accuracy (when enabled)

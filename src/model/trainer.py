@@ -11,6 +11,7 @@ from transformers import get_cosine_schedule_with_warmup
 from peft import get_peft_model, LoraConfig
 from src.model.llm.model_factory import ModelFactory
 from src.model.encoder.pose_encoder import HandPoseEncoder
+from src.model.fusion import EnhancedDynamicModalityFusion
 from src.utils.tools import instantiate_from_config
 from deepspeed.utils.zero_to_fp32 import load_state_dict_from_zero_checkpoint
 from termcolor import colored
@@ -45,11 +46,12 @@ class WaveLLMTrainer(pl.LightningModule):
                 nn.Conv1d(1024, self.model.config.hidden_size, kernel_size=3, padding=1),
                 Rearrange('b d t -> b t d')
             )
+            
+            # Initialize enhanced fusion module when both modalities are enabled
             if self.modalities.get('use_pred_pose', False):
-                self.feature_gate = nn.Sequential(
-                    nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size),
-                    nn.LayerNorm(self.model.config.hidden_size),
-                    nn.Sigmoid()
+                self.fusion_module = EnhancedDynamicModalityFusion(
+                    dim=self.model.config.hidden_size,
+                    dropout=0.1
                 )
 
         # Create tokenizer
@@ -113,11 +115,11 @@ class WaveLLMTrainer(pl.LightningModule):
     
     def _get_wave_embeds(self, batch):
         """
-        Process feature and pose data to generate embeddings
+        Process feature and pose data to generate embeddings using enhanced fusion
         Args:
             batch: Data batch containing 'features' and 'joints'
         Returns:
-            torch.Tensor: Feature embeddings or combined feature+pose embeddings
+            torch.Tensor: Enhanced fused embeddings
         """
         use_features = self.modalities.get('use_features', False)
         use_pred_pose = self.modalities.get('use_pred_pose', False)
@@ -141,10 +143,17 @@ class WaveLLMTrainer(pl.LightningModule):
             joints = batch['joints']
             pose_embeds = self.hand_pose_encoder(joints.to(torch.bfloat16))
         
-        # Return combined results
+        # Use enhanced fusion when both modalities are available
         if feature_embeds is not None and pose_embeds is not None:
-            gate_value = self.feature_gate(feature_embeds)
-            return feature_embeds * gate_value + pose_embeds
+            # Ensure both modalities have the same sequence length
+            if feature_embeds.size(1) != pose_embeds.size(1):
+                # Pad or truncate to match sequence length
+                min_len = min(feature_embeds.size(1), pose_embeds.size(1))
+                feature_embeds = feature_embeds[:, :min_len, :]
+                pose_embeds = pose_embeds[:, :min_len, :]
+            
+            # Use enhanced fusion module
+            return self.fusion_module(pose_embeds, feature_embeds)
         elif feature_embeds is not None:
             return feature_embeds
         else:

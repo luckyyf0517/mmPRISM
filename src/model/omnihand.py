@@ -19,7 +19,6 @@ from copy import deepcopy
 
 from src.utils.tools import get_obj_from_str, instantiate_from_config
 from src.fmcw.simulator import Simulation, Processor
-from src.model.discriminator import KeypointDiscriminator
 
 
 class OmniHand(LightningModule):
@@ -84,74 +83,23 @@ class OmniHand(LightningModule):
             
         self.error_regressor = nn.Linear(error_input_dim, 48)
             
-        # Initialize discriminator if enabled
-        self.use_discriminator = cfg.training.get('use_discriminator', False)
-        self.freeze_discriminator = cfg.discriminator.freeze
-        if self.use_discriminator:
-            self.discriminator = KeypointDiscriminator(
-                hidden_dim=256,
-                output_dim=256,
-                num_heads=8,
-                num_layers=3
-            )
-            if cfg.discriminator.pretrained is not None:
-                self.discriminator.load_state_dict(torch.load(
-                    os.path.join(cfg.discriminator.pretrained), weights_only=True), strict=False)
-            if self.freeze_discriminator:
-                for param in self.discriminator.parameters():
-                    param.requires_grad = False
-        
         # Training parameters
         self.lr = cfg.training.lr
         self.betas = cfg.training.betas
         self.weight_decay = cfg.training.weight_decay
-        self.disc_lr = cfg.training.get('disc_lr', self.lr)
         
-        # Loss weights and GAN training schedule
-        self.lambda_gan = cfg.training.get('lambda_gan', 0.1)
-        self.lambda_gp = cfg.training.get('lambda_gp', 10.0)
-        self.gan_type = cfg.training.get('gan_type', 'hinge')  # 'hinge' or 'wgan-gp' or 'ls'
-        # Number of iterations before starting generator GAN training
-        self.gan_start_iter = cfg.training.get('gan_start_iter', 0)
-
     def training_step(self, batch, batch_idx):
         # Forward pass once
         results = self.forward(batch)
         
         # Calculate reconstruction loss
         rec_loss_dict = self.compute_loss(results, batch)
-        # Train generator
-        if self.use_discriminator:
-            g_opt, d_opt = self.optimizers()
         
-            # Calculate GAN losses
-            if self.gan_type == 'hinge':
-                gan_loss_dict = self.compute_gan_loss_hinge(results, batch)
-            elif self.gan_type == 'wgan-gp':
-                gan_loss_dict = self.compute_gan_loss_wgan_gp(results, batch)
-            else:
-                gan_loss_dict = self.compute_gan_loss(results, batch)
-            rec_loss_dict.update(gan_loss_dict)
-            
-            # Add GAN loss to total loss only after warm-up period
-            if self.global_step >= self.gan_start_iter:
-                rec_loss_dict['loss'] = rec_loss_dict['loss'] + self.lambda_gan * gan_loss_dict['loss_gan_g']
-        else:
-            g_opt = self.optimizers()
-
+        # Train generator
+        g_opt = self.optimizers()
         g_opt.zero_grad()
         self.manual_backward(rec_loss_dict['loss'])
         g_opt.step()
-        
-        # Update discriminator every n steps (default: 1)
-        update_disc_every_n_steps = getattr(self, 'update_disc_every_n_steps', 1)
-
-        if self.use_discriminator and not self.freeze_discriminator:
-            if (self.global_step % update_disc_every_n_steps) == 0:
-                # Train discriminator
-                d_opt.zero_grad()
-                self.manual_backward(gan_loss_dict['loss_gan_d'])
-                d_opt.step()
             
         # Logging
         self._log_info(rec_loss_dict, phase='train')
@@ -338,115 +286,6 @@ class OmniHand(LightningModule):
         loss_dict['loss'] = loss_dict['loss_joints'] + loss_dict['loss_error']
         return loss_dict
         
-    def compute_gan_loss(self, results, batch):
-        """LSGAN loss (legacy)"""
-        loss_dict = {}
-        pred = results['joints']  # [B, 2, 24, 3]
-        target = batch['joints']  # [B, 2, 24, 3]
-        
-        # Extract last 21 joints for discriminator (hands only)
-        pred_disc = pred[..., 3:, :].reshape(-1, 21, 3)  # [B*2, 21, 3]
-        target_disc = target[..., 3:, :].reshape(-1, 21, 3)
-
-        # Discriminator outputs
-        d_pred_detach = self.discriminator(pred_disc.detach())
-        d_pred = self.discriminator(pred_disc)
-        d_target = self.discriminator(target_disc)
-        
-        # LSGAN with margin
-        margin = 0.5
-        target_real = 1.0 + margin
-        target_fake = 0.0 - margin
-        
-        loss_dict['loss_gan_g'] = ((d_pred - target_real) ** 2).mean()
-        d_loss_real = ((d_target - target_real) ** 2).mean()
-        d_loss_fake = ((d_pred_detach - target_fake) ** 2).mean()
-        loss_dict['loss_gan_d'] = d_loss_real + d_loss_fake
-        loss_dict['loss_gan_d_real'] = d_loss_real
-        loss_dict['loss_gan_d_fake'] = d_loss_fake
-        
-        with torch.no_grad():
-            d_real_acc = (d_target > 0.0).float().mean()
-            d_fake_acc = (d_pred <= 0.0).float().mean()
-            loss_dict['acc_real'] = d_real_acc
-            loss_dict['acc_fake'] = d_fake_acc
-        return loss_dict
-
-    def compute_gan_loss_hinge(self, results, batch):
-        """Hinge GAN loss"""
-        loss_dict = {}
-        pred = results['joints']
-        target = batch['joints']
-        pred_disc = pred[..., 3:, :].reshape(-1, 21, 3)
-        target_disc = target[..., 3:, :].reshape(-1, 21, 3)
-        
-        d_pred_detach = self.discriminator(pred_disc.detach())
-        d_pred = self.discriminator(pred_disc)
-        d_target = self.discriminator(target_disc)
-        
-        # Discriminator hinge loss
-        d_loss_real = F.relu(1.0 - d_target).mean()
-        d_loss_fake = F.relu(1.0 + d_pred_detach).mean()
-        loss_dict['loss_gan_d'] = d_loss_real + d_loss_fake
-        loss_dict['loss_gan_d_real'] = d_loss_real
-        loss_dict['loss_gan_d_fake'] = d_loss_fake
-        
-        # Generator hinge loss
-        loss_dict['loss_gan_g'] = (-d_pred).mean()
-        
-        with torch.no_grad():
-            d_real_acc = (d_target > 0.0).float().mean()
-            d_fake_acc = (d_pred <= 0.0).float().mean()
-            loss_dict['acc_real'] = d_real_acc
-            loss_dict['acc_fake'] = d_fake_acc
-        return loss_dict
-
-    def _grad_penalty(self, real, fake):
-        """Compute gradient penalty for WGAN-GP on linearly interpolated samples."""
-        alpha = torch.rand(real.size(0), 1, 1, device=real.device)
-        alpha = alpha.expand_as(real)
-        interpolates = alpha * real + (1 - alpha) * fake
-        interpolates.requires_grad_(True)
-        d_inter = self.discriminator(interpolates)
-        gradients = torch.autograd.grad(
-            outputs=d_inter,
-            inputs=interpolates,
-            grad_outputs=torch.ones_like(d_inter),
-            create_graph=True,
-            retain_graph=True,
-            only_inputs=True
-        )[0]
-        gradients = gradients.view(gradients.size(0), -1)
-        gp = ((gradients.norm(2, dim=1) - 1.0) ** 2).mean()
-        return gp
-
-    def compute_gan_loss_wgan_gp(self, results, batch):
-        """WGAN-GP loss"""
-        loss_dict = {}
-        pred = results['joints']
-        target = batch['joints']
-        pred_disc = pred[..., 3:, :].reshape(-1, 21, 3)
-        target_disc = target[..., 3:, :].reshape(-1, 21, 3)
-        
-        d_pred_detach = self.discriminator(pred_disc.detach())
-        d_pred = self.discriminator(pred_disc)
-        d_target = self.discriminator(target_disc)
-        
-        # Wasserstein losses
-        loss_dict['loss_gan_d'] = (d_pred_detach.mean() - d_target.mean())
-        loss_dict['loss_gan_g'] = (-d_pred.mean())
-        
-        # Gradient penalty
-        gp = self._grad_penalty(target_disc, pred_disc.detach())
-        loss_dict['loss_gp'] = gp * self.lambda_gp
-        loss_dict['loss_gan_d'] = loss_dict['loss_gan_d'] + loss_dict['loss_gp']
-        
-        with torch.no_grad():
-            d_real_acc = (d_target > 0.0).float().mean()
-            d_fake_acc = (d_pred <= 0.0).float().mean()
-            loss_dict['acc_real'] = d_real_acc
-            loss_dict['acc_fake'] = d_fake_acc
-        return loss_dict
 
     def _log_info(self, info_dict, phase='train'):
         """Log losses to logger"""
@@ -467,7 +306,7 @@ class OmniHand(LightningModule):
                   f'MPJPE: {loss_dict["MPJPE"].item():.4f}')
 
     def configure_optimizers(self):
-        """Configure optimizers for generator and discriminator"""
+        """Configure optimizers for generator"""
         # Generator optimizer (backbone + regressor)
         g_params = list(self.backbone.parameters()) + \
                    list(self.regressor.parameters()) + \
@@ -479,14 +318,4 @@ class OmniHand(LightningModule):
             weight_decay=self.weight_decay
         )
         
-        if self.use_discriminator:
-            # Discriminator optimizer
-            d_opt = torch.optim.AdamW(
-                self.discriminator.parameters(),
-                lr=self.disc_lr,
-                betas=self.betas,
-                weight_decay=0.0
-            )
-            return [g_opt, d_opt]
-        else:
-            return [g_opt]
+        return [g_opt]

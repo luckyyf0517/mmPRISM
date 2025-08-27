@@ -12,6 +12,7 @@ outputs/
 pack/
 pretrained_models/
 results/
+subproject/
 temp/
 wandb/
 weights/

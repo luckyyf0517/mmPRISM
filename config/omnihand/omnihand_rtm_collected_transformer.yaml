@@ -61,15 +61,7 @@ model_cfg:
         params:
           in_features: 512  # Must match backbone output_dim
           out_features: 144  # 21 joints × 3 coordinates + 21 joints × 3 rotations
-      discriminator:
-        pretrained: null
-        freeze: false
       training:
-        use_discriminator: false
-        disc_lr: 1.0e-4
-        gan_start_iter: 1000
-        lambda_gp: 0.0
-        lambda_gan: 0.1
         lr: 8.0e-5  # Slightly reduced learning rate for enhanced model
         betas: [0.9, 0.999]  # Adam optimizer betas
         weight_decay: 0.02  # Increased weight decay for better regularization
