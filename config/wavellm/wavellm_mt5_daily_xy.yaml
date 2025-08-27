@@ -1,0 +1,57 @@
+# Basic settings
+log_dir: "log/exp"
+strategy: "deepspeed"
+
+# Data configuration
+data_cfg:
+  target: src.data.data_interface.BaseDataInterface
+  params:
+    cfg:
+      dataset: src.data.dataset.CslDailyDataset
+      train_split: 'dataset/csl-daily/train.json'
+      val_split: 'dataset/csl-daily/val.json'
+      test_split: 'dataset/csl-daily/val.json'
+      opt: 
+        annotation_path: 'data/csl-daily/sentence_label/csl2020ct_v2.pkl'
+        max_length: 256
+        downsample_factor: 1
+        upsample_factor: 1
+        modalities:  # Control which modalities to use
+          use_pred_pose: true
+          use_features: false
+          use_raw_pose: false
+          use_gt_pose: false
+        pose_config:  # Pose modality specific settings
+          # pose_dir: "poses"
+          pose_dir: "pred_poses_0602_rtm"
+          norm_pose: true
+          no_depth: true
+      num_workers: 4
+
+# Model configuration
+model_cfg:
+  target: src.model.trainer.WaveLLMTrainer
+  params:
+    cfg:
+      # LLM configuration
+      model_type: "mt5"
+      model:
+        model_path: "huggingface/mt5-pretrained"
+        model_max_length: 2048
+        
+      # PEFT configuration
+      use_peft: false
+      fix_llm: false
+      peft_config:
+        r: 16
+        lora_alpha: 32
+        target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
+        lora_dropout: 0.05
+        bias: "none"
+
+      # Training configuration
+      training:
+        learning_rate: 8.0e-4
+        weight_decay: 1.0e-4
+        warmup_steps: 100
+      

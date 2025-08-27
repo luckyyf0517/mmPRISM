@@ -102,15 +102,16 @@ class BaseDataset(Dataset):
             pose = (pose - mean) / std
             
         if 'train' in self.split_path:
-            # Add random noise to the whole sequence (same noise for each frame in the sequence)
-            noise = np.random.normal(0, 0.01, (1, 2, 1, 3))  # shape: (1, 2, 24, 3)
-            pose = pose + noise
-
             # Add random global scaling (same scaling for the whole sequence)
             global_scale = np.random.uniform(0.8, 1.2, (1, 1, 1, 3))  # shape: (1, 1, 1, 3)
             pose = pose * global_scale
         
         pose = pose - pose[:, :, [0], :].mean(1, keepdims=True) # remove global translation
+
+        # Optionally remove depth information (z-coordinate)
+        if self.pose_config.get('no_depth', False):
+            pose[..., 2] = 0.0
+
         return pose
     
 
@@ -239,6 +240,7 @@ class SequenceBaseDataset(BaseDataset):
         self.pose_config = opt.get('pose_config', {
             'pose_dir': 'pred_poses', 
             'norm_pose': False,
+            'no_depth': False,  # Option to remove depth information (z-coordinate)
         })
         
         # Validate modality settings
