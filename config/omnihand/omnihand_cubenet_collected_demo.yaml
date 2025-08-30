@@ -8,9 +8,9 @@ data_cfg:
   params:
     cfg: 
       dataset: src.data.dataset.CollectedSingleFrameDataset
-      train_split: 'dataset/collected-700/train.json'
-      val_split: 'dataset/collected-700/val.json'
-      test_split: 'dataset/collected-700/val.json'
+      train_split: 'dataset/collected-demo/train.json'
+      val_split: 'dataset/collected-demo/val.json'
+      test_split: 'dataset/collected-demo/val.json'
       opt: 
         norm_pose: true
       num_workers: 4

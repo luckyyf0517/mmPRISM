@@ -101,11 +101,11 @@ class BaseDataset(Dataset):
             assert mean is not None and std is not None, f"Missing data stats for {pose_path}"
             pose = (pose - mean) / std
             
-        if 'train' in self.split_path:
-            # Add random global scaling (same scaling for the whole sequence)
-            global_scale = np.random.uniform(0.8, 1.2, (1, 1, 1, 3))  # shape: (1, 1, 1, 3)
-            pose = pose * global_scale
-        
+        # if 'train' in self.split_path:
+        #     # Add random global scaling (same scaling for the whole sequence)
+        #     global_scale = np.random.uniform(0.8, 1.2, (1, 1, 1, 3))  # shape: (1, 1, 1, 3)
+        #     pose = pose * global_scale
+
         pose = pose - pose[:, :, [0], :].mean(1, keepdims=True) # remove global translation
 
         # Optionally remove depth information (z-coordinate)

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
-from src.model.encoder.cubenet_rtm import CSPEncoder3D
+from src.model.encoder.cubenet import CubeNet
 from src.utils.tools import get_obj_from_str
 
 
@@ -446,11 +446,11 @@ class AdvancedTemporalTransformerEncoder(nn.Module):
         return final_features
 
 
-class CSPRTMTransformerEncoder3D(nn.Module):
-    """CSP-RTM Encoder with Advanced Transformer-based temporal aggregation
+class CubeNetTransformer(nn.Module):
+    """CubeNet Encoder with Advanced Transformer-based temporal aggregation
     
     Architecture enhancements:
-    1. Shared CSPEncoder3D extracts spatial features from each frame
+    1. Shared CubeNet extracts spatial features from each frame
     2. Advanced Transformer encoder with RoPE, temporal convolutions, SwiGLU
     3. Cross-attention for spatial-temporal feature fusion
     4. Multiple aggregation strategies with learnable fusion
@@ -469,10 +469,8 @@ class CSPRTMTransformerEncoder3D(nn.Module):
                  base_channels=64,
                  stage_channels=[128, 256, 512, 1024],
                  stage_blocks=[2, 4, 4, 2],
-                 spp_kernel_sizes=(3, 5, 7),
-                 expansion=0.5,
-                 channel_attention=True,
-                 norm_layer='torch.nn.BatchNorm3d',
+                 use_attention=True,
+                 use_pafpn=True,
                  spatial_encoder_pretrained=None,
                  spatial_encoder_freeze=False,
                  # Enhanced temporal transformer parameters
@@ -493,18 +491,13 @@ class CSPRTMTransformerEncoder3D(nn.Module):
         self.output_dim = output_dim
         
         # Shared spatial encoder for all frames
-        self.spatial_encoder = CSPEncoder3D(
+        self.spatial_encoder = CubeNet(
             in_channels=in_channels,
             base_channels=base_channels,
             stage_channels=stage_channels,
             stage_blocks=stage_blocks,
-            spp_kernel_sizes=spp_kernel_sizes,
-            expansion=expansion,
-            channel_attention=channel_attention,
-            norm_layer=norm_layer,
-            use_csp=True,
-            use_channel_attention=True,
-            use_pafpn=True
+            use_attention=use_attention,
+            use_pafpn=use_pafpn
         )
         
         # Load pretrained weights for spatial encoder if provided
@@ -573,7 +566,7 @@ class CSPRTMTransformerEncoder3D(nn.Module):
                     new_key = key[len('spatial_encoder.'):]
                     spatial_encoder_state_dict[new_key] = value
                 elif not any(prefix in key for prefix in ['temporal_transformer', 'output_projection']):
-                    # If no prefix, assume it's directly from CSPEncoder3D
+                    # If no prefix, assume it's directly from CubeNet
                     spatial_encoder_state_dict[key] = value
             
             # Load the filtered state dict
@@ -705,3 +698,7 @@ class CSPRTMTransformerEncoder3D(nn.Module):
         global_feat = self.output_projection(aggregated_features)  # [B, output_dim]
         
         return global_feat 
+
+
+# Alias for backward compatibility
+CSPRTMTransformerEncoder3D = CubeNetTransformer 

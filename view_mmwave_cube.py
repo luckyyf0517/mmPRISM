@@ -16,6 +16,43 @@ from mpl_toolkits.mplot3d import Axes3D
 from src.data.dataset import CollectedSingleFrameDataset
 from src.fmcw.simulator import Processor
 
+def draw_colorbar(vmax=64, save_path="outputs/velocity_colorbar.pdf"):
+    """
+    Draw a horizontal colorbar for velocity from -vmax to vmax.
+    Save as PDF.
+    """
+    # Create figure and remove default axes
+    fig = plt.figure(figsize=(8, 1.0))
+    fig.clear()  # Remove any default axes
+    
+    # Create colorbar directly
+    norm = plt.Normalize(-vmax, vmax)
+    sm = plt.cm.ScalarMappable(cmap='seismic', norm=norm)
+    
+    # Add colorbar to figure with specific position
+    cbar_ax = fig.add_axes([0.1, 0.2, 0.8, 0.3])  # [left, bottom, width, height]
+    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
+    
+    # Set colorbar ticks and labels
+    cbar.set_ticks([-vmax, 0, vmax])
+    cbar.set_ticklabels(['-Vmax', '0', 'Vmax'])
+    cbar.ax.tick_params(labelsize=20, width=2)  # Make tick marks thicker and labels larger
+    
+    # Make font bold and use Times font
+    for label in cbar.ax.get_xticklabels():
+        label.set_fontweight('bold')
+        label.set_fontfamily('Times New Roman')
+    
+    # Make colorbar border thicker
+    cbar.outline.set_linewidth(2)
+    
+    # Transparent background
+    fig.patch.set_alpha(0.0)
+    
+    plt.savefig(save_path, dpi=300, bbox_inches='tight', format='pdf')
+    plt.close()
+    print(f"Colorbar saved to: {save_path}")
+
 def visualize_energy_cube(energy_matrix, velocity_matrix, title="Energy Cube Visualization", cube_index=0):
     """
     Visualize a 3D energy cube with energy-based transparency and velocity-based colors.
@@ -55,8 +92,12 @@ def visualize_energy_cube(energy_matrix, velocity_matrix, title="Energy Cube Vis
     normalized_velocity = non_zero_velocities / 64
 
     # NOW draw the points with energy-based transparency and velocity-based colors
-    # Use velocity values for color mapping
+    # Use velocity values for color mapping, but set the lowest velocity (background) to gray
     colors = plt.cm.seismic(normalized_velocity)
+    # Set background (lowest velocity) to gray
+    gray = np.array([0.5, 0.5, 0.5, 1.0])  # RGBA for gray
+    background_mask = normalized_velocity <= 0.01  # You can adjust threshold as needed
+    colors[background_mask] = gray
     
     # Create alpha values based on energy: lower energy = more transparent
     alpha_values = 0.02 + 0.7 * normalized_energy  # Range from 0.1 to 0.8
@@ -121,22 +162,22 @@ def visualize_energy_cube(energy_matrix, velocity_matrix, title="Energy Cube Vis
     
     # Draw the 12 edges of the cube with higher zorder to appear on top
     # Bottom face edges
-    ax.plot([0, 31], [0, 0], [0, 0], 'k-', linewidth=2, zorder=1000)
-    ax.plot([31, 31], [0, 31], [0, 0], 'k-', linewidth=2, zorder=1000)
-    ax.plot([31, 0], [31, 31], [0, 0], 'k-', linewidth=2, zorder=1000)
-    ax.plot([0, 0], [31, 0], [0, 0], 'k-', linewidth=2, zorder=1000)
+    ax.plot([0, 31], [0, 0], [0, 0], 'k-', linewidth=3, zorder=1000)
+    ax.plot([31, 31], [0, 31], [0, 0], 'k-', linewidth=3, zorder=1000)
+    ax.plot([31, 0], [31, 31], [0, 0], 'k-', linewidth=3, zorder=1000)
+    ax.plot([0, 0], [31, 0], [0, 0], 'k-', linewidth=3, zorder=1000)
     
     # Top face edges
-    ax.plot([0, 31], [0, 0], [7.75, 7.75], 'k-', linewidth=2, zorder=1000)
-    ax.plot([31, 31], [0, 31], [7.75, 7.75], 'k-', linewidth=2, zorder=1000)
-    ax.plot([31, 0], [31, 31], [7.75, 7.75], 'k-', linewidth=2, zorder=1000)
-    ax.plot([0, 0], [31, 0], [7.75, 7.75], 'k-', linewidth=2, zorder=1000)
+    ax.plot([0, 31], [0, 0], [7.75, 7.75], 'k-', linewidth=3, zorder=1000)
+    ax.plot([31, 31], [0, 31], [7.75, 7.75], 'k-', linewidth=3, zorder=1000)
+    ax.plot([31, 0], [31, 31], [7.75, 7.75], 'k-', linewidth=3, zorder=1000)
+    ax.plot([0, 0], [31, 0], [7.75, 7.75], 'k-', linewidth=3, zorder=1000)
     
     # Vertical edges
-    ax.plot([0, 0], [0, 0], [0, 7.75], 'k-', linewidth=2, zorder=1000)
-    ax.plot([31, 31], [0, 0], [0, 7.75], 'k-', linewidth=2, zorder=1000)
-    ax.plot([31, 31], [31, 31], [0, 7.75], 'k-', linewidth=2, zorder=1000)
-    ax.plot([0, 0], [31, 31], [0, 7.75], 'k-', linewidth=2, zorder=1000)
+    ax.plot([0, 0], [0, 0], [0, 7.75], 'k-', linewidth=3, zorder=1000)
+    ax.plot([31, 31], [0, 0], [0, 7.75], 'k-', linewidth=3, zorder=1000)
+    ax.plot([31, 31], [31, 31], [0, 7.75], 'k-', linewidth=3, zorder=1000)
+    ax.plot([0, 0], [31, 31], [0, 7.75], 'k-', linewidth=3, zorder=1000)
     
     plt.tight_layout()
     # plt.show()
@@ -285,6 +326,10 @@ def main():
         # Visualize the energy cube with velocity-based colors
         print("Creating 3D visualization for energy with velocity colors...")
         visualize_energy_cube(energy_matrix, velocity_matrix, f"Energy_Velocity_Sample", "energy_velocity")
+        
+        # Create horizontal colorbar for velocity mapping
+        print("Creating horizontal colorbar for velocity mapping...")
+        draw_colorbar(vmax=64, save_path="outputs/velocity_colorbar.pdf")
         
         print("Processing completed successfully!")
         

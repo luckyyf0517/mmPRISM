@@ -21,20 +21,24 @@ model_cfg:
   params:
     cfg:
       use_simulator: false
-      learnable_weights: false
+      learnable_weights: true
       backbone: 
-        target: src.model.encoder.mmhand.MMHandEncoder
+        target: src.model.encoder.cubenet.CubeNet
         params: 
-          input_dim: 64
-          hidden_dims: [64, 128, 256, 512]
-          num_blocks: [2, 2, 2, 2]
-          reduction_ratio: 16
+          in_channels: 64  # mmWave data channels
+          base_channels: 64
+          stage_channels: [64, 128, 256, 512]  # Match CubeNet implementation
+          stage_blocks: [2, 2, 2, 2]  # Match CubeNet implementation
+          use_attention: true  # Enable attention mechanisms
+          use_pafpn: false  # Enable PAFPN neck
+          use_se_attention: false  # SE attention for channel recalibration
+          use_deformable_conv: false  # Deformable convolution for adaptive feature extraction
         pretrained: null
         freeze: false
       regressor:
         target: torch.nn.Linear
         params:
-          in_features: 512 
+          in_features: 512  # Match CubeNet feature_dim output
           out_features: 144
       training:
         lr: 1.0e-4

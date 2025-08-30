@@ -172,7 +172,7 @@ The OmniHand system has been recently enhanced with temporal processing capabili
    - Integrates with various backbone encoders
 
 2. **Encoders**:
-   - **MMHand Encoder (src/model/encoder/mmhand_encoder.py)**: Simplified architecture with attention mechanisms
+   - **MMHand Encoder (src/model/encoder/mmhand.py)**: Simplified architecture with attention mechanisms
    - **CubeNet Encoder (src/model/encoder/cubenet.py)**: Traditional 3D CNN with ResNet-style blocks
    - **CubeNet RTM Encoder (src/model/encoder/cubenet_rtm.py)**: Advanced CSP/PAFPN architecture
    - **CubeNet RTM Temporal Encoder (src/model/encoder/cubenet_rtm_temporal.py)**: Temporal extension for sequence processing

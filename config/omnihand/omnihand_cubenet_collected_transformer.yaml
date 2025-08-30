@@ -1,5 +1,5 @@
 # Basic settings
-log_dir: 'log/omnihand_transformer_enhanced'
+log_dir: 'log/omnihand'
 strategy: 'ddp'
 
 # Data configuration with temporal support
@@ -26,34 +26,33 @@ model_cfg:
       use_simulator: false
       learnable_weights: true
       backbone: 
-        target: src.model.encoder.cubenet_rtm_transformer.CSPRTMTransformerEncoder3D
+        target: src.model.encoder.cubenet_transformer.CubeNetTransformer
         params: 
-          # Spatial encoder parameters
+          # Spatial encoder parameters (CubeNet)
           in_channels: 64  # mmWave data channels
           base_channels: 64
-          stage_channels: [128, 256, 512, 1024]  # Feature progression through CSP stages
-          stage_blocks: [2, 4, 4, 2]  # Number of blocks per stage
-          spp_kernel_sizes: [3, 5, 7]  # Spatial Pyramid Pooling kernel sizes
-          expansion: 0.5  # CSP expansion ratio
-          norm_layer: torch.nn.GroupNorm  # Normalization layer
+          stage_channels: [64, 128, 256, 512]  # Match CubeNet implementation
+          stage_blocks: [2, 2, 2, 2]  # Match CubeNet implementation
+          use_attention: true  # Enable attention mechanisms
+          use_pafpn: false  # Enable PAFPN neck
           
+          # Enhanced modules (SOTA features)
+          use_se_attention: false  # SE attention for channel recalibration
+          use_deformable_conv: false  # Deformable convolution for adaptive feature extraction
           # Pretrained spatial encoder settings
-          spatial_encoder_pretrained: weights/rtm_0824/model.pth  # Path to pretrained CSPEncoder3D weights
+          spatial_encoder_pretrained: null  # Path to pretrained CubeNet weights (if available)
           spatial_encoder_freeze: false  # Whether to freeze spatial encoder
-          
           # Enhanced temporal transformer parameters
           temporal_frames: 8  # Must match dataset configuration
           transformer_layers: 8  # Increased layers for better modeling capacity
-          transformer_heads: 16  # More attention heads for richer feature interactions (must divide 1024)
-          transformer_dim_feedforward: 3072  # Larger feedforward for better feature transformation
+          transformer_heads: 8  # Attention heads (must divide 512)
+          transformer_dim_feedforward: 2048  # Feedforward dimension
           transformer_dropout: 0.1  # Dropout rate in transformer
-          
           # Advanced temporal modeling features
           temporal_kernel_size: 3  # Kernel size for temporal convolutions
           use_cross_attention: true  # Enable cross-attention for spatial-temporal fusion
-          
           # Output parameters
-          output_dim: 512  # Increased output dimension for richer representations
+          output_dim: 512  # Output dimension for final features
         pretrained: null
         freeze: false
       regressor:

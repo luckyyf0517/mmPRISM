@@ -6,7 +6,7 @@ from src.utils.tools import get_obj_from_str
 
 
 class ChannelAttention(nn.Module):
-    """Efficient channel attention mechanism for mmWave signals.
+    """Basic channel attention mechanism as described in paper.
     
     Args:
         channels (int): Number of input channels
@@ -19,9 +19,9 @@ class ChannelAttention(nn.Module):
         self.gap = nn.AdaptiveAvgPool3d(1)
         self.gmp = nn.AdaptiveMaxPool3d(1)
         
-        # Shared MLP
+        # Simple FC layer as in paper
         reduced_channels = max(channels // reduction_ratio, 8)
-        self.mlp = nn.Sequential(
+        self.fc = nn.Sequential(
             nn.Linear(channels * 2, reduced_channels),
             nn.ReLU(inplace=True),
             nn.Linear(reduced_channels, channels),
@@ -43,15 +43,16 @@ class ChannelAttention(nn.Module):
         pool_concat = torch.cat([avg_pool, max_pool], dim=1)
         
         # Generate attention weights
-        weights = self.mlp(pool_concat).view(B, C, 1, 1, 1)
+        weights = self.fc(pool_concat).view(B, C, 1, 1, 1)
         
         return x * weights
 
 
 class SpatialAttention3D(nn.Module):
-    """Lightweight 3D spatial attention mechanism."""
+    """Basic 3D spatial attention as described in paper."""
     def __init__(self, kernel_size=7):
         super().__init__()
+        # Simple Conv2 as mentioned in paper
         self.conv = nn.Conv3d(2, 1, kernel_size=kernel_size, 
                              padding=kernel_size//2, bias=False)
         self.sigmoid = nn.Sigmoid()
@@ -67,14 +68,17 @@ class SpatialAttention3D(nn.Module):
         mean_out = torch.mean(x, dim=1, keepdim=True)
         max_out, _ = torch.max(x, dim=1, keepdim=True)
         
-        # Generate spatial attention map
+        # Generate spatial attention map as in paper
         attention = self.sigmoid(self.conv(torch.cat([mean_out, max_out], dim=1)))
         
         return x * attention
 
 
 class AttentionBlock(nn.Module):
-    """Efficient attention block with simplified structure.
+    """Attention residual block with two branches as described in paper.
+    
+    Branch 1: 1x1 conv to preserve current level features
+    Branch 2: Downsampling -> processing -> Upsampling (hourglass)
     
     Args:
         in_channels (int): Input channels
@@ -84,10 +88,29 @@ class AttentionBlock(nn.Module):
     def __init__(self, in_channels, out_channels, reduction_ratio=16):
         super().__init__()
         
-        # Main convolution path
-        self.conv = nn.Sequential(
-            nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm3d(out_channels),
+        # Branch 1: 1x1 conv to preserve features of current level
+        self.branch1 = nn.Sequential(
+            nn.Conv3d(in_channels, out_channels, kernel_size=1, bias=False),
+            nn.GroupNorm(min(32, out_channels // 4), out_channels),
+            nn.ReLU(inplace=True)
+        )
+        
+        # Branch 2: Hourglass structure (downsample -> process -> upsample)
+        mid_channels = max(out_channels // 2, 16)
+        self.downsample = nn.Sequential(
+            nn.Conv3d(in_channels, mid_channels, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(min(32, mid_channels // 4), mid_channels),
+            nn.ReLU(inplace=True)
+        )
+        self.process = nn.Sequential(
+            nn.Conv3d(mid_channels, mid_channels, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(min(32, mid_channels // 4), mid_channels),
+            nn.ReLU(inplace=True)
+        )
+        self.upsample = nn.Sequential(
+            nn.ConvTranspose3d(mid_channels, out_channels, kernel_size=3, stride=2, 
+                              padding=1, output_padding=1, bias=False),
+            nn.GroupNorm(min(32, out_channels // 4), out_channels),
             nn.ReLU(inplace=True)
         )
         
@@ -100,7 +123,7 @@ class AttentionBlock(nn.Module):
         if in_channels != out_channels:
             self.shortcut = nn.Sequential(
                 nn.Conv3d(in_channels, out_channels, kernel_size=1, bias=False),
-                nn.BatchNorm3d(out_channels)
+                nn.GroupNorm(min(32, out_channels // 4), out_channels)
             )
     
     def forward(self, x):
@@ -112,12 +135,22 @@ class AttentionBlock(nn.Module):
         """
         identity = self.shortcut(x)
         
-        # Main path with attention
-        out = self.conv(x)
+        # Two branches as described in paper
+        branch1_out = self.branch1(x)  # Preserve current level features
+        
+        # Branch 2: Hourglass structure
+        branch2_out = self.downsample(x)
+        branch2_out = self.process(branch2_out)
+        branch2_out = self.upsample(branch2_out)
+        
+        # Combine branches
+        out = branch1_out + branch2_out
+        
+        # Apply attention mechanisms
         out = self.channel_attention(out)
         out = self.spatial_attention(out)
         
-        # Add identity
+        # Add identity and activation
         out += identity
         
         return F.relu(out)
@@ -140,19 +173,13 @@ class MMHandEncoder(nn.Module):
                  **kwargs):
         super().__init__()
         
-        # Default configurations (reduced complexity)
-        if hidden_dims is None:
-            hidden_dims = [64, 128, 256, 512]  # Reduced maximum channels
-        if num_blocks is None:
-            num_blocks = [1, 1, 2, 2]  # Reduced number of blocks
-        
         self.input_dim = input_dim
         self.hidden_dims = hidden_dims
         
         # Initial convolution with stride 2
         self.conv_input = nn.Sequential(
             nn.Conv3d(input_dim, hidden_dims[0], kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm3d(hidden_dims[0]),
+            nn.GroupNorm(min(32, hidden_dims[0] // 4), hidden_dims[0]),
             nn.ReLU(inplace=True)
         )
         
@@ -168,7 +195,7 @@ class MMHandEncoder(nn.Module):
                 stage.append(nn.Sequential(
                     nn.Conv3d(in_channels, out_channels, kernel_size=3, 
                              stride=2, padding=1, bias=False),
-                    nn.BatchNorm3d(out_channels),
+                    nn.GroupNorm(min(32, out_channels // 4), out_channels),
                     nn.ReLU(inplace=True)
                 ))
             
