@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+import sys; sys.path.append('.')
+
 import matplotlib.pyplot as plt
 from config.radar import iwr1843 as radar_cfg
 from src.fmcw.beamformer import build_steering_vector, build_steering_vector_1d
@@ -14,12 +16,25 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 class Processor(nn.Module):
     """Signal processing module for radar data"""
-    def __init__(self, learnable_weights=False, dtype=torch.float32, ctype=torch.complex64):
+    def __init__(self, learnable_weights=False, W=32, H=32, dtype=torch.float32, ctype=torch.complex64, array_size="full"):
         super().__init__()
-        self.D, self.R, self.W, self.H = 64, 32, 32, 32
+        self.array_size = array_size
+        
+        # Get antenna configuration based on array size
+        if array_size == "small":
+            D, self.antenna_indices = get_index_small()
+        elif array_size == "middle":
+            D, self.antenna_indices = get_index_middle()
+        elif array_size == "large":
+            D, self.antenna_indices = get_index_large()
+        else:  
+            D, self.antenna_indices = get_index_full()
+            
+        self.D_antennas = len(D)
+        self.D, self.R, self.W, self.H = 64, 32, W, H
         
         # Initialize beamforming weights
-        azi_ele_id = torch.tensor(np.array(get_index()) - np.array([43, 0]))
+        azi_ele_id = torch.tensor(np.array(D) - np.array([43, 0]))
         azi_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.W)
         ele_theta_grid = torch.linspace(-np.pi/6, np.pi/6, self.H)
         bm_weights = build_steering_vector(azi_ele_id, azi_theta_grid, ele_theta_grid)
@@ -89,7 +104,13 @@ class Processor(nn.Module):
         Returns:
             radar_frame: [B, D, R, W, H] Processed radar signals
         """
-        radar_frame = raw_radar_frame.clone()
+        # Select appropriate antennas based on array size configuration
+        if hasattr(self, 'antenna_indices') and len(self.antenna_indices) < raw_radar_frame.shape[2]:
+            # Use the precomputed indices to select antennas
+            radar_frame = raw_radar_frame[:, :, self.antenna_indices, :].clone()
+        else:
+            # Use all antennas (default behavior)
+            radar_frame = raw_radar_frame.clone()
         
         # Process step by step
         if self.if_process_range:
@@ -278,49 +299,64 @@ class mmSimulator(nn.Module):
         }
 
 
-def get_index(return_index=False):
+def get_index_full():
+
     D = [
-        [ 0,  0], [ 1,  0], [ 2,  0], [ 3,  0], [11,  0], [12,  0], [13,  0], [14,  0],
-        [46,  0], [47,  0], [48,  0], [49,  0], [50,  0], [51,  0], [52,  0], [53,  0],
-        [ 4,  0], [ 5,  0], [ 6,  0], [ 7,  0], [15,  0], [16,  0], [17,  0], [18,  0],
-        [50,  0], [51,  0], [52,  0], [53,  0], [54,  0], [55,  0], [56,  0], [57,  0],
-        [ 8,  0], [ 9,  0], [10,  0], [11,  0], [19,  0], [20,  0], [21,  0], [22,  0],
-        [54,  0], [55,  0], [56,  0], [57,  0], [58,  0], [59,  0], [60,  0], [61,  0],
-        [12,  0], [13,  0], [14,  0], [15,  0], [23,  0], [24,  0], [25,  0], [26,  0],
-        [58,  0], [59,  0], [60,  0], [61,  0], [62,  0], [63,  0], [64,  0], [65,  0],
-        [16,  0], [17,  0], [18,  0], [19,  0], [27,  0], [28,  0], [29,  0], [30,  0],
-        [62,  0], [63,  0], [64,  0], [65,  0], [66,  0], [67,  0], [68,  0], [69,  0],
-        [20,  0], [21,  0], [22,  0], [23,  0], [31,  0], [32,  0], [33,  0], [34,  0],
-        [66,  0], [67,  0], [68,  0], [69,  0], [70,  0], [71,  0], [72,  0], [73,  0],
-        [24,  0], [25,  0], [26,  0], [27,  0], [35,  0], [36,  0], [37,  0], [38,  0],
-        [70,  0], [71,  0], [72,  0], [73,  0], [74,  0], [75,  0], [76,  0], [77,  0],
-        [28,  0], [29,  0], [30,  0], [31,  0], [39,  0], [40,  0], [41,  0], [42,  0],
-        [74,  0], [75,  0], [76,  0], [77,  0], [78,  0], [79,  0], [80,  0], [81,  0],
-        [32,  0], [33,  0], [34,  0], [35,  0], [43,  0], [44,  0], [45,  0], [46,  0],
-        [78,  0], [79,  0], [80,  0], [81,  0], [82,  0], [83,  0], [84,  0], [85,  0],
-        [ 9,  1], [10,  1], [11,  1], [12,  1], [20,  1], [21,  1], [22,  1], [23,  1],
-        [55,  1], [56,  1], [57,  1], [58,  1], [59,  1], [60,  1], [61,  1], [62,  1],
-        [10,  4], [11,  4], [12,  4], [13,  4], [21,  4], [22,  4], [23,  4], [24,  4],
-        [56,  4], [57,  4], [58,  4], [59,  4], [60,  4], [61,  4], [62,  4], [63,  4],
-        [11,  6], [12,  6], [13,  6], [14,  6], [22,  6], [23,  6], [24,  6], [25,  6],
-        [57,  6], [58,  6], [59,  6], [60,  6], [61,  6], [62,  6], [63,  6], [64,  6]
-        ]
-    D_uni = np.unique(D, axis=0).tolist()
-    
-    to_be_removed = [
-        [13, 6], [14, 6], [24, 6], [25, 6], [63, 6], [64, 6], 
-        [10, 4], [13, 4], [21, 4], [24, 4], [56, 4], [63, 4], 
-        [9, 1], [10, 1], [20, 1], [21, 1], [55, 1], [56, 1]]
-    for item in to_be_removed: 
-        D_uni.remove(item)
-    
-    index = []
-    for cor in D_uni:
-        index.append(D.index(cor))
-    if return_index: 
-        return index
-    else: 
-        return D_uni
+        [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [8, 0], [9, 0], [10, 0], [11, 0], 
+        [11, 1], [11, 4], [11, 6], [12, 0], [12, 1], [12, 4], [12, 6], [13, 0], [14, 0], [15, 0], [16, 0], 
+        [17, 0], [18, 0], [19, 0], [20, 0], [21, 0], [22, 0], [22, 1], [22, 4], [22, 6], [23, 0], [23, 1], 
+        [23, 4], [23, 6], [24, 0], [25, 0], [26, 0], [27, 0], [28, 0], [29, 0], [30, 0], [31, 0], [32, 0], 
+        [33, 0], [34, 0], [35, 0], [36, 0], [37, 0], [38, 0], [39, 0], [40, 0], [41, 0], [42, 0], [43, 0], 
+        [44, 0], [45, 0], [46, 0], [47, 0], [48, 0], [49, 0], [50, 0], [51, 0], [52, 0], [53, 0], [54, 0], 
+        [55, 0], [56, 0], [57, 0], [57, 1], [57, 4], [57, 6], [58, 0], [58, 1], [58, 4], [58, 6], [59, 0], 
+        [59, 1], [59, 4], [59, 6], [60, 0], [60, 1], [60, 4], [60, 6], [61, 0], [61, 1], [61, 4], [61, 6], 
+        [62, 0], [62, 1], [62, 4], [62, 6], [63, 0], [64, 0], [65, 0], [66, 0], [67, 0], [68, 0], [69, 0], 
+        [70, 0], [71, 0], [72, 0], [73, 0], [74, 0], [75, 0], [76, 0], [77, 0], [78, 0], [79, 0], [80, 0], 
+        [81, 0], [82, 0], [83, 0], [84, 0], [85, 0]]
+
+    return D, np.arange(0, len(D))
+
+
+def get_index_large():
+
+    D = [
+        [11, 0], 
+        [11, 1], [11, 4], [11, 6], [12, 0], [12, 1], [12, 4], [12, 6], [13, 0], [14, 0], [15, 0], [16, 0], 
+        [17, 0], [18, 0], [19, 0], [20, 0], [21, 0], [22, 0], [22, 1], [22, 4], [22, 6], [23, 0], [23, 1], 
+        [23, 4], [23, 6], [24, 0], [25, 0], [26, 0], [27, 0], [28, 0], [29, 0], [30, 0], [31, 0], [32, 0], 
+        [33, 0], [34, 0], [35, 0], [36, 0], [37, 0], [38, 0], [39, 0], [40, 0], [41, 0], [42, 0]]
+
+    D_full, _ = get_index_full()
+    index = [D_full.index(item) for item in D]
+
+    return D, index
+
+
+def get_index_middle():
+
+    D = [
+        [11, 0], 
+        [11, 1], [11, 4], [12, 0], [12, 1], [12, 4], [13, 0], [14, 0], [15, 0], [16, 0], 
+        [17, 0], [18, 0], [19, 0], [20, 0], [21, 0], [22, 0], [22, 1], [22, 4], [23, 0], [23, 1], 
+        [23, 4], [24, 0], [25, 0], [26, 0]]
+
+    D_full, _ = get_index_full()
+    index = [D_full.index(item) for item in D]
+
+    return D, index
+
+
+def get_index_small():
+
+    D = [
+        [11, 0], 
+        [11, 1], [12, 0], [12, 1], [13, 0], [14, 0], [15, 0], [16, 0], 
+        [17, 0], [18, 0]]
+
+    D_full, _ = get_index_full()
+    index = [D_full.index(item) for item in D]
+
+    return D, index
 
 
 def process_point_cloud(data, nan_mask=None):

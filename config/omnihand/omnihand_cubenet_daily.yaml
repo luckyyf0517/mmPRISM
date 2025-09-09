@@ -21,23 +21,24 @@ model_cfg:
   target: src.model.omnihand.OmniHand
   params:
     cfg:
+      use_simulator: true
       learnable_weights: true
       backbone: 
-        target: src.model.encoder.cubenet_rtm.CSPEncoder3D
+        target: src.model.encoder.cubenet.CubeNet
         params: 
-          in_channels: 32  # mmWave data channels
+          in_channels: 64  
           base_channels: 64
-          stage_channels: [128, 256, 512, 1024]  # Increased channel progression for better feature extraction
-          stage_blocks: [2, 4, 4, 2]  # More blocks for deeper feature learning
-          spp_kernel_sizes: [3, 5, 7]
-          expansion: 0.5  # Standard expansion ratio
-          norm_layer: torch.nn.GroupNorm  # GroupNorm for better regularization
-        pretrained: null  
+          stage_channels: [64, 128, 256, 512]  
+          stage_blocks: [2, 2, 2, 2]  
+          use_attention: true  
+          use_pafpn: false  
+          use_se_attention: true  
+        pretrained: null
         freeze: false
       regressor:
         target: torch.nn.Linear
         params:
-          in_features: 1024
+          in_features: 512
           out_features: 144
       training:
         lr: 1.0e-4

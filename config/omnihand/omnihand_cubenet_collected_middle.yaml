@@ -22,11 +22,11 @@ model_cfg:
     cfg:
       use_simulator: false
       learnable_weights: true
-      antenna_array_size: "full"  # Default to full array size
+      antenna_array_size: "middle"  # 16*3 antenna array
       backbone: 
         target: src.model.encoder.cubenet.CubeNet
         params: 
-          in_channels: 64  # Updated to match full array size
+          in_channels: 64
           base_channels: 64
           stage_channels: [64, 128, 256, 512]  
           stage_blocks: [2, 2, 2, 2]  

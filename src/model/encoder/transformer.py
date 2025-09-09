@@ -471,6 +471,7 @@ class CubeNetTransformer(nn.Module):
                  stage_blocks=[2, 4, 4, 2],
                  use_attention=True,
                  use_pafpn=True,
+                 use_se_attention=True,
                  spatial_encoder_pretrained=None,
                  spatial_encoder_freeze=False,
                  # Enhanced temporal transformer parameters
@@ -497,7 +498,8 @@ class CubeNetTransformer(nn.Module):
             stage_channels=stage_channels,
             stage_blocks=stage_blocks,
             use_attention=use_attention,
-            use_pafpn=use_pafpn
+            use_pafpn=use_pafpn,
+            use_se_attention=use_se_attention
         )
         
         # Load pretrained weights for spatial encoder if provided

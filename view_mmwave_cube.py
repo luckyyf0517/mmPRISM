@@ -7,53 +7,17 @@ Can also use simulator to generate synthetic mmwave data from pose data.
 """
 
 import os
-import sys
+
 import argparse
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 from src.data.dataset import CollectedSingleFrameDataset
 from src.fmcw.simulator import Processor
 
-def draw_colorbar(vmax=64, save_path="outputs/velocity_colorbar.pdf"):
-    """
-    Draw a horizontal colorbar for velocity from -vmax to vmax.
-    Save as PDF.
-    """
-    # Create figure and remove default axes
-    fig = plt.figure(figsize=(8, 1.0))
-    fig.clear()  # Remove any default axes
-    
-    # Create colorbar directly
-    norm = plt.Normalize(-vmax, vmax)
-    sm = plt.cm.ScalarMappable(cmap='seismic', norm=norm)
-    
-    # Add colorbar to figure with specific position
-    cbar_ax = fig.add_axes([0.1, 0.2, 0.8, 0.3])  # [left, bottom, width, height]
-    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
-    
-    # Set colorbar ticks and labels
-    cbar.set_ticks([-vmax, 0, vmax])
-    cbar.set_ticklabels(['-Vmax', '0', 'Vmax'])
-    cbar.ax.tick_params(labelsize=20, width=2)  # Make tick marks thicker and labels larger
-    
-    # Make font bold and use Times font
-    for label in cbar.ax.get_xticklabels():
-        label.set_fontweight('bold')
-        label.set_fontfamily('Times New Roman')
-    
-    # Make colorbar border thicker
-    cbar.outline.set_linewidth(2)
-    
-    # Transparent background
-    fig.patch.set_alpha(0.0)
-    
-    plt.savefig(save_path, dpi=300, bbox_inches='tight', format='pdf')
-    plt.close()
-    print(f"Colorbar saved to: {save_path}")
 
-def visualize_energy_cube(energy_matrix, velocity_matrix, title="Energy Cube Visualization", cube_index=0):
+def visualize_3d_cube(energy_matrix, velocity_matrix, title="Energy Cube Visualization", cube_index=0):
     """
     Visualize a 3D energy cube with energy-based transparency and velocity-based colors.
     Energy determines transparency: lower energy = more transparent, higher energy = more opaque.
@@ -113,7 +77,7 @@ def visualize_energy_cube(energy_matrix, velocity_matrix, title="Energy Cube Vis
     # Draw all points in a single scatter plot with individual colors and sizes
     ax.scatter(x_coords, y_coords, z_coords, 
               c=colors_with_alpha, s=size_values, edgecolors='none')
-    
+
     # Remove axis labels and grids for cleaner look
     ax.set_xlabel('')
     ax.set_ylabel('')
@@ -146,6 +110,9 @@ def visualize_energy_cube(energy_matrix, velocity_matrix, title="Energy Cube Vis
     # Set aspect ratio to 1:1:0.25 (X:Y:Z)
     ax.set_box_aspect([1, 1, 0.25])
     
+    # Set viewing angle for more tilted perspective
+    ax.view_init(elev=30, azim=-75)
+
     # Add custom axis labels with Times font and bold style
     # Azimuth: top center
     ax.text(38, 16, 0, 'Azimuth', fontsize=32, fontweight='bold', fontfamily='Times New Roman', ha='center')
@@ -154,49 +121,186 @@ def visualize_energy_cube(energy_matrix, velocity_matrix, title="Energy Cube Vis
     # Elevate: right side (adjusted for compressed height)
     ax.text(32, 32, 4, 'Elevation', fontsize=32, fontweight='bold', fontfamily='Times New Roman', ha='left', va='center')
 
-    # NOW draw the black wireframe box LAST (on top of everything)
+    # Draw semi-transparent gray faces on each side of the cube
+    # Define the 8 vertices of the cube (height compressed to 1/4)
+    # Note: boundaries should be from -0.5 to 31.5 to center on data points
+    vertices = np.array([
+        [-0.5, -0.5, 0], [31.5, -0.5, 0], [31.5, 31.5, 0], [-0.5, 31.5, 0],  # Bottom face
+        [-0.5, -0.5, 7.75], [31.5, -0.5, 7.75], [31.5, 31.5, 7.75], [-0.5, 31.5, 7.75]  # Top face
+    ])
+    
+    # Define the 6 faces using vertex indices
+    faces = [
+        [0, 1, 2, 3],  # Bottom face
+        [4, 5, 6, 7],  # Top face
+        [0, 1, 5, 4],  # Front face
+        [2, 3, 7, 6],  # Back face
+        [0, 3, 7, 4],  # Left face
+        [1, 2, 6, 5]   # Right face
+    ]
+    
+    # Draw each face as simple rectangular planes with semi-transparent gray color
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+    
+    for face in faces:
+        face_vertices = vertices[face]
+        # Create a simple rectangular polygon
+        poly = Poly3DCollection([face_vertices], alpha=0.05, facecolor='gray', edgecolor='none')
+        ax.add_collection3d(poly)
+    
+    # Draw cross-section lines at half height using dark green dashed lines, width 3
+    cross_section_height = 7.75 / 2
+    ax.plot([-0.5, 31.5], [-0.5, -0.5], [cross_section_height, cross_section_height], linestyle='--', color='darkgreen', linewidth=3, zorder=999)
+    ax.plot([-0.5, 31.5], [31.5, 31.5], [cross_section_height, cross_section_height], linestyle='--', color='darkgreen', linewidth=3, zorder=999)
+    ax.plot([-0.5, -0.5], [-0.5, 31.5], [cross_section_height, cross_section_height], linestyle='--', color='darkgreen', linewidth=3, zorder=999)
+    ax.plot([31.5, 31.5], [-0.5, 31.5], [cross_section_height, cross_section_height], linestyle='--', color='darkgreen', linewidth=3, zorder=999)
+
     # Create the 8 vertices of the cube (height compressed to 1/4)
-    x = [0, 31, 31, 0, 0, 31, 31, 0]
-    y = [0, 0, 31, 31, 0, 0, 31, 31]
+    # Boundaries from -0.5 to 31.5 to center on data points
+    x = [-0.5, 31.5, 31.5, -0.5, -0.5, 31.5, 31.5, -0.5]
+    y = [-0.5, -0.5, 31.5, 31.5, -0.5, -0.5, 31.5, 31.5]
     z = [0, 0, 0, 0, 7.75, 7.75, 7.75, 7.75]  # 31/4 = 7.75
     
     # Draw the 12 edges of the cube with higher zorder to appear on top
     # Bottom face edges
-    ax.plot([0, 31], [0, 0], [0, 0], 'k-', linewidth=3, zorder=1000)
-    ax.plot([31, 31], [0, 31], [0, 0], 'k-', linewidth=3, zorder=1000)
-    ax.plot([31, 0], [31, 31], [0, 0], 'k-', linewidth=3, zorder=1000)
-    ax.plot([0, 0], [31, 0], [0, 0], 'k-', linewidth=3, zorder=1000)
+    ax.plot([-0.5, 31.5], [-0.5, -0.5], [0, 0], 'k-', linewidth=4, zorder=1000)
+    ax.plot([31.5, 31.5], [-0.5, 31.5], [0, 0], 'k-', linewidth=4, zorder=1000)
+    ax.plot([31.5, -0.5], [31.5, 31.5], [0, 0], 'k-', linewidth=4, zorder=1000)
+    ax.plot([-0.5, -0.5], [31.5, -0.5], [0, 0], 'k-', linewidth=4, zorder=1000)
     
     # Top face edges
-    ax.plot([0, 31], [0, 0], [7.75, 7.75], 'k-', linewidth=3, zorder=1000)
-    ax.plot([31, 31], [0, 31], [7.75, 7.75], 'k-', linewidth=3, zorder=1000)
-    ax.plot([31, 0], [31, 31], [7.75, 7.75], 'k-', linewidth=3, zorder=1000)
-    ax.plot([0, 0], [31, 0], [7.75, 7.75], 'k-', linewidth=3, zorder=1000)
+    ax.plot([-0.5, 31.5], [-0.5, -0.5], [7.75, 7.75], 'k-', linewidth=4, zorder=1000)
+    ax.plot([31.5, 31.5], [-0.5, 31.5], [7.75, 7.75], 'k-', linewidth=4, zorder=1000)
+    ax.plot([31.5, -0.5], [31.5, 31.5], [7.75, 7.75], 'k-', linewidth=4, zorder=1000)
+    ax.plot([-0.5, -0.5], [31.5, -0.5], [7.75, 7.75], 'k-', linewidth=4, zorder=1000)
     
     # Vertical edges
-    ax.plot([0, 0], [0, 0], [0, 7.75], 'k-', linewidth=3, zorder=1000)
-    ax.plot([31, 31], [0, 0], [0, 7.75], 'k-', linewidth=3, zorder=1000)
-    ax.plot([31, 31], [31, 31], [0, 7.75], 'k-', linewidth=3, zorder=1000)
-    ax.plot([0, 0], [31, 31], [0, 7.75], 'k-', linewidth=3, zorder=1000)
+    ax.plot([-0.5, -0.5], [-0.5, -0.5], [0, 7.75], 'k-', linewidth=4, zorder=1000)
+    ax.plot([31.5, 31.5], [-0.5, -0.5], [0, 7.75], 'k-', linewidth=4, zorder=1000)
+    ax.plot([31.5, 31.5], [31.5, 31.5], [0, 7.75], 'k-', linewidth=4, zorder=1000)
+    ax.plot([-0.5, -0.5], [31.5, 31.5], [0, 7.75], 'k-', linewidth=4, zorder=1000)
     
+    # Save the 3D cube visualization
     plt.tight_layout()
-    # plt.show()
     plt.savefig(f"outputs/energy_cube_{cube_index}_{title}.png", dpi=200)
-    plt.close()  # Close figure to free memory
+    plt.close()
+
+    # Extract cross-section data at half height (z=16) for 2D visualization
+    cross_section_z = 16  # Half of 32
+    # cross_section_energy = energy_matrix[:, :, cross_section_z]
+    # cross_section_velocity = velocity_matrix[:, :, cross_section_z]
+
+    cross_section_energy = energy_matrix.sum(-1)
+    cross_section_velocity = velocity_matrix[:, :, cross_section_z]
+    
+    return cross_section_energy, cross_section_velocity  # Return cross-section data for 2D plot
+
+
+def visualize_2d_cross_section(cross_section_energy, cross_section_velocity, title="Cross-Section Visualization", cube_index=0):
+    """
+    Visualize a 2D cross-section with energy-based transparency and velocity-based colors.
+    """
+    # Normalize cross-section data
+    cross_section_normalized_energy = (cross_section_energy - cross_section_energy.min()) / (cross_section_energy.max() - cross_section_energy.min() + 1e-10)
+    cross_section_normalized_velocity = cross_section_velocity / 64
+    
+    # Only distinguish velocity sign: positive (>=0) or negative (<0)
+    velocity_sign = (cross_section_velocity < 32).astype(float)  # 0 for negative, 1 for positive
+    cross_section_colors = plt.cm.seismic(velocity_sign)
+    gray = np.array([0.5, 0.5, 0.5, 1.0])
+    cross_section_background_mask = cross_section_normalized_velocity <= 0.01
+    cross_section_colors[cross_section_background_mask] = gray
+    
+    # Apply energy-based transparency
+    cross_section_alpha = 0.1 + 0.9 * cross_section_normalized_energy
+    cross_section_colors[:, :, 3] = cross_section_alpha
+    
+    # Create 2D cross-section plot
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # Create 2D cross-section visualization
+    im = ax.imshow(cross_section_colors, extent=[-0.5, 31.5, -0.5, 31.5], origin='lower')
+    # Set labels with Times New Roman and bold, and remove ticks
+    # Save the 2D cross-section
+    plt.tight_layout()
+    plt.axis('off')
+    plt.savefig(f"outputs/range_angle_cross_section_{cube_index}_{title}.png", 
+               dpi=200, bbox_inches='tight', pad_inches=0)
+    plt.close()
+
+def visualize_angle_doppler(mmwave_data_4d, title="Angle-Doppler Visualization", cube_index=0):
+    """
+    Visualize angle-doppler plot with energy-based transparency and velocity-based colors.
+    Energy determines transparency: lower energy = more transparent, higher energy = more opaque.
+    Velocity determines colors: >32 = blue, <32 = red.
+    Uses mmwave_data_4d[:, sum, :, 16] slice.
+    """
+    # Extract angle-doppler data: [:, sum, :, 16] -> [64, 32]
+    # Sum across range dimension (axis 2), take elevation slice at 16
+    angle_doppler_data = mmwave_data_4d.sum(dim=1).sum(dim=-1)  # [64, 32]
+
+    # Convert to numpy for processing
+    angle_doppler_data_np = angle_doppler_data.numpy()  # [64, 32]
+    
+    # Normalize energy data (each pixel has its own energy value)
+    angle_doppler_normalized_energy = (angle_doppler_data_np - angle_doppler_data_np.min()) / (angle_doppler_data_np.max() - angle_doppler_data_np.min() + 1e-10)
+
+    # Get velocity argmax for each pixel to determine color mapping
+    velocity_argmax = angle_doppler_data.argmax(dim=0).numpy()  # [32] - argmax along velocity dimension for each angle
+    
+    # Create velocity-based colors with energy-based transparency
+    velocity_colors = np.zeros((64, 32, 4))  # RGBA array for 2D data
+    
+    # Make red and blue colors deeper by increasing the scaling factor
+    blue_scale = 4.5  # Increase for deeper blue
+    red_scale = 4.5   # Increase for deeper red
+
+    # Apply color mapping based on velocity threshold for each angle column
+    for i in range(32):  # For each angle
+        if velocity_argmax[i] > 32:
+            # Use blue colormap for velocities > 32
+            # Apply threshold: only show color for energy > 0.1, make colors deeper
+            energy_threshold = angle_doppler_normalized_energy[:, i] > 0.1
+            blue_colors = plt.cm.Blues(np.clip(angle_doppler_normalized_energy[:, i] * blue_scale, 0, 1))  # Make colors deeper
+            blue_colors[~energy_threshold] = [0, 0, 0, 0]  # Transparent for low energy
+            velocity_colors[:, i, :3] = blue_colors[:, :3]
+        else:
+            # Use red colormap for velocities <= 32
+            # Apply threshold: only show color for energy > 0.1, make colors deeper
+            energy_threshold = angle_doppler_normalized_energy[:, i] > 0.1
+            red_colors = plt.cm.Reds(np.clip(angle_doppler_normalized_energy[:, i] * red_scale, 0, 1))  # Make colors deeper
+            red_colors[~energy_threshold] = [0, 0, 0, 0]  # Transparent for low energy
+            velocity_colors[:, i, :3] = red_colors[:, :3]
+    
+    # Apply energy-based transparency for each pixel
+    # Make low energy areas more transparent, high energy areas more opaque
+    angle_doppler_alpha = np.where(angle_doppler_normalized_energy > 0.1, 
+                                  0.3 + 0.7 * angle_doppler_normalized_energy, 
+                                  0.0)  # Completely transparent for low energy
+    velocity_colors[:, :, 3] = angle_doppler_alpha
+    
+    # Create 2D angle-doppler plot
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # Create angle-doppler visualization (2D data) with 1:1 aspect ratio (square pixels)
+    im = ax.imshow(velocity_colors, origin='lower', aspect='auto')
+    ax.set_aspect(1)  # Force 1:1 aspect ratio (square)
+    plt.axis('off')
+    
+    # Save the angle-doppler plot
+    plt.tight_layout()
+    plt.savefig(f"outputs/angle_doppler_{cube_index}_{title}.png", dpi=200)
+    plt.close()
 
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Process mmwave data with option to use simulator')
     parser.add_argument('--use-simulator', action='store_true', 
                        help='Use simulator to generate synthetic mmwave data from pose data')
-    parser.add_argument('--use-real-data', action='store_true',
-                       help='Use real mmwave data from dataset (default)')
+
     args = parser.parse_args()
     
-    # Determine whether to use simulator or real data
     use_simulator = args.use_simulator
-    if not args.use_simulator and not args.use_real_data:
-        use_simulator = False  # Default to real data
     
     print(f"Mode: {'Simulator' if use_simulator else 'Real Data'}")
     
@@ -229,9 +333,9 @@ def main():
         print("Dataset is empty!")
         return
     
-    # Load a specific sample
+    # Load a random sample
     random_index = np.random.randint(0, len(dataset))
-    random_index = 3265
+    random_index = 16012
     print(f"Loading sample at index {random_index}...")
     
     try:
@@ -250,16 +354,10 @@ def main():
             print(f"Pose data shape: {pose_data.shape}")
             
             # Extract 3D points and velocities from pose data
-            # Assuming pose data has shape [T, 2, 24, 3] where:
-            # T: time steps, 2: left/right sides, 24: body+hand points, 3: xyz coordinates
-            points_3d = torch.from_numpy(pose_data)  # Take first time step [2, 24, 3]
-            velocities_3d = torch.zeros_like(points_3d)  # Zero velocities for static pose
-            
-            # Add batch dimension for simulator
-            points_3d = points_3d.unsqueeze(0)  # [1, 2, 24, 3]
-            velocities_3d = velocities_3d.unsqueeze(0)  # [1, 2, 24, 3]
-            velocities_3d[0, 0] = -1
-            velocities_3d[0, 1] = 1
+            points_3d = torch.from_numpy(pose_data).unsqueeze(0)  # Add batch dimension
+            velocities_3d = torch.zeros_like(points_3d)
+            velocities_3d[0, 0] = -1  # Left side velocity
+            velocities_3d[0, 1] = 1   # Right side velocity
             
             print(f"Simulator input - Points shape: {points_3d.shape}, Velocities shape: {velocities_3d.shape}")
             
@@ -297,12 +395,12 @@ def main():
             print(f"Raw mmwave data shape: {mmwave_data.shape}")
             print(f"Raw mmwave data type: {mmwave_data.dtype}")
             
-            # Convert numpy array to torch tensor and add batch dimension
-            mmwave_tensor = torch.from_numpy(mmwave_data).unsqueeze(0)  # Add batch dimension
+            # Convert to tensor and add batch dimension
+            mmwave_tensor = torch.from_numpy(mmwave_data).unsqueeze(0)
             print(f"mmwave tensor shape: {mmwave_tensor.shape}")
             
-            # Process with DEFAULT beamforming weights
-            print("Processing with DEFAULT beamforming weights...")
+            # Process with default beamforming weights
+            print("Processing with default beamforming weights...")
             processor = Processor(learnable_weights=False)
             
             with torch.no_grad():
@@ -325,13 +423,18 @@ def main():
         
         # Visualize the energy cube with velocity-based colors
         print("Creating 3D visualization for energy with velocity colors...")
-        visualize_energy_cube(energy_matrix, velocity_matrix, f"Energy_Velocity_Sample", "energy_velocity")
+        cross_section_energy, cross_section_velocity = visualize_3d_cube(energy_matrix, velocity_matrix, f"Energy_Velocity_Sample", "energy_velocity")
         
-        # Create horizontal colorbar for velocity mapping
-        print("Creating horizontal colorbar for velocity mapping...")
-        draw_colorbar(vmax=64, save_path="outputs/velocity_colorbar.pdf")
+        # Create 2D cross-section visualization
+        print("Creating 2D cross-section visualization...")
+        visualize_2d_cross_section(cross_section_energy, cross_section_velocity, f"Energy_Velocity_Sample", "energy_velocity")
         
+        # Create angle-doppler visualization
+        print("Creating angle-doppler visualization...")
+        visualize_angle_doppler(mmwave_data_4d, f"Energy_Velocity_Sample", "energy_velocity")
+
         print("Processing completed successfully!")
+
         
     except Exception as e:
         print(f"Error processing sample: {e}")
@@ -341,7 +444,6 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Usage examples:
-# python load_and_process_mmwave.py                    # Use real mmwave data (default)
-# python load_and_process_mmwave.py --use-real-data   # Use real mmwave data
-# python load_and_process_mmwave.py --use-simulator   # Use simulator to generate synthetic data
+# Usage:
+# python view_mmwave_cube.py                    # Use real mmwave data (default)
+# python view_mmwave_cube.py --use-simulator   # Use simulator to generate synthetic data

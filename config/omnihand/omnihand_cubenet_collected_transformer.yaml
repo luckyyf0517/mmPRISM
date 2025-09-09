@@ -8,6 +8,9 @@ data_cfg:
   params:
     cfg: 
       dataset: src.data.dataset.CollectedSingleFrameDataset
+      # train_split: 'dataset/collected-700/train.json'
+      # val_split: 'dataset/collected-700/val.json'
+      # test_split: 'dataset/collected-700/val.json'
       train_split: 'dataset/collected-700/train.json'
       val_split: 'dataset/collected-700/val.json'
       test_split: 'dataset/collected-700/val.json'
@@ -26,33 +29,30 @@ model_cfg:
       use_simulator: false
       learnable_weights: true
       backbone: 
-        target: src.model.encoder.cubenet_transformer.CubeNetTransformer
+        target: src.model.encoder.transformer.CubeNetTransformer
         params: 
           # Spatial encoder parameters (CubeNet)
           in_channels: 64  # mmWave data channels
           base_channels: 64
-          stage_channels: [64, 128, 256, 512]  # Match CubeNet implementation
-          stage_blocks: [2, 2, 2, 2]  # Match CubeNet implementation
-          use_attention: true  # Enable attention mechanisms
-          use_pafpn: false  # Enable PAFPN neck
-          
-          # Enhanced modules (SOTA features)
-          use_se_attention: false  # SE attention for channel recalibration
-          use_deformable_conv: false  # Deformable convolution for adaptive feature extraction
+          stage_channels: [64, 128, 256, 512] 
+          stage_blocks: [2, 2, 2, 2]  
+          use_attention: true  
+          use_pafpn: false  
+          use_se_attention: true  
           # Pretrained spatial encoder settings
-          spatial_encoder_pretrained: null  # Path to pretrained CubeNet weights (if available)
-          spatial_encoder_freeze: false  # Whether to freeze spatial encoder
+          spatial_encoder_pretrained: weights/cubenet_0831/model.pth  
+          spatial_encoder_freeze: false  
           # Enhanced temporal transformer parameters
-          temporal_frames: 8  # Must match dataset configuration
-          transformer_layers: 8  # Increased layers for better modeling capacity
-          transformer_heads: 8  # Attention heads (must divide 512)
-          transformer_dim_feedforward: 2048  # Feedforward dimension
-          transformer_dropout: 0.1  # Dropout rate in transformer
+          temporal_frames: 8  
+          transformer_layers: 8  
+          transformer_heads: 8  
+          transformer_dim_feedforward: 2048  
+          transformer_dropout: 0.1  
           # Advanced temporal modeling features
-          temporal_kernel_size: 3  # Kernel size for temporal convolutions
-          use_cross_attention: true  # Enable cross-attention for spatial-temporal fusion
+          temporal_kernel_size: 3  
+          use_cross_attention: true  
           # Output parameters
-          output_dim: 512  # Output dimension for final features
+          output_dim: 512  
         pretrained: null
         freeze: false
       regressor:

@@ -34,10 +34,14 @@ class OmniHand(LightningModule):
         # Handle batch_size from training config or top level
         self.batch_size = cfg.training.get('batch_size', cfg.get('batch_size', 8))
         
+        # Get antenna array size configuration (default to "full")
+        self.antenna_array_size = cfg.get('antenna_array_size', 'full')
+        
+        self.processor = Processor(learnable_weights=cfg.get('learnable_weights', False), array_size=self.antenna_array_size)
         self.use_simulator = cfg.get('use_simulator', True)
         if self.use_simulator:
-            self.simulator = Simulation()
-        self.processor = Processor(learnable_weights=cfg.get('learnable_weights', False))
+            self.simulator = Simulation(array_size=self.antenna_array_size)
+            self.processor.if_process_range = True
         
         # Initialize backbone (Vision Transformer)
         self.backbone = instantiate_from_config(cfg.backbone)
@@ -71,17 +75,6 @@ class OmniHand(LightningModule):
             # Use standard instantiation
             self.regressor = instantiate_from_config(cfg.regressor)
             
-        # Determine input dimension for error regressor
-        if hasattr(cfg.regressor.params, 'in_features'):
-            error_input_dim = cfg.regressor.params.in_features
-        elif hasattr(cfg.regressor.params, 'layers') and len(cfg.regressor.params.layers) > 0:
-            # Get input dimension from first layer
-            first_layer_params = cfg.regressor.params.layers[0].get('params', {})
-            error_input_dim = first_layer_params.get('in_features', self.feature_dim)
-        else:
-            error_input_dim = self.feature_dim
-            
-        self.error_regressor = nn.Linear(error_input_dim, 48)
             
         # Training parameters
         self.lr = cfg.training.lr
@@ -159,10 +152,9 @@ class OmniHand(LightningModule):
             Dictionary containing either 'joints' or 'simcc_logits'
         """
         features = self.encode_feature(input_data)
-        regressor_output = self.forward_feature(features)
+        joints = self.forward_feature(features)
         return {
-            'joints': regressor_output[..., :3],
-            'error': regressor_output[..., -1],
+            'joints': joints,
         }
         
     def encode_feature(self, input_data):
@@ -174,37 +166,37 @@ class OmniHand(LightningModule):
         else:
             x = input_data['mmwave']
             
-            # Check if we have temporal data (5D or 6D tensor: [B, T, ...])
-            if (x.dim() == 5 or x.dim() == 6) and hasattr(self.backbone, 'temporal_frames'):
-                # Temporal processing: check if data is already processed or raw
-                B, T = x.shape[:2]
-                
-                # Check if this is already processed data for TVAN ([B, T, 64, 32, 32, 32])
-                # or raw mmwave data ([B, T, num_chirps, num_antenna, num_samples])
-                if x.dim() == 6 and x.shape[2] == 64 and x.shape[3] == 32 and x.shape[4] == 32 and x.shape[5] == 32:
-                    # Already processed data for TVAN - bypass processor
-                    x_temporal = x  # [B, T, 64, 32, 32, 32]
-                else:
-                    # Raw mmwave data - process through Processor first
-                    # x is [B, T, num_chirps, num_antenna, num_samples]
-                    processed_frames = []
-                    
-                    for t in range(T):
-                        # Process individual frame: [B, num_chirps, num_antenna, num_samples]
-                        frame = x[:, t, :, :, :]
-                        processed_frame = self.processor(frame)  # [B, 64, 32, 32, 32]
-                        processed_frames.append(processed_frame.unsqueeze(1))  # Add time dimension
-                    
-                    # Stack processed frames: [B, T, 64, 32, 32, 32]
-                    x_temporal = torch.cat(processed_frames, dim=1)
-                
-                # Extract features using temporal backbone
-                features = self.backbone(x_temporal)
-                return features
+        # Check if we have temporal data (5D or 6D tensor: [B, T, ...])
+        if (x.dim() == 5 or x.dim() == 6) and hasattr(self.backbone, 'temporal_frames'):
+            # Temporal processing: check if data is already processed or raw
+            B, T = x.shape[:2]
+            
+            # Check if this is already processed data for TVAN ([B, T, 64, 32, 32, 32])
+            # or raw mmwave data ([B, T, num_chirps, num_antenna, num_samples])
+            if x.dim() == 6 and x.shape[2] == 64 and x.shape[3] == 32 and x.shape[4] == 32 and x.shape[5] == 32:
+                # Already processed data for TVAN - bypass processor
+                x_temporal = x  # [B, T, 64, 32, 32, 32]
             else:
-                # Standard processing: x is [B, num_chirps, num_antenna, num_samples]
-                x = self.processor(x)
-        
+                # Raw mmwave data - process through Processor first
+                # x is [B, T, num_chirps, num_antenna, num_samples]
+                processed_frames = []
+                
+                for t in range(T):
+                    # Process individual frame: [B, num_chirps, num_antenna, num_samples]
+                    frame = x[:, t, :, :, :]
+                    processed_frame = self.processor(frame)  # [B, 64, 32, 32, 32]
+                    processed_frames.append(processed_frame.unsqueeze(1))  # Add time dimension
+                
+                # Stack processed frames: [B, T, 64, 32, 32, 32]
+                x_temporal = torch.cat(processed_frames, dim=1)
+            
+            # Extract features using temporal backbone
+            features = self.backbone(x_temporal)
+            return features
+        else:
+            # Standard processing: x is [B, num_chirps, num_antenna, num_samples]
+            x = self.processor(x)
+    
         # Extract features using backbone
         features = self.backbone(x)
         return features
@@ -213,25 +205,15 @@ class OmniHand(LightningModule):
         """Forward pass for feature extraction"""
         features = self.relu(features)
         regressor_output = self.regressor(features)
-        error_output = self.error_regressor(features)
         
         B = features.shape[0]
         
-        # Reshape for concatenation
+        # Reshape for joints
         # Regressor outputs [B, 288] where we need first 144 for joints
         joint_features = regressor_output[:, :144]  # [B, 144] 
         reshaped_regressor = joint_features.view(B, 2, 24, 3)  # [B, 2, 24, 3]
         
-        # Error outputs [B, 48] for error values
-        reshaped_error = error_output.view(B, 2, 24, 1)  # [B, 2, 24, 1]
-        
-        # Concatenate along last dimension: [B, 2, 24, 4]
-        result = torch.cat([
-            reshaped_regressor,
-            reshaped_error], 
-        dim=-1)
-        
-        return result
+        return reshaped_regressor
             
     def compute_loss(self, results, batch):
         """Calculate reconstruction losses
@@ -258,14 +240,12 @@ class OmniHand(LightningModule):
         """
         loss_dict = {}
         pred = results['joints'] * 1e3  # [B, 2, 24, 3]
-        pred_error = results['error'] * 1e3  # [B, 2, 24]
         target = batch['joints'] * 1e3  # [B, 2, 24, 3]
 
         # Merge batch and hand dimensions for full joint set
         B = pred.shape[0]
         pred_full = pred.reshape(-1, 24, 3)  # [B*2, 24, 3]
         target_full = target.reshape(-1, 24, 3)
-        pred_error_full = pred_error.reshape(-1, 24)  # [B*2, 24]
 
         # Check if any value in the last dimension (xyz) is NaN
         valid_mask = ~torch.any(torch.isnan(target_full), dim=-1)  # [B*2, 24]
@@ -273,7 +253,6 @@ class OmniHand(LightningModule):
         # Apply mask to both predictions and targets
         pred_valid = pred_full[valid_mask]  # [N, 3]
         target_valid = target_full[valid_mask]  # [N, 3]
-        pred_error_valid = pred_error_full[valid_mask]  # [N]
         
         # L1 loss on valid joint positions (using all 24 joints)
         loss_dict['loss_joints'] = F.l1_loss(pred_valid, target_valid)
@@ -281,9 +260,8 @@ class OmniHand(LightningModule):
         # MPJPE (Mean Per Joint Position Error) on valid joints (using all 24 joints)
         mpjpe = torch.norm(pred_valid - target_valid, dim=-1) # [N]
         loss_dict['MPJPE'] = mpjpe.mean()  
-        loss_dict['loss_error'] = F.l1_loss(pred_error_valid, mpjpe.detach())
         
-        loss_dict['loss'] = loss_dict['loss_joints'] + loss_dict['loss_error']
+        loss_dict['loss'] = loss_dict['loss_joints']
         return loss_dict
         
 

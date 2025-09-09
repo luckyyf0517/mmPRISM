@@ -18,21 +18,15 @@ class ConvBNAct3D(nn.Module):
         padding (int, optional): Zero-padding added to both sides of the input.
             Default: None (kernel_size // 2).
         groups (int): Number of blocked connections from input channels to output channels. Default: 1.
-        use_deformable_conv (bool): Whether to use deformable convolution. Default: False.
     """
     def __init__(self, in_channels, out_channels, kernel_size=3, 
-                 stride=1, padding=None, groups=1, use_deformable_conv=False):
+                 stride=1, padding=None, groups=1):
         super().__init__()
         padding = padding or kernel_size // 2
         
-        # Choose convolution type
-        if use_deformable_conv:
-            from .deformable_conv_3d import DeformableConv3D
-            self.conv = DeformableConv3D(in_channels, out_channels, kernel_size, 
-                                       stride, padding, groups)
-        else:
-            self.conv = nn.Conv3d(in_channels, out_channels, kernel_size, 
-                                stride, padding, groups=groups, bias=False)
+        # Standard convolution
+        self.conv = nn.Conv3d(in_channels, out_channels, kernel_size, 
+                            stride, padding, groups=groups, bias=False)
         
         self.norm = nn.GroupNorm(min(32, out_channels // 4), out_channels)
         self.act = nn.SiLU(inplace=True)

@@ -14,8 +14,7 @@ from .modules import (
     ResidualBlock3D, 
     ChannelAttention3D, 
     SpatialAttention3D,
-    SEAttention3D,
-    DeformableConv3D
+    SEAttention3D
 )
 
 
@@ -28,15 +27,13 @@ class PAFPN(nn.Module):
         out_indices (tuple): Output level indices
         num_blocks (int): Number of residual blocks
         use_se_attention (bool): Whether to use SE attention
-        use_deformable_conv (bool): Whether to use deformable convolution
     """
     def __init__(self,
                  in_channels=[128, 256, 512],
                  out_channels=None,
                  out_indices=(1, 2),
                  num_blocks=2,
-                 use_se_attention=False,
-                 use_deformable_conv=False):
+                 use_se_attention=False):
         super().__init__()
         
         self.out_indices = out_indices
@@ -50,8 +47,7 @@ class PAFPN(nn.Module):
         
         for idx in range(len(in_channels) - 1, 0, -1):
             self.reduce_layers.append(
-                ConvBNAct3D(in_channels[idx], in_channels[idx-1], 1, 
-                           use_deformable_conv=use_deformable_conv))
+                ConvBNAct3D(in_channels[idx], in_channels[idx-1], 1))
             
             # Use enhanced residual blocks
             blocks = []
@@ -61,7 +57,6 @@ class PAFPN(nn.Module):
                     in_channels[idx-1], 
                     use_attention=False,
                     use_se_attention=use_se_attention,
-                    use_deformable_conv=use_deformable_conv
                 ))
             self.top_down_blocks.append(nn.Sequential(*blocks))
         
@@ -76,13 +71,10 @@ class PAFPN(nn.Module):
             concat_channels = current_channels + next_channels
             
             self.downsample_layers.append(
-                ConvBNAct3D(current_channels, current_channels, 3, stride=2,
-                           use_deformable_conv=use_deformable_conv))
+                ConvBNAct3D(current_channels, current_channels, 3, stride=2))
             
             self.trans_layers.append(
-                ConvBNAct3D(concat_channels, next_channels, 1, stride=1,
-                           use_deformable_conv=use_deformable_conv)
-            )
+                ConvBNAct3D(concat_channels, next_channels, 1, stride=1))
             
             # Use enhanced residual blocks
             blocks = []
@@ -91,7 +83,6 @@ class PAFPN(nn.Module):
                     next_channels, next_channels, 
                     use_attention=False,
                     use_se_attention=use_se_attention,
-                    use_deformable_conv=use_deformable_conv
                 ))
             self.bottom_up_blocks.append(nn.Sequential(*blocks))
     
@@ -140,7 +131,6 @@ class CubeNet(nn.Module):
         use_attention (bool): Whether to use attention mechanisms
         use_pafpn (bool): Whether to use PAFPN neck
         use_se_attention (bool): Whether to use SE attention
-        use_deformable_conv (bool): Whether to use deformable convolution
     """
     def __init__(self, 
                  in_channels=32,
@@ -150,7 +140,6 @@ class CubeNet(nn.Module):
                  use_attention=True,
                  use_pafpn=True,
                  use_se_attention=False,
-                 use_deformable_conv=False,
                  **kwargs):
         super().__init__()
         
@@ -159,15 +148,10 @@ class CubeNet(nn.Module):
         self.use_attention = use_attention
         self.use_pafpn = use_pafpn
         self.use_se_attention = use_se_attention
-        self.use_deformable_conv = use_deformable_conv
         
-        # Stem layer with optional deformable conv
-        if use_deformable_conv:
-            stem_conv = DeformableConv3D(in_channels, base_channels, 
-                                       kernel_size=3, stride=2, padding=1)
-        else:
-            stem_conv = nn.Conv3d(in_channels, base_channels, 
-                                kernel_size=3, stride=2, padding=1, bias=False)
+        # Stem layer
+        stem_conv = nn.Conv3d(in_channels, base_channels, 
+                            kernel_size=3, stride=2, padding=1, bias=False)
         
         self.stem = nn.Sequential(
             stem_conv,
@@ -184,16 +168,10 @@ class CubeNet(nn.Module):
             
             # Downsampling (except for first stage if channels match)
             if i > 0 or in_ch != out_ch:
-                if use_deformable_conv:
-                    downsample_conv = DeformableConv3D(in_ch, out_ch, 
-                                                     kernel_size=3, 
-                                                     stride=2 if i > 0 else 1, 
-                                                     padding=1)
-                else:
-                    downsample_conv = nn.Conv3d(in_ch, out_ch, 
-                                              kernel_size=3, 
-                                              stride=2 if i > 0 else 1, 
-                                              padding=1, bias=False)
+                downsample_conv = nn.Conv3d(in_ch, out_ch, 
+                                          kernel_size=3, 
+                                          stride=2 if i > 0 else 1, 
+                                          padding=1, bias=False)
                 
                 stage.append(nn.Sequential(
                     downsample_conv,
@@ -211,7 +189,6 @@ class CubeNet(nn.Module):
                     block_in_ch, out_ch, 
                     use_attention=use_attention,
                     use_se_attention=use_se_attention,
-                    use_deformable_conv=use_deformable_conv
                 ))
             
             self.stages.append(nn.Sequential(*stage))
@@ -224,8 +201,7 @@ class CubeNet(nn.Module):
                 out_channels=None,
                 out_indices=(0, 1, 2, 3),  # Output all levels to access the highest level
                 num_blocks=2,
-                use_se_attention=use_se_attention,
-                use_deformable_conv=use_deformable_conv
+                use_se_attention=use_se_attention
             )
         else:
             self.neck = None

@@ -13,34 +13,24 @@ class ResidualBlock3D(nn.Module):
     This block supports multiple attention mechanisms that can be enabled independently:
     - Original Channel + Spatial Attention (use_attention)
     - SE Attention (use_se_attention) - lightweight channel attention
-    - Deformable Convolution (use_deformable_conv) - adaptive convolution
     
     Args:
         in_channels (int): Input channels
         out_channels (int): Output channels
         use_attention (bool): Whether to use original channel+spatial attention
         use_se_attention (bool): Whether to use SE attention
-        use_deformable_conv (bool): Whether to use deformable convolution
     """
     def __init__(self, in_channels, out_channels, use_attention=True, 
-                 use_se_attention=False, use_deformable_conv=False):
+                 use_se_attention=False):
         super().__init__()
         self.use_attention = use_attention
         self.use_se_attention = use_se_attention
         
         # Main conv layers
         from .conv_bn_act_3d import ConvBNAct3D
-        self.conv1 = ConvBNAct3D(in_channels, out_channels, 3, 1, 1, 
-                                use_deformable_conv=use_deformable_conv)
-        
-        if use_deformable_conv:
-            from .deformable_conv_3d import DeformableConv3D
-            conv2_layer = DeformableConv3D(out_channels, out_channels, kernel_size=3, padding=1)
-        else:
-            conv2_layer = nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1, bias=False)
-            
+        self.conv1 = ConvBNAct3D(in_channels, out_channels, 3, 1, 1)
         self.conv2 = nn.Sequential(
-            conv2_layer,
+            nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.GroupNorm(min(32, out_channels // 4), out_channels)
         )
         
@@ -58,12 +48,7 @@ class ResidualBlock3D(nn.Module):
         
         # Shortcut connection
         if in_channels != out_channels:
-            if use_deformable_conv:
-                from .deformable_conv_3d import DeformableConv3D
-                shortcut_conv = DeformableConv3D(in_channels, out_channels, kernel_size=1, padding=0)
-            else:
-                shortcut_conv = nn.Conv3d(in_channels, out_channels, kernel_size=1, bias=False)
-                
+            shortcut_conv = nn.Conv3d(in_channels, out_channels, kernel_size=1, bias=False)
             self.shortcut = nn.Sequential(
                 shortcut_conv,
                 nn.GroupNorm(min(32, out_channels // 4), out_channels)

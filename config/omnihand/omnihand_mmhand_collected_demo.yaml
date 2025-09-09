@@ -25,16 +25,16 @@ model_cfg:
       backbone: 
         target: src.model.encoder.mmhand.MMHandEncoder
         params: 
-          input_dim: 64  # mmWave data channels
-          hidden_dims: [128, 256, 512, 1024]  # MMHandEncoder uses hidden_dims instead of stage_channels
-          num_blocks: [2, 4, 6, 3]  # Number of attention residual blocks in each stage
-          reduction_ratio: 16  # Channel reduction ratio for attention mechanisms
-        pretrained: null  # No pretrained weights for MMHandEncoder initially
+          input_dim: 64
+          hidden_dims: [64, 128, 256, 512]
+          num_blocks: [2, 2, 2, 2]
+          reduction_ratio: 16
+        pretrained: null
         freeze: false
       regressor:
         target: torch.nn.Linear
         params:
-          in_features: 1024  # Updated to match MMHandEncoder output dimension
+          in_features: 512 
           out_features: 144
       training:
         lr: 1.0e-4

@@ -6,7 +6,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=False, draw_skeleton=True, colors=None, skeleton_thickness=2, joint_size=None, enhanced_visual=True):
+def _draw_dashed_line(img, pt1, pt2, color, thickness, dash_length=8, gap_length=6):
+    """Draw a dashed line between two points using OpenCV."""
+    x1, y1 = pt1
+    x2, y2 = pt2
+    # Compute the total length of the line
+    line_vec = np.array([x2 - x1, y2 - y1], dtype=np.float32)
+    line_len = float(np.hypot(line_vec[0], line_vec[1]))
+    if line_len == 0:
+        return
+    # Unit direction
+    direction = line_vec / line_len
+    # Iterate along the line, drawing dash segments
+    dist = 0.0
+    while dist < line_len:
+        start = np.array([x1, y1], dtype=np.float32) + direction * dist
+        end = np.array([x1, y1], dtype=np.float32) + direction * min(dist + dash_length, line_len)
+        cv2.line(
+            img,
+            (int(round(start[0])), int(round(start[1]))),
+            (int(round(end[0])), int(round(end[1]))),
+            color,
+            thickness
+        )
+        dist += dash_length + gap_length
+
+
+def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=False, draw_skeleton=True, colors=None, skeleton_thickness=2, joint_size=None, enhanced_visual=True, skeleton_dashed=False):
     # For orthographic projection, treat camera_intrinsic as [scale_x, scale_y, offset_x, offset_y]
     scale_x, scale_y, offset_x, offset_y = camera_intrinsic 
     
@@ -193,16 +219,24 @@ def plot_hand_camera(image, joints, camera_position, camera_intrinsic, boundary=
                 
                 # Draw shadow first
                 shadow_offset = 1
-                cv2.line(image, 
-                        (item[0][0][0] + shadow_offset, item[0][0][1] + shadow_offset),
-                        (item[0][1][0] + shadow_offset, item[0][1][1] + shadow_offset),
-                        (50, 50, 50), skeleton_thickness + 1)
+                shadow_pt1 = (item[0][0][0] + shadow_offset, item[0][0][1] + shadow_offset)
+                shadow_pt2 = (item[0][1][0] + shadow_offset, item[0][1][1] + shadow_offset)
+                if skeleton_dashed:
+                    _draw_dashed_line(image, shadow_pt1, shadow_pt2, (50, 50, 50), skeleton_thickness + 1)
+                else:
+                    cv2.line(image, shadow_pt1, shadow_pt2, (50, 50, 50), skeleton_thickness + 1)
                 
                 # Draw main line with determined color
-                cv2.line(image, tuple(item[0][0]), tuple(item[0][1]), line_color, skeleton_thickness)
+                if skeleton_dashed:
+                    _draw_dashed_line(image, tuple(item[0][0]), tuple(item[0][1]), line_color, skeleton_thickness)
+                else:
+                    cv2.line(image, tuple(item[0][0]), tuple(item[0][1]), line_color, skeleton_thickness)
                 
             else:
-                cv2.line(image, tuple(item[0][0]), tuple(item[0][1]), (0, 0, 0), skeleton_thickness)
+                if skeleton_dashed:
+                    _draw_dashed_line(image, tuple(item[0][0]), tuple(item[0][1]), (0, 0, 0), skeleton_thickness)
+                else:
+                    cv2.line(image, tuple(item[0][0]), tuple(item[0][1]), (0, 0, 0), skeleton_thickness)
                 
         elif item[1] == 'point':
             if enhanced_visual and colors is not None and item[0][2] < len(colors):
