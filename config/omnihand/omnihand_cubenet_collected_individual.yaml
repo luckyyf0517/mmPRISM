@@ -2,16 +2,16 @@
 log_dir: 'log/omnihand'
 strategy: 'ddp'
 
-# Data configuration
+# Data configuration with cross-individual validation
 data_cfg:
   target: src.data.data_interface.BaseDataInterface
   params:
-    cfg: 
+    cfg:
       dataset: src.data.dataset.CollectedSingleFrameDataset
-      train_split: 'dataset/collected-700/train.json'
-      val_split: 'dataset/collected-700/val.json'
-      test_split: 'dataset/collected-700/val.json'
-      opt: 
+      train_split: 'dataset/collected-cross-individual-demo/train.json'
+      val_split: 'dataset/collected-cross-individual-demo/val.json'
+      test_split: 'dataset/collected-cross-individual-demo/test.json'
+      opt:
         norm_pose: true
       num_workers: 4
 
@@ -22,17 +22,17 @@ model_cfg:
     cfg:
       use_simulator: false
       learnable_weights: true
-      antenna_array_size: "small"  # 8*2 antenna array
-      backbone: 
+      antenna_array_size: "full"  # Default to full array size
+      backbone:
         target: src.model.encoder.cubenet.CubeNet
-        params: 
-          in_channels: 64
+        params:
+          in_channels: 64  # Updated to match full array size
           base_channels: 64
-          stage_channels: [64, 128, 256, 512]  
-          stage_blocks: [2, 2, 2, 2]  
-          use_attention: true  
-          use_pafpn: false  
-          use_se_attention: true  
+          stage_channels: [64, 128, 256, 512]
+          stage_blocks: [2, 2, 2, 2]
+          use_attention: true
+          use_pafpn: false
+          use_se_attention: true
         pretrained: null
         freeze: false
       regressor:

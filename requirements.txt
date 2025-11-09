@@ -1,0 +1,69 @@
+# Core ML/DL Frameworks
+# Install PyTorch with CUDA support:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# For CUDA 12.1: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+torch>=2.0.0
+torchvision>=0.15.0
+pytorch-lightning>=2.0.0
+torchaudio>=2.0.0
+
+# Transformers and PEFT
+transformers>=4.30.0
+peft>=0.5.0
+tokenizers>=0.13.0
+sentence-transformers>=2.2.0
+
+# Distributed Training and Optimization
+deepspeed>=0.10.0
+accelerate>=0.20.0
+
+# Scientific Computing and Data Processing
+numpy>=1.21.0
+scipy>=1.9.0
+scikit-learn>=1.1.0
+
+# Computer Vision
+opencv-python>=4.7.0
+matplotlib>=3.5.0
+pillow>=9.0.0
+
+# Logging and Experiment Tracking
+wandb>=0.15.0
+swanlab>=0.1.0
+tensorboard>=2.12.0
+
+# Progress Bars and Utilities
+tqdm>=4.64.0
+termcolor>=2.0.0
+easydict>=1.9
+
+# Data Structures and Utilities
+einops>=0.6.0
+omegaconf>=2.2.0
+hydra-core>=1.2.0
+
+# Computer Vision Libraries (for pose estimation)
+mmcv>=2.0.0
+mmengine>=0.7.0
+mmpose>=1.0.0
+
+# Additional ML Libraries
+sentencepiece>=0.1.96
+protobuf>=3.20.0
+
+# File I/O and Compression
+h5py>=3.7.0
+pickle5>=0.0.12; python_version<"3.8"
+
+# Development and Testing
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
+
+# Optional: For specific features
+# Uncomment if needed
+# kornia>=0.6.0  # Advanced image processing
+# timm>=0.6.0    # Pretrained models
+# albumentations>=1.2.0  # Data augmentation
+# ftfy>=6.1.0    # Text fixing
+# regex>=2022.7.9  # Advanced regex

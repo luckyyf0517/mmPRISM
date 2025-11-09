@@ -2,16 +2,16 @@
 log_dir: 'log/omnihand'
 strategy: 'ddp'
 
-# Data configuration with temporal support
+# Data configuration with cross-individual validation and temporal support
 data_cfg:
   target: src.data.data_interface.BaseDataInterface
   params:
-    cfg: 
+    cfg:
       dataset: src.data.dataset.CollectedSingleFrameDataset
-      train_split: 'dataset/collected-700/train.json'
-      val_split: 'dataset/collected-700/val.json'
-      test_split: 'dataset/collected-700/val.json'
-      opt: 
+      train_split: 'dataset/collected-cross-individual-demo-06xx/train.json'
+      val_split: 'dataset/collected-cross-individual-demo-06xx/val.json'
+      test_split: 'dataset/collected-cross-individual-demo-06xx/test.json'
+      opt:
         # Enable temporal processing
         use_temporal: true
         num_temporal_frames: 8  # Increased from 5 for better temporal modeling
@@ -25,31 +25,31 @@ model_cfg:
     cfg:
       use_simulator: false
       learnable_weights: true
-      backbone: 
+      backbone:
         target: src.model.encoder.transformer.CubeNetTransformer
-        params: 
+        params:
           # Spatial encoder parameters (CubeNet)
           in_channels: 64  # mmWave data channels
           base_channels: 64
-          stage_channels: [64, 128, 256, 512] 
-          stage_blocks: [2, 2, 2, 2]  
-          use_attention: true  
-          use_pafpn: false  
-          use_se_attention: true  
+          stage_channels: [64, 128, 256, 512]
+          stage_blocks: [2, 2, 2, 2]
+          use_attention: true
+          use_pafpn: false
+          use_se_attention: true
           # Pretrained spatial encoder settings
-          spatial_encoder_pretrained: weights/cubenet_0831/model.pth  
-          spatial_encoder_freeze: false  
+          spatial_encoder_pretrained: weights/cubenet_0831/model.pth
+          spatial_encoder_freeze: false
           # Enhanced temporal transformer parameters
-          temporal_frames: 8  
-          transformer_layers: 8  
-          transformer_heads: 8  
-          transformer_dim_feedforward: 2048  
-          transformer_dropout: 0.1  
+          temporal_frames: 8
+          transformer_layers: 8
+          transformer_heads: 8
+          transformer_dim_feedforward: 2048
+          transformer_dropout: 0.1
           # Advanced temporal modeling features
-          temporal_kernel_size: 3  
-          use_cross_attention: true  
+          temporal_kernel_size: 3
+          use_cross_attention: true
           # Output parameters
-          output_dim: 512  
+          output_dim: 512
         pretrained: null
         freeze: false
       regressor:
@@ -61,7 +61,7 @@ model_cfg:
         lr: 8.0e-5  # Slightly reduced learning rate for enhanced model
         betas: [0.9, 0.999]  # Adam optimizer betas
         weight_decay: 0.02  # Increased weight decay for better regularization
-        
+
         # Enhanced training schedule
         warmup_steps: 1000  # Warmup steps for learning rate
         lr_schedule: 'cosine'  # Cosine annealing learning rate schedule

@@ -8,16 +8,16 @@ Data Organization:
 - 1xxx sequences (e.g., 1000-1999) are located in: mmprism/collected_demo/
 
 Split Configuration (Current Settings):
-- Training set:   Sequences 1000-1299 (collect_demo folder)
-- Test/Val set:   Sequences 1300-1400, multiples of 5 only (collect_demo folder)
+- Training set:   Sequences 0000-0099 (collected_base folder)
+- Test/Val set:   Sequences 0100-0199 (collected_base folder)
 - Output path:    dataset/collected-cross-individual/
 
 Usage:
 1. For collected_base data (0xxx sequences):
-   python src/scripts/split_cross_individual.py --signals_root /root/autodl-tmp/datasets/mmprism/collected_base/poses/
+   python src/scripts/split_cross_individual.py
 
 2. For collected_demo data (1xxx sequences):
-   python src/scripts/split_cross_individual.py --signals_root /root/autodl-tmp/datasets/mmprism/collected_demo/poses/
+   Modify the signals_root variable in the script
 
 To modify split ranges, update the TRAIN_MIN, TRAIN_MAX, TEST_MIN, TEST_MAX variables
 in the split_data_cross_individual() function.
@@ -31,16 +31,16 @@ from tqdm import tqdm
 from termcolor import colored
 
 
-def split_data_cross_individual(signals_list, subfolder='collected-cross-individual-demo', dry_run=False):
+def split_data_cross_individual(signals_list, subfolder='collected-cross-individual', dry_run=False):
     """
     Split signal data for cross-individual validation.
-    - Training set: sequences 1000-1299 (inclusive)
-    - Validation set: sequences 1300-1400 (inclusive)
-    - Test set: same as validation set (1300-1400)
+    - Training set: sequences 0000-0099 (inclusive)
+    - Validation set: sequences 0100-0199 (inclusive)
+    - Test set: same as validation set (0100-0199)
 
     Args:
         signals_list (list): List of paths to signal files
-        subfolder (str, optional): Subfolder name for saving split files. Defaults to 'collected-cross-individual-demo'
+        subfolder (str, optional): Subfolder name for saving split files. Defaults to 'collected-cross-individual'
         dry_run (bool, optional): If True, only show split statistics without saving files. Defaults to False.
     """
     # Initialize dictionaries to store split data
@@ -48,8 +48,8 @@ def split_data_cross_individual(signals_list, subfolder='collected-cross-individ
     split_stats = {'train': 0, 'test': 0, 'val': 0, 'all': 0}
 
     # Define sequence ID ranges
-    TRAIN_MIN, TRAIN_MAX = 1000, 1299
-    TEST_MIN, TEST_MAX = 1300, 1400
+    TRAIN_MIN, TRAIN_MAX = 0, 99
+    TEST_MIN, TEST_MAX = 100, 199
 
     print(colored(f'Processing {len(signals_list)} signal files...', 'yellow'))
 
@@ -68,8 +68,8 @@ def split_data_cross_individual(signals_list, subfolder='collected-cross-individ
         split_name = None
         if TRAIN_MIN <= seq_num <= TRAIN_MAX:
             split_name = 'train'
-        elif TEST_MIN <= seq_num <= TEST_MAX and seq_num % 5 == 0:
-            split_name = 'val'  # Will be copied to both val and test, only multiples of 5
+        elif TEST_MIN <= seq_num <= TEST_MAX:
+            split_name = 'val'  # Will be copied to both val and test
 
         if os.path.exists(signal_path) and split_name is not None:
             data_key = seq_id
@@ -124,8 +124,8 @@ def analyze_individual_distribution(signals_list):
     Args:
         signals_list (list): List of paths to signal files
     """
-    TRAIN_MIN, TRAIN_MAX = 1000, 1299
-    TEST_MIN, TEST_MAX = 1300, 1400
+    TRAIN_MIN, TRAIN_MAX = 0, 99
+    TEST_MIN, TEST_MAX = 100, 199
     
     train_count = 0
     test_count = 0
@@ -140,7 +140,7 @@ def analyze_individual_distribution(signals_list):
             seq_num = int(seq_id)
             if TRAIN_MIN <= seq_num <= TRAIN_MAX:
                 train_count += 1
-            elif TEST_MIN <= seq_num <= TEST_MAX and seq_num % 5 == 0:
+            elif TEST_MIN <= seq_num <= TEST_MAX:
                 test_count += 1
             else:
                 other_count += 1
@@ -150,21 +150,21 @@ def analyze_individual_distribution(signals_list):
     total = train_count + test_count + other_count
     print(f'Total files: {total}')
     print(f'TRAIN range ({TRAIN_MIN:04d}-{TRAIN_MAX:04d}): {train_count:4} files ({train_count/total*100:5.1f}%)')
-    print(f'TEST  range ({TEST_MIN:04d}-{TEST_MAX:04d}, multiples of 5): {test_count:4} files ({test_count/total*100:5.1f}%)')
+    print(f'TEST  range ({TEST_MIN:04d}-{TEST_MAX:04d}): {test_count:4} files ({test_count/total*100:5.1f}%)')
     print(f'Other sequences:                    {other_count:4} files ({other_count/total*100:5.1f}%)')
 
     # Show predicted split
     print(colored('\n=== Predicted Cross-Individual Split ===', 'cyan', attrs=['bold']))
     print(f'TRAIN ({TRAIN_MIN:04d}-{TRAIN_MAX:04d}): {train_count:4} files ({train_count/total*100:5.1f}%)')
-    print(f'VAL   ({TEST_MIN:04d}-{TEST_MAX:04d}, multiples of 5): {test_count:4} files ({test_count/total*100:5.1f}%)')
-    print(f'TEST  ({TEST_MIN:04d}-{TEST_MAX:04d}, multiples of 5): {test_count:4} files ({test_count/total*100:5.1f}%)')
-    print(colored(f'\nNote: Sequences {TEST_MIN:04d}-{TEST_MAX:04d} (multiples of 5 only) are held out for cross-individual validation', 'yellow'))
+    print(f'VAL   ({TEST_MIN:04d}-{TEST_MAX:04d}): {test_count:4} files ({test_count/total*100:5.1f}%)')
+    print(f'TEST  ({TEST_MIN:04d}-{TEST_MAX:04d}): {test_count:4} files ({test_count/total*100:5.1f}%)')
+    print(colored(f'\nNote: Sequences {TEST_MIN:04d}-{TEST_MAX:04d} are held out for cross-individual validation', 'yellow'))
 
 
 if __name__ == '__main__':
     # Vobe coding: Hardcoded configuration
-    signals_root = '/root/autodl-tmp/datasets/mmprism/collected_demo/poses/'
-    subfolder = 'collected-cross-individual-demo'
+    signals_root = '/root/autodl-tmp/datasets/mmprism/collected_base/poses/'
+    subfolder = 'collected-cross-individual'
     pattern = '*.npy'
     analyze_only = False  # Set to True to only analyze without saving
     dry_run = False       # Set to True to preview split without saving files
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     # Perform splitting unless analyze_only
     if not analyze_only:
         print(colored(f'\n=== Performing Cross-Individual Split ===', 'cyan', attrs=['bold']))
-        print(f'Split rule: Sequences 1000-1299 -> TRAIN, Sequences 1300-1400 (multiples of 5 only) -> VAL & TEST')
+        print(f'Split rule: Sequences 0000-0099 -> TRAIN, Sequences 0100-0199 -> VAL & TEST')
         split_data_cross_individual(signals_list, subfolder, dry_run)
     else:
         print(colored('\n=== Analysis Complete ===', 'yellow', attrs=['bold']))

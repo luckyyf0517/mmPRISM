@@ -38,7 +38,7 @@ class OmniHand(LightningModule):
         self.antenna_array_size = cfg.get('antenna_array_size', 'full')
         
         self.processor = Processor(learnable_weights=cfg.get('learnable_weights', False), array_size=self.antenna_array_size)
-        self.use_simulator = cfg.get('use_simulator', True)
+        self.use_simulator = cfg.get('use_simulator', False)
         if self.use_simulator:
             self.simulator = Simulation(array_size=self.antenna_array_size)
             self.processor.if_process_range = True

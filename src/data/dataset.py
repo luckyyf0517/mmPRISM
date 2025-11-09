@@ -61,6 +61,7 @@ class BaseDataset(Dataset):
         with open(split_path, 'r') as f:
             self.data_dict = json.load(f)
             
+            
     def __len__(self):
         return len(self.data_dict)
     
@@ -149,15 +150,20 @@ class CollectedSingleFrameDataset(BaseDataset):
         
         # Add temporal configuration
         self.use_temporal = opt.get('use_temporal', False)
+        self.use_temporal_pose = opt.get('use_temporal_pose', False)
         self.num_temporal_frames = opt.get('num_temporal_frames', 5)  # Default to 5 frames
-        
         self.num_frames = 99
+        
+        self.just_load_one_frame = opt.get('just_load_one_frame', False)
         
         # build data list
         self.data_list = []
         for seq_id in self.data_dict.keys():
-            for frame_id in range(self.num_frames):
-                self.data_list.append((seq_id, frame_id))
+            if not self.just_load_one_frame:
+                for frame_id in range(self.num_frames):
+                    self.data_list.append((seq_id, frame_id))
+            else: 
+                self.data_list.append((seq_id, 0))
 
     def __len__(self):
         return len(self.data_list)
@@ -196,12 +202,20 @@ class CollectedSingleFrameDataset(BaseDataset):
                 # Fallback if no frames were loaded
                 mmwave_temporal = np.zeros((self.num_temporal_frames, 128, 86, 256), dtype=np.complex64)
             
-            # For joints, we still return a single frame as the target
-            joints = pose[frame_idx]  # (2, 24, 3)
+            # For joints, return temporal sequence if use_temporal_pose is True
+            if self.use_temporal_pose:
+                joints = pose[start_frame:end_frame]  # (T, 2, 24, 3)
+                # Pad if needed to ensure exact num_temporal_frames
+                if joints.shape[0] < self.num_temporal_frames:
+                    pad_shape = (self.num_temporal_frames - joints.shape[0],) + joints.shape[1:]
+                    joints = np.concatenate([joints, np.zeros(pad_shape, dtype=joints.dtype)], axis=0)
+            else:
+                # For joints, we still return a single frame as the target
+                joints = pose[frame_idx]  # (2, 24, 3)
             
             return {
                 'id': id, 
-                'joints': joints.astype(np.float32),  # (2, 24, 3) - single frame for training target
+                'joints': joints.astype(np.float32),  # (T, 2, 24, 3) if use_temporal_pose else (2, 24, 3)
                 'mmwave': mmwave_temporal.astype(np.complex64),  # [T, num_chirps, num_antenna, num_samples] - temporal for TVAN
                 'frame_idx': frame_idx,
             }

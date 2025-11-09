@@ -14,13 +14,13 @@ class MPJPEEvaluator(OmniHand):
         super().__init__(*args, **kwargs)
         self.skipped_count = 0
         self.processed_count = 0
+        self.mpjpe_list = []
         
     def test_step(self, batch, batch_idx):
         # Get batch timestep data
-        max_len = batch['valid_length'][0].item()
-        points_t = batch['joints'][0, :max_len]  # [T, 2, 24, 3]
-        mmwave_t = batch['mmwave'][0, :max_len]  # [T, 64, 32, 32]
-
+        points_t = batch['joints'][0]  # [T, 2, 24, 3]
+        mmwave_t = batch['mmwave'][0]  # [T, 64, 32, 32]
+        
         # Process doppler data
         mmwave = self.processor(mmwave_t)
         features = self.backbone(mmwave)
@@ -33,9 +33,16 @@ class MPJPEEvaluator(OmniHand):
         pred_valid = joints_pred[valid_mask]
         target_valid = points_t[valid_mask]
         mpjpe = torch.norm(pred_valid - target_valid, dim=-1).mean() * 1e3
-        print(f"ID: {batch['id'][0]}, MPJPE: {mpjpe.item()}")
+        mpjpe_value = mpjpe.item()
+        print(f"ID: {batch['id'][0]}, MPJPE: {mpjpe_value}")
         
+        self.mpjpe_list.append(mpjpe_value)
         self.processed_count += 1
+    
+    def on_test_epoch_end(self):
+        if self.mpjpe_list:
+            avg_mpjpe = np.mean(self.mpjpe_list)
+            print(colored(f"\nAverage MPJPE: {avg_mpjpe:.4f}", "green", attrs=["bold"]))
 
 def main():
     # Initialize distributed training
@@ -53,17 +60,15 @@ def main():
     # Modify test split to use all data
     assert datastage == 'daily'
     args = edict({
-        # 'config': 'config/omnihand/omnihand_rtm_collected.yaml',
-        # 'resume_checkpoint': 'log/omnihand/omnihand-rtm-collected-0704/last.ckpt',
-        'config': 'config/omnihand/omnihand_mmhand_collected.yaml',
-        'resume_checkpoint': 'log/omnihand/omnihand-mmhand-collected-0707/last.ckpt',
+        'config': 'config/omnihand/omnihand_cubenet_collected_individual.yaml', # <- need to change
+        'resume_checkpoint': 'log/omnihand/omnihand-cubenet-collected-1108/last.ckpt', # <- need to change
     })
     cfg = load_yaml(args.config)
     cfg.batch_size = 1
     data_cfg = cfg.data_cfg
-    data_cfg.params.cfg.dataset = 'src.data.dataset.CollectedDailyDataset'
+    data_cfg.params.cfg.dataset = 'src.data.dataset.CollectedSingleFrameDataset'
     data_cfg.params.cfg.batch_size = 1
-    data_cfg.params.cfg.test_split = 'dataset/collected-500/val.json'
+    data_cfg.params.cfg.test_split = 'dataset/collected-cross-individual-demo/test.json' # <- need to change
     data_cfg.params.cfg.opt = {
         "annotation_path": None,
         "max_length": 100, 
@@ -78,6 +83,10 @@ def main():
             "pose_dir": "poses", 
             "norm_pose": True,
         },
+        "use_temporal": True,
+        "use_temporal_pose": True,
+        "num_temporal_frames": 99,
+        "just_load_one_frame": True, 
     }
         
     data = instantiate_from_config(data_cfg)
