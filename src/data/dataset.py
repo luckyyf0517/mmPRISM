@@ -21,10 +21,6 @@ data_stats = {
         'mean': np.array([0.02832265, 0.37857532, -0.21782798]),
         'std': np.array([0.32808729, 0.3750018, 0.12171327]),
     },
-    'csl-daily/sentence/pred_poses_0525_large': {
-        'mean': np.array([0.00545881, 0.00916435, -0.01287592]),
-        'std': np.array([0.10056931, 0.1028068, 0.0844123]),
-    },
     'csl-daily/sentence/pred_poses_0602_rtm': {
         'mean': np.array([0.00491593, 0.01073456, -0.0108644]),
         'std': np.array([0.10114002, 0.10167552, 0.08443051]),
@@ -226,6 +222,9 @@ class CollectedSingleFrameDataset(BaseDataset):
             mmwave_path = pose_path.replace('poses', 'mmwave').replace('.npy', f'/{frame_idx:04d}.npy')
             mmwave = np.load(mmwave_path) 
             mmwave = mmwave[..., 0] + mmwave[..., 1] * 1j
+            
+        # # add random noise to mmwave
+        # mmwave = mmwave + np.random.normal(0, 0.01, mmwave.shape, dtype=np.complex64)
 
         return {
             'id': id, 
