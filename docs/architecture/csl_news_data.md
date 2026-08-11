@@ -262,3 +262,10 @@ published pairs and found only this mismatch. Clean commit `98549a9` then produc
 `snapshot_20260811T212450.135852Z` with 9,551 included records, one checksum-bound exclusion, zero unpaired
 eligible NPZ and manifest SHA-256
 `8e3db8712bc61848e9d6dea9f5b3a3821365ffd102d6643977ad43107b2db0c4`. This remains a partial snapshot.
+
+The first v2 source-bound snapshot was built from clean commit `11014a8` at
+`snapshot_20260811T222941.214512Z`. It binds registry SHA-256 `ae6b2909...`, contains 10,011 records from
+12 represented archives, and writes 1,875 superseded/unbound sidecars to a checksum-covered source-identity
+quarantine ledger. The manifest SHA-256 is
+`3412aeb2f7fea685796e17d85b3af6342b7ffe1b3a61895446295f5f71e073f7`. All snapshot checksums,
+the general manifest contract and first/middle/last checksum-validating reads passed. It remains partial.

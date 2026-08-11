@@ -28,7 +28,7 @@ CSL-News 官方源；其他数据族仍未到位。
 | Data Family | 历史用途 | 预期主要模态 | 当前状态 |
 |---|---|---|---|
 | CSL-Daily | OmniHand simulation、WaveLLM caption | images, pose, pred_pose, feature, annotation | missing_location |
-| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_v2_registry_59_archives_97997_videos_passed |
+| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_v2_registry_62_archives_102949_videos_passed |
 | Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | missing_location |
 | Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | missing_location |
 | Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | missing_location |
@@ -415,3 +415,26 @@ registry 为 22 final、19 passed/31,423 videos，失败项仍仅 `001/005/008`�
 通过。另外 1,875 个缺少或不匹配当前 source identity 的历史 pair 单独隔离且不计入完成度。四个
 `registry{0..3}-v3` worker 的 orchestration metadata 分别为 `worker_index=0..3`、
 `worker_count=4`，共同使用 GPU 7；GPU 利用率不作为停止条件。
+
+clean commit `11014a82627726758e3f6f24b82455e976c61c2b` 的新 identity audit 冻结 11,815 个
+pair、哈希 6,373,342,155 bytes，11,814 通过；唯一失败仍为已登记的 `archive_006/3af7...`，
+没有新增 conflict。报告 SHA-256 为
+`23278c988156ce27e52405794642f7e77ab0ec44d93c43be93da1626d5864105`。
+
+同一 clean commit 构建的 v2-bound snapshot
+`snapshot_20260811T222941.214512Z` 包含 10,011 records/12 represented archives，manifest SHA-256
+为 `3412aeb2f7fea685796e17d85b3af6342b7ffe1b3a61895446295f5f71e073f7`。1,875 个旧来源或
+unbound sidecar 进入 `source_identity_quarantine.jsonl`，ledger SHA-256 为
+`1b03721b4fc64601d8dff0fc247e6d7a1a319ac93d2dc25c6cc463f0cd659586`；当前来源 unpaired NPZ
+为 0。五项 `SHA256SUMS`、通用 manifest contract 和首/中/末 adapter checksum 读取全部通过。
+该 snapshot 是 partial pipeline evidence，不是最终数据集规模或论文结果。
+
+`22:32 UTC` integrity timer 在 clean commit `11014a8` 下继续通过 `091/094/096`，live v2 registry
+更新为 62/62 passed、102,949 videos、failed 0，SHA-256
+`b461c9efd619ca2a049f4f64c9758bf7d6c64fb603a06ea64123148d13542e1a`。已发布的 10,011-record
+snapshot 仍绑定其冻结时的 59-archive registry bytes，不受 live registry 后续更新影响。
+
+`22:30 UTC` 自动 status 报告返回 `attention_required`，唯一新增 failure 是已登记的
+`archive_006/3af7...` 在当前 worker run 中再次触发 preserve-on-conflict；没有新增 sample identity，
+current-source duplicate 0、missing pair 0、抽检 3/3 通过。status service 以 exit 1 保留该告警，
+四个 annotation worker 和下载/integrity 服务不受影响。

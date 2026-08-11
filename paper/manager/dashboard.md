@@ -30,7 +30,7 @@ Role: `control_panel`
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；source-integrity v2 registry
-  当前覆盖 59 个 archive/97,997 videos，全部通过完整 CRC、label coverage 和 decode probe。
+  在 `22:32Z` 覆盖 62 个 archive/102,949 videos，全部通过完整 CRC、label coverage 和 decode probe。
   `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；4 个 source-aware registry
   worker 在 GPU 7 持续运行。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
@@ -39,6 +39,10 @@ Role: `control_panel`
   9,518 对通过；唯一异常 `archive_006/3af7...` 保留原样并由 checksum-bound exclusion 隔离。
   clean commit `98549a9` 随后生成 9,551-record/9-archive partial snapshot，0 unpaired NPZ，
   `SHA256SUMS`、通用 contract 和首/中/末 adapter 读取均通过。
+- clean commit `11014a8` 已冻结首个 v2 source-bound snapshot：10,011 records/12 archives，
+  1,875 个 old/unbound pair 写入 checksum-covered quarantine ledger；五项 `SHA256SUMS`、通用
+  contract 和首/中/末 checksum-validating adapter 读取全部通过。同期 11,815-pair 全量审计只发现
+  已登记的 `archive_006/3af7...` 冲突。
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.2 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。

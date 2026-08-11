@@ -6,7 +6,7 @@ Role: `DATA-001-K_source_integrity_evidence`
 
 ## 1. Audit Identity
 
-Current cumulative control snapshot (the registry continues to update in place):
+Frozen recovery control snapshot used by the first v2 pose snapshot:
 
 ```text
 registry writer commit: 0f2e635114e4bda3b359c9b795e50d9dd4b2532c
@@ -22,6 +22,18 @@ selected replacements: 001,005,008
 v2 registry 不再假设 `archive_NNN.zip` 必须来自 primary root；每项显式保存
 `archive_path_relative` 和 `source_kind`，worker 必须读取该精确路径。primary 坏文件保持不变，
 replacement 位于 versioned overlay；registry 仍为 436-archive 下载中的 partial snapshot。
+
+The live registry subsequently advanced at `2026-08-11T22:32Z` under clean commit `11014a8`:
+
+```text
+registry SHA-256: b461c9efd619ca2a049f4f64c9758bf7d6c64fb603a06ea64123148d13542e1a
+present/passed: 62/62 archives
+videos: 102,949
+failed: 0
+selected replacements: 001,005,008
+```
+
+该 live 更新不改变已发布 snapshot 内复制的 registry bytes/hash；后续 archive 只进入新的 snapshot。
 
 Historical v1 cumulative snapshot retained for incident provenance:
 

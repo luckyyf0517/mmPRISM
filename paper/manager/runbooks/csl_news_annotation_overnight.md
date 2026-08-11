@@ -287,3 +287,17 @@ scripts/run_csl_news_annotation_audit.sh
 - `22:13Z` 手工 source-aware 状态报告为 `healthy`：9,394 个 current-source pair、1,875 个
   old/unbound quarantine pair、duplicate-current-source 0、missing pair 0、latest run 新失败 0、
   抽检 3/3 通过；四个 worker `active/running`、`NRestarts=0`。
+- `22:27Z–22:28Z` 在 clean commit `11014a8` 上执行全量 identity audit：冻结 11,815 pair、
+  哈希 6,373,342,155 bytes，11,814 通过，唯一失败仍为既有 `archive_006/3af7...`；报告 SHA-256
+  `23278c988156ce27e52405794642f7e77ab0ec44d93c43be93da1626d5864105`，无新增 conflict。
+- `22:29Z` 同一 clean commit 冻结 v2-bound partial snapshot `snapshot_20260811T222941.214512Z`：
+  10,011 records/12 archives，1,875 个旧来源/unbound sidecar 写入 checksum-covered quarantine，
+  当前来源 unpaired NPZ 0。五项 `SHA256SUMS`、通用 contract 和首/中/末 checksum adapter 读取
+  全部通过；manifest SHA-256 为 `3412aeb2f7fea685796e17d85b3af6342b7ffe1b3a61895446295f5f71e073f7`。
+- `22:30Z` 自动 status 为 `attention_required`，原因仅为既有 `archive_006/3af7...` 在当前 run
+  再次触发 preserve-on-conflict。current-source duplicate/missing pair 均为 0、抽检 3/3 通过；timer
+  保留 exit 1 告警，但四个 worker 不停止、不迁移。
+- `22:32Z` clean integrity timer 继续审计通过 `091/094/096`，live v2 registry 为 62/62 passed、
+  102,949 videos、failed 0，SHA-256
+  `b461c9efd619ca2a049f4f64c9758bf7d6c64fb603a06ea64123148d13542e1a`。既有 snapshot 仍绑定
+  冻结时的 59-archive registry，不追写 live 更新。

@@ -39,7 +39,7 @@ Role: `master_task_index`
 | ID | Task | Dependency | Status | Exit Criterion |
 |---|---|---|---|---|
 | `DATA-002` | 定义 sample/sequence manifest schema | source data audit | in_progress | 通用 schema/validator 已落地；待真实数据 adapter 校准 |
-| `DATA-003` | 为各数据族生成只读 source manifest | `DATA-002` | in_progress | CSL-News v2 registry 为 59 archive/97,997 videos passed，`001/005/008` replacement 已验收；待 source-aware partial pose snapshot 和 436-archive complete manifest |
+| `DATA-003` | 为各数据族生成只读 source manifest | `DATA-002` | in_progress | CSL-News v2 registry 为 62 archive/102,949 videos passed，`001/005/008` replacement 已验收；10,011-record v2-bound pose snapshot 已通过，待 436-archive complete manifest |
 | `DATA-004` | 重建无泄漏 split | `DATA-003` | in_progress | CSL-News 2,157-record partial sequence split 已通过 coverage/leakage audit；待 complete source、signer/subject 和 final split |
 | `ARCH-002` | 完成 package/config/CLI/runtime foundation | environment lock | in_progress | pyproject、strict config、doctor/plan CLI 与 run metadata 完整 |
 | `ARCH-003` | 实现 canonical data/radar vertical slice | `DATA-002`, `ARCH-002` | in_progress | tensor/range-Doppler contract 已通过；待真实 radar manifest fixture、beamforming provenance 和 cube gate |

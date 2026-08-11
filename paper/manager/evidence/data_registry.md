@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 registry active；59 archives/97,997 videos passed at 22:10Z；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 registry active；62 archives/102,949 videos passed at 22:32Z；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -39,7 +39,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 v2 registry workers active；9,394 current-source pairs healthy；1,875 old/unbound pairs quarantined；source-versioned recomputation in progress；prior v1 snapshot retained as historical evidence | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 v2 registry workers active；clean audit 11,814/11,815 passed with one known conflict；v2 snapshot 10,011 records/12 archives, SHA-256 `3412aeb2...`；1,875 old/unbound pairs checksum-quarantined | in_progress |
 
 ## Model-ready Contracts
 
@@ -133,7 +133,16 @@ The current source control plane is
 pose snapshots remain immutable incident/pipeline evidence but are not the current training source because
 their source identities predate replacement selection. The live v2 status at `22:13Z` counted 9,394
 current-source pairs, 1,875 quarantined old/unbound pairs, zero duplicate-current-source samples and 3/3
-validated samples. A new v2-bound pose snapshot requires a clean full identity audit and is tracked separately.
+validated samples. The subsequent clean audit and v2-bound pose snapshot are tracked below.
+
+The first v2-bound snapshot is
+`pose_manifest_v1/snapshot_20260811T222941.214512Z`. It binds the registry hash above and contains 10,011
+current-source records from 12 represented archives. Manifest SHA-256 is
+`3412aeb2f7fea685796e17d85b3af6342b7ffe1b3a61895446295f5f71e073f7`; its 1,875-entry
+source-identity quarantine ledger has SHA-256
+`1b03721b4fc64601d8dff0fc247e6d7a1a319ac93d2dc25c6cc463f0cd659586`. All five checksum entries,
+the general manifest contract, and first/middle/last checksum-validating adapter reads passed. It remains
+partial and is not a paper-facing dataset-size claim.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 

@@ -97,6 +97,9 @@ Integrity-gated pose+caption snapshot passed 2,157-record contract/checksum/port
 Pose manifest adapter loaded first/middle/last native and canonical arrays without training imports
 Clean CPU-only identity audit streamed 9,519 published pairs / 5.116 GB and reported exactly one stable conflict
 Checksum-bound quarantine preserved that pair and produced a 9,551-record/9-archive partial snapshot with 0 unpaired NPZ
+Clean v2 identity audit hashed 11,815 pairs / 6.373 GB and found only the same registered conflict
+v2 source-bound snapshot contains 10,011 records/12 archives and a checksum-covered 1,875-entry quarantine ledger
+All five v2 snapshot checksums, general manifest contract, and first/middle/last adapter reads passed
 Partial sequence split passed 2,157/2,157 coverage and zero cross-split group leakage
 All 2,157 group IDs and assignment buckets independently recomputed and matched
 Formal run initialization atomically writes config/environment/input hashes and refuses collisions

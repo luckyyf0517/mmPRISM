@@ -1,6 +1,6 @@
 # CSL-News Pose Manifest Evidence
 
-Status: `partial_snapshot_evidence_ready`
+Status: `v2_partial_snapshot_evidence_ready`
 Last Updated: `2026-08-11`
 Role: `DATA-003-B_ARCH-003-A_pose_caption_manifest_evidence`
 
@@ -158,4 +158,40 @@ snapshot `SHA256SUMS` 覆盖。
 `ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c`：当前来源 pair 9,394，
 旧来源/unbound 隔离 pair 1,875，当前来源重复 0，missing pair 0，抽检 3/3 通过，状态 `healthy`。
 此前 v1-bound snapshot 保留为 pipeline/incident evidence，不作为 current-source training manifest。
-新 v2-bound partial snapshot 必须在 clean full identity audit 后另行冻结和验收。
+后续 clean full identity audit 与 v2-bound partial snapshot 的验收结果记录如下。
+
+## 9. v2-Bound Partial Snapshot
+
+clean commit `11014a82627726758e3f6f24b82455e976c61c2b` 的全量 identity audit 冻结 11,815 个
+published pair，流式哈希 6,373,342,155 bytes；11,814 通过，唯一失败仍是已登记的
+`archive_006/3af7db9841fb2ac483721620`，没有新冲突。报告为
+`identity_audits/audit_20260811T222742Z.json`，SHA-256
+`23278c988156ce27e52405794642f7e77ab0ec44d93c43be93da1626d5864105`，Git clean，
+`audit_failures` 为空。
+
+同一 clean commit 随后冻结 current-source snapshot：
+
+```text
+snapshot: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/pose_manifest_v1/snapshot_20260811T222941.214512Z
+snapshot config fingerprint: dc33e47ef79468fa0b9158ce92ca73771056740a760cef3a6f03a1934ed069fc
+integrity registry SHA-256: ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c
+manifest SHA-256: 3412aeb2f7fea685796e17d85b3af6342b7ffe1b3a61895446295f5f71e073f7
+summary SHA-256: 35502576b1bf4cc7d530c6d7f4c0a44d38a3d881ee13087f226cd91d5297305e
+source identity quarantine SHA-256: 1b03721b4fc64601d8dff0fc247e6d7a1a319ac93d2dc25c6cc463f0cd659586
+SHA256SUMS SHA-256: 0c450ea95c596a1e2abf3076d8834876da032181b1291876870ac0ad75e7f611
+records: 10,011
+represented archives: 12
+frozen current-source sidecars: 10,012
+explicit exclusions: 1
+source-identity quarantine entries: 1,875
+unpaired current-source NPZ: 0
+referenced artifact bytes: 5,389,225,123
+status: partial
+```
+
+五项 `SHA256SUMS` 全部 `OK`；通用 manifest contract 读取 10,011 records/9 modalities；首/中/末
+adapter 在 `verify_checksum=True` 下 3/3 通过。quarantine ledger 的 1,875 条记录覆盖
+`002/003/004/005/006/009`，原因均为旧产物缺少或不匹配当前 source content identity；它们未计入
+manifest。manifest 中 `005/008` 的抽样记录分别绑定 replacement SHA-256 `3450d136...`/
+`b258e4be...` 和 v2 精确相对路径。`001` 在冻结时尚无 current-source 完成产物，因此未出现在该
+partial snapshot；后续 worker 产物进入新的 snapshot，不修改本 snapshot。

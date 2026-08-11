@@ -16,17 +16,17 @@ Role: `data_execution_tracker`
 | `DATA-001-H` | P0 | 分批上传私人真实采集 raw package | blocked | incoming batch checksum 完整且原始包只读 |
 | `DATA-001-I` | P0 | 固定 CSL-Daily/CSL-News 重新下载或上传路径 | in_progress | CSL-News 已确认可重下；待补齐各数据集 version/URL/license/checksum 或 incoming batch |
 | `DATA-001-J` | P0 | 恢复原投稿 MANO/mesh/skeleton simulation provenance | blocked | 实际 simulator、输入、配置和历史证据一致 |
-| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | versioned replacement `001/005/008` 已通过完整 gate；v2 registry 当前 59 archives/97,997 videos passed，待其余 377 archives + labels 全量验证 |
+| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | versioned replacement `001/005/008` 已通过完整 gate；v2 registry 当前 62 archives/102,949 videos passed，待其余 374 archives + labels 全量验证 |
 | `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | in_progress | schema v1 reviewed against real source |
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | in_progress | metric `[left/right,24,x/y/z]` contract 已冻结；待各数据族单位/坐标 mapping，RTMW3D 当前仅 shape/order 已证 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | in_progress | complex `[chirp,antenna,sample]` contract 与 range-Doppler v1 已通过；待真实 reader/config fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
-| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | v2 registry/atomic audit/exact-path worker whitelist 已验证；59 archive/97,997 videos passed；待 v2-bound pose snapshot 和最终 436-archive CRC/coverage/decode report |
+| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | v2 registry/atomic audit/exact-path worker whitelist 已验证；62 archive/102,949 videos passed；10,011-record v2-bound pose snapshot 已验收，待最终 436-archive CRC/coverage/decode report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | primary `001/005/008` 和 1,875 个 unbound/旧来源 pair 保持隔离；replacement 已通过；唯一 sidecar/NPZ identity conflict 由 clean audit + checksum-bound exclusion 隔离且原件保留；待最终全量 audit |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | in_progress | 2,157-record CSL-News partial sequence split 已通过 deterministic coverage/leakage audit；待 full manifest、signer/subject metadata 和最终 split |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
-| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | durable publication、source-bound resume、source-versioned coexistence、4-worker v2 registry shard 和 source-aware status 已通过；9,394 个当前来源 pair 健康，夜间全量 build 与新 frozen manifest 待完成 |
+| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | durable publication、source-bound resume、source-versioned coexistence、4-worker v2 shard 已通过；11,815-pair audit 和 10,011-record v2 snapshot 已验收，夜间全量 build 待完成 |
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | in_progress | NumPy range-Doppler v1/analytic tests 已通过；beamforming/simulation 等 acquisition、array、calibration evidence |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | in_progress | strict dependency-light radar-cube/metric-pose manifest adapter、checksum 和 variable-time collator 已通过；待真实 collected cube/pose build、validation report 与 frozen manifest hash |
