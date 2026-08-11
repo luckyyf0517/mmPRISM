@@ -1,0 +1,13 @@
+schema_version: mmprism.experiment.v1
+name: omnihand-train-smoke
+task: pose_reconstruction
+paths:
+  data_root: ${MMPRISM_DATA_ROOT:-data}
+  artifact_root: ${MMPRISM_ARTIFACT_ROOT:-outputs}
+  cache_root: ${MMPRISM_CACHE_ROOT:-.cache/mmprism}
+runtime:
+  seed: 20260811
+  accelerator: auto
+  devices: auto
+  precision: bf16-mixed
+  deterministic: true

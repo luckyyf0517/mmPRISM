@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from mmprism.config import load_experiment_config
 from mmprism.training import OmniHandRunConfig, OmniHandRunError, load_omnihand_run_config
 
 
@@ -108,3 +109,9 @@ def test_versioned_omnihand_run_config_matches_formal_smoke_contract() -> None:
     assert config.optimization.max_steps == 2
     assert config.data.verify_checksums is True
     assert config.evaluation.save_targets is True
+
+    experiment = load_experiment_config(
+        project_root / "configs/examples/omnihand_train_smoke_experiment.yaml"
+    )
+    assert experiment.runtime.precision == "bf16-mixed"
+    assert experiment.runtime.seed == 20260811

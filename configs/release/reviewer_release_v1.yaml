@@ -34,6 +34,7 @@ required_paths:
   - configs/examples/radar_smoke.yaml
   - configs/examples/mt5_smoke.yaml
   - configs/examples/omnihand_smoke.yaml
+  - configs/examples/omnihand_train_smoke_experiment.yaml
   - configs/examples/omnihand_train_smoke.yaml
   - configs/models/evaluation_models_v1.yaml
   - configs/release/reviewer_release_v1.yaml

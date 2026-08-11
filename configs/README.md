@@ -82,7 +82,7 @@ export MMPRISM_VALIDATION_MANIFEST=/path/to/validation.jsonl
 scripts/run_omnihand_train.sh
 ```
 
-`configs/examples/pose_smoke.yaml` owns roots, seed, device, precision, and determinism;
+`configs/examples/omnihand_train_smoke_experiment.yaml` owns roots, seed, device, bf16 precision, and determinism;
 `configs/examples/omnihand_train_smoke.yaml` owns CubeNet, loader, optimizer, and metric settings.
 Both source files and both manifests are hashed as formal inputs. The task config is deliberately
 limited to two steps and must not be used as a paper-result protocol.

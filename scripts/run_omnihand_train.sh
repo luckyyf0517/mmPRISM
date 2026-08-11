@@ -3,7 +3,7 @@
 set -euo pipefail
 
 project_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-experiment_config="${MMPRISM_EXPERIMENT_CONFIG:-$project_root/configs/examples/pose_smoke.yaml}"
+experiment_config="${MMPRISM_EXPERIMENT_CONFIG:-$project_root/configs/examples/omnihand_train_smoke_experiment.yaml}"
 task_config="${MMPRISM_OMNIHAND_CONFIG:-$project_root/configs/examples/omnihand_train_smoke.yaml}"
 
 : "${MMPRISM_TRAIN_MANIFEST:?Set MMPRISM_TRAIN_MANIFEST to a model-ready training manifest}"
