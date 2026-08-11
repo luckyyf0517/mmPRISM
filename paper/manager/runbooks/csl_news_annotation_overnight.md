@@ -118,4 +118,8 @@ journalctl --user -u mmprism-csl-news-annotation.service -f
 - 正式 unit：`mmprism-csl-news-annotation.service`，选择 GPU 7，首次启动于
   `2026-08-11T14:38:12Z`；成功生成第二个样本后发现上游 CPU 线程池过量，主动停止并加入
   4-thread 限制。该停止不清理任何 artifact 或 scratch。
-- 最终恢复时间、PID 和限流后健康状态待重启验证后补充。
+- 最终恢复：`2026-08-11T14:39:47Z`，GPU 7，main PID `1525289`；PyTorch/OpenCV
+  报告的线程限制分别为 4/1，unit 另设 `CPUQuota=400%`。
+- `2026-08-11T14:41Z` 健康检查：`active/running`、`NRestarts=0`、GPU memory 约 838 MiB，
+  累计 19 个成功 NPZ。抽查最近 3 个样本的 shape、finite values、非空文本和 SHA-256 均通过。
+- failure 目录中保留 2 个正式启动前的依赖诊断记录；最终恢复后未观察到新增失败。
