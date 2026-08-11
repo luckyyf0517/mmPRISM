@@ -9,7 +9,7 @@ Usage: scripts/run_csl_news_annotation_worker.sh [options] [-- annotation-option
 Options:
   --config PATH        Annotation YAML configuration.
   --gpu ID|auto        Physical GPU index, or choose by free memory (default: auto).
-  --min-free-mib N     Required free GPU memory before model load (default: 30000).
+  --min-free-mib N     Required free GPU memory before model load (default: 2048).
   -h, --help            Show this help.
 
 GPU utilization is intentionally not a gate. The operator approved sharing a
@@ -20,7 +20,7 @@ EOF
 project_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 config="$project_root/configs/data/csl_news_rtmw3d_overnight.yaml"
 gpu="auto"
-min_free_mib=30000
+min_free_mib=2048
 annotation_args=()
 
 while (($#)); do

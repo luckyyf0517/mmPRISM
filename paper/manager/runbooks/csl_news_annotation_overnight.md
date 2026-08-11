@@ -8,10 +8,11 @@ Role: `unattended_pose_annotation_operations`
 
 - 对已经完整下载并原子命名为 `archive_*.zip` 的 CSL-News 视频持续生成 RTMW3D-L 姿态。
 - 今晚只运行一个 GPU worker；后续可按 archive ID 取模扩展多个 worker。
-- 操作者已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停或退出条件。
-- 授权边界：可以在已有计算任务的卡上同时运行本 worker；只要满足最低可用显存即可，已有任务的 GPU 利用率不构成冲突或迁移理由。
+- 操作者已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停、迁移或退出条件。
+- 授权边界：可以在已有计算任务的卡上同时运行本 worker；只要满足最低可用显存即可，已有任务的 GPU 利用率不构成冲突或迁移理由。不得为了本任务结束、暂停或修改其他用户进程。
+- 默认启动门槛为 2,048 MiB free memory；该值高于当前单 worker 约 838 MiB 的稳定占用并保留加载余量，可通过 `--min-free-mib` 按模型实测结果调整。30 GiB 不再作为固定门槛。
 - worker 将 OpenMP/BLAS/PyTorch 限制为 4 个 CPU 线程，并将 OpenCV 限制为 1 个线程。
-- 不结束、暂停或修改其他用户进程。若任何卡达不到最低空闲显存，worker 退出并交给 systemd 稍后重试。
+- 若指定卡达不到最低空闲显存，worker 退出并交给 systemd 稍后重试；自动选卡时在满足门槛的卡中选择空闲显存最多者。
 
 ## 2. 严格禁止清理
 
@@ -71,7 +72,7 @@ NPZ 同时保留 `[T,133,3]` 原生 3D keypoints、`[T,133]` confidence、
 
 1. `uv sync --extra annotation` 安装锁定环境。
 2. 对一个已完成 archive 做 SHA-256/CRC/label/decode source audit。
-3. 在空闲显存最多且至少 30 GiB 可用的卡上执行单视频 smoke；允许该卡同时有高利用率任务。
+3. 在满足配置启动门槛的卡上执行单视频 smoke；允许该卡同时有高利用率任务，默认门槛为 2,048 MiB free memory。
 4. 检查输出 shape、有限值、中文文本、sidecar checksum、峰值显存和每帧速度。
 5. smoke 通过后，以同一物理 GPU 启动一个 `systemd --user` worker。
 6. worker 持续轮询新下载完成的 archive，已验证输出自动跳过；逐视频普通失败写 sidecar 后继续。
@@ -149,7 +150,8 @@ scripts/run_csl_news_annotation_qc.sh
   独立 service 设 `CPUQuota=100%`。手工触发验收以 `0/SUCCESS` 完成；快照仍为 `healthy`，
   147 个成功样本、当前 run 新增失败 0、抽样 3/3 通过。首次自动触发为 `15:00 UTC`。
 - `2026-08-11` 操作者再次明确批准 GPU 共享策略：可以与其他任务挤在同一张卡上，调度只看
-  可用显存，GPU 利用率不作为 gate。当前 worker 继续使用 GPU 7，不因此重启或迁移。
+  可用显存，GPU 利用率不作为 gate。worker 默认启动门槛据实测占用由 30,000 MiB 调整为
+  2,048 MiB；当前 worker 继续使用 GPU 7，不因此重启或迁移。
 - `2026-08-11T14:56Z` 首份正式数值 QC 为 `passed`：在 246 个候选产物中确定性抽检
   100 个、共 24,628 帧，100/100 通过且无 warning；校验和、shape、finite、连续帧号、
   reported frame count 和 FPS 契约均通过。canonical valid ratio 为 0.99245，transformed 2D
