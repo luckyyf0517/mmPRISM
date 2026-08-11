@@ -14,7 +14,7 @@ Role: `data_execution_tracker`
 | `DATA-001-F` | P0 | 收集待上传 archive/目录大小及可重下标记 | blocked | source-side preflight inventory 可计算上传/解压峰值 |
 | `DATA-001-G` | P0 | 上传并验证 metadata/radar config/calibration | blocked | checksum、字段字典、config mapping 和 access scope 通过 |
 | `DATA-001-H` | P0 | 分批上传私人真实采集 raw package | blocked | incoming batch checksum 完整且原始包只读 |
-| `DATA-001-I` | P0 | 确认 CSL-Daily/CSL-News 重新下载或上传路径 | blocked | 每个外部数据集有 version/URL/license/checksum 或 incoming batch |
+| `DATA-001-I` | P0 | 固定 CSL-Daily/CSL-News 重新下载或上传路径 | in_progress | CSL-News 已确认可重下；待补齐各数据集 version/URL/license/checksum 或 incoming batch |
 | `DATA-001-J` | P0 | 恢复原投稿 MANO/mesh/skeleton simulation provenance | blocked | 实际 simulator、输入、配置和历史证据一致 |
 | `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | in_progress | schema v1 reviewed against real source |
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |

@@ -92,6 +92,9 @@ metadata_dictionary.md
 - 数据集版本、下载日期、来源 URL、license/terms。旧代码至少筛选过
   `Common-Concerns` 和 `Dragon-TV`，但新 manifest 必须以源数据实际字段为准。
 
+作者已确认 CSL-News 原视频可以重新下载，因此默认不进入上传队列。执行下载前仍需固定官方来源、
+数据版本、访问条款和 archive checksum；原始 `CSL_News_Labels.json` 必须属于同一版本。
+
 如果这两个数据集可以从官方来源重新获取，不需要重复占用 GFS；先提供准确版本、URL、访问方式和
 checksum。若链接已失效、需要审批或版本无法确定，则按 P0 上传原始包。
 
@@ -224,7 +227,7 @@ source_owner,access_class,original_format,notes
 2. 上传匿名 metadata、雷达配置、阵列映射和标定文件；这些体积小且决定后续 reader contract。
 3. 分批上传私人真实采集 raw package，优先 `collected_csl` 和原投稿 test split 对应批次。
 4. 上传 MANO/mesh/simulator provenance，关闭仿真方法不一致风险。
-5. 仅在不能官方重下时上传 CSL-Daily/CSL-News 原始包。
+5. 从固定官方版本重新下载 CSL-News；仅在不能官方重下时上传 CSL-Daily 或其他外部原始包。
 6. 容量允许后上传原投稿 checkpoints、predictions、metrics 和 figure source data。
 7. 不上传可从以上资产重新生成的 pose/signal/feature/cache，除非它们是唯一历史证据。
 

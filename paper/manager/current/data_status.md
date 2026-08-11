@@ -41,7 +41,7 @@ huggingface/
 | 采集元数据 | subject/session/scene/orientation/occlusion/split/ethics scope | 必须重新上传；匿名化、带字段字典 | P0 |
 | 雷达与标定 | 硬件/固件、chirp/frame、阵列映射、channel order、外参和标定 | 必须重新上传；每条 sequence 绑定 config ID | P0 |
 | CSL-Daily | 原始图像、`csl2020ct_v2.pkl`、signer/sequence/version/license | 官方版本可重下则固定版本下载，否则上传 | P0 |
-| CSL-News | 原始视频、`CSL_News_Labels.json`、archive/category/version/license | 官方版本可重下则固定版本下载，否则上传 | P0 |
+| CSL-News | 原始视频、`CSL_News_Labels.json`、archive/category/version/license | 作者确认可重下；待固定官方来源、版本、条款和 checksum | P0 |
 | MANO/仿真来源 | MANO 参数/mesh/model 或原始 simulator 输入、配置和运行证据 | 依据原投稿真实 pipeline 条件性上传 | P0 |
 | 返修真实 stress set | 新用户、0°/30°/60°、双手重叠和物体遮挡 | 原始数据 intake 后冻结 protocol 并新采；不得混入原 test protocol | P0 |
 | 历史论文证据 | split、checkpoint、prediction、metric、log、figure source | 为原投稿 provenance 优先上传 | P1 |
@@ -148,3 +148,4 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 2. 优先上传体积小的匿名 metadata、雷达配置、阵列映射、标定和仿真 provenance。
 3. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
 4. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
+5. CSL-News 不进入首批上传；先登记官方 URL/version/license，再下载到 versioned incoming batch。
