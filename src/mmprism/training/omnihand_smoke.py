@@ -115,7 +115,6 @@ def _build_batch(
     *,
     step: int,
     device: torch.device,
-    dtype: torch.dtype,
 ) -> dict[str, Tensor]:
     batch_size = config.batch.batch_size
     frames = config.batch.frame_count
@@ -152,9 +151,9 @@ def _build_batch(
     if batch_size > 1:
         valid_joints[-1, 0, -1] = False
     return {
-        "radar_cube": radar_cube.to(device=device, dtype=dtype),
+        "radar_cube": radar_cube.to(device=device),
         "frame_mask": frame_mask.to(device),
-        "target": target.to(device=device, dtype=dtype),
+        "target": target.to(device=device),
         "valid_joints": valid_joints.to(device),
     }
 
@@ -301,7 +300,7 @@ def run_omnihand_smoke(
     steps: list[dict[str, object]] = []
     final_batch: dict[str, Tensor] | None = None
     for step in range(config.optimization.steps):
-        batch = _build_batch(config, step=step, device=resolved_device, dtype=dtype)
+        batch = _build_batch(config, step=step, device=resolved_device)
         final_batch = batch
         optimizer.zero_grad(set_to_none=True)
         with (
@@ -350,7 +349,14 @@ def run_omnihand_smoke(
         raise OmniHandSmokeError(f"Expected tracked model parameters to update: {parameter_deltas}")
 
     model.eval()
-    with torch.inference_mode():
+    with (
+        torch.inference_mode(),
+        (
+            torch.autocast(device_type="cuda", dtype=dtype)
+            if resolved_device.type == "cuda" and dtype is torch.bfloat16
+            else nullcontext()
+        ),
+    ):
         sequence_output = model.forward(final_batch["radar_cube"], final_batch["frame_mask"])
         changed_padding = final_batch["radar_cube"].clone()
         invalid_frames = ~final_batch["frame_mask"].bool()
