@@ -48,6 +48,19 @@ uv run --frozen --extra evaluation mmprism models-smoke \
 The config contains immutable upstream commits and portable relative destinations only. The output
 root is always supplied by CLI or `MMPRISM_MODEL_ROOT`; it does not belong in versioned config.
 
+Prepare the pinned mT5 asset and run the geometry-fusion engineering smoke with:
+
+```bash
+export MMPRISM_MT5_MODEL_ROOT=/path/to/mt5-assets
+export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
+scripts/download_mt5.sh
+MMPRISM_DEVICE=cuda:0 scripts/run_mt5_smoke.sh
+```
+
+`configs/models/mt5_base_v1.yaml` fixes the upstream revision; machine-specific roots and the CUDA
+device remain runtime inputs. `configs/examples/mt5_smoke.yaml` is a deterministic two-step integration
+configuration with a frozen language backbone. It is not the production paper-training configuration.
+
 Build the pinned CSL-News partial sequence split with:
 
 ```bash

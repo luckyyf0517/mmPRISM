@@ -37,15 +37,17 @@ Role: `control_panel`
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.4 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；99 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；119 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run artifact writer 与 `run-init` 已实现：原子冻结 resolved config、Git/environment、命令和
   输入 SHA-256，metrics 强制显式 protocol/样本数/有限值；train/eval/prepare 服务仍待实现。
 - fixed-revision SimCSE/SBERT downloader 已完成 14-file checksum manifest；clean commit `3ae69c3`
   上两个真实 CPU loader 均输出 finite `[2,768]` embedding，`ARCH-REV-002` 已达到 evidence ready。
-- clean commit `812c117` release audit 已验证 66 个逐文件 hash、149 个 internal/legacy 排除项和
-  35-module dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。Reviewer
-  profile 现只被 LICENSE、radar example、mT5 example 三项真实缺失阻塞。
+- clean commit `79b45b5` 上已完成 pinned mT5-base 资产和 A100 两步 geometry-fusion smoke：三路
+  adapter 梯度/参数更新、置信度反事实和 beam generation 均通过；该 artifact 明确不是论文结果。
+- 同 commit 的 release audit 已验证 76 个逐文件 hash、150 个 internal/legacy 排除项和 39-module
+  dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。mT5 缺失项已关闭，
+  reviewer profile 现只被 LICENSE 和 provenance-gated radar example 两项真实缺失阻塞。
 - `DEC-027` 已固定 mT5-only generation rebuild；legacy Phi-3 不进入 public support，clean commit
   `812c117` 的 66-file release content gate 零命中并有回归测试，`ARCH-REV-004` 达到 evidence ready。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
@@ -56,7 +58,7 @@ Role: `control_panel`
 2. 按已建立的 sober-language 与 Availability 清单准备回写；不在新增实验完成前强化结果主张。
 3. 监控 CSL-News 官方下载和夜间姿态标注，同时收集私人历史 archive/目录的名称、大小和可重下标记。
 4. 确认可新增真实数据的人数、伦理边界、方向/遮挡采集条件和时间预算。
-5. 在已锁定的 canonical 环境下，待真实 source 到位后完成 data/radar vertical slice 和端到端 GPU smoke。
+5. 在 mT5 工程切片已通过的基础上，待真实 source 到位后完成 OmniHand、data/radar 和 production WaveLLM GPU smoke。
 
 ## 当前 Blocker
 

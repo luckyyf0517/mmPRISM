@@ -1,5 +1,5 @@
 {
-  "config_fingerprint": "9f6fe0a0d5a5dd676c1819734edd8ef06b6aeaaa43cc84b3b89140370688a99f",
+  "config_fingerprint": "1c39365a3109b2ca34a6597b3ee25bc22d674dd6d78e270a3baae8d60e468abf",
   "dependencies": {
     "cycles": [],
     "external_imports": [
@@ -10,7 +10,7 @@
       "transformers",
       "yaml"
     ],
-    "internal_edge_count": 54,
+    "internal_edge_count": 64,
     "internal_edges": [
       [
         "mmprism.__main__",
@@ -63,6 +63,14 @@
       [
         "mmprism.cli",
         "mmprism.runtime"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.training"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.training.mt5_smoke"
       ],
       [
         "mmprism.config",
@@ -197,6 +205,18 @@
         "mmprism.contracts"
       ],
       [
+        "mmprism.models",
+        "mmprism.models.stgcn"
+      ],
+      [
+        "mmprism.models",
+        "mmprism.models.translation"
+      ],
+      [
+        "mmprism.models.translation",
+        "mmprism.models.stgcn"
+      ],
+      [
         "mmprism.radar",
         "mmprism.radar.processing"
       ],
@@ -227,9 +247,29 @@
       [
         "mmprism.runtime.plan",
         "mmprism.runtime.provenance"
+      ],
+      [
+        "mmprism.training",
+        "mmprism.training.mt5_config"
+      ],
+      [
+        "mmprism.training.mt5_config",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.training.mt5_smoke",
+        "mmprism.assets"
+      ],
+      [
+        "mmprism.training.mt5_smoke",
+        "mmprism.models"
+      ],
+      [
+        "mmprism.training.mt5_smoke",
+        "mmprism.training.mt5_config"
       ]
     ],
-    "module_count": 35,
+    "module_count": 39,
     "modules": [
       "mmprism",
       "mmprism.__main__",
@@ -257,6 +297,8 @@
       "mmprism.data.split",
       "mmprism.evaluation",
       "mmprism.models",
+      "mmprism.models.stgcn",
+      "mmprism.models.translation",
       "mmprism.radar",
       "mmprism.radar.processing",
       "mmprism.release",
@@ -265,13 +307,15 @@
       "mmprism.runtime.paths",
       "mmprism.runtime.plan",
       "mmprism.runtime.provenance",
-      "mmprism.training"
+      "mmprism.training",
+      "mmprism.training.mt5_config",
+      "mmprism.training.mt5_smoke"
     ]
   },
   "entrypoints": {
     "mmprism": "mmprism.cli:main"
   },
-  "finding_count": 3,
+  "finding_count": 2,
   "findings": [
     {
       "code": "REQUIRED_PATH_MISSING",
@@ -281,17 +325,12 @@
     {
       "code": "REQUIRED_PATH_MISSING",
       "message": "required release file does not exist",
-      "path": "configs/examples/mt5_smoke.yaml"
-    },
-    {
-      "code": "REQUIRED_PATH_MISSING",
-      "message": "required release file does not exist",
       "path": "configs/examples/radar_smoke.yaml"
     }
   ],
-  "generated_at": "2026-08-11T18:39:56.549085+00:00",
+  "generated_at": "2026-08-11T19:12:00.732005+00:00",
   "git": {
-    "commit": "812c11716ecd65195d3c1d91933427b3b09af064",
+    "commit": "79b45b58d803b3b07a8b7476f87c208e6f17399d",
     "dirty_entry_count": 0,
     "state": "clean"
   },
@@ -310,6 +349,11 @@
         "sha256": "c86f2f99c4a99855658111e8538628a42027e68e71832426a35801cdd06f4da7"
       },
       {
+        "bytes": 710,
+        "path": "configs/examples/mt5_smoke.yaml",
+        "sha256": "8f604e6203403c7945f9bd49926e39b69c3be42ddadb14a3736fc97e69c780e9"
+      },
+      {
         "bytes": 330,
         "path": "configs/examples/pose_smoke.yaml",
         "sha256": "a292312fa29b82fbd0e61623c008e68ecf2c831fb1b56795e8586c42ad531888"
@@ -320,9 +364,14 @@
         "sha256": "047e073ee0b511d0fe442177d9532eb56fd94b8acc4a5f2edbcc3426c223b464"
       },
       {
-        "bytes": 1509,
+        "bytes": 423,
+        "path": "configs/models/mt5_base_v1.yaml",
+        "sha256": "e247779055482d99ce6cb82ecebc6620fe6bfadd0105bb68d00a10a614b6d5d7"
+      },
+      {
+        "bytes": 1623,
         "path": "configs/release/reviewer_release_v1.yaml",
-        "sha256": "c76da11826e0d06f3719dd47d63b5498789f1091996f8c3b9e5b5b1652a34c45"
+        "sha256": "052e7679635ce7a8d913427aad4f07cb86d64a5514524c1b866544cf0feb7463"
       },
       {
         "bytes": 2539,
@@ -338,6 +387,16 @@
         "bytes": 468,
         "path": "scripts/download_models.sh",
         "sha256": "f21861cf489cf8f28b67b0ea71559036ca33ad4cdb123e25eb886974ec0826f6"
+      },
+      {
+        "bytes": 391,
+        "path": "scripts/download_mt5.sh",
+        "sha256": "4201f97a47af680e9b2fc8787123c5c2a0af1e8411dd357ebd6e6f32c0027f50"
+      },
+      {
+        "bytes": 566,
+        "path": "scripts/run_mt5_smoke.sh",
+        "sha256": "fbf8f938fefb5154a224209f42766b74e33f62f57bb4f31c41552ad13ea1acae"
       },
       {
         "bytes": 65,
@@ -360,19 +419,19 @@
         "sha256": "906ea079dce6e70ce83380f29603500fbc8108d647beaf7526b6bc740a93990c"
       },
       {
-        "bytes": 864,
+        "bytes": 966,
         "path": "src/mmprism/assets/__init__.py",
-        "sha256": "0e0154048a03729236f3c619da7ceb07a0d7c87b9b24e4660b82e1990656ef88"
+        "sha256": "163d41669a8fdffb4443bc18e2589ff41871b1e744565df4f3ac16a5f651cb44"
       },
       {
-        "bytes": 31516,
+        "bytes": 32792,
         "path": "src/mmprism/assets/models.py",
-        "sha256": "ce635f759eaabfea5b2346acc7e95e755fabdbc21b0a86575100a4c3ce76c9ba"
+        "sha256": "6e04b618bca8fbd740bf77e6d169fca664e74bb4ff8c32853438e98ab25dbd6d"
       },
       {
-        "bytes": 19660,
+        "bytes": 21903,
         "path": "src/mmprism/cli.py",
-        "sha256": "98ed9b95371c4efb2ab9a96cbb33431bafcf8972e5f43a945fc4ff199eab6dab"
+        "sha256": "bbf748ae45f881d3265c85731ace8cbd293b77597f2baeeda476768884f3ed94"
       },
       {
         "bytes": 321,
@@ -465,9 +524,19 @@
         "sha256": "9852052356bc8b0642ba727fac25c5d0a064a3747d2823bff6718df0ec0d5a95"
       },
       {
-        "bytes": 73,
+        "bytes": 637,
         "path": "src/mmprism/models/__init__.py",
-        "sha256": "fc27ddfe77fe3f154332342fdeafde949ba6b43f39467036683baf37173e232c"
+        "sha256": "f40123011ce90b0d9f059a688162fc8c4ad07e58078761b7a2062672f787aba6"
+      },
+      {
+        "bytes": 7075,
+        "path": "src/mmprism/models/stgcn.py",
+        "sha256": "2c55b5310b163eed26bfd6a69454918a80ac46806b794d1087bea7ddad84b370"
+      },
+      {
+        "bytes": 9978,
+        "path": "src/mmprism/models/translation.py",
+        "sha256": "267edd6730b156dd0ee2d480bab80aafe51a43d00d0b324747216ab46094117e"
       },
       {
         "bytes": 1,
@@ -515,9 +584,19 @@
         "sha256": "ca32e27e104a9202287dd2fa2ec753325719539d9453a46481f3bfc9cc0ac54f"
       },
       {
-        "bytes": 78,
+        "bytes": 584,
         "path": "src/mmprism/training/__init__.py",
-        "sha256": "bf502d2d5aa86e5aa25a53217677b238751b404fc516bd3e38e396ac679045b8"
+        "sha256": "f81bc35e205bfa1d043e53dc9503a8cad9574ff9ebd76bc794edbef82d1af2cf"
+      },
+      {
+        "bytes": 12568,
+        "path": "src/mmprism/training/mt5_config.py",
+        "sha256": "3a756e930b3f476751ac0740212d2abd52953d0b187ffee312b857ea947eab57"
+      },
+      {
+        "bytes": 17999,
+        "path": "src/mmprism/training/mt5_smoke.py",
+        "sha256": "2be41df8f89809988c6cc2924d5263c2d4ba1f21415e9eb0b3d36aff572f6ddf"
       },
       {
         "bytes": 412,
@@ -533,6 +612,11 @@
         "bytes": 514,
         "path": "tests/fixtures/manifests/pose_smoke.jsonl",
         "sha256": "9abd9779e7924e553174d24b26f1805c01cf2d40176471ba1c1a75731e3b71f0"
+      },
+      {
+        "bytes": 2903,
+        "path": "tests/integration/test_mt5_model.py",
+        "sha256": "26cfde3ad946233cce14ec7cee34890cd6e30c2985806a08109e4f42c4a4b84f"
       },
       {
         "bytes": 8744,
@@ -598,6 +682,11 @@
         "bytes": 9392,
         "path": "tests/unit/test_model_assets.py",
         "sha256": "ff3860b8bd15fa21b1693e67407401d5b098ef5c28403fc08cb6f5a6d8cc259c"
+      },
+      {
+        "bytes": 2820,
+        "path": "tests/unit/test_mt5_config.py",
+        "sha256": "7e20cea0e02b85c5f83bf1fe00730f9d1b3c4f96f4d3023672aeacbe527687e6"
       },
       {
         "bytes": 4313,
@@ -681,6 +770,7 @@
       "paper/manager/evidence/experiment_registry.md",
       "paper/manager/evidence/manuscript_inventory.md",
       "paper/manager/evidence/model_assets.md",
+      "paper/manager/evidence/model_support_boundary.md",
       "paper/manager/evidence/paper_evidence_map.md",
       "paper/manager/evidence/radar_contract_audit.md",
       "paper/manager/evidence/release_audit.md",
@@ -781,10 +871,10 @@
       "src/utils/tools.py",
       "src/utils/unzip_folders.py"
     ],
-    "forbidden_tracked_but_excluded_count": 149,
-    "selected_bytes": 652545,
-    "selected_file_count": 66,
-    "tracked_file_count": 251
+    "forbidden_tracked_but_excluded_count": 150,
+    "selected_bytes": 712783,
+    "selected_file_count": 76,
+    "tracked_file_count": 262
   },
   "status": "failed"
 }

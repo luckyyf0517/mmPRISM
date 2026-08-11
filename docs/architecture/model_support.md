@@ -1,6 +1,6 @@
 # Language Model Support Boundary
 
-Status: `mt5_target_phi3_excluded`
+Status: `mt5_engineering_smoke_ready_phi3_excluded`
 Last Updated: `2026-08-11`
 
 ## Decision
@@ -21,12 +21,24 @@ compatibility shim. Reintroducing Phi-3 would require all of the following:
 
 ## Enforced Surface
 
-- Canonical README: mT5 is described only as the rebuild target, not as runnable yet.
+- Canonical README: mT5 is the only supported generation backend and has a bounded engineering smoke.
 - Reviewer inventory: legacy model namespaces, legacy config, CLAUDE and root entrypoints are excluded.
 - Release content gate: the encoded `unsupported_language_backend` rule rejects a Phi-3 name in any
   selected README, config, script, canonical source or test.
-- Release deliverable gate: `configs/examples/mt5_smoke.yaml` remains required and missing until the
-  actual mT5 vertical slice passes.
+- Release deliverable gate: `configs/examples/mt5_smoke.yaml`, the pinned asset config, downloader and
+  runner are selected and hashed; the clean release audit no longer reports an mT5 missing path.
+
+## Verified mT5 Boundary
+
+The canonical path implements a dual-hand ST-GCN pose encoder, 1024-D radar feature projector,
+confidence-aware fusion and mT5 wrapper. A clean-commit A100 smoke completed two finite cross-entropy
+steps, verified nonzero gradients and parameter changes in all three adapter paths, forced the pose gate
+to zero for zero-confidence input, and generated two sample-level beam predictions.
+
+The smoke freezes all 582,401,280 language-model parameters and updates 2,170,432 adapter parameters.
+It is intentionally an engineering vertical slice, not a full WaveLLM training protocol, checkpoint,
+dataset result or paper-facing metric. Those requirements remain open under `ARCH-005`, `ARCH-006` and
+the experiment registry.
 
 SBERT and SimCSE are evaluator assets, not caption-generation backends. Their loader readiness is tracked
 separately under `EVID-CODE-MODELS-V1`.

@@ -19,6 +19,7 @@ Implemented foundation:
 - explicit radar, pose, feature, and caption tensor contracts;
 - a NumPy range-Doppler v1 transform with analytic signal tests;
 - pinned, checksummed SBERT and SimCSE evaluator-model acquisition;
+- pinned mT5-base acquisition plus a two-step pose/radar/fusion train-generate GPU smoke;
 - a single `mmprism` CLI surface;
 - dependency-light unit and contract tests.
 
@@ -26,7 +27,7 @@ Not yet implemented in the canonical package:
 
 - antenna calibration, beamforming, physical radar axes, and radar simulation;
 - CubeNet/OmniHand training and evaluation;
-- WaveLLM/mT5 training, generation, and evaluation;
+- production WaveLLM/mT5 training, checkpointing, prediction, and evaluation;
 - remaining production data adapters, distributed prediction/checkpoint writers, and GPU integration tests.
 
 Do not interpret the current package as a reproducible release of the paper results yet. Range-Doppler
@@ -101,10 +102,21 @@ to `0` before invocation if a deployment has a validated Xet path.
 
 ## Language Model Support
 
-No language-generation backend is currently advertised as runnable in the canonical package. mT5 is
-the selected rebuild target, and the reviewer release deliberately remains blocked until its portable
-train/generate/evaluate smoke exists. Historical alternative backend definitions are excluded from the
-release rather than exposed as unverified classes or configuration.
+mT5 is the sole canonical language-generation backend. The pinned engineering smoke exercises the
+dual-hand ST-GCN pose path, radar-feature projection, confidence-aware fusion, real mT5 forward/backward,
+optimizer updates and beam generation:
+
+```bash
+export MMPRISM_MT5_MODEL_ROOT=/path/to/mt5-assets
+export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
+scripts/download_mt5.sh
+MMPRISM_DEVICE=cuda:0 scripts/run_mt5_smoke.sh
+```
+
+The smoke freezes the mT5 backbone and updates only the canonical adapters. It proves runnable module
+integration, not paper-result reproduction or the final training protocol. Production dataset adapters,
+checkpoint/prediction writers, full fine-tuning and paper metrics remain under construction. Historical
+alternative backend definitions are excluded from the release rather than exposed as unsupported claims.
 
 ## Canonical Layout
 

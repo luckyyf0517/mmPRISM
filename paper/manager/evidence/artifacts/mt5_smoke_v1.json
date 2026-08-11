@@ -1,0 +1,133 @@
+{
+  "asset_config_fingerprint": "776fa93e54f6eb12fb15b726da1197497daae31b2f62b639c164c48e3e3c4516",
+  "confidence_counterfactual": {
+    "embedding_max_abs_difference": 2.734375,
+    "unit_confidence_pose_gate_mean": 0.43837451934814453,
+    "zero_confidence_pose_gate_mean": 0.0
+  },
+  "config_fingerprint": "dd6c5d9574aede0c65baf00e78c4ab50c7b5f430817e8dd5456b38adb5022c11",
+  "cuda_memory": {
+    "peak_allocated_bytes": 1334382592,
+    "peak_reserved_bytes": 1354760192
+  },
+  "elapsed_seconds": 1.8908052956685424,
+  "generation": {
+    "generated_token_shape": [
+      2,
+      9
+    ],
+    "max_new_tokens": 8,
+    "num_beams": 2,
+    "samples": [
+      {
+        "prediction": "<extra_id_0> translation -",
+        "reference": "\u65e9\u4e0a\u597d\u3002",
+        "sample_id": "synthetic_smoke_00"
+      },
+      {
+        "prediction": "<extra_id_0>r <extra_id_1>sal nacelles \u00bb.",
+        "reference": "\u8bf7\u5e2e\u6211\u5199\u4e00\u5c01\u90ae\u4ef6\u3002",
+        "sample_id": "synthetic_smoke_01"
+      }
+    ]
+  },
+  "loss_protocol": {
+    "ignore_index": -100,
+    "label_smoothing": 0.0,
+    "name": "token_cross_entropy"
+  },
+  "model_asset": {
+    "asset_id": "mt5_base",
+    "asset_manifest_sha256": "4edec505643e4b05ea606346599942901ab55a6b505ac6c0946f94f2a15585b9",
+    "collection_manifest_sha256": "2350101b38c5ee9c860ae5d8c28918e360eb57b47d39fc1b24a3d36773418bc6",
+    "loader": "transformers_mt5",
+    "repo_id": "google/mt5-base",
+    "revision": "2eb15465c5dd7f72a8f7984306ad05ebc3dd1e1f",
+    "size_bytes": 2334046221
+  },
+  "parameter_count": {
+    "frozen": 582401280,
+    "total": 584571712,
+    "trainable": 2170432
+  },
+  "runtime": {
+    "device": {
+      "compute_capability": [
+        8,
+        0
+      ],
+      "index": 5,
+      "name": "NVIDIA A100-SXM4-80GB",
+      "requested_type": "cuda",
+      "resolved": "cuda:5",
+      "total_memory_bytes": 85095874560
+    },
+    "dtype": "bfloat16",
+    "git": {
+      "commit": "79b45b58d803b3b07a8b7476f87c208e6f17399d",
+      "dirty": false
+    },
+    "packages": {
+      "numpy": "2.5.2",
+      "sentencepiece": "0.2.2",
+      "torch": "2.11.0+cu128",
+      "transformers": "4.57.6"
+    },
+    "platform": "Linux-5.15.0-119-generic-x86_64-with-glibc2.35",
+    "python": "3.12.13",
+    "torch_cuda": "12.8"
+  },
+  "schema_version": "mmprism.mt5_vertical_smoke.v1",
+  "scope": "engineering_vertical_smoke_not_paper_evidence",
+  "smoke_id": "mt5_geometry_fusion_v1",
+  "status": "passed",
+  "training": {
+    "parameter_max_abs_delta": {
+      "fusion.confidence_gate.0.weight": 0.00244140625,
+      "pose_encoder.output_projection.0.weight": 0.002197265625,
+      "radar_projector.projection.0.weight": 0.0020751953125
+    },
+    "steps": [
+      {
+        "encoder_shape": [
+          2,
+          13
+        ],
+        "gradient_norms": {
+          "fusion": 147.90212871722875,
+          "pose_encoder": 34.21891555425363,
+          "radar_projector": 183.42658985062965
+        },
+        "input_batch_sha256": "471475026f57cddee6fd7c89890436177fae5374e51e3354098e70246af01243",
+        "logits_shape": [
+          2,
+          10,
+          250112
+        ],
+        "loss": 11.36807918548584,
+        "pose_gate_mean": 0.21731004118919373,
+        "step": 0
+      },
+      {
+        "encoder_shape": [
+          2,
+          13
+        ],
+        "gradient_norms": {
+          "fusion": 572.9468784987862,
+          "pose_encoder": 144.49232523975525,
+          "radar_projector": 680.2436041820449
+        },
+        "input_batch_sha256": "5dbc997365f6759785f2ae7ed3f2772adf82a68d380bc0b8c54dda4d012061c3",
+        "logits_shape": [
+          2,
+          10,
+          250112
+        ],
+        "loss": 12.955700874328613,
+        "pose_gate_mean": 0.22525738179683685,
+        "step": 1
+      }
+    ]
+  }
+}

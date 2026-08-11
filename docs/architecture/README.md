@@ -51,6 +51,7 @@ Dataset-specific audits:
 - `data_splits.md`: deterministic group assignment, portable split artifacts and leakage gates.
 - `tensor_contracts.md`: canonical radar/pose/feature axes and the NumPy range-Doppler protocol.
 - `release_audit.md`: Git-backed public inventory, dependency graph, and reviewer-release gates.
+- `model_support.md`: mT5-only generation boundary, verified engineering smoke, and excluded legacy backend.
 
 ## Environment Contract
 

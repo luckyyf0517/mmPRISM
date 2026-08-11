@@ -32,7 +32,7 @@ CSL-News 官方源；其他数据族仍未到位。
 | Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | missing_location |
 | Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | missing_location |
 | Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | missing_location |
-| Model Weights | RTMPose3D、CubeNet、MT5、semantic evaluators | checkpoints/tokenizers | RTMW3D + SimCSE + SBERT verified；training checkpoints/mT5 missing |
+| Model Weights | RTMPose3D、CubeNet、MT5、semantic evaluators | checkpoints/tokenizers | RTMW3D + mT5 base + SimCSE + SBERT verified；historical training checkpoints missing |
 | Historical Runs | paper metrics and checkpoints | config, ckpt, predictions, metrics | missing_location |
 
 ## 3. 完整复现所需来源分类
@@ -91,6 +91,14 @@ collection manifest SHA-256 为
 `../evidence/artifacts/evaluation_models_smoke_v1.json`，SHA-256 为
 `e957ac79f620f0a982019befa4938c393357764f5d912b4b6a7c27996f789b39`。模型版权边界仍按各上游
 条款处理；SimCSE HF card 未声明 license，因此当前只提供固定 revision 下载器，不把权重纳入 release。
+
+`mt5_base_v1` 已通过同一 canonical asset service 写入 `external/models/mt5_base_v1/`。固定来源为
+`google/mt5-base@2eb15465c5dd7f72a8f7984306ad05ebc3dd1e1f`，6 个 loader 文件共
+2,334,046,221 bytes；主权重 SHA-256 为
+`180573b534144580f04af026da62bf71bc976ee1b7eb311b8945e2fefde8d614`，collection manifest
+SHA-256 为 `2350101b38c5ee9c860ae5d8c28918e360eb57b47d39fc1b24a3d36773418bc6`。clean commit
+`79b45b5` 的 A100 smoke 已验证两步 adapter update 和 beam generation。该 base asset 不替代仍缺失的
+原投稿/历史 fine-tuned checkpoint，也不构成论文指标证据；详情见 `../evidence/mt5_vertical_smoke.md`。
 
 ## 5. Canonical Sample Record
 

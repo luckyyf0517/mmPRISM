@@ -30,7 +30,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Model | Source ID | Revision/Checksum | License | Rule | Status |
 |---|---|---|---|---|---|---|
-| `MODEL-MT5-BASE` | mT5 base | `google/mt5-base` | unknown | unknown | pin and download; upload historical fine-tuned weights separately | not_started |
+| `MODEL-MT5-BASE` | mT5 base | `google/mt5-base` | HF `2eb15465c5dd7f72a8f7984306ad05ebc3dd1e1f`; 6 files/2,334,046,221 B；weight SHA-256 `180573b5...`；asset manifest `4edec505...` | upstream license/release redistribution review pending | pinned downloader + A100 two-step train/generate smoke；historical fine-tuned weights remain separate | evidence_ready |
 | `MODEL-RTMW3D` | RTMPose3D | official OpenMMLab RTMW3D-L; MMPose `759b39c` | `794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed` | upstream research code/model terms; release audit pending | checkpoint/config/commit hash gate before every run | evidence_ready |
 | `MODEL-SIMCSE` | SimCSE evaluator | `cyclone/simcse-chinese-roberta-wwm-ext` | HF `871d7039a3fccd4869d545a25b63c545341ca7f4`; 6 files/409,532,074 B；asset manifest `e57f2eeb...` | HF card does not declare license；do not redistribute until clarified | pinned downloader + `AutoModel` CPU smoke `[2,768]` finite；`EVID-CODE-MODELS-V1` | evidence_ready |
 | `MODEL-SBERT` | SBERT evaluator | `shibing624/text2vec-base-chinese` | HF `183bb99aa7af74355fb58d16edf8c13ae7c5433e`; 8 files/409,209,289 B；asset manifest `81395c0b...` | Apache-2.0 in HF card | pinned downloader + `SentenceTransformer` CPU smoke `[2,768]` finite；`EVID-CODE-MODELS-V1` | evidence_ready |

@@ -43,18 +43,20 @@ metric protocol 写入有限数值。CSL-News RTMW3D 标注已具有独立 stric
 config、原子 artifact、resume/failure contract、GPU smoke、portable pose+caption manifest builder、
 无训练依赖的随机访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
 pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation
-因 provenance 冲突保持 blocked。OmniHand、WaveLLM 与通用训练/评估服务、checkpoint/prediction
-writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
+因 provenance 冲突保持 blocked。Canonical mT5 工程切片现包含双手 ST-GCN、radar projector、
+confidence-aware fusion 和真实 mT5 forward/backward/generate；OmniHand、production WaveLLM 与通用
+训练/评估服务、checkpoint/prediction writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
 canonical dependency graph，并自动拒绝 legacy/internal path、硬编码本地路径、缺失 entrypoint 和 import cycle。
 外部 evaluator 资产现由 `mmprism.assets` 管理：strict config 固定 Hugging Face commit 和相对目标，
 下载使用可恢复 cache、逐文件 SHA-256 与同文件系统原子晋升，现有目录只有在完整复验后才复用；
-`models-smoke` 延迟导入 ML 依赖并已真实加载 SimCSE/SBERT。
+`models-smoke` 延迟导入 ML 依赖并已真实加载 SimCSE/SBERT。mT5-base 同样固定 revision、逐文件
+校验并原子晋升，clean commit `79b45b5` 上的 A100 两步 adapter smoke 已通过。
 
 Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-110 tests passed（含 10 项 model asset、9 项 tensor contract、17 项 range-Doppler 和 10 项 release audit tests）
+119 tests passed（含 mT5 strict config 和真实 tiny-model forward/backward/generate integration）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -81,9 +83,11 @@ All 2,157 group IDs and assignment buckets independently recomputed and matched
 Formal run initialization atomically writes config/environment/input hashes and refuses collisions
 Metrics require a versioned protocol, sample count and finite values; completed runs require metrics
 Pinned SimCSE/SBERT acquisition passed 14-file checksum validation and real CPU `[2,768]` loader smoke
-Clean release audit at `812c117`: 66 hashed files selected; 149 internal/legacy paths excluded
-Canonical dependency audit: 35 modules / 54 edges / 0 missing targets / 0 legacy imports / 0 cycles
-Reviewer release remains blocked only on LICENSE, radar example and mT5 example; model download is verified
+Pinned mT5-base acquisition passed 6-file checksum validation at immutable revision `2eb15465...`
+Clean mT5 A100 smoke at `79b45b5`: two finite adapter updates, confidence counterfactual and beam generation passed
+Clean release audit at `79b45b5`: 76 hashed files selected; 150 internal/legacy paths excluded
+Canonical dependency audit: 39 modules / 64 edges / 0 missing targets / 0 legacy imports / 0 cycles
+Reviewer release remains blocked only on LICENSE and the provenance-gated radar example
 Caption-generation support is mT5-only by policy; the unsupported legacy backend is excluded and guarded by a release content test
 ```
 
