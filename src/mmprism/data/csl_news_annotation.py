@@ -39,6 +39,10 @@ class CslNewsAnnotationError(RuntimeError):
     """Raised when CSL-News annotation cannot continue safely."""
 
 
+class CslNewsAnnotationArtifactConflictError(CslNewsAnnotationError):
+    """Raised when existing derived output must be preserved for review."""
+
+
 @dataclass(frozen=True)
 class CslNewsLabel:
     video_name: str
@@ -450,7 +454,7 @@ def _write_npz_atomic(
 ) -> tuple[int, str]:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
-        raise CslNewsAnnotationError(
+        raise CslNewsAnnotationArtifactConflictError(
             f"refusing to overwrite existing annotation artifact: {path}"
         )
     temporary = path.with_name(f".{path.name}.tmp.{os.getpid()}.npz")
@@ -463,7 +467,7 @@ def _write_npz_atomic(
         raise CslNewsAnnotationError(f"temporary annotation artifact is empty: {temporary}")
     expected_sha256 = sha256_file(temporary)
     if path.exists():
-        raise CslNewsAnnotationError(
+        raise CslNewsAnnotationArtifactConflictError(
             f"annotation artifact appeared before atomic promotion: {path}"
         )
     temporary.replace(path)
@@ -1217,7 +1221,7 @@ def run_csl_news_annotation(
                         started = time.monotonic()
                         try:
                             if npz_path.exists() or sidecar_path.exists():
-                                raise CslNewsAnnotationError(
+                                raise CslNewsAnnotationArtifactConflictError(
                                     "refusing to overwrite an existing incomplete or "
                                     f"identity-mismatched sample: {npz_path} / {sidecar_path}"
                                 )
@@ -1363,7 +1367,9 @@ def run_csl_news_annotation(
                                 error=str(error),
                                 failure=str(failure_path),
                             )
-                            if pose_estimator is None:
+                            if pose_estimator is None and not isinstance(
+                                error, CslNewsAnnotationArtifactConflictError
+                            ):
                                 raise CslNewsAnnotationError(
                                     "Failed before the pose estimator became ready"
                                 ) from error

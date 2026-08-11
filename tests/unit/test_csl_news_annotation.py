@@ -16,6 +16,7 @@ from mmprism.data import (
     validate_annotation_output,
 )
 from mmprism.data.csl_news_annotation import (
+    CslNewsAnnotationArtifactConflictError,
     _archive_integrity_provenance,
     _write_npz_atomic,
     discover_complete_archives,
@@ -202,7 +203,7 @@ runtime:
             original = artifact.read_bytes()
 
             with self.assertRaisesRegex(
-                CslNewsAnnotationError, "refusing to overwrite"
+                CslNewsAnnotationArtifactConflictError, "refusing to overwrite"
             ):
                 _write_npz_atomic(self._valid_arrays(frame_count=3), artifact)
             self.assertEqual(artifact.read_bytes(), original)
