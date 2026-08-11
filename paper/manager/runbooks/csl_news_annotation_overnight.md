@@ -272,3 +272,8 @@ scripts/run_csl_news_annotation_audit.sh
   一个 preserved conflict，写入 9,551 records/9 archives、0 unpaired NPZ；manifest SHA-256 为
   `8e3db8712bc61848e9d6dea9f5b3a3821365ffd102d6643977ad43107b2db0c4`，四项 `SHA256SUMS`、
   contract 和首/中/末 adapter 读取全部通过。后台下载和四个 GPU 7 worker 未暂停。
+- `21:32Z–21:34Z` 在 clean HEAD `e821044` 上对 registry worker 0/1/2/3 逐个滚动重启，统一替换
+  `85d1143`/`c21b818` 的混合运行 provenance；每次只重启一个本项目 unit，不触碰下载、integrity timer
+  或其他 GPU 进程。最终四个 worker 均 `active/running`、`NRestarts=0`，run metadata 的 Git commit/
+  dirty state 全部为 `e821044`/`false`，四个 shard 均重新加载模型并产出新样本。`21:34Z` 当前 NPZ/
+  sidecar 为 9,907/9,907。
