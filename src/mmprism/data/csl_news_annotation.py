@@ -526,6 +526,10 @@ class MMPoseRtmw3dEstimator:
                 f"{error}"
             ) from error
         self._torch = torch
+        cpu_threads = int(os.environ.get("MMPRISM_CPU_THREADS", "4"))
+        torch.set_num_threads(cpu_threads)
+        torch.set_num_interop_threads(1)
+        self._cv2.setNumThreads(1)
         self._inference_topdown = apis.inference_topdown
         self._model = apis.init_model(
             str(config.model.config_path),
@@ -636,6 +640,9 @@ class MMPoseRtmw3dEstimator:
             "checkpoint_load_policy": os.environ.get(
                 "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"
             ),
+            "cpu_threads": self._torch.get_num_threads(),
+            "interop_threads": self._torch.get_num_interop_threads(),
+            "opencv_threads": self._cv2.getNumThreads(),
         }
         if self._config.model.device.startswith("cuda"):
             metadata.update(
@@ -828,6 +835,8 @@ def _run_metadata(
                 "python": sys.version,
                 "platform": platform.platform(),
                 "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+                "cpu_threads": os.environ.get("MMPRISM_CPU_THREADS"),
+                "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
             },
             "model_assets": dict(model_assets),
             "labels_sha256": labels_sha256,

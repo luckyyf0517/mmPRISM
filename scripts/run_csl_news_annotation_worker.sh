@@ -87,5 +87,10 @@ cd "$project_root"
 export CUDA_VISIBLE_DEVICES="$selected"
 # The pinned official checkpoint predates PyTorch's weights_only default change.
 export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
+export MMPRISM_CPU_THREADS="${MMPRISM_CPU_THREADS:-4}"
+export OMP_NUM_THREADS="$MMPRISM_CPU_THREADS"
+export MKL_NUM_THREADS="$MMPRISM_CPU_THREADS"
+export OPENBLAS_NUM_THREADS="$MMPRISM_CPU_THREADS"
+export NUMEXPR_NUM_THREADS="$MMPRISM_CPU_THREADS"
 exec uv run --frozen --extra annotation mmprism csl-news-annotate \
   "$config" --project-root "$project_root" "${annotation_args[@]}"

@@ -9,6 +9,7 @@ Role: `unattended_pose_annotation_operations`
 - 对已经完整下载并原子命名为 `archive_*.zip` 的 CSL-News 视频持续生成 RTMW3D-L 姿态。
 - 今晚只运行一个 GPU worker；后续可按 archive ID 取模扩展多个 worker。
 - 操作者已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停或退出条件。
+- worker 将 OpenMP/BLAS/PyTorch 限制为 4 个 CPU 线程，并将 OpenCV 限制为 1 个线程。
 - 不结束、暂停或修改其他用户进程。若任何卡达不到最低空闲显存，worker 退出并交给 systemd 稍后重试。
 
 ## 2. 严格禁止清理
@@ -112,4 +113,9 @@ journalctl --user -u mmprism-csl-news-annotation.service -f
 
 ## 9. 运行记录
 
-尚待 smoke 通过后填写：systemd unit、物理 GPU、启动时间、首批输出和健康检查结果。
+- 单视频 smoke：GPU 5，125 帧，10.49 秒（含首次模型加载），峰值显存 274,832,896 B；
+  native/canonical shape、finite values、文本和 artifact SHA-256 均通过。
+- 正式 unit：`mmprism-csl-news-annotation.service`，选择 GPU 7，首次启动于
+  `2026-08-11T14:38:12Z`；成功生成第二个样本后发现上游 CPU 线程池过量，主动停止并加入
+  4-thread 限制。该停止不清理任何 artifact 或 scratch。
+- 最终恢复时间、PID 和限流后健康状态待重启验证后补充。
