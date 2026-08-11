@@ -33,6 +33,7 @@ Role: `cross_workstream_decisions`
 | `DEC-025` | 2026-08-11 | reviewer release 从 Git tracked allowlist 构建并自动审计，不直接复制开发仓库 | legacy、CLAUDE、manager、manuscript 和私有运维配置仍需取证但不得进入公开包 | accepted | 每个 selected file 绑定 hash；检查 required/forbidden path、绝对路径/凭据、entrypoint、missing/legacy import 和 cycle；LICENSE/model download/radar+mT5 examples 缺失时 release 必须失败 |
 | `DEC-026` | 2026-08-11 | evaluator 模型通过 fixed HF commit、selected-file checksum manifest 和原子晋升管理 | moving `main` 与手写 wget 文件清单不能证明下载完整，历史脚本也遗漏 SBERT | accepted | canonical `scripts/download_models.sh` 同时准备 SimCSE/SBERT；坏 final 不覆盖，重复运行先复验；权重不进入 reviewer Git archive，按上游 license 下载 |
 | `DEC-027` | 2026-08-11 | canonical caption-generation 只以 mT5 为重建目标，Phi-3 不列为 supported backend | legacy Phi-3 只有底层类，无 runnable config/train/eval/checkpoint evidence；greenfield 重构无需保留伪支持 | accepted | reviewer release 排除 legacy 类和 claim，并以 content gate 防止回流；只有完成 canonical contract、配置、训练/生成/评测与 provenance 后才可重新提案 |
+| `DEC-028` | 2026-08-11 | OmniHand model-ready 输入使用 checksum-bound manifest，训练产物统一由 formal-run writer 登记 | 模型内解析路径或各训练脚本自由落盘会重新引入硬编码、模态错配和不可审计 checkpoint | accepted | model 只接收 tensor；adapter 严格校验相对 `.npy`、单位/坐标与 mask；checkpoint/prediction/config/history 由 orchestration 原子写入并绑定 run provenance |
 
 ## 决策记录模板
 

@@ -22,9 +22,9 @@ schema_version: mmprism.experiment.v1
 name: artifact-test
 task: evaluation
 paths:
-  data_root: {root / 'data'}
-  artifact_root: {root / 'artifacts'}
-  cache_root: {root / 'cache'}
+  data_root: {root / "data"}
+  artifact_root: {root / "artifacts"}
+  cache_root: {root / "cache"}
 runtime:
   seed: 17
   devices: auto
@@ -46,9 +46,7 @@ runtime:
             manifest.write_text('{"sample_id":"one"}\n', encoding="utf-8")
             config = load_experiment_config(config_path)
             plan = build_run_plan(config, project_root, created_at=created_at)
-            run_input = RunInput.capture(
-                name="data_manifest", kind="manifest", path=manifest
-            )
+            run_input = RunInput.capture(name="data_manifest", kind="manifest", path=manifest)
 
             writer = RunArtifactWriter.initialize(
                 plan,
@@ -75,6 +73,23 @@ runtime:
                 sample_count=1,
                 created_at=completed_at,
             )
+            writer.write_json_artifact(
+                "checkpoint.json",
+                {"schema_version": "fixture.checkpoint.v1", "step": 2},
+            )
+            writer.write_jsonl_artifact(
+                "predictions.jsonl",
+                (
+                    {
+                        "schema_version": "fixture.prediction.v1",
+                        "sample_id": "one",
+                        "error_mm": 1.5,
+                    },
+                ),
+            )
+            weights_path = writer.artifact_path("checkpoint.safetensors")
+            weights_path.write_bytes(b"fixture weights")
+            writer.register_artifact("checkpoint.safetensors")
             writer.finalize(status="completed", completed_at=completed_at)
 
             run = json.loads((writer.run_dir / "run.json").read_text(encoding="utf-8"))
@@ -82,6 +97,9 @@ runtime:
             self.assertEqual(run["status"], "completed")
             self.assertEqual(run["experiment"]["seed"], 17)
             self.assertIn("metrics.json", run["artifacts"])
+            self.assertIn("checkpoint.json", run["artifacts"])
+            self.assertIn("checkpoint.safetensors", run["artifacts"])
+            self.assertIn("predictions.jsonl", run["artifacts"])
             self.assertEqual(metrics["protocol_id"], "translation.v1")
             self.assertEqual(metrics["values"], {"bleu4": 0.25, "samples": 1})
             self.assertFalse(any(path.name.startswith(".") for path in writer.run_dir.iterdir()))
@@ -104,13 +122,9 @@ runtime:
 
             config = load_experiment_config(config_path)
             plan = build_run_plan(config, project_root, created_at=created_at)
-            run_input = RunInput.capture(
-                name="data_manifest", kind="manifest", path=manifest
-            )
+            run_input = RunInput.capture(name="data_manifest", kind="manifest", path=manifest)
             with self.assertRaisesRegex(ArtifactError, "launch command"):
-                RunArtifactWriter.initialize(
-                    plan, source_config=config_path, inputs=(run_input,)
-                )
+                RunArtifactWriter.initialize(plan, source_config=config_path, inputs=(run_input,))
             with self.assertRaisesRegex(ArtifactError, "registered inputs"):
                 RunArtifactWriter.initialize(
                     plan, source_config=config_path, command=("mmprism", "evaluate")
@@ -142,6 +156,12 @@ runtime:
                     values={"loss": float("nan")},
                     sample_count=1,
                 )
+            with self.assertRaisesRegex(ArtifactError, "safe top-level"):
+                writer.write_json_artifact("../escape.json", {"value": 1})
+            with self.assertRaisesRegex(ArtifactError, "at least one record"):
+                writer.write_jsonl_artifact("predictions.jsonl", ())
+            with self.assertRaisesRegex(ArtifactError, "does not exist"):
+                writer.register_artifact("checkpoint.safetensors")
             with self.assertRaisesRegex(ArtifactError, "require metrics"):
                 writer.finalize(status="completed")
             writer.finalize(status="failed", failure="intentional test failure")
@@ -168,9 +188,7 @@ runtime:
                     plan,
                     source_config=config_path,
                     inputs=(
-                        RunInput.capture(
-                            name="data_manifest", kind="manifest", path=manifest
-                        ),
+                        RunInput.capture(name="data_manifest", kind="manifest", path=manifest),
                     ),
                     command=("mmprism", "evaluate"),
                 )

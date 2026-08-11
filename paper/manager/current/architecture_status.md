@@ -39,7 +39,9 @@ tests/
 当前 foundation 已包含 strict config、环境变量展开、manifest v1、无副作用 run plan、runtime
 provenance、原子 formal-run artifact writer、统一 CLI 和 dependency-light unit tests。正式 run 现可
 冻结 resolved config、环境/Git、命令以及 manifest/split/checkpoint/model 输入 SHA-256，并以显式
-metric protocol 写入有限数值。CSL-News RTMW3D 标注已具有独立 strict
+metric protocol 写入有限数值；domain writer 还可原子写入 strict JSON/JSONL，并登记外部原子完成的
+checkpoint 等顶层 artifact。Model-ready pose adapter 现严格读取 manifest 绑定的 radar-cube/metric-pose
+`.npy`、校验 shape/dtype/checksum/单位/坐标系，并对变长时间序列执行零填充和 mask。CSL-News RTMW3D 标注已具有独立 strict
 config、原子 artifact、resume/failure contract、GPU smoke、portable pose+caption manifest builder、
 无训练依赖的随机访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
 pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation

@@ -21,7 +21,14 @@ RUN_SCHEMA_VERSION = "mmprism.run.v1"
 RUN_INPUTS_SCHEMA_VERSION = "mmprism.run-inputs.v1"
 METRICS_SCHEMA_VERSION = "mmprism.metrics.v1"
 _SAFE_INPUT_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+_SAFE_ARTIFACT_NAME = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_RESERVED_ARTIFACT_NAMES = {
+    "run.json",
+    "config.resolved.json",
+    "environment.json",
+    "inputs.json",
+}
 
 
 class ArtifactError(ValueError):
@@ -94,6 +101,34 @@ def _atomic_write_json(path: Path, payload: Mapping[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _atomic_write_jsonl(path: Path, records: Sequence[Mapping[str, Any]]) -> None:
+    if not records:
+        raise ArtifactError("JSONL artifacts require at least one record")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}")
+    try:
+        with temporary.open("xb") as handle:
+            for index, record in enumerate(records):
+                try:
+                    line = json.dumps(
+                        record,
+                        allow_nan=False,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ).encode("utf-8")
+                except (TypeError, ValueError) as error:
+                    raise ArtifactError(
+                        f"JSONL artifact record {index} is not strict JSON: {error}"
+                    ) from error
+                handle.write(line + b"\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 @dataclass(frozen=True)
 class RunInput:
     name: str
@@ -112,9 +147,7 @@ class RunInput:
         expected_sha256: str | None = None,
     ) -> RunInput:
         if not _SAFE_INPUT_NAME.fullmatch(name):
-            raise ArtifactError(
-                "input name must match [a-z0-9][a-z0-9._-]*"
-            )
+            raise ArtifactError("input name must match [a-z0-9][a-z0-9._-]*")
         try:
             input_kind = kind if isinstance(kind, RunInputKind) else RunInputKind(kind)
         except ValueError as error:
@@ -194,9 +227,9 @@ class RunArtifactWriter:
         project_root_value = plan.runtime_report.get("project_root")
         if not isinstance(project_root_value, str) or not project_root_value:
             raise ArtifactError("run plan has no project root provenance")
-        source_config_payload = load_experiment_config(config_path).resolved(
-            Path(project_root_value)
-        ).to_dict()
+        source_config_payload = (
+            load_experiment_config(config_path).resolved(Path(project_root_value)).to_dict()
+        )
         if _canonical_json_sha256(source_config_payload) != plan.config_sha256:
             raise ArtifactError("source configuration does not match the resolved run plan")
 
@@ -306,6 +339,40 @@ class RunArtifactWriter:
         self._register_artifact("metrics.json")
         return destination
 
+    def artifact_path(self, name: str) -> Path:
+        """Return one safe top-level artifact path without creating it."""
+
+        if not _SAFE_ARTIFACT_NAME.fullmatch(name):
+            raise ArtifactError("artifact name must be one safe top-level filename")
+        if name in _RESERVED_ARTIFACT_NAMES:
+            raise ArtifactError(f"artifact name is reserved: {name}")
+        return self.run_dir / name
+
+    def write_json_artifact(self, name: str, payload: Mapping[str, Any]) -> Path:
+        destination = self.artifact_path(name)
+        if destination.exists():
+            raise ArtifactError(f"artifact already exists: {destination}")
+        _atomic_write_json(destination, payload)
+        self._register_artifact(name)
+        return destination
+
+    def write_jsonl_artifact(self, name: str, records: Sequence[Mapping[str, Any]]) -> Path:
+        destination = self.artifact_path(name)
+        if destination.exists():
+            raise ArtifactError(f"artifact already exists: {destination}")
+        _atomic_write_jsonl(destination, records)
+        self._register_artifact(name)
+        return destination
+
+    def register_artifact(self, name: str) -> Path:
+        """Register an atomically completed artifact created by a domain writer."""
+
+        destination = self.artifact_path(name)
+        if not destination.is_file():
+            raise ArtifactError(f"artifact does not exist: {destination}")
+        self._register_artifact(name)
+        return destination
+
     def finalize(
         self,
         *,
@@ -351,6 +418,8 @@ class RunArtifactWriter:
         artifacts = payload.get("artifacts")
         if not isinstance(artifacts, dict):
             raise ArtifactError("run metadata artifacts must be a mapping")
+        if name in artifacts:
+            raise ArtifactError(f"artifact is already registered: {name}")
         artifacts[name] = {
             "sha256": sha256_file(artifact),
             "size_bytes": artifact.stat().st_size,

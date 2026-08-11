@@ -41,6 +41,12 @@ Role: `dataset_and_split_provenance`
 |---|---|---|---|---|---|
 | `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 registry workers active；first frozen manifest has 2,157 records/5 archives and SHA-256 `4161593f...`；15 ineligible historical pairs retained and excluded | in_progress |
 
+## Model-ready Contracts
+
+| ID | Modalities | Protocol | Validation | Real Build Status |
+|---|---|---|---|---|
+| `CONTRACT-POSE-RECONSTRUCTION-V1` | required `radar_cube [T,D,R,A,E] float32`, `pose_gt [2,24,3] float32`; optional `frame_mask [T] bool`, `pose_valid [2,24] bool` | sample `mmprism.pose_reconstruction.sample_v1`; cube `mmprism.radar_cube.power_v1`; pose unit `m` and explicit coordinate frame | strict relative `.npy` URI、shape/dtype/SHA-256、finite/non-negative power、manifest-wide spatial/coordinate consistency、variable-time zero-padding/masking tests passed | adapter_ready；real radar cube/metric pose manifest blocked on collected source and calibration provenance |
+
 ## Split Registry
 
 | ID | Dataset | Group Rule | Seed/Hash Rule | Train/Val/Test Count | Manifest Hash | Leakage Audit | Status |

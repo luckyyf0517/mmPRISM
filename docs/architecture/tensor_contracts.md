@@ -34,6 +34,23 @@ and coordinate frame have not yet been established as metric radar coordinates. 
 a conforming dual-hand metric pose, or used for millimetre-error claims, until that calibration evidence is
 recovered or a documented conversion is implemented.
 
+### Model-ready pose reconstruction manifest
+
+The dependency-light adapter `mmprism.data.PoseReconstructionManifest` accepts only local relative
+`.npy` modality references in `mmprism.sample.v1` JSONL records. Each modality must carry its exact
+shape, dtype, and SHA-256. Required modalities are:
+
+- `radar_cube`: `[T,D,R,A,E]` `float32` non-negative power under
+  `mmprism.radar_cube.power_v1`;
+- `pose_gt`: `[2,24,3]` `float32` metres with an explicit coordinate-frame ID.
+
+Optional `frame_mask: [T] bool` and `pose_valid: [2,24] bool` arrays default to all-valid. A batch may
+contain different sequence lengths, but all samples must share the same spatial cube shape and pose
+coordinate frame. Collation pads time with zero power and marks padding invalid; invalid source frames are
+also zeroed. The sample acquisition metadata must declare
+`sample_protocol: mmprism.pose_reconstruction.sample_v1`. This contract does not make the current
+CSL-News image-derived pose metric or establish radar-camera calibration.
+
 Raw storage order intentionally differs from the notation order `S_raw(t,n,m)` used in the manuscript:
 `t -> sample`, `n -> chirp`, and `m -> antenna`. The storage mapping is explicit at every validator call;
 dimensions are never inferred from size alone.
