@@ -160,6 +160,7 @@ runtime:
                         "source": {
                             "source_id": "fixture",
                             "source_revision": "revision",
+                            "labels_sha256": "c" * 64,
                         },
                         "summary": {
                             "passed_count": 1,
@@ -192,6 +193,24 @@ runtime:
                     }
                 ),
                 encoding="utf-8",
+            )
+            eligible_sidecar = (
+                config.runtime.output_root
+                / "samples"
+                / "archive_001"
+                / "sample.json"
+            )
+            eligible_payload = json.loads(
+                eligible_sidecar.read_text(encoding="utf-8")
+            )
+            eligible_payload["source"] = {
+                "integrity": {
+                    "archive_sha256": "a" * 64,
+                    "labels_sha256": "c" * 64,
+                }
+            }
+            eligible_sidecar.write_text(
+                json.dumps(eligible_payload), encoding="utf-8"
             )
 
             report = build_csl_news_annotation_status(

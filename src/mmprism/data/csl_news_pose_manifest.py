@@ -19,6 +19,8 @@ from mmprism.config import expand_environment
 from mmprism.contracts import SampleRecord, validate_manifest
 from mmprism.data.csl_news import csl_news_source_program
 from mmprism.data.csl_news_annotation import (
+    _source_identity_matches,
+    annotation_artifact_stem_matches_sample_id,
     load_csl_news_labels,
     sha256_file,
     stable_sample_id,
@@ -441,6 +443,8 @@ def _integrity_provenance(
         )
     return {
         "archive_sha256": entry.sha256,
+        "archive_path_relative": entry.archive_path_relative.as_posix(),
+        "archive_source_kind": entry.source_kind,
         "archive_size_bytes": entry.size_bytes,
         "archive_mtime_ns": entry.mtime_ns,
         "archive_video_count": entry.video_count,
@@ -458,12 +462,12 @@ def _verify_sidecar_integrity(
     sidecar_path: Path,
 ) -> bool:
     if sidecar_integrity is None:
-        return False
+        raise CslNewsPoseManifestError(
+            f"Sidecar has no source-integrity provenance: {sidecar_path}"
+        )
     payload = _mapping(sidecar_integrity, f"{sidecar_path}.source.integrity")
     expected = {
         "archive_sha256": current["archive_sha256"],
-        "audit_sha256": current["audit_sha256"],
-        "builder_commit": current["audit_builder_commit"],
         "labels_sha256": labels_sha256,
     }
     mismatches = [key for key, value in expected.items() if payload.get(key) != value]
@@ -473,6 +477,73 @@ def _verify_sidecar_integrity(
             + ", ".join(mismatches)
         )
     return True
+
+
+def _select_current_source_sidecars(
+    sidecar_paths: list[Path],
+    *,
+    annotation_root: Path,
+    passed_archives: Mapping[int, CslNewsIntegrityArchive],
+    labels_sha256: str,
+) -> tuple[list[Path], list[dict[str, Any]]]:
+    selected_by_sample: dict[tuple[int, str], Path] = {}
+    quarantined: list[dict[str, Any]] = []
+    for sidecar_path in sidecar_paths:
+        match = ARCHIVE_DIRECTORY_PATTERN.fullmatch(sidecar_path.parent.name)
+        if match is None:
+            raise CslNewsPoseManifestError(
+                f"invalid archive output directory: {sidecar_path.parent.name}"
+            )
+        archive_id = int(match.group(1))
+        archive_entry = passed_archives.get(archive_id)
+        if archive_entry is None:
+            continue
+        payload = _load_json(sidecar_path, "annotation sidecar source selection")
+        sample_id = _text(payload, "sample_id", "sidecar")
+        if not annotation_artifact_stem_matches_sample_id(
+            sidecar_path.stem, sample_id
+        ):
+            raise CslNewsPoseManifestError(
+                f"sample ID does not match sidecar filename: {sidecar_path}"
+            )
+        source = _mapping(payload.get("source"), "sidecar.source")
+        expected_integrity = {
+            "archive_sha256": archive_entry.sha256,
+            "labels_sha256": labels_sha256,
+        }
+        sidecar_integrity = source.get("integrity")
+        if not _source_identity_matches(sidecar_integrity, expected_integrity):
+            declared = (
+                {
+                    "archive_sha256": sidecar_integrity.get("archive_sha256"),
+                    "labels_sha256": sidecar_integrity.get("labels_sha256"),
+                }
+                if isinstance(sidecar_integrity, Mapping)
+                else None
+            )
+            quarantined.append(
+                {
+                    "sidecar": sidecar_path.relative_to(
+                        annotation_root
+                    ).as_posix(),
+                    "sidecar_sha256": sha256_file(sidecar_path),
+                    "sample_id": sample_id,
+                    "archive_id": f"{archive_id:03d}",
+                    "reason": "source_content_identity_mismatch_or_missing",
+                    "declared_source_integrity": declared,
+                    "expected_source_identity": expected_integrity,
+                }
+            )
+            continue
+        key = (archive_id, sample_id)
+        previous = selected_by_sample.get(key)
+        if previous is not None:
+            raise CslNewsPoseManifestError(
+                "multiple sidecars bind the current source identity for "
+                f"archive_{archive_id:03d}/{sample_id}: {previous}, {sidecar_path}"
+            )
+        selected_by_sample[key] = sidecar_path
+    return sorted(selected_by_sample.values()), quarantined
 
 
 def _verify_artifact_exclusion(
@@ -854,9 +925,15 @@ def build_csl_news_pose_manifest_snapshot(
         if not path.name.startswith(".")
     )
     eligible_stems = {f"archive_{archive_id:03d}" for archive_id in passed_archives}
-    eligible_sidecars = [
+    archive_eligible_sidecars = [
         path for path in sidecar_paths if path.parent.name in eligible_stems
     ]
+    eligible_sidecars, source_quarantine = _select_current_source_sidecars(
+        archive_eligible_sidecars,
+        annotation_root=config.annotation_root,
+        passed_archives=passed_archives,
+        labels_sha256=labels_sha256,
+    )
     exclusion_by_sidecar = {
         Path("samples")
         / exclusion.archive_directory
@@ -875,20 +952,38 @@ def build_csl_news_pose_manifest_snapshot(
             "configured pose exclusions are not frozen eligible sidecars: "
             + ", ".join(unmatched_exclusions)
         )
-    ineligible_sidecar_count = len(sidecar_paths) - len(eligible_sidecars)
-    ineligible_npz_count = sum(
+    archive_ineligible_sidecar_count = len(sidecar_paths) - len(
+        archive_eligible_sidecars
+    )
+    archive_ineligible_npz_count = sum(
         path.parent.name not in eligible_stems for path in npz_paths
+    )
+    ineligible_sidecar_count = archive_ineligible_sidecar_count + len(
+        source_quarantine
     )
     frozen_sidecar_identities = {
         path.relative_to(sample_root).with_suffix("") for path in eligible_sidecars
+    }
+    archive_eligible_sidecar_identities = {
+        path.relative_to(sample_root).with_suffix("")
+        for path in archive_eligible_sidecars
     }
     frozen_npz_identities = {
         path.relative_to(sample_root).with_suffix("")
         for path in npz_paths
         if path.parent.name in eligible_stems
     }
+    source_quarantined_npz_count = len(
+        (archive_eligible_sidecar_identities - frozen_sidecar_identities)
+        & frozen_npz_identities
+    )
+    ineligible_npz_count = (
+        archive_ineligible_npz_count + source_quarantined_npz_count
+    )
     missing_artifacts = sorted(frozen_sidecar_identities - frozen_npz_identities)
-    unpaired_npz_at_scan = sorted(frozen_npz_identities - frozen_sidecar_identities)
+    unpaired_npz_at_scan = sorted(
+        frozen_npz_identities - archive_eligible_sidecar_identities
+    )
     if missing_artifacts:
         raise CslNewsPoseManifestError(
             f"{len(missing_artifacts)} frozen sidecars have no NPZ artifact"
@@ -957,7 +1052,9 @@ def build_csl_news_pose_manifest_snapshot(
                     f"annotation config fingerprint mismatch: {sidecar_path}"
                 )
             sample_id = _text(payload, "sample_id", "sidecar")
-            if sample_id != sidecar_path.stem:
+            if not annotation_artifact_stem_matches_sample_id(
+                sidecar_path.stem, sample_id
+            ):
                 raise CslNewsPoseManifestError(
                     f"sample ID does not match sidecar filename: {sidecar_path}"
                 )
@@ -1098,6 +1195,21 @@ def build_csl_news_pose_manifest_snapshot(
             "manifest contract count differs from builder count"
         )
     manifest_sha256 = sha256_file(manifest_path)
+    source_quarantine_path = temporary / "source_identity_quarantine.jsonl"
+    source_quarantine_path.write_text(
+        "".join(
+            json.dumps(
+                item,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+            for item in source_quarantine
+        ),
+        encoding="utf-8",
+    )
+    source_quarantine_sha256 = sha256_file(source_quarantine_path)
     registry_copy_path = temporary / "integrity_registry.json"
     registry_copy_path.write_bytes(registry_bytes)
     registry_copy_sha256 = sha256_file(registry_copy_path)
@@ -1137,7 +1249,13 @@ def build_csl_news_pose_manifest_snapshot(
             "sidecar_integrity_present_count": sidecar_integrity_present_count,
             "sidecar_integrity_missing_count": len(sample_ids)
             - sidecar_integrity_present_count,
+            "source_identity_quarantined_sidecar_count": len(source_quarantine),
+            "source_identity_quarantine_path": "source_identity_quarantine.jsonl",
+            "source_identity_quarantine_sha256": source_quarantine_sha256,
+            "archive_ineligible_sidecar_count": archive_ineligible_sidecar_count,
             "ineligible_sidecar_count": ineligible_sidecar_count,
+            "archive_ineligible_npz_count": archive_ineligible_npz_count,
+            "source_identity_quarantined_npz_count": source_quarantined_npz_count,
             "ineligible_npz_count": ineligible_npz_count,
             "unpaired_npz_at_scan_count": len(unpaired_npz_at_scan),
             "unpaired_npz_at_scan_examples": [
@@ -1167,6 +1285,7 @@ def build_csl_news_pose_manifest_snapshot(
         **exclusion_evidence_checksums,
         "integrity_registry.json": registry_sha256,
         "manifest.jsonl": manifest_sha256,
+        "source_identity_quarantine.jsonl": source_quarantine_sha256,
         "summary.json": sha256_file(summary_path),
     }
     (temporary / "SHA256SUMS").write_text(

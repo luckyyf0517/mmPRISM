@@ -992,6 +992,14 @@ def _source_identity_matches(
     )
 
 
+def annotation_artifact_stem_matches_sample_id(stem: str, sample_id: str) -> bool:
+    """Accept canonical and immutable source-variant artifact filenames."""
+
+    return stem == sample_id or re.fullmatch(
+        re.escape(sample_id) + r"--source_[0-9a-f]{64}", stem
+    ) is not None
+
+
 def _completed_sidecar_targets_other_source(
     sidecar_path: Path,
     config_fingerprint: str,

@@ -15,6 +15,7 @@ from typing import Any
 from mmprism.data.csl_news_annotation import (
     OUTPUT_SCHEMA_VERSION,
     CslNewsAnnotationConfig,
+    annotation_artifact_stem_matches_sample_id,
 )
 
 IDENTITY_AUDIT_SCHEMA_VERSION = (
@@ -111,14 +112,8 @@ def _audit_annotation_pair(
             failures.append("sidecar_status_not_completed")
         if payload.get("config_fingerprint") != expected_config_fingerprint:
             failures.append("config_fingerprint_mismatch")
-        variant_pattern = (
-            re.escape(sample_id) + r"--source_[0-9a-f]{64}"
-            if sample_id is not None
-            else None
-        )
-        if sample_id != sidecar_path.stem and (
-            variant_pattern is None
-            or re.fullmatch(variant_pattern, sidecar_path.stem) is None
+        if sample_id is None or not annotation_artifact_stem_matches_sample_id(
+            sidecar_path.stem, sample_id
         ):
             failures.append("sample_id_path_mismatch")
 

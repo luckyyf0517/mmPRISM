@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import zipfile
 from collections import Counter
 from collections.abc import Mapping
@@ -11,11 +12,16 @@ from typing import Any
 
 from mmprism.data.csl_news_annotation import (
     CslNewsAnnotationConfig,
+    _source_identity_matches,
     discover_complete_archives,
     sha256_file,
     validate_annotation_output,
 )
-from mmprism.data.csl_news_integrity import load_csl_news_integrity_registry
+from mmprism.data.csl_news_integrity import (
+    CslNewsIntegrityArchive,
+    load_csl_news_integrity_registry,
+    passed_csl_news_integrity_archives,
+)
 
 STATUS_SCHEMA_VERSION = "mmprism.csl_news_pose_annotation_status.v1"
 
@@ -121,6 +127,8 @@ def build_csl_news_annotation_status(
         else None
     )
     integrity_summary: Mapping[str, Any] = {}
+    passed_archives: dict[int, CslNewsIntegrityArchive] = {}
+    registry_labels_sha256: str | None = None
     integrity_registry_sha256: str | None = None
     if registry_path is not None:
         registry = load_csl_news_integrity_registry(
@@ -133,6 +141,12 @@ def build_csl_news_annotation_status(
             if isinstance((summary := registry.get("summary")), Mapping)
             else {}
         )
+        passed_archives = passed_csl_news_integrity_archives(registry)
+        registry_source = registry.get("source")
+        if isinstance(registry_source, Mapping) and isinstance(
+            registry_source.get("labels_sha256"), str
+        ):
+            registry_labels_sha256 = registry_source["labels_sha256"]
         integrity_registry_sha256 = sha256_file(registry_path)
     archives = discover_complete_archives(
         config, integrity_registry_path=registry_path
@@ -160,13 +174,75 @@ def build_csl_news_annotation_status(
         for path in sample_root.glob("archive_*/*.json")
         if not path.name.startswith(".")
     ]
-    npz_paths = [path for path in all_npz_paths if output_is_eligible(path)]
-    sidecar_paths = [path for path in all_sidecar_paths if output_is_eligible(path)]
+    archive_eligible_npz_paths = [
+        path for path in all_npz_paths if output_is_eligible(path)
+    ]
+    archive_eligible_sidecar_paths = [
+        path for path in all_sidecar_paths if output_is_eligible(path)
+    ]
+    source_quarantined_sidecars: list[Path] = []
+    duplicate_current_source_samples: list[str] = []
+    if registry_path is None:
+        sidecar_paths = archive_eligible_sidecar_paths
+    else:
+        selected_by_sample: dict[tuple[str, str], Path] = {}
+        for path in archive_eligible_sidecar_paths:
+            payload = _load_json(path)
+            source = payload.get("source") if payload is not None else None
+            sample_id = payload.get("sample_id") if payload is not None else None
+            archive_match = re.fullmatch(r"archive_(\d{3})", path.parent.name)
+            entry = (
+                passed_archives.get(int(archive_match.group(1)))
+                if archive_match is not None
+                else None
+            )
+            expected = (
+                {
+                    "archive_sha256": entry.sha256,
+                    "labels_sha256": registry_labels_sha256,
+                }
+                if entry is not None and registry_labels_sha256 is not None
+                else {}
+            )
+            if (
+                not isinstance(source, Mapping)
+                or not isinstance(sample_id, str)
+                or not expected
+                or not _source_identity_matches(source.get("integrity"), expected)
+            ):
+                source_quarantined_sidecars.append(path)
+                continue
+            key = (path.parent.name, sample_id)
+            previous = selected_by_sample.get(key)
+            if previous is not None:
+                duplicate_current_source_samples.append(
+                    f"{path.parent.name}/{sample_id}"
+                )
+                continue
+            selected_by_sample[key] = path
+        sidecar_paths = sorted(selected_by_sample.values())
+    npz_paths = [
+        path.with_suffix(".npz")
+        for path in sidecar_paths
+        if path.with_suffix(".npz").is_file()
+    ]
     npz_identities = {path.relative_to(sample_root).with_suffix("") for path in npz_paths}
     sidecar_identities = {
         path.relative_to(sample_root).with_suffix("") for path in sidecar_paths
     }
-    missing_sidecars = sorted(str(path) for path in npz_identities - sidecar_identities)
+    archive_eligible_npz_identities = {
+        path.relative_to(sample_root).with_suffix("")
+        for path in archive_eligible_npz_paths
+    }
+    archive_eligible_sidecar_identities = {
+        path.relative_to(sample_root).with_suffix("")
+        for path in archive_eligible_sidecar_paths
+    }
+    missing_sidecars = sorted(
+        str(path)
+        for path in archive_eligible_npz_identities
+        - archive_eligible_sidecar_identities
+    )
     missing_artifacts = sorted(str(path) for path in sidecar_identities - npz_identities)
 
     latest_run_path, latest_run_started_at = _latest_run(output_root)
@@ -243,13 +319,38 @@ def build_csl_news_annotation_status(
     marker_paths = [
         path
         for path in all_marker_paths
-        if registry_path is None or path.stem in eligible_archive_stems
+        if registry_path is None
+        or (
+            (match := re.fullmatch(
+                r"(archive_(\d{3}))(?:--source_[0-9a-f]{64})?", path.stem
+            ))
+            is not None
+            and match.group(1) in eligible_archive_stems
+        )
     ]
     marker_payloads = [
         payload
         for path in marker_paths
         if (payload := _load_json(path)) is not None
         and payload.get("config_fingerprint") == config.fingerprint
+        and (
+            registry_path is None
+            or (
+                (match := re.fullmatch(
+                    r"archive_(\d{3})(?:--source_[0-9a-f]{64})?", path.stem
+                ))
+                is not None
+                and (entry := passed_archives.get(int(match.group(1)))) is not None
+                and registry_labels_sha256 is not None
+                and _source_identity_matches(
+                    payload.get("source_integrity"),
+                    {
+                        "archive_sha256": entry.sha256,
+                        "labels_sha256": registry_labels_sha256,
+                    },
+                )
+            )
+        )
     ]
     marker_statuses = Counter(
         str(payload.get("status", "unknown")) for payload in marker_payloads
@@ -278,6 +379,7 @@ def build_csl_news_annotation_status(
         and not missing_sidecars
         and not missing_artifacts
         and not failures_since_latest_run
+        and not duplicate_current_source_samples
         and validations_passed
         and not integrity_attention
         and (completed_sample_count > 0 or available_video_count == 0)
@@ -320,6 +422,18 @@ def build_csl_news_annotation_status(
                 else None
             ),
             "archive_marker_statuses": dict(sorted(marker_statuses.items())),
+            "source_identity_quarantined_sidecar_count": len(
+                source_quarantined_sidecars
+            ),
+            "source_identity_quarantined_sidecar_examples": [
+                str(path) for path in source_quarantined_sidecars[:20]
+            ],
+            "duplicate_current_source_sample_count": len(
+                duplicate_current_source_samples
+            ),
+            "duplicate_current_source_sample_examples": (
+                duplicate_current_source_samples[:20]
+            ),
             "ineligible_npz_count": len(all_npz_paths) - len(npz_paths),
             "ineligible_sidecar_count": len(all_sidecar_paths) - len(sidecar_paths),
             "ineligible_archive_marker_count": len(all_marker_paths)

@@ -82,6 +82,19 @@ output:
         arrays = self._arrays()
         np.savez_compressed(artifact_path, **arrays)
         artifact_sha256 = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+        source_integrity = None
+        if config.integrity_registry_path.is_file():
+            registry = json.loads(
+                config.integrity_registry_path.read_text(encoding="utf-8")
+            )
+            entry = registry.get("archives", {}).get(f"{archive_id:03d}", {})
+            archive_sha256 = entry.get("sha256")
+            labels_sha256 = registry.get("source", {}).get("labels_sha256")
+            if isinstance(archive_sha256, str) and isinstance(labels_sha256, str):
+                source_integrity = {
+                    "archive_sha256": archive_sha256,
+                    "labels_sha256": labels_sha256,
+                }
         sidecar_path = artifact_path.with_suffix(".json")
         sidecar_path.write_text(
             json.dumps(
@@ -99,6 +112,7 @@ output:
                         "member_size_bytes": 1234,
                         "member_crc32": archive_id,
                         "video_sha256": "b" * 64,
+                        "integrity": source_integrity,
                     },
                     "annotation": {
                         "text": caption,
@@ -242,6 +256,14 @@ output:
             json.dumps(registry, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
+        for sidecar_path in (
+            config.annotation_root / "samples" / "archive_001"
+        ).glob("*.json"):
+            payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+            payload["source"]["integrity"]["labels_sha256"] = labels_sha256
+            sidecar_path.write_text(
+                json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+            )
         self._write_sample(
             config,
             archive_id=1,
@@ -360,7 +382,7 @@ output:
         self.assertEqual(record["modalities"]["canonical_pose"]["shape"], [2, 2, 24, 3])
         self.assertEqual(summary["annotation"]["ineligible_sidecar_count"], 1)
         self.assertEqual(summary["annotation"]["ineligible_npz_count"], 1)
-        self.assertEqual(summary["annotation"]["sidecar_integrity_missing_count"], 1)
+        self.assertEqual(summary["annotation"]["sidecar_integrity_missing_count"], 0)
         self.assertEqual(copied_registry, registry_bytes)
         self.assertEqual(len(dataset), 1)
         self.assertEqual(sample.caption, "第一条文本")
@@ -376,6 +398,64 @@ output:
                     runtime_report=self._runtime(dirty=True),
                     snapshot_id="dirty",
                 )
+
+    def test_selects_current_source_variant_and_quarantines_unbound_sidecar(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config, _ = self._prepare(root)
+            sample_root = config.annotation_root / "samples" / "archive_001"
+            canonical_sidecar = next(sample_root.glob("*.json"))
+            canonical_artifact = canonical_sidecar.with_suffix(".npz")
+            payload = json.loads(canonical_sidecar.read_text(encoding="utf-8"))
+            source_integrity = dict(payload["source"]["integrity"])
+            payload["source"]["integrity"] = None
+            canonical_sidecar.write_text(
+                json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+            )
+
+            sample_id = payload["sample_id"]
+            archive_sha256 = source_integrity["archive_sha256"]
+            variant_stem = f"{sample_id}--source_{archive_sha256}"
+            variant_artifact = sample_root / f"{variant_stem}.npz"
+            variant_artifact.write_bytes(canonical_artifact.read_bytes())
+            variant_sidecar = sample_root / f"{variant_stem}.json"
+            payload["source"]["integrity"] = source_integrity
+            payload["artifact"]["path"] = str(variant_artifact)
+            payload["artifact"]["size_bytes"] = variant_artifact.stat().st_size
+            payload["artifact"]["sha256"] = hashlib.sha256(
+                variant_artifact.read_bytes()
+            ).hexdigest()
+            variant_sidecar.write_text(
+                json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+            )
+
+            receipt = build_csl_news_pose_manifest_snapshot(
+                config,
+                runtime_report=self._runtime(),
+                snapshot_id="source_variant",
+            )
+            snapshot = Path(receipt["snapshot_dir"])
+            summary = json.loads(
+                Path(receipt["summary_path"]).read_text(encoding="utf-8")
+            )
+            manifest_record = json.loads(
+                Path(receipt["manifest_path"]).read_text(encoding="utf-8")
+            )
+            quarantine_lines = (
+                snapshot / "source_identity_quarantine.jsonl"
+            ).read_text(encoding="utf-8").splitlines()
+            checksum_text = (snapshot / "SHA256SUMS").read_text(encoding="ascii")
+
+        self.assertEqual(receipt["record_count"], 1)
+        self.assertEqual(
+            summary["annotation"]["source_identity_quarantined_sidecar_count"],
+            1,
+        )
+        self.assertEqual(len(quarantine_lines), 1)
+        self.assertIn(variant_stem, manifest_record["modalities"]["canonical_pose"]["uri"])
+        self.assertIn("source_identity_quarantine.jsonl", checksum_text)
 
     def test_rejects_artifact_checksum_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
