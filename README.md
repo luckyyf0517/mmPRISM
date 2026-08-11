@@ -16,18 +16,21 @@ Implemented foundation:
 - versioned JSONL sample-manifest contract;
 - side-effect-free run planning, runtime provenance reporting, and atomic formal-run initialization;
 - SHA-256-bound run inputs plus versioned finite-metric artifacts;
+- explicit radar, pose, feature, and caption tensor contracts;
+- a NumPy range-Doppler v1 transform with analytic signal tests;
 - a single `mmprism` CLI surface;
-- dependency-light unit tests;
-- revision and reviewer-evidence management under `paper/manager/`.
+- dependency-light unit and contract tests.
 
 Not yet implemented in the canonical package:
 
-- radar simulation and FMCW processing;
+- antenna calibration, beamforming, physical radar axes, and radar simulation;
 - CubeNet/OmniHand training and evaluation;
 - WaveLLM/mT5 training, generation, and evaluation;
 - remaining production data adapters, distributed prediction/checkpoint writers, and GPU integration tests.
 
-Do not interpret the foundation scaffold as a reproducible release of the paper results yet. Read `paper/manager/dashboard.md` for the current blockers and work order.
+Do not interpret the current package as a reproducible release of the paper results yet. Range-Doppler
+processing is independently tested, but the complete 4D cube remains blocked on acquisition, channel-map,
+virtual-array, and calibration evidence.
 
 ## Quick Start
 
@@ -39,6 +42,7 @@ uv run mmprism doctor
 uv run mmprism config configs/examples/pose_smoke.yaml
 uv run mmprism plan configs/examples/pose_smoke.yaml
 uv run mmprism manifest tests/fixtures/manifests/pose_smoke.jsonl
+uv run mmprism release-audit configs/release/reviewer_release_v1.yaml
 uv run pytest
 ```
 
@@ -85,29 +89,30 @@ src/mmprism/
   runtime/               paths, environment, seeds, devices, run plans
   cli.py                  user-facing command composition
 tests/                    unit, contract, integration, and fixtures
-paper/manager/            revision control plane and evidence tracking
-paper/manuscript/         private Overleaf Git submodule
 ```
 
-Architecture rules are defined in `AGENTS.md` and `docs/architecture/README.md`.
+The public package boundary is enforced by the versioned release audit. Internal agent guidance,
+revision management, manuscript sources, credentials, architecture work logs, and legacy forensic code
+are not part of the reviewer release inventory.
 
 ## Legacy Code
 
-The root `run_*.py` files, `config/`, and the original modules under `src/data`, `src/fmcw`, `src/model`, `src/eval`, `src/scripts`, and `src/utils` are retained only to audit the original submission.
+The development repository retains the root `run_*.py` files, `config/`, and original modules under
+`src/data`, `src/fmcw`, `src/model`, `src/eval`, `src/scripts`, and `src/utils` only to audit the original
+submission. They are absent from the reviewer release selection.
 
 - New code must not import them.
 - They will not receive feature work or compatibility shims.
 - The reviewer release will contain only validated canonical entry points.
 - They will be archived or removed after historical evidence is extracted.
 
-## Paper Revision
+## Release Audit
 
-- Management entry: `paper/manager/README.md`
-- Current dashboard: `paper/manager/dashboard.md`
-- Reviewer comments: `paper/manager/reviews/`
-- Architecture status: `paper/manager/current/architecture_status.md`
-- Data rebuild status: `paper/manager/current/data_status.md`
-- Overleaf workflow: `paper/manager/current/operator_guide.md`
+`mmprism release-audit` builds the public inventory from Git-tracked files, hashes every selected file,
+checks required and forbidden paths, scans for local absolute paths and credentials, validates the console
+entrypoint, and statically audits canonical imports for missing modules, legacy dependencies, and cycles.
+The reviewer profile remains intentionally failing until all required runnable examples, model download
+instructions, and the author-approved license are present.
 
 ## License
 

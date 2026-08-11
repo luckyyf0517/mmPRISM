@@ -50,6 +50,7 @@ Dataset-specific audits:
 - `run_artifacts.md`: atomic formal-run initialization, input hashing, metrics and lifecycle contract.
 - `data_splits.md`: deterministic group assignment, portable split artifacts and leakage gates.
 - `tensor_contracts.md`: canonical radar/pose/feature axes and the NumPy range-Doppler protocol.
+- `release_audit.md`: Git-backed public inventory, dependency graph, and reviewer-release gates.
 
 ## Environment Contract
 

@@ -23,6 +23,15 @@ uv run mmprism run-init configs/examples/pose_smoke.yaml \
 `run-init` creates only the atomic run provenance envelope. It does not execute training or evaluation.
 The full artifact contract is documented in `docs/architecture/run_artifacts.md`.
 
+Audit the allowlisted reviewer release with:
+
+```bash
+uv run mmprism release-audit configs/release/reviewer_release_v1.yaml
+```
+
+This command is expected to return `1` until every required release deliverable is present. A structured
+failed report is a valid blocker inventory; configuration or execution errors return `2`.
+
 Build the pinned CSL-News partial sequence split with:
 
 ```bash

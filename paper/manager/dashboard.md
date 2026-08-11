@@ -37,7 +37,7 @@ Role: `control_panel`
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.4 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；90 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；99 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run artifact writer 与 `run-init` 已实现：原子冻结 resolved config、Git/environment、命令和
   输入 SHA-256，metrics 强制显式 protocol/样本数/有限值；train/eval/prepare 服务仍待实现。

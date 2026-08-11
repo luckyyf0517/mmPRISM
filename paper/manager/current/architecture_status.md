@@ -44,13 +44,14 @@ config、原子 artifact、resume/failure contract、GPU smoke、portable pose+c
 无训练依赖的随机访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
 pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation
 因 provenance 冲突保持 blocked。OmniHand、WaveLLM 与通用训练/评估服务、checkpoint/prediction
-writer 尚未实现。
+writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
+canonical dependency graph，并自动拒绝 legacy/internal path、硬编码本地路径、缺失 entrypoint 和 import cycle。
 
 Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-90 tests passed（含 9 项 tensor contract 和 17 项 range-Doppler numerical/error tests）
+99 tests passed（含 9 项 tensor contract、17 项 range-Doppler 和 9 项 release audit tests）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -118,6 +119,7 @@ predicted pose [B,T,2,24,3] and/or feature [B,T,D]
 | `ARCH-009` | 测试期间逐 batch 读写同一 JSON | 慢且易损坏 | rank-local append/aggregate artifact writer |
 | `ARCH-010` | 指标、模型、运行脚本没有 protocol version | 数值漂移难解释 | metric/data/model protocol 显式版本化 |
 | `ARCH-011` | 稿件与 legacy 的带宽、chirp、阵列、clutter 和 steering 共轭不一致 | 直接照搬将生成不可解释的 4D cube | range-Doppler 独立验收；beamforming 等 acquisition/calibration evidence |
+| `ARCH-012` | 开发仓库必须保留 legacy/internal 证据，但 reviewer archive 必须排除 | 直接复制仓库会再次提交 CLAUDE、硬编码 legacy 和私人材料 | tracked allowlist + required/forbidden/content/import/cycle audit |
 
 ## 4. Canonical Package
 
@@ -150,6 +152,7 @@ src/mmprism/
   training/
   evaluation/
   artifacts/
+  release/
   runtime/
   cli/
 tests/

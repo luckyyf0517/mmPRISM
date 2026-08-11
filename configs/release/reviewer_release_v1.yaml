@@ -1,0 +1,73 @@
+schema_version: mmprism.release_audit_config.v1
+release_id: reviewer_release_v1
+require_clean_git: true
+
+include:
+  - .python-version
+  - LICENSE
+  - README.md
+  - pyproject.toml
+  - uv.lock
+  - configs/examples/**
+  - configs/release/**
+  - scripts/bootstrap_env.sh
+  - scripts/download_models.sh
+  - src/mmprism/**
+  - tests/**
+
+exclude:
+  - '**/__pycache__/**'
+  - '**/*.pyc'
+
+required_paths:
+  - .python-version
+  - LICENSE
+  - README.md
+  - pyproject.toml
+  - uv.lock
+  - configs/examples/pose_smoke.yaml
+  - configs/examples/radar_smoke.yaml
+  - configs/examples/mt5_smoke.yaml
+  - configs/release/reviewer_release_v1.yaml
+  - scripts/bootstrap_env.sh
+  - scripts/download_models.sh
+  - src/mmprism/cli.py
+  - tests/fixtures/manifests/pose_smoke.jsonl
+
+forbidden_paths:
+  - .env
+  - .gitmodules
+  - AGENTS.md
+  - CLAUDE.md
+  - config/**
+  - paper/**
+  - requirements.txt
+  - run_*.py
+  - scripts/omnihand/**
+  - scripts/overleaf_git.sh
+  - scripts/wavellm/**
+  - src/data/**
+  - src/eval/**
+  - src/fmcw/**
+  - src/model/**
+  - src/scripts/**
+  - src/utils/**
+
+forbidden_content_patterns:
+  local_absolute_path: '/(?:home|mnt|root)/[^\s`"'']+'
+  overleaf_token: 'olp_[A-Za-z0-9]+'
+
+python_roots:
+  - src/mmprism
+
+forbidden_import_prefixes:
+  - config
+  - src.data
+  - src.eval
+  - src.fmcw
+  - src.model
+  - src.scripts
+  - src.utils
+
+expected_entrypoints:
+  mmprism: mmprism.cli:main

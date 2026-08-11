@@ -34,6 +34,12 @@ from mmprism.data import (
     write_csl_news_audit,
     write_csl_news_metadata_profile,
 )
+from mmprism.release import (
+    ReleaseAuditError,
+    audit_release,
+    load_release_audit_config,
+    write_release_audit,
+)
 from mmprism.runtime import build_run_plan, collect_runtime_report, discover_project_root
 
 
@@ -154,6 +160,14 @@ def _build_parser() -> argparse.ArgumentParser:
     integrity_parser.add_argument("--project-root", type=Path)
     integrity_parser.add_argument("--max-new-archives", type=int)
     integrity_parser.add_argument("--archive-id", type=int)
+
+    release_parser = subparsers.add_parser(
+        "release-audit",
+        help="Audit the public release inventory, imports, and entrypoints",
+    )
+    release_parser.add_argument("config", type=Path)
+    release_parser.add_argument("--project-root", type=Path)
+    release_parser.add_argument("--output", type=Path)
 
     return parser
 
@@ -332,7 +346,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 snapshot_id=arguments.snapshot_id,
             )
             exit_code = 0
-        else:
+        elif arguments.command == "csl-news-integrity-scan":
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
@@ -346,10 +360,22 @@ def main(argv: Sequence[str] | None = None) -> int:
                 archive_id=arguments.archive_id,
             )
             exit_code = 0
+        else:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            release_config = load_release_audit_config(arguments.config)
+            payload = audit_release(release_config, project_root=project_root)
+            if arguments.output:
+                write_release_audit(payload, arguments.output)
+            exit_code = 0 if payload["status"] == "passed" else 1
     except (
         ArtifactError,
         ConfigError,
         ManifestError,
+        ReleaseAuditError,
         CslNewsAnnotationError,
         CslNewsAuditError,
         CslNewsIntegrityError,
