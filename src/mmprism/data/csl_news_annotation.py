@@ -435,18 +435,57 @@ def validate_annotation_output(path: str | Path) -> bool:
 def _write_json_atomic(payload: Mapping[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp.{os.getpid()}")
-    temporary.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    encoded = (
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
+    with temporary.open("xb") as stream:
+        stream.write(encoded)
+        stream.flush()
+        os.fsync(stream.fileno())
     temporary.replace(path)
 
 
-def _write_npz_atomic(payload: Mapping[str, np.ndarray], path: Path) -> None:
+def _write_npz_atomic(
+    payload: Mapping[str, np.ndarray], path: Path
+) -> tuple[int, str]:
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        raise CslNewsAnnotationError(
+            f"refusing to overwrite existing annotation artifact: {path}"
+        )
     temporary = path.with_name(f".{path.name}.tmp.{os.getpid()}.npz")
-    np.savez_compressed(temporary, **payload)  # type: ignore[arg-type]
+    with temporary.open("xb") as stream:
+        np.savez_compressed(stream, **payload)  # type: ignore[arg-type]
+        stream.flush()
+        os.fsync(stream.fileno())
+    expected_size = temporary.stat().st_size
+    if expected_size <= 0:
+        raise CslNewsAnnotationError(f"temporary annotation artifact is empty: {temporary}")
+    expected_sha256 = sha256_file(temporary)
+    if path.exists():
+        raise CslNewsAnnotationError(
+            f"annotation artifact appeared before atomic promotion: {path}"
+        )
     temporary.replace(path)
+    deadline = time.monotonic() + 5.0
+    while True:
+        try:
+            observed_size = path.stat().st_size
+            observed_sha256 = (
+                sha256_file(path) if observed_size == expected_size else None
+            )
+        except OSError:
+            observed_size = -1
+            observed_sha256 = None
+        if observed_size == expected_size and observed_sha256 == expected_sha256:
+            return expected_size, expected_sha256
+        if time.monotonic() >= deadline:
+            raise CslNewsAnnotationError(
+                "promoted annotation artifact did not reach its durable identity: "
+                f"{path}; expected size/SHA-256 {expected_size}/{expected_sha256}, "
+                f"observed {observed_size}/{observed_sha256}"
+            )
+        time.sleep(0.1)
 
 
 def _archive_number(path: Path) -> int:
@@ -891,10 +930,13 @@ def is_completed_annotation_sample(
         sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return False
+    artifact = sidecar.get("artifact")
     return bool(
         sidecar.get("status") == "completed"
         and sidecar.get("config_fingerprint") == config_fingerprint
-        and sidecar.get("artifact", {}).get("sha256") == sha256_file(npz_path)
+        and isinstance(artifact, dict)
+        and artifact.get("size_bytes") == npz_path.stat().st_size
+        and artifact.get("sha256") == sha256_file(npz_path)
     )
 
 
@@ -976,7 +1018,7 @@ def _run_metadata(
     worker_index: int,
     worker_count: int,
     integrity_registry_path: Path | None,
-) -> Path:
+) -> tuple[Path, dict[str, Any]]:
     try:
         git_commit = subprocess.run(
             ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
@@ -994,40 +1036,38 @@ def _run_metadata(
         git_dirty = True
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
     path = config.runtime.output_root / "runs" / f"run_{timestamp}_{os.getpid()}.json"
-    _write_json_atomic(
-        {
-            "schema_version": ANNOTATION_SCHEMA_VERSION,
-            "started_at": datetime.now(UTC).isoformat(),
-            "config": config.to_dict(),
-            "config_fingerprint": config.fingerprint,
-            "git": {"commit": git_commit, "dirty": git_dirty},
-            "environment": {
-                "python": sys.version,
-                "platform": platform.platform(),
-                "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
-                "cpu_threads": os.environ.get("MMPRISM_CPU_THREADS"),
-                "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
-            },
-            "model_assets": dict(model_assets),
-            "labels_sha256": labels_sha256,
-            "orchestration": {
-                "worker_index": worker_index,
-                "worker_count": worker_count,
-                "integrity_registry": (
-                    str(integrity_registry_path)
-                    if integrity_registry_path is not None
-                    else None
-                ),
-                "integrity_registry_sha256": (
-                    sha256_file(integrity_registry_path)
-                    if integrity_registry_path is not None
-                    else None
-                ),
-            },
+    payload = {
+        "schema_version": ANNOTATION_SCHEMA_VERSION,
+        "started_at": datetime.now(UTC).isoformat(),
+        "config": config.to_dict(),
+        "config_fingerprint": config.fingerprint,
+        "git": {"commit": git_commit, "dirty": git_dirty},
+        "environment": {
+            "python": sys.version,
+            "platform": platform.platform(),
+            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+            "cpu_threads": os.environ.get("MMPRISM_CPU_THREADS"),
+            "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
         },
-        path,
-    )
-    return path
+        "model_assets": dict(model_assets),
+        "labels_sha256": labels_sha256,
+        "orchestration": {
+            "worker_index": worker_index,
+            "worker_count": worker_count,
+            "integrity_registry": (
+                str(integrity_registry_path)
+                if integrity_registry_path is not None
+                else None
+            ),
+            "integrity_registry_sha256": (
+                sha256_file(integrity_registry_path)
+                if integrity_registry_path is not None
+                else None
+            ),
+        },
+    }
+    _write_json_atomic(payload, path)
+    return path, payload
 
 
 def run_csl_news_annotation(
@@ -1065,7 +1105,7 @@ def run_csl_news_annotation(
     labels = load_csl_news_labels(config.source.labels_path)
     labels_sha256 = sha256_file(config.source.labels_path)
     model_assets = _require_model_assets(config)
-    run_metadata_path = _run_metadata(
+    run_metadata_path, run_metadata = _run_metadata(
         config,
         model_assets,
         labels_sha256,
@@ -1176,6 +1216,11 @@ def run_csl_news_annotation(
                         )
                         started = time.monotonic()
                         try:
+                            if npz_path.exists() or sidecar_path.exists():
+                                raise CslNewsAnnotationError(
+                                    "refusing to overwrite an existing incomplete or "
+                                    f"identity-mismatched sample: {npz_path} / {sidecar_path}"
+                                )
                             extracted_path, video_sha256 = _extract_video(
                                 archive, member, scratch_path
                             )
@@ -1191,7 +1236,7 @@ def run_csl_news_annotation(
                                 annotation.native_keypoint_scores,
                                 config.transform.confidence_threshold,
                             )
-                            _write_npz_atomic(
+                            artifact_size, artifact_sha256 = _write_npz_atomic(
                                 {
                                     "native_keypoints_3d": annotation.native_keypoints_3d,
                                     "native_keypoint_scores": annotation.native_keypoint_scores,
@@ -1204,7 +1249,6 @@ def run_csl_news_annotation(
                                 },
                                 npz_path,
                             )
-                            artifact_sha256 = sha256_file(npz_path)
                             sidecar = {
                                 "schema_version": OUTPUT_SCHEMA_VERSION,
                                 "status": "completed",
@@ -1265,9 +1309,17 @@ def run_csl_news_annotation(
                                     "canonical_valid": list(valid.shape),
                                 },
                                 "runtime": dict(pose_estimator.runtime_metadata()),
+                                "run": {
+                                    "metadata_path": run_metadata_path.relative_to(
+                                        config.runtime.output_root
+                                    ).as_posix(),
+                                    "git": dict(run_metadata["git"]),
+                                    "worker_index": effective_index,
+                                    "worker_count": effective_count,
+                                },
                                 "artifact": {
                                     "path": str(npz_path),
-                                    "size_bytes": npz_path.stat().st_size,
+                                    "size_bytes": artifact_size,
                                     "sha256": artifact_sha256,
                                 },
                                 "scratch_video": str(extracted_path),

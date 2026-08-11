@@ -372,6 +372,7 @@ def _manifest_record(
     arrays = _mapping(payload.get("arrays"), "sidecar.arrays")
     model = _mapping(payload.get("model"), "sidecar.model")
     transform = _mapping(payload.get("transform"), "sidecar.transform")
+    annotation_run = payload.get("run")
     member_name = _text(source, "member", "sidecar.source")
     video_name = PurePosixPath(member_name.replace("\\", "/")).name
     caption = _text(annotation, "text", "sidecar.annotation")
@@ -450,6 +451,9 @@ def _manifest_record(
                     "checkpoint_sha256": model.get("checkpoint_sha256"),
                 },
                 "transform": compact_transform,
+                "run": dict(annotation_run)
+                if isinstance(annotation_run, Mapping)
+                else None,
             },
             "artifact": {
                 "path": artifact_relative,

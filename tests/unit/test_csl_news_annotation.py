@@ -17,6 +17,7 @@ from mmprism.data import (
 )
 from mmprism.data.csl_news_annotation import (
     _archive_integrity_provenance,
+    _write_npz_atomic,
     discover_complete_archives,
 )
 
@@ -163,7 +164,10 @@ runtime:
                     {
                         "status": "completed",
                         "config_fingerprint": "fingerprint",
-                        "artifact": {"sha256": checksum},
+                        "artifact": {
+                            "sha256": checksum,
+                            "size_bytes": artifact.stat().st_size,
+                        },
                     }
                 ),
                 encoding="utf-8",
@@ -179,6 +183,53 @@ runtime:
             invalid["frame_indices"] = np.asarray([1, 2], dtype=np.int64)
             np.savez_compressed(artifact, **invalid)
             self.assertFalse(validate_annotation_output(artifact))
+
+    def test_atomic_npz_writer_returns_durable_identity_and_refuses_overwrite(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            artifact = Path(directory) / "sample.npz"
+            size_bytes, checksum = _write_npz_atomic(
+                self._valid_arrays(), artifact
+            )
+
+            self.assertGreater(size_bytes, 0)
+            self.assertEqual(size_bytes, artifact.stat().st_size)
+            self.assertEqual(
+                checksum, hashlib.sha256(artifact.read_bytes()).hexdigest()
+            )
+            self.assertTrue(validate_annotation_output(artifact))
+            original = artifact.read_bytes()
+
+            with self.assertRaisesRegex(
+                CslNewsAnnotationError, "refusing to overwrite"
+            ):
+                _write_npz_atomic(self._valid_arrays(frame_count=3), artifact)
+            self.assertEqual(artifact.read_bytes(), original)
+
+    def test_resume_requires_sidecar_size_and_checksum(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifact = root / "sample.npz"
+            size_bytes, checksum = _write_npz_atomic(
+                self._valid_arrays(), artifact
+            )
+            sidecar = root / "sample.json"
+            payload = {
+                "status": "completed",
+                "config_fingerprint": "fingerprint",
+                "artifact": {"sha256": checksum, "size_bytes": size_bytes + 1},
+            }
+            sidecar.write_text(json.dumps(payload), encoding="utf-8")
+
+            self.assertFalse(
+                is_completed_annotation_sample(artifact, sidecar, "fingerprint")
+            )
+            payload["artifact"]["size_bytes"] = size_bytes
+            sidecar.write_text(json.dumps(payload), encoding="utf-8")
+            self.assertTrue(
+                is_completed_annotation_sample(artifact, sidecar, "fingerprint")
+            )
 
     def test_retries_archive_markers_with_unresolved_failures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
