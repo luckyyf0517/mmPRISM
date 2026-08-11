@@ -6,7 +6,14 @@ from pathlib import Path
 
 from mmprism.config import ConfigError, load_experiment_config
 from mmprism.contracts import ManifestError, validate_manifest
-from mmprism.data import CslNewsAuditError, audit_csl_news_archive, write_csl_news_audit
+from mmprism.data import (
+    CslNewsAnnotationError,
+    CslNewsAuditError,
+    audit_csl_news_archive,
+    load_csl_news_annotation_config,
+    run_csl_news_annotation,
+    write_csl_news_audit,
+)
 from mmprism.runtime import build_run_plan, collect_runtime_report, discover_project_root
 
 
@@ -39,6 +46,17 @@ def _build_parser() -> argparse.ArgumentParser:
     csl_news_parser.add_argument("--scratch-dir", type=Path)
     csl_news_parser.add_argument("--skip-crc", action="store_true")
 
+    annotation_parser = subparsers.add_parser(
+        "csl-news-annotate", help="Build restartable RTMW3D annotations for CSL-News"
+    )
+    annotation_parser.add_argument("config", type=Path)
+    annotation_parser.add_argument("--project-root", type=Path)
+    annotation_parser.add_argument("--max-videos", type=int)
+    annotation_parser.add_argument("--archive-id", type=int)
+    annotation_parser.add_argument(
+        "--once", action="store_true", help="Process currently complete archives and exit"
+    )
+
     return parser
 
 
@@ -69,7 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         elif arguments.command == "manifest":
             payload = validate_manifest(arguments.path).to_dict()
-        else:
+        elif arguments.command == "csl-news-audit":
             payload = audit_csl_news_archive(
                 arguments.archive,
                 arguments.labels,
@@ -80,7 +98,29 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             write_csl_news_audit(payload, arguments.output)
             exit_code = 0 if payload["status"] == "passed" else 1
-    except (ConfigError, ManifestError, CslNewsAuditError, FileNotFoundError) as error:
+        else:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            annotation_config = load_csl_news_annotation_config(
+                arguments.config, project_root
+            )
+            payload = run_csl_news_annotation(
+                annotation_config,
+                max_videos=arguments.max_videos,
+                once=arguments.once,
+                archive_id=arguments.archive_id,
+            )
+            exit_code = 0 if payload["failed"] == 0 else 1
+    except (
+        ConfigError,
+        ManifestError,
+        CslNewsAnnotationError,
+        CslNewsAuditError,
+        FileNotFoundError,
+    ) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
 

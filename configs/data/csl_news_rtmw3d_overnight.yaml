@@ -1,0 +1,28 @@
+schema_version: mmprism.csl_news_pose_annotation.v1
+source:
+  archive_root: /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/rgb_archives
+  labels_path: /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/metadata/CSL_News_Labels.json
+  source_id: huggingface:ZechengLi19/CSL-News
+  source_revision: 3a0601210333fe760efd09b5d9e2ae5f341ce339
+  expected_archive_count: 436
+model:
+  mmpose_root: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9
+  mmpose_commit: 759b39c13fea6ba094afc1fa932f51dc1b11cbf9
+  project_dir: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9/projects/rtmpose3d
+  config_path: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9/projects/rtmpose3d/configs/rtmw3d-l_8xb64_cocktail14-384x288.py
+  checkpoint_path: /mnt/gfs/yanyifan/mmPRISM/external/models/rtmw3d/794dbc78_20240626/rtmw3d-l_8xb64_cocktail14-384x288-794dbc78_20240626.pth
+  checkpoint_sha256: 794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed
+  device: cuda:0
+transform:
+  crop_top: 20
+  crop_left: 20
+  crop_right: 20
+  confidence_threshold: 0.3
+runtime:
+  output_root: /mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1
+  scratch_root: /mnt/gfs/yanyifan/mmPRISM/cache/csl_news_annotation/rtmw3d_l_794dbc78_v1
+  worker_index: 0
+  worker_count: 1
+  poll_seconds: 60
+  min_free_bytes: 1099511627776
+  max_consecutive_oom: 2

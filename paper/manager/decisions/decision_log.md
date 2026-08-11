@@ -20,6 +20,8 @@ Role: `cross_workstream_decisions`
 | `DEC-012` | 2026-08-11 | 在 provenance 关闭前不把 skeleton 仿真视为稿件 MANO mesh pipeline 的等价复现 | 稿件方法描述与当前可见 legacy code 不一致 | accepted | 必须恢复原 simulator/输入/配置或修订方法描述，并分别登记实验协议 |
 | `DEC-013` | 2026-08-11 | CSL-News 使用官方 HF revision `3a060121` 从头下载，压缩包验证前不解压 | 官方源、935 GB 规模和 CC BY-NC 4.0 条款已确认；共享盘当前约余 3.6 TB | accepted | 436 archives 由可恢复 systemd service 下载，保留 1 TiB floor，完成后建立 source manifest |
 | `DEC-014` | 2026-08-11 | CSL-News 下载从 16 路单连接 curl 切换为 4 worker x 8 连接 aria2 | HF 端点支持 Range；稳定后 60 秒有效写入 9.95 MB/s，高于切换前约 3.9–4.7 MB/s | accepted | 原 `.part` 原位续传，完成后仍原子重命名；curl 保留为脚本 fallback |
+| `DEC-015` | 2026-08-11 | CSL-News pose 以 RTMW3D 原生输出加显式历史 2x24 transform 重建 | 保留可重解释的 133-joint 证据，避免将旧映射不可逆写入唯一数据 | accepted | 每个样本保存 native/transformed/canonical 数组、文本、checksum 和失败 sidecar |
+| `DEC-016` | 2026-08-11 | 夜间 pose worker 可与其他任务共享 GPU，只以可用显存为门槛 | 操作者明确批准高利用率共卡；真实 smoke 峰值显存约 262 MiB | accepted | 单 worker 固定一张显存充足的卡，不干预其他进程；连续 OOM 和磁盘 floor 仍触发停止 |
 
 ## 决策记录模板
 

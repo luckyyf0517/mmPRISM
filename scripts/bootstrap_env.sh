@@ -15,6 +15,7 @@ case "${profile}" in
       --extra evaluation
       --extra tracking
       --extra visualization
+      --extra annotation
     )
     ;;
   distributed)
@@ -24,6 +25,7 @@ case "${profile}" in
       --extra evaluation
       --extra tracking
       --extra visualization
+      --extra annotation
       --extra distributed
     )
     ;;

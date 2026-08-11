@@ -21,12 +21,12 @@ Role: `data_execution_tracker`
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
-| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | 单 archive source audit 已实现并排期；待 full coverage/shape/annotation report |
+| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | `archive_003` SHA/CRC/label/decode audit 已通过；待 full coverage/shape/annotation report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | not_started | quarantine reason registry |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
-| `DATA-005-A` | P2 | 重建 pose annotation pipeline | not_started | versioned pose output + QC |
+| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | strict config、native/canonical artifact、resume/failure contract 和单视频 GPU smoke 已通过；夜间全量 worker 待完成 |
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | not_started | versioned radar output + QC |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | not_started | validation report + manifest hash |
@@ -45,9 +45,9 @@ Role: `data_execution_tracker`
 当前 public download 由 `mmprism-csl-news-metadata.service` 和
 `mmprism-csl-news-archives.service` 托管；完成前不得解压。
 
-`mmprism-csl-news-source-trial.timer` 已安排在 `2026-08-12 08:00 Asia/Shanghai` 执行一个
-archive 的只读 SHA-256/CRC/label/decode smoke。通过只表示 source intake gate 可用，不表示 pose 或
-simulation pipeline 已完成。
+`archive_003` 的只读 SHA-256/CRC/label/decode smoke 已通过；原定
+`mmprism-csl-news-source-trial.timer` 保留为 `2026-08-12 08:00 Asia/Shanghai` 独立复核。
+RTMW3D 单视频 smoke 也已通过，但不代表 436 个 archive 已完成。
 
 ## 禁止事项
 

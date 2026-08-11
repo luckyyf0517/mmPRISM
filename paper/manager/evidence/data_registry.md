@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | source adapter audit in progress; full manifest pending | first archive audit scheduled; full validation pending | visual pose/synthetic training and SLU | in_progress |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | source adapter audit in progress; full manifest pending | `archive_003`: SHA/CRC/1,657 labels/decode passed; full validation pending | visual pose/synthetic training and SLU | in_progress |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -31,9 +31,15 @@ Role: `dataset_and_split_provenance`
 | ID | Model | Source ID | Revision/Checksum | License | Rule | Status |
 |---|---|---|---|---|---|---|
 | `MODEL-MT5-BASE` | mT5 base | `google/mt5-base` | unknown | unknown | pin and download; upload historical fine-tuned weights separately | not_started |
-| `MODEL-RTMW3D` | RTMPose3D | `rtmw3d-l_8xb64_cocktail14-384x288-794dbc78_20240626.pth` | filename hash only; source unresolved | unknown | pin official source and checksum or upload if unavailable | not_started |
+| `MODEL-RTMW3D` | RTMPose3D | official OpenMMLab RTMW3D-L; MMPose `759b39c` | `794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed` | upstream research code/model terms; release audit pending | checkpoint/config/commit hash gate before every run | evidence_ready |
 | `MODEL-SIMCSE` | SimCSE evaluator | `cyclone/simcse-chinese-roberta-wwm-ext` | unknown | unknown | pin HF revision and download | not_started |
 | `MODEL-SBERT` | SBERT evaluator | `shibing624/text2vec-base-chinese` | unknown | unknown | pin HF revision, download and run evaluator smoke | not_started |
+
+## Derived Dataset Builds
+
+| ID | Source | Protocol | Location | Validation | Status |
+|---|---|---|---|---|---|
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | one 125-frame sample passed shape/finite/text/artifact-hash checks; full build active | in_progress |
 
 ## Split Registry
 

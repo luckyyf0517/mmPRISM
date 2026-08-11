@@ -151,7 +151,7 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 3. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
 4. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
 5. 监控 CSL-News 下载服务；完成后生成 file/member manifest、SHA-256、ZIP integrity 和 label coverage report。
-6. `2026-08-12 08:00 Asia/Shanghai` 对一个完整 archive 执行 source-audit smoke；该任务不运行姿态标注。
+6. `archive_003` source-audit smoke 已提前通过；保留次晨 timer 作为独立复核。
 
 ## 9. CSL-News 官方下载状态
 
@@ -185,3 +185,12 @@ systemctl --user status mmprism-csl-news-archives.service
 ```text
 /mnt/gfs/yanyifan/mmPRISM/interim/csl_news/source_trial_v1/
 ```
+
+`2026-08-11T14:29Z`，`archive_003.zip` 审计通过：1,657 个视频、CRC 无失败、无不安全或
+重复 member、全部命中官方非空文本；archive SHA-256 为
+`ae348f6cc3088cc755d5af4f4320c3f6851a5564fb27345b3fb0e150f1a655d4`。
+
+canonical pose annotation 使用 `configs/data/csl_news_rtmw3d_overnight.yaml` 和
+`paper/manager/runbooks/csl_news_annotation_overnight.md`。首个真实样本生成 125 帧原生
+`[T,133,3]` 与 canonical `[T,2,24,3]`，全部数值有限，峰值显存约 262 MiB；正式输出和
+scratch 在次晨人工检查前全部保留。
