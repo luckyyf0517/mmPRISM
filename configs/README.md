@@ -61,6 +61,17 @@ MMPRISM_DEVICE=cuda:0 scripts/run_mt5_smoke.sh
 device remain runtime inputs. `configs/examples/mt5_smoke.yaml` is a deterministic two-step integration
 configuration with a frozen language backbone. It is not the production paper-training configuration.
 
+Run the canonical CubeNet/OmniHand engineering smoke with:
+
+```bash
+export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
+MMPRISM_DEVICE=cuda:0 scripts/run_omnihand_smoke.sh
+```
+
+`configs/examples/omnihand_smoke.yaml` exercises the manuscript-facing 10-frame, 8-layer,
+16-head temporal contract with a compact synthetic radar cube. It verifies execution and provenance;
+it is not a production data or paper-result configuration.
+
 Build the pinned CSL-News partial sequence split with:
 
 ```bash

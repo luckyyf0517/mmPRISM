@@ -18,6 +18,8 @@ Implemented foundation:
 - SHA-256-bound run inputs plus versioned finite-metric artifacts;
 - explicit radar, pose, feature, and caption tensor contracts;
 - a NumPy range-Doppler v1 transform with analytic signal tests;
+- a canonical CubeNet/OmniHand pose regressor with independently ablatable attention,
+  mask-aware temporal aggregation, and versioned metric-pose evaluation;
 - pinned, checksummed SBERT and SimCSE evaluator-model acquisition;
 - pinned mT5-base acquisition plus a two-step pose/radar/fusion train-generate GPU smoke;
 - a single `mmprism` CLI surface;
@@ -26,7 +28,7 @@ Implemented foundation:
 Not yet implemented in the canonical package:
 
 - antenna calibration, beamforming, physical radar axes, and radar simulation;
-- CubeNet/OmniHand training and evaluation;
+- production OmniHand dataset training, checkpointing, and prediction;
 - production WaveLLM/mT5 training, checkpointing, prediction, and evaluation;
 - remaining production data adapters, distributed prediction/checkpoint writers, and GPU integration tests.
 
@@ -45,6 +47,8 @@ uv run mmprism config configs/examples/pose_smoke.yaml
 uv run mmprism plan configs/examples/pose_smoke.yaml
 uv run mmprism manifest tests/fixtures/manifests/pose_smoke.jsonl
 uv run mmprism models-plan configs/models/evaluation_models_v1.yaml
+# Requires a clean Git worktree and the train profile.
+MMPRISM_DEVICE=cuda:0 scripts/run_omnihand_smoke.sh
 # Expected to return 1 while the listed reviewer-release blockers remain.
 uv run mmprism release-audit configs/release/reviewer_release_v1.yaml
 uv run pytest
@@ -99,6 +103,27 @@ resume state remains under `${MMPRISM_MODEL_ROOT}/.cache/huggingface`; consumers
 materialized `simcse/` and `sbert/` directories plus their manifests.
 The wrapper defaults `HF_HUB_DISABLE_XET=1` after an observed stalled Xet transfer; explicitly set it
 to `0` before invocation if a deployment has a validated Xet path.
+
+## Pose Reconstruction
+
+The canonical reconstruction path consumes non-negative radar-cube power with axes
+`[batch,time,doppler,range,azimuth,elevation]` and emits metric dual-hand joints with shape
+`[batch,2,24,3]`. CubeNet uses depthwise-separable 3D residual blocks, optional PAFPN aggregation,
+and separately configurable channel, spatial, and squeeze-excitation attention. The temporal path is
+mask-aware and combines CLS, valid-frame mean, and learned-attention summaries.
+
+Run the deterministic two-step engineering smoke on an available CUDA device:
+
+```bash
+export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
+MMPRISM_DEVICE=cuda:0 scripts/run_omnihand_smoke.sh
+```
+
+The smoke checks spatial/temporal/head gradients and parameter updates, single-frame inference,
+padding invariance, sample-level MPJPE, wrist-relative MPJPE/PCK, runtime provenance, and peak CUDA
+memory. Synthetic cubes and targets are used only to validate the executable model boundary; their
+metrics are not paper results. Physical 4D-cube reproduction remains gated on acquisition and
+calibration provenance.
 
 ## Language Model Support
 

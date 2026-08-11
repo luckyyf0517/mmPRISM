@@ -50,7 +50,12 @@ from mmprism.release import (
     write_release_audit,
 )
 from mmprism.runtime import build_run_plan, collect_runtime_report, discover_project_root
-from mmprism.training import MT5SmokeError, load_mt5_smoke_config
+from mmprism.training import (
+    MT5SmokeError,
+    OmniHandSmokeError,
+    load_mt5_smoke_config,
+    load_omnihand_smoke_config,
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -216,6 +221,15 @@ def _build_parser() -> argparse.ArgumentParser:
     mt5_smoke_parser.add_argument("--device", default="auto")
     mt5_smoke_parser.add_argument("--output", type=Path, required=True)
 
+    omnihand_smoke_parser = subparsers.add_parser(
+        "omnihand-smoke",
+        help="Run the canonical CubeNet pose-reconstruction vertical smoke",
+    )
+    omnihand_smoke_parser.add_argument("config", type=Path)
+    omnihand_smoke_parser.add_argument("--project-root", type=Path)
+    omnihand_smoke_parser.add_argument("--device", default="auto")
+    omnihand_smoke_parser.add_argument("--output", type=Path, required=True)
+
     return parser
 
 
@@ -248,9 +262,7 @@ def _capture_run_inputs(specifications: Sequence[str], project_root: Path) -> tu
         identity, separator, path_text = specification.partition("=")
         kind, kind_separator, name = identity.partition(":")
         if not separator or not kind_separator or not kind or not name or not path_text:
-            raise ArtifactError(
-                f"invalid --input {specification!r}; expected KIND:NAME=PATH"
-            )
+            raise ArtifactError(f"invalid --input {specification!r}; expected KIND:NAME=PATH")
         path = Path(path_text).expanduser()
         if not path.is_absolute():
             path = project_root / path
@@ -330,9 +342,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if arguments.project_root
                 else discover_project_root()
             )
-            annotation_config = load_csl_news_annotation_config(
-                arguments.config, project_root
-            )
+            annotation_config = load_csl_news_annotation_config(arguments.config, project_root)
             payload = run_csl_news_annotation(
                 annotation_config,
                 max_videos=arguments.max_videos,
@@ -349,9 +359,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if arguments.project_root
                 else discover_project_root()
             )
-            annotation_config = load_csl_news_annotation_config(
-                arguments.config, project_root
-            )
+            annotation_config = load_csl_news_annotation_config(arguments.config, project_root)
             payload = build_csl_news_annotation_status(
                 annotation_config,
                 sample_validate_count=arguments.sample_validate,
@@ -367,9 +375,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if arguments.project_root
                 else discover_project_root()
             )
-            annotation_config = load_csl_news_annotation_config(
-                arguments.config, project_root
-            )
+            annotation_config = load_csl_news_annotation_config(arguments.config, project_root)
             payload = build_csl_news_annotation_qc(
                 annotation_config, sample_count=arguments.sample_count
             )
@@ -393,9 +399,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if arguments.project_root
                 else discover_project_root()
             )
-            source_manifest_config = load_csl_news_source_manifest_config(
-                arguments.config
-            )
+            source_manifest_config = load_csl_news_source_manifest_config(arguments.config)
             payload = build_csl_news_source_manifest_snapshot(
                 source_manifest_config,
                 runtime_report=collect_runtime_report(project_root),
@@ -407,9 +411,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if arguments.project_root
                 else discover_project_root()
             )
-            pose_manifest_config = load_csl_news_pose_manifest_config(
-                arguments.config
-            )
+            pose_manifest_config = load_csl_news_pose_manifest_config(arguments.config)
             payload = build_csl_news_pose_manifest_snapshot(
                 pose_manifest_config,
                 runtime_report=collect_runtime_report(project_root),
@@ -441,13 +443,37 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_release_audit(payload, arguments.output)
             exit_code = 0 if payload["status"] == "passed" else 1
+        elif arguments.command == "omnihand-smoke":
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            omnihand_config = load_omnihand_smoke_config(arguments.config)
+            try:
+                from mmprism.training.omnihand_smoke import (
+                    run_omnihand_smoke,
+                    write_omnihand_smoke_report,
+                )
+            except ImportError as error:
+                raise OmniHandSmokeError(
+                    "OmniHand smoke dependencies are missing; install the train extra"
+                ) from error
+            payload = run_omnihand_smoke(
+                omnihand_config,
+                device=arguments.device,
+                runtime_report=collect_runtime_report(project_root),
+                command=("mmprism", *effective_argv),
+            )
+            write_omnihand_smoke_report(payload, arguments.output)
+            exit_code = 0
         elif arguments.command == "mt5-smoke":
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
                 else discover_project_root()
             )
-            smoke_config = load_mt5_smoke_config(arguments.config)
+            mt5_config = load_mt5_smoke_config(arguments.config)
             model_config = load_model_asset_config(arguments.model_assets)
             try:
                 from mmprism.training.mt5_smoke import (
@@ -459,7 +485,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "mT5 smoke dependencies are missing; install the train extra"
                 ) from error
             payload = run_mt5_smoke(
-                smoke_config,
+                mt5_config,
                 model_config,
                 _resolve_mt5_model_root(arguments.model_root, project_root),
                 device=arguments.device,
@@ -502,6 +528,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ManifestError,
         ModelAssetError,
         MT5SmokeError,
+        OmniHandSmokeError,
         ReleaseAuditError,
         CslNewsAnnotationError,
         CslNewsAuditError,
