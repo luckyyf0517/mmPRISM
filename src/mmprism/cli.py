@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from mmprism.config import ConfigError, load_experiment_config
-from mmprism.contracts import ManifestError, validate_manifest
+from mmprism.contracts import ManifestError, SplitContractError, validate_manifest
 from mmprism.data import (
     CslNewsAnnotationError,
     CslNewsAuditError,
@@ -13,16 +13,19 @@ from mmprism.data import (
     CslNewsMetadataError,
     CslNewsPoseManifestError,
     CslNewsSourceManifestError,
+    DataSplitError,
     audit_csl_news_archive,
     build_csl_news_annotation_qc,
     build_csl_news_annotation_status,
     build_csl_news_metadata_profile,
     build_csl_news_pose_manifest_snapshot,
     build_csl_news_source_manifest_snapshot,
+    build_data_split_snapshot,
     load_csl_news_annotation_config,
     load_csl_news_integrity_config,
     load_csl_news_pose_manifest_config,
     load_csl_news_source_manifest_config,
+    load_data_split_config,
     run_csl_news_annotation,
     scan_csl_news_source_integrity,
     write_csl_news_annotation_qc,
@@ -50,6 +53,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     manifest_parser = subparsers.add_parser("manifest", help="Validate a JSONL data manifest")
     manifest_parser.add_argument("path", type=Path)
+
+    split_parser = subparsers.add_parser(
+        "split", help="Build an atomic deterministic group-disjoint split snapshot"
+    )
+    split_parser.add_argument("config", type=Path)
+    split_parser.add_argument("--project-root", type=Path)
+    split_parser.add_argument("--snapshot-id")
 
     csl_news_parser = subparsers.add_parser(
         "csl-news-audit", help="Audit one complete CSL-News archive against official labels"
@@ -161,6 +171,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         elif arguments.command == "manifest":
             payload = validate_manifest(arguments.path).to_dict()
+        elif arguments.command == "split":
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            split_config = load_data_split_config(arguments.config)
+            payload = build_data_split_snapshot(
+                split_config,
+                runtime_report=collect_runtime_report(project_root),
+                snapshot_id=arguments.snapshot_id,
+            )
         elif arguments.command == "csl-news-audit":
             payload = audit_csl_news_archive(
                 arguments.archive,
@@ -287,7 +309,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         CslNewsMetadataError,
         CslNewsPoseManifestError,
         CslNewsSourceManifestError,
+        DataSplitError,
         FileNotFoundError,
+        SplitContractError,
     ) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2

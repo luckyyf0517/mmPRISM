@@ -58,6 +58,13 @@ from mmprism.data.csl_news_pose_manifest import (
     build_csl_news_pose_manifest_snapshot,
     load_csl_news_pose_manifest_config,
 )
+from mmprism.data.split import (
+    DataSplitConfig,
+    DataSplitError,
+    SplitAllocation,
+    build_data_split_snapshot,
+    load_data_split_config,
+)
 
 __all__ = [
     "CslNewsAnnotationConfig",
@@ -74,10 +81,14 @@ __all__ = [
     "CslNewsPoseSample",
     "CslNewsSourceManifestConfig",
     "CslNewsSourceManifestError",
+    "DataSplitConfig",
+    "DataSplitError",
+    "SplitAllocation",
     "audit_csl_news_archive",
     "build_csl_news_metadata_profile",
     "build_csl_news_pose_manifest_snapshot",
     "build_csl_news_source_manifest_snapshot",
+    "build_data_split_snapshot",
     "build_csl_news_annotation_status",
     "build_csl_news_annotation_qc",
     "canonicalize_hands",
@@ -91,6 +102,7 @@ __all__ = [
     "load_csl_news_integrity_registry_snapshot",
     "load_csl_news_pose_manifest_config",
     "load_csl_news_source_manifest_config",
+    "load_data_split_config",
     "run_csl_news_annotation",
     "passed_csl_news_integrity_archives",
     "read_csl_news_integrity_registry_snapshot",

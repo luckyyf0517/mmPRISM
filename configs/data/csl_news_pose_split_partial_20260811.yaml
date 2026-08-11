@@ -1,0 +1,27 @@
+schema_version: mmprism.split_config.v1
+source:
+  data_root: ${MMPRISM_DATA_ROOT}
+  manifest: manifests/csl_news/pose_manifest_v1/snapshot_20260811T164204Z_partial/manifest.jsonl
+  expected_manifest_sha256: 4161593fdbfc85a5c2fb392e3ef92d40da560db5c75a19d559f1f92878e31600
+  expected_dataset: csl_news_rtmw3d_l_v1
+  expected_record_count: 2157
+  scope: partial
+grouping:
+  selector: sequence_id
+  namespace: csl_news_pose_sequence_v1
+assignment:
+  algorithm: sha256_mod_weight_v1
+  protocol_id: csl_news_pose_sequence_hash_80_10_10_v1
+  seed: 20260811
+  splits:
+    - name: train
+      weight: 8
+    - name: validation
+      weight: 1
+    - name: test
+      weight: 1
+validation:
+  minimum_groups_per_split: 1
+  minimum_free_bytes: 1099511627776
+output:
+  snapshot_root: splits/csl_news/pose_sequence_hash_80_10_10_v1
