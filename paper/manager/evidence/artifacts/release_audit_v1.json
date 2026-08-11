@@ -1,12 +1,16 @@
 {
-  "config_fingerprint": "bbc4924e64f597d171889ae689c8cbe86d8e37a67af1e1f28f1d6821df234af0",
+  "config_fingerprint": "2c8d073ea0e32566f17614e006bff7aec7a1a25d807407f83f944d31a687a71a",
   "dependencies": {
     "cycles": [],
     "external_imports": [
+      "huggingface_hub",
       "numpy",
+      "sentence_transformers",
+      "torch",
+      "transformers",
       "yaml"
     ],
-    "internal_edge_count": 51,
+    "internal_edge_count": 54,
     "internal_edges": [
       [
         "mmprism.__main__",
@@ -25,8 +29,20 @@
         "mmprism.runtime.plan"
       ],
       [
+        "mmprism.assets",
+        "mmprism.assets.models"
+      ],
+      [
+        "mmprism.assets.models",
+        "mmprism.config"
+      ],
+      [
         "mmprism.cli",
         "mmprism.artifacts"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.assets"
       ],
       [
         "mmprism.cli",
@@ -213,12 +229,14 @@
         "mmprism.runtime.provenance"
       ]
     ],
-    "module_count": 33,
+    "module_count": 35,
     "modules": [
       "mmprism",
       "mmprism.__main__",
       "mmprism.artifacts",
       "mmprism.artifacts.run",
+      "mmprism.assets",
+      "mmprism.assets.models",
       "mmprism.cli",
       "mmprism.config",
       "mmprism.config.loader",
@@ -253,7 +271,7 @@
   "entrypoints": {
     "mmprism": "mmprism.cli:main"
   },
-  "finding_count": 4,
+  "finding_count": 3,
   "findings": [
     {
       "code": "REQUIRED_PATH_MISSING",
@@ -269,16 +287,11 @@
       "code": "REQUIRED_PATH_MISSING",
       "message": "required release file does not exist",
       "path": "configs/examples/radar_smoke.yaml"
-    },
-    {
-      "code": "REQUIRED_PATH_MISSING",
-      "message": "required release file does not exist",
-      "path": "scripts/download_models.sh"
     }
   ],
-  "generated_at": "2026-08-11T18:05:42.988569+00:00",
+  "generated_at": "2026-08-11T18:35:54.741062+00:00",
   "git": {
-    "commit": "c49f7252d53f0e10c17c91b5795f4a336168f695",
+    "commit": "288955e70d3afca0c4eb3ca2ce8bcb1f250b3e46",
     "dirty_entry_count": 0,
     "state": "clean"
   },
@@ -292,9 +305,9 @@
         "sha256": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d"
       },
       {
-        "bytes": 5571,
+        "bytes": 7045,
         "path": "README.md",
-        "sha256": "9633cace87770296ee92fb8b739c8cda1e13142a41ad4f5d9075a63adc2f016f"
+        "sha256": "642f948ba6193c275ef6db1245c0107ad94d38f53b77734c0c857db104030178"
       },
       {
         "bytes": 330,
@@ -302,19 +315,29 @@
         "sha256": "a292312fa29b82fbd0e61623c008e68ecf2c831fb1b56795e8586c42ad531888"
       },
       {
-        "bytes": 1391,
-        "path": "configs/release/reviewer_release_v1.yaml",
-        "sha256": "9040f55c3dc855ae22500d508ff06d4bddb32cf9708dadbb6f3cc6c5de172d8c"
+        "bytes": 851,
+        "path": "configs/models/evaluation_models_v1.yaml",
+        "sha256": "047e073ee0b511d0fe442177d9532eb56fd94b8acc4a5f2edbcc3426c223b464"
       },
       {
-        "bytes": 2463,
+        "bytes": 1458,
+        "path": "configs/release/reviewer_release_v1.yaml",
+        "sha256": "8a69fb77a3e1397017bf900fb7f806a58354660a5fa21874cfbb7a5ea197508d"
+      },
+      {
+        "bytes": 2539,
         "path": "pyproject.toml",
-        "sha256": "6bb72fc57f8a68c3cd926bcde304810a078548071ee2ef3858fb4d929f61e649"
+        "sha256": "782ac89b158a93875284853b106fecbd63e10f94686ea60e4c99e2528aca4459"
       },
       {
         "bytes": 685,
         "path": "scripts/bootstrap_env.sh",
         "sha256": "839e31d7e61a39c7544c35ccab6e37d12c8e1825ebcf2e6e100e9d4a01e16807"
+      },
+      {
+        "bytes": 468,
+        "path": "scripts/download_models.sh",
+        "sha256": "f21861cf489cf8f28b67b0ea71559036ca33ad4cdb123e25eb886974ec0826f6"
       },
       {
         "bytes": 65,
@@ -337,9 +360,19 @@
         "sha256": "906ea079dce6e70ce83380f29603500fbc8108d647beaf7526b6bc740a93990c"
       },
       {
-        "bytes": 16645,
+        "bytes": 864,
+        "path": "src/mmprism/assets/__init__.py",
+        "sha256": "0e0154048a03729236f3c619da7ceb07a0d7c87b9b24e4660b82e1990656ef88"
+      },
+      {
+        "bytes": 31516,
+        "path": "src/mmprism/assets/models.py",
+        "sha256": "ce635f759eaabfea5b2346acc7e95e755fabdbc21b0a86575100a4c3ce76c9ba"
+      },
+      {
+        "bytes": 19660,
         "path": "src/mmprism/cli.py",
-        "sha256": "9037ce89c36ea0ae35d5ca79fd3971637232f8dc9bbf6d5fb45b534285b9024b"
+        "sha256": "98ed9b95371c4efb2ab9a96cbb33431bafcf8972e5f43a945fc4ff199eab6dab"
       },
       {
         "bytes": 321,
@@ -562,6 +595,11 @@
         "sha256": "1fa7af56e07c3fd2db4034f1b66514aab1ce93f669ae396fbbc7ccf4845171d4"
       },
       {
+        "bytes": 9392,
+        "path": "tests/unit/test_model_assets.py",
+        "sha256": "ff3860b8bd15fa21b1693e67407401d5b098ef5c28403fc08cb6f5a6d8cc259c"
+      },
+      {
         "bytes": 4313,
         "path": "tests/unit/test_radar_processing.py",
         "sha256": "0bffa9713a1991369e5f645343806f30aec4d43fd370d265d1aa96883cb843bb"
@@ -587,9 +625,9 @@
         "sha256": "4cd7c93d34bdab355d00d40b9be03c8aaf13b5c2aecb284125e8dd8575e61c8e"
       },
       {
-        "bytes": 143595,
+        "bytes": 144206,
         "path": "uv.lock",
-        "sha256": "d96fbd007605ae21e49bd3e18cd51dcdd5b2640757713739dbbc3f9a3b67afb0"
+        "sha256": "41d9c9ccaf70edb4476c5138caf58dd39876988e13e480e1c66a606ff3e615e8"
       }
     ],
     "forbidden_tracked_but_excluded": [
@@ -629,8 +667,10 @@
       "paper/manager/data_upload_checklist.md",
       "paper/manager/decisions/decision_log.md",
       "paper/manager/evidence/README.md",
+      "paper/manager/evidence/artifacts/evaluation_models_smoke_v1.json",
       "paper/manager/evidence/artifacts/manuscript_inventory_v1.json",
       "paper/manager/evidence/artifacts/manuscript_inventory_v2.json",
+      "paper/manager/evidence/artifacts/release_audit_v1.json",
       "paper/manager/evidence/csl_news_metadata_profile.md",
       "paper/manager/evidence/csl_news_pose_manifest.md",
       "paper/manager/evidence/csl_news_pose_split.md",
@@ -640,8 +680,10 @@
       "paper/manager/evidence/display_item_registry.md",
       "paper/manager/evidence/experiment_registry.md",
       "paper/manager/evidence/manuscript_inventory.md",
+      "paper/manager/evidence/model_assets.md",
       "paper/manager/evidence/paper_evidence_map.md",
       "paper/manager/evidence/radar_contract_audit.md",
+      "paper/manager/evidence/release_audit.md",
       "paper/manager/original_submission/README.md",
       "paper/manager/reviews/README.md",
       "paper/manager/reviews/analysis.md",
@@ -739,10 +781,10 @@
       "src/utils/tools.py",
       "src/utils/unzip_folders.py"
     ],
-    "forbidden_tracked_but_excluded_count": 145,
-    "selected_bytes": 602934,
-    "selected_file_count": 61,
-    "tracked_file_count": 240
+    "forbidden_tracked_but_excluded_count": 149,
+    "selected_bytes": 651268,
+    "selected_file_count": 66,
+    "tracked_file_count": 250
   },
   "status": "failed"
 }

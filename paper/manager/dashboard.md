@@ -41,9 +41,11 @@ Role: `control_panel`
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run artifact writer 与 `run-init` 已实现：原子冻结 resolved config、Git/environment、命令和
   输入 SHA-256，metrics 强制显式 protocol/样本数/有限值；train/eval/prepare 服务仍待实现。
-- clean commit `c49f725` release audit 已验证 61 个逐文件 hash、145 个 internal/legacy 排除项和
-  33-module dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。Reviewer
-  profile 仍被 LICENSE、model download、radar example、mT5 example 四项真实缺失阻塞。
+- fixed-revision SimCSE/SBERT downloader 已完成 14-file checksum manifest；clean commit `3ae69c3`
+  上两个真实 CPU loader 均输出 finite `[2,768]` embedding，`ARCH-REV-002` 已达到 evidence ready。
+- clean commit `288955e` release audit 已验证 66 个逐文件 hash、149 个 internal/legacy 排除项和
+  35-module dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。Reviewer
+  profile 现只被 LICENSE、radar example、mT5 example 三项真实缺失阻塞。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
 
 ## 当前最高优先级

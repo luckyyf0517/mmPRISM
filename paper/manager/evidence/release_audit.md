@@ -1,6 +1,6 @@
 # Reviewer Release Audit Evidence
 
-Status: `boundary_verified_required_deliverables_blocked`
+Status: `boundary_verified_three_required_deliverables_blocked`
 Last Updated: `2026-08-11`
 Role: `ARCH-001-A_ARCH-001-B_ARCH-REV-003_R2-CODE-3_evidence`
 Evidence ID: `EVID-CODE-RELEASE-V1`
@@ -10,12 +10,12 @@ Evidence ID: `EVID-CODE-RELEASE-V1`
 ```text
 schema: mmprism.release_audit_report.v1
 release profile: reviewer_release_v1
-builder commit: c49f7252d53f0e10c17c91b5795f4a336168f695
+builder commit: 288955e70d3afca0c4eb3ca2ce8bcb1f250b3e46
 builder Git state: clean
 config: configs/release/reviewer_release_v1.yaml
-config fingerprint: bbc4924e64f597d171889ae689c8cbe86d8e37a67af1e1f28f1d6821df234af0
+config fingerprint: 2c8d073ea0e32566f17614e006bff7aec7a1a25d807407f83f944d31a687a71a
 artifact: paper/manager/evidence/artifacts/release_audit_v1.json
-artifact SHA-256: 57ad568e8223b26a8d2b4df3b7ec5325250ab3326e130cf008fcf2bcd2b48c9c
+artifact SHA-256: a11cbf0aa8f0cadab07fc25c57bfde680c3438bec6d4399b4f0c76265cda8a26
 status: failed (expected blockers retained)
 ```
 
@@ -33,13 +33,13 @@ execution failure would return `2`.
 
 | Gate | Result |
 |---|---:|
-| Git tracked files inspected | 240 |
-| release-selected files | 61 |
-| selected bytes | 602,934 |
-| selected files with size + SHA-256 | 61/61 |
-| tracked internal/legacy paths explicitly excluded | 145 |
-| canonical Python modules | 33 |
-| internal dependency edges | 51 |
+| Git tracked files inspected | 250 |
+| release-selected files | 66 |
+| selected bytes | 651,268 |
+| selected files with size + SHA-256 | 66/66 |
+| tracked internal/legacy paths explicitly excluded | 149 |
+| canonical Python modules | 35 |
+| internal dependency edges | 54 |
 | missing canonical import targets | 0 |
 | canonical imports of forbidden legacy namespaces | 0 |
 | relative canonical imports | 0 |
@@ -48,28 +48,30 @@ execution failure would return `2`.
 | local absolute path/token content hits | 0 |
 | expected `mmprism = mmprism.cli:main` entrypoint | matched |
 
-The 145 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
+The 149 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
 legacy entrypoints/configuration, legacy `src/*` namespaces, and internal operational scripts. They remain
 in the development repository for evidence recovery and are absent from the release selection.
 
 ## 3. Open Release Blockers
 
-The profile failed on exactly four `REQUIRED_PATH_MISSING` findings:
+The profile failed on exactly three `REQUIRED_PATH_MISSING` findings:
 
 1. `LICENSE`: author approval is still required (`OPS-REV-002`, `R2-CODE-4`).
-2. `scripts/download_models.sh`: supported evaluator/model acquisition is incomplete (`ARCH-REV-002`,
-   `R2-CODE-2`).
-3. `configs/examples/radar_smoke.yaml`: complete portable radar/cube path remains blocked on acquisition
+2. `configs/examples/radar_smoke.yaml`: complete portable radar/cube path remains blocked on acquisition
    and calibration provenance.
-4. `configs/examples/mt5_smoke.yaml`: canonical mT5 train/evaluate vertical slice is not implemented.
+3. `configs/examples/mt5_smoke.yaml`: canonical mT5 train/evaluate vertical slice is not implemented.
 
 These are release requirements, not placeholders to satisfy by creating empty files. Each path must become
 runnable and pass a clean-environment smoke before the report may turn green.
 
+`scripts/download_models.sh` and `configs/models/evaluation_models_v1.yaml` are now selected and hashed
+by the release profile. Their fixed-revision download, checksum and two-loader execution evidence is
+recorded separately as `EVID-CODE-MODELS-V1`; therefore `ARCH-REV-002` is no longer a release blocker.
+
 ## 4. Evidence Boundary
 
 - This report verifies selection, hashes, text/path safety, entrypoints, and static dependency structure.
-- It does not create a ZIP, test installation inside a clean container, download models, or execute
+- This audit does not itself create a ZIP, test installation inside a clean container, download models, or execute
   prepare/train/evaluate.
 - It does not close `R2-CODE-3` until the four blockers are resolved and a final reviewer archive passes the
   same audit plus clean-environment execution.
