@@ -19,7 +19,7 @@ Role: `risk_register`
 | `DATA-CSLNEWS-META-001` | P1 | 官方 CSL-News CSV 比唯一 JSON 多 4 条冲突重复行 | CSV last-write-wins 会为 4 个视频静默选择错误译文 | mitigated | 固定 JSON 为 canonical source，CSV 只作审计；保留 profile 和四个 key，必要时反馈上游 |
 | `DATA-CSLNEWS-INTEGRITY-001` | P0 | `005/008` member 解压损坏；`001` 因 aria2 403 后被旧脚本误晋升为 incomplete final | `005/008` 的 3,251 个视频及 `001` 均不可作为 source；旧 partial snapshot 不能作为 integrity-verified 输入 | active_mitigated | promotion + cumulative consumption gate 已运行；17:53Z 仅调度 registry 中 19 个 passed archive；保留并 versioned 重下 `001/005/008` |
 | `EXP-TEST-001` | P1 | legacy 无自动化测试；canonical 仅有 foundation fixture/tests | radar/model/训练链仍缺保护 | in_progress | 扩展 shape、split、processor、model smoke tests |
-| `DOC-DRIFT-001` | P2 | README/CLAUDE 描述多个当前不存在的模块和脚本 | 误导执行 | evidence_ready | legacy baseline 后统一重写文档 |
+| `DOC-DRIFT-001` | P2 | legacy CLAUDE 描述多个不存在模块；旧公开 README 曾与代码漂移 | 直接复制开发仓库会误导执行 | mitigated | canonical README 已重写，release audit 确认 CLAUDE/internal/legacy 未被选择；最终 archive 继续执行同一 gate |
 | `ARCH-LLM-001` | P2 | Phi-3 路径与当前 base API 不一致，现有配置主要只支持 MT5 | 模型支持边界不清 | not_started | 决定删除、修复或降级为 unsupported |
 | `REV-ARCH-001` | P0 | 两阶段架构缺少 matched direct end-to-end baseline | 核心增益归因不充分 | blocked | `EXP-REV-001` |
 | `REV-DA-001` | P0 | shallow adaptation 缺少 full/adversarial/MMD 横向比较 | “最优/高效”主张不充分 | blocked | `EXP-REV-002` |

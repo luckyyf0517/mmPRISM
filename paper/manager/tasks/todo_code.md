@@ -6,7 +6,7 @@ Role: `architecture_execution_tracker`
 
 | ID | Priority | Task | Status | Acceptance |
 |---|---|---|---|---|
-| `ARCH-001-A` | P0 | 生成当前 import/config/entrypoint dependency graph | evidence_ready | AST audit 已输出 modules/edges/external/missing/legacy/cycle 与 pyproject entrypoint；待 clean snapshot 登记 |
+| `ARCH-001-A` | P0 | 生成当前 import/config/entrypoint dependency graph | done | clean `c49f725` snapshot：33 modules/51 edges，missing/legacy/relative/cycle 0，entrypoint matched |
 | `ARCH-001-B` | P0 | 冻结 legacy forensic inventory 与公开 release 排除边界 | in_progress | tracked allowlist/forbidden boundary 已实现；待最终 release artifact 和历史 evidence 完成后归档 legacy |
 | `ARCH-001-C` | P0 | 定义 radar、pose、feature、caption 的 shape/dtype contract | evidence_ready | explicit axes/dtype/finite/value/unit/coordinate-frame validators 与 9 项 contract tests 通过 |
 | `ARCH-002-A` | P1 | 建立 `pyproject.toml` 和版本锁定方案 | done | Python 3.12、UV lock、research extras、wheel 与 A100 smoke 通过 |

@@ -42,6 +42,7 @@ uv run mmprism doctor
 uv run mmprism config configs/examples/pose_smoke.yaml
 uv run mmprism plan configs/examples/pose_smoke.yaml
 uv run mmprism manifest tests/fixtures/manifests/pose_smoke.jsonl
+# Expected to return 1 while the listed reviewer-release blockers remain.
 uv run mmprism release-audit configs/release/reviewer_release_v1.yaml
 uv run pytest
 ```

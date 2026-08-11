@@ -14,8 +14,10 @@ Last Updated: `2026-08-11`
 - `manuscript_inventory.md`：当前 Overleaf 主稿和 supplementary 的结构、引用、资产与合规静态证据。
 - `display_item_registry.md`：20 个当前 display item 的 Source Data 与 provenance 控制表。
 - `radar_contract_audit.md`：雷达张量/range-Doppler 契约、稿件与 legacy 冲突及 beamforming gate。
+- `release_audit.md`：公开 release allowlist、依赖图、逐文件 hash、排除边界和剩余交付 blocker。
 - `artifacts/manuscript_inventory_v2.json`：由审计工具生成的逐文件、逐行、逐 display item 机器可读 inventory。
 - `artifacts/manuscript_inventory_v1.json`：首次环境级审计的历史快照，不再作为当前 canonical inventory。
+- `artifacts/release_audit_v1.json`：clean commit 上生成的 reviewer release 机器可读预审报告。
 - `experiment_registry.md`：每次正式 run 的配置、commit、数据、checkpoint、prediction 和 metrics。
 - `paper_evidence_map.md`：paper claim/table/figure 到 data/experiment/reviewer/manuscript 的映射。
 

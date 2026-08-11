@@ -77,6 +77,9 @@ Partial sequence split passed 2,157/2,157 coverage and zero cross-split group le
 All 2,157 group IDs and assignment buckets independently recomputed and matched
 Formal run initialization atomically writes config/environment/input hashes and refuses collisions
 Metrics require a versioned protocol, sample count and finite values; completed runs require metrics
+Clean release audit at `c49f725`: 61 hashed files selected; 145 internal/legacy paths excluded
+Canonical dependency audit: 33 modules / 51 edges / 0 missing targets / 0 legacy imports / 0 cycles
+Reviewer release remains blocked only on LICENSE, model download, radar example and mT5 example
 ```
 
 Research profile 已安装 Lightning 2.6.5、Transformers 4.57.6、PEFT 0.20.0、SciPy/HDF5、sentence-transformers、OpenCV、W&B 等核心依赖。DeepSpeed 作为 `distributed` profile 按需安装，不进入默认研究环境。

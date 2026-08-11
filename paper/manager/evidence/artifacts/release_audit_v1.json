@@ -1,0 +1,748 @@
+{
+  "config_fingerprint": "bbc4924e64f597d171889ae689c8cbe86d8e37a67af1e1f28f1d6821df234af0",
+  "dependencies": {
+    "cycles": [],
+    "external_imports": [
+      "numpy",
+      "yaml"
+    ],
+    "internal_edge_count": 51,
+    "internal_edges": [
+      [
+        "mmprism.__main__",
+        "mmprism.cli"
+      ],
+      [
+        "mmprism.artifacts",
+        "mmprism.artifacts.run"
+      ],
+      [
+        "mmprism.artifacts.run",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.artifacts.run",
+        "mmprism.runtime.plan"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.artifacts"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.contracts"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.data"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.release"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.runtime"
+      ],
+      [
+        "mmprism.config",
+        "mmprism.config.loader"
+      ],
+      [
+        "mmprism.config",
+        "mmprism.config.schema"
+      ],
+      [
+        "mmprism.config.loader",
+        "mmprism.config.schema"
+      ],
+      [
+        "mmprism.contracts",
+        "mmprism.contracts.manifest"
+      ],
+      [
+        "mmprism.contracts",
+        "mmprism.contracts.split"
+      ],
+      [
+        "mmprism.contracts",
+        "mmprism.contracts.tensors"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.csl_news"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.csl_news_annotation"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.csl_news_annotation_qc"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.csl_news_annotation_status"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.csl_news_integrity"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.csl_news_manifest"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.csl_news_metadata"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.csl_news_pose_manifest"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.split"
+      ],
+      [
+        "mmprism.data.csl_news_annotation",
+        "mmprism.data.csl_news_integrity"
+      ],
+      [
+        "mmprism.data.csl_news_annotation_qc",
+        "mmprism.data.csl_news_annotation"
+      ],
+      [
+        "mmprism.data.csl_news_annotation_status",
+        "mmprism.data.csl_news_annotation"
+      ],
+      [
+        "mmprism.data.csl_news_annotation_status",
+        "mmprism.data.csl_news_integrity"
+      ],
+      [
+        "mmprism.data.csl_news_integrity",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.data.csl_news_integrity",
+        "mmprism.data.csl_news"
+      ],
+      [
+        "mmprism.data.csl_news_manifest",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.data.csl_news_manifest",
+        "mmprism.contracts"
+      ],
+      [
+        "mmprism.data.csl_news_manifest",
+        "mmprism.data.csl_news"
+      ],
+      [
+        "mmprism.data.csl_news_manifest",
+        "mmprism.data.csl_news_annotation"
+      ],
+      [
+        "mmprism.data.csl_news_metadata",
+        "mmprism.data.csl_news"
+      ],
+      [
+        "mmprism.data.csl_news_pose_manifest",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.data.csl_news_pose_manifest",
+        "mmprism.contracts"
+      ],
+      [
+        "mmprism.data.csl_news_pose_manifest",
+        "mmprism.data.csl_news"
+      ],
+      [
+        "mmprism.data.csl_news_pose_manifest",
+        "mmprism.data.csl_news_annotation"
+      ],
+      [
+        "mmprism.data.csl_news_pose_manifest",
+        "mmprism.data.csl_news_integrity"
+      ],
+      [
+        "mmprism.data.split",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.data.split",
+        "mmprism.contracts"
+      ],
+      [
+        "mmprism.radar",
+        "mmprism.radar.processing"
+      ],
+      [
+        "mmprism.radar.processing",
+        "mmprism.contracts.tensors"
+      ],
+      [
+        "mmprism.release",
+        "mmprism.release.audit"
+      ],
+      [
+        "mmprism.runtime",
+        "mmprism.runtime.paths"
+      ],
+      [
+        "mmprism.runtime",
+        "mmprism.runtime.plan"
+      ],
+      [
+        "mmprism.runtime",
+        "mmprism.runtime.provenance"
+      ],
+      [
+        "mmprism.runtime.plan",
+        "mmprism.config.schema"
+      ],
+      [
+        "mmprism.runtime.plan",
+        "mmprism.runtime.provenance"
+      ]
+    ],
+    "module_count": 33,
+    "modules": [
+      "mmprism",
+      "mmprism.__main__",
+      "mmprism.artifacts",
+      "mmprism.artifacts.run",
+      "mmprism.cli",
+      "mmprism.config",
+      "mmprism.config.loader",
+      "mmprism.config.schema",
+      "mmprism.contracts",
+      "mmprism.contracts.manifest",
+      "mmprism.contracts.split",
+      "mmprism.contracts.tensors",
+      "mmprism.data",
+      "mmprism.data.csl_news",
+      "mmprism.data.csl_news_annotation",
+      "mmprism.data.csl_news_annotation_qc",
+      "mmprism.data.csl_news_annotation_status",
+      "mmprism.data.csl_news_integrity",
+      "mmprism.data.csl_news_manifest",
+      "mmprism.data.csl_news_metadata",
+      "mmprism.data.csl_news_pose_manifest",
+      "mmprism.data.split",
+      "mmprism.evaluation",
+      "mmprism.models",
+      "mmprism.radar",
+      "mmprism.radar.processing",
+      "mmprism.release",
+      "mmprism.release.audit",
+      "mmprism.runtime",
+      "mmprism.runtime.paths",
+      "mmprism.runtime.plan",
+      "mmprism.runtime.provenance",
+      "mmprism.training"
+    ]
+  },
+  "entrypoints": {
+    "mmprism": "mmprism.cli:main"
+  },
+  "finding_count": 4,
+  "findings": [
+    {
+      "code": "REQUIRED_PATH_MISSING",
+      "message": "required release file does not exist",
+      "path": "LICENSE"
+    },
+    {
+      "code": "REQUIRED_PATH_MISSING",
+      "message": "required release file does not exist",
+      "path": "configs/examples/mt5_smoke.yaml"
+    },
+    {
+      "code": "REQUIRED_PATH_MISSING",
+      "message": "required release file does not exist",
+      "path": "configs/examples/radar_smoke.yaml"
+    },
+    {
+      "code": "REQUIRED_PATH_MISSING",
+      "message": "required release file does not exist",
+      "path": "scripts/download_models.sh"
+    }
+  ],
+  "generated_at": "2026-08-11T18:05:42.988569+00:00",
+  "git": {
+    "commit": "c49f7252d53f0e10c17c91b5795f4a336168f695",
+    "dirty_entry_count": 0,
+    "state": "clean"
+  },
+  "release_id": "reviewer_release_v1",
+  "schema_version": "mmprism.release_audit_report.v1",
+  "selection": {
+    "files": [
+      {
+        "bytes": 5,
+        "path": ".python-version",
+        "sha256": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d"
+      },
+      {
+        "bytes": 5571,
+        "path": "README.md",
+        "sha256": "9633cace87770296ee92fb8b739c8cda1e13142a41ad4f5d9075a63adc2f016f"
+      },
+      {
+        "bytes": 330,
+        "path": "configs/examples/pose_smoke.yaml",
+        "sha256": "a292312fa29b82fbd0e61623c008e68ecf2c831fb1b56795e8586c42ad531888"
+      },
+      {
+        "bytes": 1391,
+        "path": "configs/release/reviewer_release_v1.yaml",
+        "sha256": "9040f55c3dc855ae22500d508ff06d4bddb32cf9708dadbb6f3cc6c5de172d8c"
+      },
+      {
+        "bytes": 2463,
+        "path": "pyproject.toml",
+        "sha256": "6bb72fc57f8a68c3cd926bcde304810a078548071ee2ef3858fb4d929f61e649"
+      },
+      {
+        "bytes": 685,
+        "path": "scripts/bootstrap_env.sh",
+        "sha256": "839e31d7e61a39c7544c35ccab6e37d12c8e1825ebcf2e6e100e9d4a01e16807"
+      },
+      {
+        "bytes": 65,
+        "path": "src/mmprism/__init__.py",
+        "sha256": "746ea58e243e7c0faf1981b9113f2f4b25ec297a6f2cb26153848ecdebccd693"
+      },
+      {
+        "bytes": 55,
+        "path": "src/mmprism/__main__.py",
+        "sha256": "11b6d2564274481ab0dfb29f7b7c5831403c63b76b8e58a3f90bad16575a38a3"
+      },
+      {
+        "bytes": 483,
+        "path": "src/mmprism/artifacts/__init__.py",
+        "sha256": "40d9bcd83fcd7c0cc5d52b8957454117cc75f65173f6bdde922f1c1e02fcfd3d"
+      },
+      {
+        "bytes": 13900,
+        "path": "src/mmprism/artifacts/run.py",
+        "sha256": "906ea079dce6e70ce83380f29603500fbc8108d647beaf7526b6bc740a93990c"
+      },
+      {
+        "bytes": 16645,
+        "path": "src/mmprism/cli.py",
+        "sha256": "9037ce89c36ea0ae35d5ca79fd3971637232f8dc9bbf6d5fb45b534285b9024b"
+      },
+      {
+        "bytes": 321,
+        "path": "src/mmprism/config/__init__.py",
+        "sha256": "3d6445fdea458859327602b3c57dfd0857f26f60a51d1a580c7615f166b67fa5"
+      },
+      {
+        "bytes": 1510,
+        "path": "src/mmprism/config/loader.py",
+        "sha256": "da9a61920fea67d4557384d22199d2c3ace260f920471d796cc22bd914e0bd9d"
+      },
+      {
+        "bytes": 6440,
+        "path": "src/mmprism/config/schema.py",
+        "sha256": "be5122676bc62ed4925c95b459eab7d9f5ef1b752a62ce49d4ce32b2fc4abb0c"
+      },
+      {
+        "bytes": 1618,
+        "path": "src/mmprism/contracts/__init__.py",
+        "sha256": "c28731042871fec581f9297e437c783cd39c0c7207909e2c4d9c6934edebe832"
+      },
+      {
+        "bytes": 8263,
+        "path": "src/mmprism/contracts/manifest.py",
+        "sha256": "cb6e5a7c7956f5bdfbc4284783c5fd3e7c76d5842748fd79989b62e984eaa961"
+      },
+      {
+        "bytes": 7547,
+        "path": "src/mmprism/contracts/split.py",
+        "sha256": "83b582a3808976566720600f1a57ed49f6604b59ae26f28ab808400765ed2b28"
+      },
+      {
+        "bytes": 7664,
+        "path": "src/mmprism/contracts/tensors.py",
+        "sha256": "27996a2d5e31462601ae80e17540c6bbcce7274261c700f65318d90c67b11173"
+      },
+      {
+        "bytes": 3604,
+        "path": "src/mmprism/data/__init__.py",
+        "sha256": "43c626727069986d2d9b6d7bbe2c182025cef57dbe7dd9aeb0a30a1b1c41d607"
+      },
+      {
+        "bytes": 14893,
+        "path": "src/mmprism/data/csl_news.py",
+        "sha256": "ae2846ada26624e69dac910e6d19ed191f0804a400dd11017d3255f3a2537c7e"
+      },
+      {
+        "bytes": 56762,
+        "path": "src/mmprism/data/csl_news_annotation.py",
+        "sha256": "95ef3b504b523e4751a14f9d56bd05aa07f5ac1125f0a46fd403eff0b12912ff"
+      },
+      {
+        "bytes": 13765,
+        "path": "src/mmprism/data/csl_news_annotation_qc.py",
+        "sha256": "04a30ee2bd345b80ce298aba97681d51d481a38051552f6f657d75e2e9225b1e"
+      },
+      {
+        "bytes": 15024,
+        "path": "src/mmprism/data/csl_news_annotation_status.py",
+        "sha256": "8777497ce0b59ffb71c3c4fc66400b7cdf1d7d28886589907872b31cff1abf1d"
+      },
+      {
+        "bytes": 24734,
+        "path": "src/mmprism/data/csl_news_integrity.py",
+        "sha256": "08bafd3b849c98e09d4974f661dd3b9c8b19f18ff0c236735c90476f96306ec3"
+      },
+      {
+        "bytes": 23176,
+        "path": "src/mmprism/data/csl_news_manifest.py",
+        "sha256": "4790f3eda2ce2edf5364c3cd078bef1a42aa0ac46a15662462386c1732d45482"
+      },
+      {
+        "bytes": 27362,
+        "path": "src/mmprism/data/csl_news_metadata.py",
+        "sha256": "0bb769bed8e980391c8457137bf10fc33423aaf8656ae061356a4fd93f19d9c8"
+      },
+      {
+        "bytes": 39679,
+        "path": "src/mmprism/data/csl_news_pose_manifest.py",
+        "sha256": "d63986a486c757a9ad3cd5e7ab4f8543cc27524ef0687def033fff07f1ddd6b6"
+      },
+      {
+        "bytes": 19337,
+        "path": "src/mmprism/data/split.py",
+        "sha256": "bdaaa6b538d5490e432dab9da3acc789815980718ac25d9e66ebf44e27fdafaf"
+      },
+      {
+        "bytes": 56,
+        "path": "src/mmprism/evaluation/__init__.py",
+        "sha256": "9852052356bc8b0642ba727fac25c5d0a064a3747d2823bff6718df0ec0d5a95"
+      },
+      {
+        "bytes": 73,
+        "path": "src/mmprism/models/__init__.py",
+        "sha256": "fc27ddfe77fe3f154332342fdeafde949ba6b43f39467036683baf37173e232c"
+      },
+      {
+        "bytes": 1,
+        "path": "src/mmprism/py.typed",
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "bytes": 376,
+        "path": "src/mmprism/radar/__init__.py",
+        "sha256": "03f2681205e2ed62d2e0dbaba383decec6d59a177993506c097024fb595593f2"
+      },
+      {
+        "bytes": 6027,
+        "path": "src/mmprism/radar/processing.py",
+        "sha256": "e9c2cec357621e716f7c06165d9cdbbf3e3dced16ec38552e8e09d698c1ed257"
+      },
+      {
+        "bytes": 493,
+        "path": "src/mmprism/release/__init__.py",
+        "sha256": "53ea1a62f05cd6bd29a405585aa0241e5c8858256072a3e7bbf442db3659e881"
+      },
+      {
+        "bytes": 24620,
+        "path": "src/mmprism/release/audit.py",
+        "sha256": "c4555169b34297d99ca5bbb6a876beffdcf0d0c1406c1ac1d1fa0649695e1ef0"
+      },
+      {
+        "bytes": 267,
+        "path": "src/mmprism/runtime/__init__.py",
+        "sha256": "f97c9d452e101a0d3122d3f1f92a830ea451249a85525ab7993879801720392d"
+      },
+      {
+        "bytes": 471,
+        "path": "src/mmprism/runtime/paths.py",
+        "sha256": "d20ee9427796fc6bacc2f29769341c0c1c858dcb098e30a3f1d9d67ff1595b36"
+      },
+      {
+        "bytes": 2498,
+        "path": "src/mmprism/runtime/plan.py",
+        "sha256": "3e756c725fb8c4f7e4038ee8b4f14f623ccbbf33a0783807a839020f4a00919e"
+      },
+      {
+        "bytes": 1233,
+        "path": "src/mmprism/runtime/provenance.py",
+        "sha256": "ca32e27e104a9202287dd2fa2ec753325719539d9453a46481f3bfc9cc0ac54f"
+      },
+      {
+        "bytes": 78,
+        "path": "src/mmprism/training/__init__.py",
+        "sha256": "bf502d2d5aa86e5aa25a53217677b238751b404fc516bd3e38e396ac679045b8"
+      },
+      {
+        "bytes": 412,
+        "path": "tests/README.md",
+        "sha256": "c726bbb8e970d73fdc3d12df5a7b1c2c451c82197f59f8d7b317befdc6e6c179"
+      },
+      {
+        "bytes": 4223,
+        "path": "tests/contracts/test_tensor_contracts.py",
+        "sha256": "f06f2a68a148e14777ae195338863deea3c9264e9ea58d6f5b441a7605f35ae9"
+      },
+      {
+        "bytes": 514,
+        "path": "tests/fixtures/manifests/pose_smoke.jsonl",
+        "sha256": "9abd9779e7924e553174d24b26f1805c01cf2d40176471ba1c1a75731e3b71f0"
+      },
+      {
+        "bytes": 8744,
+        "path": "tests/unit/test_artifacts.py",
+        "sha256": "97528636eecaab8319441cae56647004dfbb45ee06a4bbbf4cfdbe9f63a7c4a5"
+      },
+      {
+        "bytes": 1653,
+        "path": "tests/unit/test_config.py",
+        "sha256": "a2e1691979e8b9899cf23d3f1f4523f5e1d96c1be1f9effab7adafaed4293961"
+      },
+      {
+        "bytes": 6440,
+        "path": "tests/unit/test_csl_news.py",
+        "sha256": "423894b4c1a2a5c964ddd31cefd7266a1186458b0c8b9deaf466129fb07d1512"
+      },
+      {
+        "bytes": 11264,
+        "path": "tests/unit/test_csl_news_annotation.py",
+        "sha256": "a3aed927f48abe014985e90a6fbf7f8e2f02c24644ca7c5c4fd67786370844e8"
+      },
+      {
+        "bytes": 5206,
+        "path": "tests/unit/test_csl_news_annotation_qc.py",
+        "sha256": "c7710a41fe01a6054c6a3e62f8126323bb2f6a28f5c919ca95e64f7461d5b844"
+      },
+      {
+        "bytes": 8984,
+        "path": "tests/unit/test_csl_news_annotation_status.py",
+        "sha256": "c0530b8caa1032b9dd9f5d4a791ebf3088ba38eedae3be51e6320aee7984d230"
+      },
+      {
+        "bytes": 6878,
+        "path": "tests/unit/test_csl_news_integrity.py",
+        "sha256": "816946ee5b964824b1db79d8b9b84a06ad9ce7b85222aea9b6b7d387c5894b91"
+      },
+      {
+        "bytes": 6359,
+        "path": "tests/unit/test_csl_news_manifest.py",
+        "sha256": "e829f7c3be89198b1e84b4bc300e786afbc27e2c424a3c956f652affc4f7a10f"
+      },
+      {
+        "bytes": 6108,
+        "path": "tests/unit/test_csl_news_metadata.py",
+        "sha256": "cb0100c71e732e8dcafcc54e1115476cf43621da7332a84a49a45f15166f328f"
+      },
+      {
+        "bytes": 13176,
+        "path": "tests/unit/test_csl_news_pose_manifest.py",
+        "sha256": "f56668fade2c08cb2cf95fc226bc2ed2fd42655045480024092f4b0771afe78e"
+      },
+      {
+        "bytes": 2850,
+        "path": "tests/unit/test_manifest.py",
+        "sha256": "9bdfc4d7280aa572e3db39dc561c776b77988790dfe327b86d560f9e68afadb4"
+      },
+      {
+        "bytes": 5366,
+        "path": "tests/unit/test_manuscript_audit.py",
+        "sha256": "1fa7af56e07c3fd2db4034f1b66514aab1ce93f669ae396fbbc7ccf4845171d4"
+      },
+      {
+        "bytes": 4313,
+        "path": "tests/unit/test_radar_processing.py",
+        "sha256": "0bffa9713a1991369e5f645343806f30aec4d43fd370d265d1aa96883cb843bb"
+      },
+      {
+        "bytes": 6608,
+        "path": "tests/unit/test_release_audit.py",
+        "sha256": "ec919c6405b781330cd08e8dfaa94c28c2cdd90e5c37acbdbfa83eb6c4f394cc"
+      },
+      {
+        "bytes": 2284,
+        "path": "tests/unit/test_run_plan.py",
+        "sha256": "8555bd79f642b1b5118bcb457a1c282b2c03579fdc977f3c02853e652615cb96"
+      },
+      {
+        "bytes": 705,
+        "path": "tests/unit/test_runtime.py",
+        "sha256": "6532b569fd8082317fa48296ccb270a79500d10b6d81f92ea771e1cd623a24a0"
+      },
+      {
+        "bytes": 7767,
+        "path": "tests/unit/test_split.py",
+        "sha256": "4cd7c93d34bdab355d00d40b9be03c8aaf13b5c2aecb284125e8dd8575e61c8e"
+      },
+      {
+        "bytes": 143595,
+        "path": "uv.lock",
+        "sha256": "d96fbd007605ae21e49bd3e18cd51dcdd5b2640757713739dbbc3f9a3b67afb0"
+      }
+    ],
+    "forbidden_tracked_but_excluded": [
+      ".gitmodules",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "config/omnihand/omnihand_cubenet_collected.yaml",
+      "config/omnihand/omnihand_cubenet_collected_demo.yaml",
+      "config/omnihand/omnihand_cubenet_collected_individual.yaml",
+      "config/omnihand/omnihand_cubenet_collected_transformer.yaml",
+      "config/omnihand/omnihand_cubenet_collected_transformer_individual.yaml",
+      "config/omnihand/omnihand_cubenet_daily.yaml",
+      "config/omnihand/omnihand_cubenet_news.yaml",
+      "config/omnihand/omnihand_mmhand_collected.yaml",
+      "config/omnihand/omnihand_mmhand_collected_demo.yaml",
+      "config/radar/iwr1843.py",
+      "config/wavellm/wavellm_mt5_collected.yaml",
+      "config/wavellm/wavellm_mt5_daily.yaml",
+      "config/wavellm/wavellm_mt5_daily_features.yaml",
+      "config/wavellm/wavellm_mt5_daily_multimodal.yaml",
+      "config/wavellm/wavellm_mt5_daily_xy.yaml",
+      "config/wavellm/wavellm_mt5_news.yaml",
+      "paper/README.md",
+      "paper/assets/README.md",
+      "paper/manager/README.md",
+      "paper/manager/current/architecture_status.md",
+      "paper/manager/current/availability_plan.md",
+      "paper/manager/current/core_rules.md",
+      "paper/manager/current/data_status.md",
+      "paper/manager/current/editorial_language_audit.md",
+      "paper/manager/current/issues.md",
+      "paper/manager/current/manuscript_status.md",
+      "paper/manager/current/operator_guide.md",
+      "paper/manager/current/overview.md",
+      "paper/manager/current/roadmap.md",
+      "paper/manager/dashboard.md",
+      "paper/manager/data_upload_checklist.md",
+      "paper/manager/decisions/decision_log.md",
+      "paper/manager/evidence/README.md",
+      "paper/manager/evidence/artifacts/manuscript_inventory_v1.json",
+      "paper/manager/evidence/artifacts/manuscript_inventory_v2.json",
+      "paper/manager/evidence/csl_news_metadata_profile.md",
+      "paper/manager/evidence/csl_news_pose_manifest.md",
+      "paper/manager/evidence/csl_news_pose_split.md",
+      "paper/manager/evidence/csl_news_source_integrity.md",
+      "paper/manager/evidence/csl_news_source_manifest.md",
+      "paper/manager/evidence/data_registry.md",
+      "paper/manager/evidence/display_item_registry.md",
+      "paper/manager/evidence/experiment_registry.md",
+      "paper/manager/evidence/manuscript_inventory.md",
+      "paper/manager/evidence/paper_evidence_map.md",
+      "paper/manager/evidence/radar_contract_audit.md",
+      "paper/manager/original_submission/README.md",
+      "paper/manager/reviews/README.md",
+      "paper/manager/reviews/analysis.md",
+      "paper/manager/reviews/decision_letter.md",
+      "paper/manager/reviews/raw/README.md",
+      "paper/manager/reviews/raw/decision_email_20260811_redacted.md",
+      "paper/manager/reviews/response_letter_tracker.md",
+      "paper/manager/reviews/review_cn.md",
+      "paper/manager/reviews/review_en.md",
+      "paper/manager/reviews/reviewer_closure_matrix.md",
+      "paper/manager/rounds/README.md",
+      "paper/manager/rounds/round0/README.md",
+      "paper/manager/runbooks/architecture_refactor.md",
+      "paper/manager/runbooks/csl_news_annotation_overnight.md",
+      "paper/manager/runbooks/data_rebuild.md",
+      "paper/manager/runbooks/experiment_reproduction.md",
+      "paper/manager/runbooks/final_submission_reviewer_audit.md",
+      "paper/manager/sync_map.md",
+      "paper/manager/tasks/todo.md",
+      "paper/manager/tasks/todo_code.md",
+      "paper/manager/tasks/todo_compliance.md",
+      "paper/manager/tasks/todo_data.md",
+      "paper/manager/tasks/todo_experiments.md",
+      "paper/manager/tools/audit_manuscript.py",
+      "paper/manuscript",
+      "requirements.txt",
+      "run_collected_annotation.py",
+      "run_csl_daily_annotation.py",
+      "run_csl_lables.py",
+      "run_csl_news_annotation.py",
+      "run_evaluate_each.py",
+      "run_evaluation.py",
+      "run_extract_feature.py",
+      "run_model.py",
+      "run_peft.py",
+      "run_simulation.py",
+      "scripts/omnihand/pretrain_cubenet.sh",
+      "scripts/omnihand/pretrain_cubenet_transformer.sh",
+      "scripts/omnihand/pretrain_daily.sh",
+      "scripts/omnihand/pretrain_mmhand.sh",
+      "scripts/omnihand/pretrain_news.sh",
+      "scripts/overleaf_git.sh",
+      "scripts/wavellm/eval_mt5_collected.sh",
+      "scripts/wavellm/eval_mt5_daily.sh",
+      "scripts/wavellm/eval_mt5_news.sh",
+      "scripts/wavellm/train_mt5_daily.sh",
+      "scripts/wavellm/train_mt5_news.sh",
+      "src/data/data_interface.py",
+      "src/data/dataset.py",
+      "src/eval/external_metrics/Rouge.py",
+      "src/eval/external_metrics/__init__.py",
+      "src/eval/external_metrics/mscoco_rouge.py",
+      "src/eval/external_metrics/sacrebleu.py",
+      "src/eval/metrics.py",
+      "src/eval/reconstruction.py",
+      "src/fmcw/beamformer.py",
+      "src/fmcw/fmcw_radar.py",
+      "src/fmcw/simulator.py",
+      "src/model/clip/clip.py",
+      "src/model/clip/clip_loss.py",
+      "src/model/encoder/cubenet.py",
+      "src/model/encoder/mmhand.py",
+      "src/model/encoder/modules/__init__.py",
+      "src/model/encoder/modules/channel_attention_3d.py",
+      "src/model/encoder/modules/conv_bn_act_3d.py",
+      "src/model/encoder/modules/residual_block_3d.py",
+      "src/model/encoder/modules/se_attention_3d.py",
+      "src/model/encoder/modules/spatial_attention_3d.py",
+      "src/model/encoder/pose_encoder.py",
+      "src/model/encoder/transformer.py",
+      "src/model/fusion.py",
+      "src/model/llm/base_model.py",
+      "src/model/llm/model_factory.py",
+      "src/model/llm/mt5_model.py",
+      "src/model/llm/phi3_model.py",
+      "src/model/omnihand.py",
+      "src/model/stgcn_layers/__init__.py",
+      "src/model/stgcn_layers/gcn_utils.py",
+      "src/model/stgcn_layers/stgcn_block.py",
+      "src/model/trainer.py",
+      "src/scripts/check.py",
+      "src/scripts/extract.py",
+      "src/scripts/split.py",
+      "src/scripts/split_cross_individual.py",
+      "src/scripts/stat.py",
+      "src/utils/compress_folders.py",
+      "src/utils/deepspeed_utils.py",
+      "src/utils/info.py",
+      "src/utils/io.py",
+      "src/utils/make_video.py",
+      "src/utils/plot.py",
+      "src/utils/render_poses.py",
+      "src/utils/save_graph_encoder.py",
+      "src/utils/save_pretrained.py",
+      "src/utils/tools.py",
+      "src/utils/unzip_folders.py"
+    ],
+    "forbidden_tracked_but_excluded_count": 145,
+    "selected_bytes": 602934,
+    "selected_file_count": 61,
+    "tracked_file_count": 240
+  },
+  "status": "failed"
+}
