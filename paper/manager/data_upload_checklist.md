@@ -10,7 +10,7 @@ Role: `author_facing_upload_contract`
 ## 1. 当前约束
 
 - Canonical data root：`/mnt/gfs/yanyifan/mmPRISM/`。
-- `/mnt/gfs` 当前总容量约 10 TB，已用 99%，仅余约 141 GB。
+- `/mnt/gfs` 为约 10 TB 共享盘；`2026-08-11T12:10Z` 复核时约余 3.6 TB，容量会动态变化。
 - `/mnt/gfs/yanyifan` 当前约占 698 GB，但没有发现 mmPRISM 数据。
 - 上传前必须先提供文件清单和总大小；未通过容量 gate 前不得解压或生成派生数据。
 - 第一优先级是不可替代的私人原始采集与标定资料，不是 pose、feature 或 synthetic radar 缓存。
@@ -94,6 +94,9 @@ metadata_dictionary.md
 
 作者已确认 CSL-News 原视频可以重新下载，因此默认不进入上传队列。执行下载前仍需固定官方来源、
 数据版本、访问条款和 archive checksum；原始 `CSL_News_Labels.json` 必须属于同一版本。
+
+当前已固定 `ZechengLi19/CSL-News@3a0601210333fe760efd09b5d9e2ae5f341ce339`，许可证为
+`CC BY-NC 4.0`，436 archives 总计约 935 GB compressed，下载正在 versioned incoming batch 中进行。
 
 如果这两个数据集可以从官方来源重新获取，不需要重复占用 GFS；先提供准确版本、URL、访问方式和
 checksum。若链接已失效、需要审批或版本无法确定，则按 P0 上传原始包。
@@ -207,7 +210,7 @@ source_owner,access_class,original_format,notes
 
 - [ ] 先给出每个 archive/目录的估计大小和文件数。
 - [ ] 标明 P0/P1/P2、是否可重新下载、是否含个人/敏感数据。
-- [ ] 确认可用空间和解压峰值；当前只有约 141 GB，默认不允许边上传边解压。
+- [ ] 确认可用空间和解压峰值；共享容量即使暂时充足，也不允许边下载边批量解压。
 - [ ] 生成相对路径 manifest 和 SHA-256；大目录可先生成 archive checksum。
 - [ ] 确认数据 owner、license、伦理和 reviewer/public sharing 边界。
 

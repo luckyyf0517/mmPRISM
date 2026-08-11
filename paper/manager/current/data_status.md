@@ -1,6 +1,6 @@
 # Data Status and Rebuild Plan
 
-Status: `upload_contract_ready_asset_intake_blocked`
+Status: `csl_news_download_active_other_asset_intake_blocked`
 Last Updated: `2026-08-11`
 Role: `data_source_of_truth`
 
@@ -14,10 +14,12 @@ Falcon_checkpoint_archive/
 huggingface/
 ```
 
-未发现目录名包含 `mmPRISM`、`CSL-Daily`、`CSL-News`、`collected_base`、`collected_demo`、`OmniHand` 或 `WaveLLM` 的资产。
+盘点开始时未发现目录名包含 `mmPRISM`、`CSL-Daily`、`CSL-News`、`collected_base`、
+`collected_demo`、`OmniHand` 或 `WaveLLM` 的资产。现已建立 canonical incoming root，并开始下载
+CSL-News 官方源；其他数据族仍未到位。
 
-共享 `/mnt/gfs` 当前约 10 TB，总使用率 99%，剩余约 141 GB；`/mnt/gfs/yanyifan` 当前约占
-698 GB。正式数据重建前必须先确认源数据位置并做容量预算，不能直接复制历史目录或展开大体积归档。
+`2026-08-11T12:10Z` 复核时，共享 `/mnt/gfs` 约 10 TB，使用率 65%，剩余约 3.6 TB；
+`/mnt/gfs/yanyifan` 约占 698 GB。空间属于共享动态状态，每次批量下载或解压前仍必须重新检查。
 
 面向上传人员的完整 P0/P1/P2 清单见 `../data_upload_checklist.md`。
 
@@ -26,7 +28,7 @@ huggingface/
 | Data Family | 历史用途 | 预期主要模态 | 当前状态 |
 |---|---|---|---|
 | CSL-Daily | OmniHand simulation、WaveLLM caption | images, pose, pred_pose, feature, annotation | missing_location |
-| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | missing_location |
+| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_in_progress |
 | Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | missing_location |
 | Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | missing_location |
 | Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | missing_location |
@@ -41,7 +43,7 @@ huggingface/
 | 采集元数据 | subject/session/scene/orientation/occlusion/split/ethics scope | 必须重新上传；匿名化、带字段字典 | P0 |
 | 雷达与标定 | 硬件/固件、chirp/frame、阵列映射、channel order、外参和标定 | 必须重新上传；每条 sequence 绑定 config ID | P0 |
 | CSL-Daily | 原始图像、`csl2020ct_v2.pkl`、signer/sequence/version/license | 官方版本可重下则固定版本下载，否则上传 | P0 |
-| CSL-News | 原始视频、`CSL_News_Labels.json`、archive/category/version/license | 作者确认可重下；待固定官方来源、版本、条款和 checksum | P0 |
+| CSL-News | 原始视频、`CSL_News_Labels.json`、archive/category/version/license | 官方 HF revision 已固定；935 GB compressed download active | P0 |
 | MANO/仿真来源 | MANO 参数/mesh/model 或原始 simulator 输入、配置和运行证据 | 依据原投稿真实 pipeline 条件性上传 | P0 |
 | 返修真实 stress set | 新用户、0°/30°/60°、双手重叠和物体遮挡 | 原始数据 intake 后冻结 protocol 并新采；不得混入原 test protocol | P0 |
 | 历史论文证据 | split、checkpoint、prediction、metric、log、figure source | 为原投稿 provenance 优先上传 | P1 |
@@ -148,4 +150,26 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 2. 优先上传体积小的匿名 metadata、雷达配置、阵列映射、标定和仿真 provenance。
 3. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
 4. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
-5. CSL-News 不进入首批上传；先登记官方 URL/version/license，再下载到 versioned incoming batch。
+5. 监控 CSL-News 下载服务；完成后生成 file/member manifest、SHA-256、ZIP integrity 和 label coverage report。
+
+## 9. CSL-News 官方下载状态
+
+```text
+source: ZechengLi19/CSL-News
+revision: 3a0601210333fe760efd09b5d9e2ae5f341ce339
+license: CC BY-NC 4.0
+compressed_size: 935001573087 bytes
+archives: 436
+incoming: /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121
+```
+
+运行服务：
+
+```bash
+systemctl --user status mmprism-csl-news-metadata.service
+systemctl --user status mmprism-csl-news-archives.service
+```
+
+下载使用 `scripts/download_csl_news.sh`，16 worker、断点续传、`.part` 原子完成、只下载不解压，
+并保留至少 1 TiB 可用空间。Legacy 预处理链与接口冲突见
+`../../../docs/architecture/csl_news_data.md`。

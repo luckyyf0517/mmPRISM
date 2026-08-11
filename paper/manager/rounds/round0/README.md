@@ -6,7 +6,7 @@ Role: `round0_control`
 
 ## Goal
 
-在不修改科学结论、不大规模移动数据的前提下，建立返修工作的可信起点。
+在不修改科学结论、通过容量和 provenance gate 后再接收数据的前提下，建立返修工作的可信起点。
 
 ## Workstreams
 
@@ -14,7 +14,7 @@ Role: `round0_control`
 |---|---|---|---|
 | Reviewer package intake | `PAPER-001A`, `REV-001` | done | original review + stable tracker + diagnosis |
 | Manuscript intake | `PAPER-001B` | in_progress | current Overleaf manuscript linked; original submission and asset index pending |
-| Asset discovery | `DATA-001` | blocked | data/checkpoint/result inventory |
+| Asset discovery | `DATA-001` | in_progress | CSL-News source download active; private data/checkpoint/result inventory pending |
 | Runtime bootstrap | `OPS-001` | done | UV/Python 3.12/cu128 lock + wheel + A100 smoke |
 | Greenfield foundation | `ARCH-001`, `ARCH-002` | in_progress | pyproject + strict config + contracts + CLI + CPU tests |
 | Canonical smoke | `EXP-001` | blocked | new OmniHand + WaveLLM minimal artifacts |
@@ -26,7 +26,8 @@ Role: `round0_control`
 - 多个 RTM/temporal 文件可在 Git 历史找到，但当前已删除，配置仍有陈旧引用。
 - 当前 README/CLAUDE 与实际源码不完全一致。
 - canonical UV research profile 已通过 8 项测试、Ruff、Mypy、wheel、核心 ML import 和 A100 CUDA smoke。
-- `/mnt/gfs/yanyifan` 未发现预期项目数据，且共享盘接近满载。
+- 初始 `/mnt/gfs/yanyifan` 未发现预期项目数据；现已锁定并开始下载 CSL-News 官方 935 GB source。
+- 共享盘可用空间随后变化到约 3.6 TB；下载使用 1 TiB floor，当前不解压。
 - Major revision decision 已收到；编辑明确要求替代架构、DA、dataset characterization 和 real-world generalization。
 - 两位 reviewer 的意见已拆成 20 个科学/代码执行项，并建立 P0–P2 计划。
 - 当前返修稿已作为 `paper/manuscript` Overleaf Git 子模块接入，接入快照为 `master@3242a40`，主入口为 `sn-article.tex`。

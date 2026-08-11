@@ -37,6 +37,31 @@ df -h /mnt/gfs/yanyifan
 3. 大规模作业先输出预计文件数、读写量、峰值磁盘和临时空间。
 4. 数据生成结束必须写 validation report 和 manifest hash。
 
+### 3.1 CSL-News 下载作业
+
+当前 transient user services：
+
+```bash
+systemctl --user status mmprism-csl-news-metadata.service
+systemctl --user status mmprism-csl-news-archives.service
+journalctl --user -u mmprism-csl-news-archives.service --since today
+loginctl show-user "$USER" -p Linger
+```
+
+夜间无人登录时要求 `Linger=yes`；两个 service 均使用 `Restart=on-failure`。Transient unit 可跨
+shell/SSH 退出运行，但主机重启后需要按 `scripts/download_csl_news.sh` 重新创建，现有 `.part`
+文件会自动续传。
+
+文件级进度：
+
+```bash
+find /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/rgb_archives \
+  -maxdepth 1 -type f -name 'archive_*.zip' | wc -l
+du -sh /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121
+```
+
+`.part` 表示可恢复的未完成文件。不要手工重命名、解压或运行 legacy cleanup/check 脚本。
+
 ## 4. 实验操作
 
 正式实验开始前记录：

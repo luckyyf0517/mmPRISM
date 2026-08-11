@@ -18,6 +18,7 @@ Role: `cross_workstream_decisions`
 | `DEC-010` | 2026-08-11 | 采用 greenfield 全量重构，`src/mmprism` 是唯一新实现主线 | 作者确认数据和训练都将从头重建，无需保持旧训练链兼容 | accepted | 旧脚本/模块只读取证；新包禁止导入旧模块，不建立 compatibility shim |
 | `DEC-011` | 2026-08-11 | 数据 intake 按“不可替代 raw/metadata 优先，公共资产下载，可再生派生物重建”执行 | GFS 仅余约 141 GB，无法无差别回传历史缓存 | accepted | 上传前必须 size/checksum preflight；metadata/calibration 和私人 raw 优先，pose/signal/feature 默认不上传 |
 | `DEC-012` | 2026-08-11 | 在 provenance 关闭前不把 skeleton 仿真视为稿件 MANO mesh pipeline 的等价复现 | 稿件方法描述与当前可见 legacy code 不一致 | accepted | 必须恢复原 simulator/输入/配置或修订方法描述，并分别登记实验协议 |
+| `DEC-013` | 2026-08-11 | CSL-News 使用官方 HF revision `3a060121` 从头下载，压缩包验证前不解压 | 官方源、935 GB 规模和 CC BY-NC 4.0 条款已确认；共享盘当前约余 3.6 TB | accepted | 436 archives 由可恢复 systemd service 下载，保留 1 TiB floor，完成后建立 source manifest |
 
 ## 决策记录模板
 

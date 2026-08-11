@@ -44,6 +44,10 @@ Lower layers must not import CLI, trainer, experiment logger, or manuscript code
 
 Each slice owns its schema, unit tests, contract tests, smoke command, resolved config, and artifact definition before formal training starts.
 
+Dataset-specific audits:
+
+- `csl_news_data.md`: official source, legacy preprocessing flow, interface drift and canonical rebuild stages.
+
 ## Environment Contract
 
 - Python: `3.12.x`, pinned by `.python-version`.

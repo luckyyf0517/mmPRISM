@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | official re-download confirmed; URL/version pending | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | in_progress |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | source manifest pending download | pending ZIP/label validation | visual pose/synthetic training and SLU | in_progress |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -68,3 +68,11 @@ Pending batches must use:
 Each batch requires `README.md`, `UPLOAD_MANIFEST.csv` and `SHA256SUMS`. No batch is promoted to
 `raw/` or `external/` until validation is recorded here. Full upload contents and ordering are defined in
 `../data_upload_checklist.md`.
+
+Active public-source batch:
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/
+```
+
+Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.

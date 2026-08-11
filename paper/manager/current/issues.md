@@ -6,11 +6,11 @@ Role: `risk_register`
 
 | ID | Severity | Issue | Impact | Status | Next Action |
 |---|---|---|---|---|---|
-| `BLOCK-DATA-ROOT` | P0 | `/mnt/gfs/yanyifan` 未发现 mmPRISM/CSL/OmniHand/WaveLLM 数据 | 无法验证数据规模、格式和历史结果 | blocked | 定位旧服务器、备份、对象存储或其他挂载路径 |
+| `BLOCK-DATA-ROOT` | P0 | CSL-News 官方源已开始下载，但私人 collected、CSL-Daily 和历史运行资产仍未定位 | 真实数据与原投稿结果仍无法验证 | blocked | 完成 CSL-News intake；定位旧服务器、备份、对象存储或其他来源 |
 | `BLOCK-MANUSCRIPT` | P0 | 当前 Overleaf 稿件已接入，但原投稿定稿和 response 未导入，表图 provenance 未登记 | 无法完成新旧稿差异、全部 claim 和 paper-facing 数值审计 | in_progress | 继续执行 `PAPER-001B` |
 | `BLOCK-PROVENANCE` | P0 | 论文数值与 checkpoint/split/metrics 未建立映射 | 结果不可审计 | not_started | 建立 data/experiment/paper evidence registry |
 | `BLOCK-RUNTIME` | P1 | canonical UV/Python/CUDA 环境缺失 | 曾阻断 wheel、ML 和 GPU smoke | done | UV research profile、lockfile、wheel 和 A100 smoke 已验证；后续只通过 pyproject/uv.lock 变更 |
-| `OPS-STORAGE-001` | P0 | `/mnt/gfs` 已使用 99%，仅余约 141 GB | 一次完整 raw upload 或解压可能耗尽共享盘 | in_progress | 先收集 source-side size inventory；按 P0 分批上传且禁止盲目解压 |
+| `OPS-STORAGE-001` | P1 | `/mnt/gfs` 可用空间从约 141 GB 动态变化到约 3.6 TB | 共享容量可能在 935 GB 下载或解压期间再次变化 | in_progress | 下载保留 1 TiB floor；不并行解压，完成后重新预算 |
 | `BLOCK-SIM-PROVENANCE` | P0 | 稿件声称 MANO mesh/ray tracing，当前可见 legacy 仿真主要使用 skeleton 插值 | 无法确认原投稿 synthetic data 方法或直接复现其结果 | blocked | 上传/定位原始 MANO/mesh/simulator 输入、配置、代码和运行证据 |
 | `ARCH-STALE-001` | P1 | legacy 配置引用已删除的 `cubenet_rtm.py` 等模块 | 旧发布包不可运行，但不再阻断 canonical 新实现 | superseded | 仅纳入 forensic/release exclusion audit，不恢复到新包 |
 | `ARCH-CONFIG-001` | P1 | legacy 配置、入口和代码中存在大量硬编码路径/GPU/dtype | 旧代码不可迁移；canonical release 必须彻底隔离 | in_progress | strict path/runtime/run-plan 已落地，继续完成所有新入口 |

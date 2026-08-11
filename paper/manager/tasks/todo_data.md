@@ -16,6 +16,7 @@ Role: `data_execution_tracker`
 | `DATA-001-H` | P0 | 分批上传私人真实采集 raw package | blocked | incoming batch checksum 完整且原始包只读 |
 | `DATA-001-I` | P0 | 固定 CSL-Daily/CSL-News 重新下载或上传路径 | in_progress | CSL-News 已确认可重下；待补齐各数据集 version/URL/license/checksum 或 incoming batch |
 | `DATA-001-J` | P0 | 恢复原投稿 MANO/mesh/skeleton simulation provenance | blocked | 实际 simulator、输入、配置和历史证据一致 |
+| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | 436 archives + labels 完整，SHA-256/ZIP/coverage report 通过 |
 | `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | in_progress | schema v1 reviewed against real source |
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
@@ -35,11 +36,14 @@ Role: `data_execution_tracker`
 
 ## 当前上传 Gate
 
-1. 当前 GFS 仅余约 141 GB；`DATA-001-F` 完成前不批准 bulk upload。
+1. GFS 在 `2026-08-11T12:10Z` 约余 3.6 TB，但为共享动态容量；bulk job 必须持续保留至少 1 TiB。
 2. 先传匿名 metadata、radar config/calibration，再传私人 raw captures。
 3. 每批进入 `incoming/<batch-id>`，完成 checksum 和只读 inventory 后才登记为 source。
 4. 公共模型和可重新生成的 pose/signal/feature/cache 不占用首批上传预算。
 5. 完整操作清单：`../data_upload_checklist.md`。
+
+当前 public download 由 `mmprism-csl-news-metadata.service` 和
+`mmprism-csl-news-archives.service` 托管；完成前不得解压。
 
 ## 禁止事项
 
