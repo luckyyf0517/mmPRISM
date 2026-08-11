@@ -24,6 +24,7 @@ import yaml
 from mmprism.data.csl_news_integrity import (
     CslNewsIntegrityError,
     load_csl_news_integrity_registry,
+    load_csl_news_integrity_registry_snapshot,
     passed_csl_news_integrity_archives,
 )
 
@@ -525,6 +526,79 @@ def discover_complete_archives(
     return sorted(archives, key=_archive_number)
 
 
+def _archive_integrity_provenance(
+    config: CslNewsAnnotationConfig,
+    registry_path: Path | None,
+    archive_path: Path,
+) -> dict[str, Any] | None:
+    if registry_path is None:
+        return None
+    try:
+        registry, registry_sha256 = load_csl_news_integrity_registry_snapshot(
+            registry_path,
+            source_id=config.source.source_id,
+            source_revision=config.source.source_revision,
+        )
+        passed = passed_csl_news_integrity_archives(registry)
+    except CslNewsIntegrityError as error:
+        raise CslNewsAnnotationError(str(error)) from error
+    archive_number = _archive_number(archive_path)
+    entry = passed.get(archive_number)
+    if entry is None:
+        raise CslNewsAnnotationError(
+            f"Archive is no longer integrity-passed: {archive_path.name}"
+        )
+    archive_stat = archive_path.stat()
+    if (
+        archive_stat.st_size != entry.size_bytes
+        or archive_stat.st_mtime_ns != entry.mtime_ns
+    ):
+        raise CslNewsAnnotationError(
+            f"Integrity-passed archive changed after audit: {archive_path.name}"
+        )
+    raw_entries = registry.get("archives")
+    raw_entry = (
+        raw_entries.get(f"{archive_number:03d}")
+        if isinstance(raw_entries, Mapping)
+        else None
+    )
+    if not isinstance(raw_entry, Mapping):
+        raise CslNewsAnnotationError(
+            f"Integrity registry entry is invalid: {archive_path.name}"
+        )
+    audit = raw_entry.get("audit")
+    audited_at = raw_entry.get("audited_at")
+    builder_commit = raw_entry.get("builder_commit")
+    source = registry.get("source")
+    if (
+        not isinstance(audit, Mapping)
+        or not isinstance(audit.get("path"), str)
+        or not audit["path"]
+        or not isinstance(audit.get("sha256"), str)
+        or not re.fullmatch(r"[0-9a-f]{64}", audit["sha256"])
+        or not isinstance(audited_at, str)
+        or not audited_at
+        or not isinstance(builder_commit, str)
+        or not re.fullmatch(r"[0-9a-f]{40}", builder_commit)
+        or not isinstance(source, Mapping)
+        or not isinstance(source.get("labels_sha256"), str)
+        or not re.fullmatch(r"[0-9a-f]{64}", source["labels_sha256"])
+    ):
+        raise CslNewsAnnotationError(
+            f"Integrity provenance is incomplete: {archive_path.name}"
+        )
+    return {
+        "registry_path": str(registry_path),
+        "registry_sha256": registry_sha256,
+        "archive_sha256": entry.sha256,
+        "audit_path": audit["path"],
+        "audit_sha256": audit["sha256"],
+        "audited_at": audited_at,
+        "builder_commit": builder_commit,
+        "labels_sha256": source["labels_sha256"],
+    }
+
+
 def _require_model_assets(config: CslNewsAnnotationConfig) -> dict[str, str]:
     for description, path in (
         ("MMPose source", config.model.mmpose_root),
@@ -853,6 +927,7 @@ def _failure_sidecar(
     sample_id: str,
     member_name: str,
     error: BaseException,
+    source_integrity: Mapping[str, Any] | None,
 ) -> Path:
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
     path = (
@@ -871,6 +946,9 @@ def _failure_sidecar(
             "archive": archive_name,
             "member": member_name,
             "sample_id": sample_id,
+            "source_integrity": (
+                dict(source_integrity) if source_integrity is not None else None
+            ),
             "error_type": type(error).__name__,
             "error": str(error),
         },
@@ -1034,6 +1112,9 @@ def run_csl_news_annotation(
             ):
                 continue
 
+            source_integrity = _archive_integrity_provenance(
+                config, registry_path, archive_path
+            )
             _ensure_disk_floor(config)
             archive_processed = 0
             archive_skipped = 0
@@ -1056,6 +1137,11 @@ def run_csl_news_annotation(
                         "archive_started",
                         archive=archive_path.name,
                         video_count=len(members),
+                        integrity_registry_sha256=(
+                            source_integrity["registry_sha256"]
+                            if source_integrity is not None
+                            else None
+                        ),
                     )
                     for member in members:
                         if max_videos is not None and processed >= max_videos:
@@ -1134,6 +1220,7 @@ def run_csl_news_annotation(
                                     "member_size_bytes": member.file_size,
                                     "member_crc32": member.CRC,
                                     "video_sha256": video_sha256,
+                                    "integrity": source_integrity,
                                 },
                                 "annotation": {
                                     "text": labels[video_name].text,
@@ -1209,6 +1296,7 @@ def run_csl_news_annotation(
                                 sample_id,
                                 member_name,
                                 error,
+                                source_integrity,
                             )
                             is_oom = (
                                 "out of memory" in str(error).lower()
@@ -1250,6 +1338,7 @@ def run_csl_news_annotation(
                         "config_fingerprint": config.fingerprint,
                         "archive": archive_path.name,
                         "archive_size_bytes": archive_path.stat().st_size,
+                        "source_integrity": source_integrity,
                         "processed": archive_processed,
                         "skipped": archive_skipped,
                         "failed": archive_failed,

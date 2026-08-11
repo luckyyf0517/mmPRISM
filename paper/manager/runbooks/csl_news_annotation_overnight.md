@@ -64,6 +64,8 @@ NPZ 同时保留 `[T,133,3]` 原生 3D keypoints、`[T,133]` confidence、
 `[T,133,2]` transformed 2D keypoints、帧号/时间戳，以及历史映射得到的
 `[T,2,24,3]` canonical pose/confidence/valid mask。JSON 保存原始中文文本、archive/member、
 源 revision、视频 checksum、crop/bbox/depth 规则、模型/config/checkpoint hash 和运行环境。
+registry worker 额外在每个成功/失败 sidecar 和 archive marker 中保存实际消费时的 registry SHA-256、
+archive SHA-256、audit path/hash、audit builder commit、audited time 和 labels SHA-256。
 
 已提取视频保留在：
 

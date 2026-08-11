@@ -34,6 +34,7 @@ from mmprism.data.csl_news_integrity import (
     CslNewsIntegrityError,
     load_csl_news_integrity_config,
     load_csl_news_integrity_registry,
+    load_csl_news_integrity_registry_snapshot,
     passed_csl_news_integrity_archives,
     scan_csl_news_source_integrity,
 )
@@ -73,6 +74,7 @@ __all__ = [
     "load_csl_news_annotation_config",
     "load_csl_news_integrity_config",
     "load_csl_news_integrity_registry",
+    "load_csl_news_integrity_registry_snapshot",
     "load_csl_news_source_manifest_config",
     "run_csl_news_annotation",
     "passed_csl_news_integrity_archives",

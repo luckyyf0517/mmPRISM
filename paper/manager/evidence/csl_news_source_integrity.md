@@ -20,6 +20,8 @@ failed: 001,005,008
 
 Registry 更新使用非阻塞 `flock`、per-archive audit 和原子替换。archive source stat 或标签 hash
 变化时旧结果不可复用；标注 worker 同时核对 source ID/revision/stat，只消费 typed `passed` entry。
+registry 以单次 byte snapshot 读取并同时计算 hash；成功/失败 sidecar 和 archive marker 都记录该
+snapshot hash 及对应 archive audit provenance，避免长运行 worker 只绑定启动时的旧 registry。
 
 Initial frozen manual audit retained for historical provenance:
 

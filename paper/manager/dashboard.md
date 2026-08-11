@@ -28,7 +28,7 @@ Role: `control_panel`
   当前覆盖 15 个 final ZIP，其中 `001/005/008` 失败并隔离，12 个 archive/19,760 videos 通过。
   5 分钟增量扫描和 4 个 registry-only dynamic annotation worker 已运行。
 - `/mnt/gfs` 当前约余 3.6 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；45 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；46 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
 

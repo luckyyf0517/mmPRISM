@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import unittest
@@ -9,6 +10,7 @@ from mmprism.data import (
     CslNewsIntegrityError,
     load_csl_news_integrity_config,
     load_csl_news_integrity_registry,
+    load_csl_news_integrity_registry_snapshot,
     passed_csl_news_integrity_archives,
     scan_csl_news_source_integrity,
 )
@@ -88,6 +90,16 @@ output:
             passed = passed_csl_news_integrity_archives(loaded)
             self.assertEqual(list(passed), [1])
             self.assertEqual(passed[1].video_count, 2)
+            snapshot, snapshot_sha256 = load_csl_news_integrity_registry_snapshot(
+                config.registry_path,
+                source_id="fixture",
+                source_revision="revision",
+            )
+            self.assertEqual(snapshot, loaded)
+            self.assertEqual(
+                snapshot_sha256,
+                hashlib.sha256(config.registry_path.read_bytes()).hexdigest(),
+            )
             for entry in loaded["archives"].values():
                 audit_path = root / entry["audit"]["path"]
                 self.assertTrue(audit_path.is_file())

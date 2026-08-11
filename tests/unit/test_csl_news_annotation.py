@@ -15,7 +15,10 @@ from mmprism.data import (
     stable_sample_id,
     validate_annotation_output,
 )
-from mmprism.data.csl_news_annotation import discover_complete_archives
+from mmprism.data.csl_news_annotation import (
+    _archive_integrity_provenance,
+    discover_complete_archives,
+)
 
 
 class CslNewsAnnotationTest(unittest.TestCase):
@@ -82,6 +85,12 @@ runtime:
                 "mtime_ns": mtime_ns,
                 "sha256": "b" * 64,
                 "video_count": archive_id,
+                "audited_at": "2026-08-11T16:00:00+00:00",
+                "builder_commit": "c" * 40,
+                "audit": {
+                    "path": f"manifests/audit_{key}.json",
+                    "sha256": "d" * 64,
+                },
             }
         path = root / "registry.json"
         path.write_text(
@@ -91,6 +100,7 @@ runtime:
                     "source": {
                         "source_id": "fixture",
                         "source_revision": "revision",
+                        "labels_sha256": "e" * 64,
                     },
                     "archives": archives,
                 }
@@ -245,6 +255,31 @@ runtime:
                 discover_complete_archives(
                     config, integrity_registry_path=registry
                 )
+
+    def test_archive_provenance_binds_one_registry_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_csl_news_annotation_config(self._write_config(root), root)
+            config.source.archive_root.mkdir()
+            archive = config.source.archive_root / "archive_002.zip"
+            archive.write_bytes(b"source")
+            stat = archive.stat()
+            registry = self._write_integrity_registry(
+                root, {2: (stat.st_size, stat.st_mtime_ns)}
+            )
+            expected_registry_sha256 = hashlib.sha256(registry.read_bytes()).hexdigest()
+
+            provenance = _archive_integrity_provenance(config, registry, archive)
+
+        self.assertIsNotNone(provenance)
+        assert provenance is not None
+        self.assertEqual(
+            provenance["registry_sha256"],
+            expected_registry_sha256,
+        )
+        self.assertEqual(provenance["archive_sha256"], "b" * 64)
+        self.assertEqual(provenance["audit_sha256"], "d" * 64)
+        self.assertEqual(provenance["builder_commit"], "c" * 40)
 
 
 if __name__ == "__main__":

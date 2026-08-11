@@ -280,9 +280,24 @@ def load_csl_news_integrity_registry(
 ) -> dict[str, Any]:
     """Load and minimally validate a cumulative integrity registry."""
 
+    registry, _ = load_csl_news_integrity_registry_snapshot(
+        path, source_id=source_id, source_revision=source_revision
+    )
+    return registry
+
+
+def load_csl_news_integrity_registry_snapshot(
+    path: str | Path,
+    *,
+    source_id: str | None = None,
+    source_revision: str | None = None,
+) -> tuple[dict[str, Any], str]:
+    """Load one registry byte snapshot and return its validated payload and hash."""
+
     registry_path = Path(path).expanduser().resolve()
     try:
-        payload: object = json.loads(registry_path.read_text(encoding="utf-8"))
+        serialized = registry_path.read_bytes()
+        payload: object = json.loads(serialized.decode("utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise CslNewsIntegrityError(
             f"Unable to load source-integrity registry {registry_path}: {error}"
@@ -298,7 +313,7 @@ def load_csl_news_integrity_registry(
     if source_revision is not None and source.get("source_revision") != source_revision:
         raise CslNewsIntegrityError("integrity registry source_revision mismatch")
     _mapping(registry.get("archives"), "registry.archives")
-    return registry
+    return registry, hashlib.sha256(serialized).hexdigest()
 
 
 def passed_csl_news_integrity_archives(
