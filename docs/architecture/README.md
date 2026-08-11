@@ -47,6 +47,7 @@ Each slice owns its schema, unit tests, contract tests, smoke command, resolved 
 Dataset-specific audits:
 
 - `csl_news_data.md`: official source, legacy preprocessing flow, interface drift and canonical rebuild stages.
+- `run_artifacts.md`: atomic formal-run initialization, input hashing, metrics and lifecycle contract.
 - `data_splits.md`: deterministic group assignment, portable split artifacts and leakage gates.
 
 ## Environment Contract

@@ -14,7 +14,8 @@ Implemented foundation:
 - strict experiment configuration with early validation;
 - environment-based path injection without machine-specific paths;
 - versioned JSONL sample-manifest contract;
-- side-effect-free run planning and runtime provenance reporting;
+- side-effect-free run planning, runtime provenance reporting, and atomic formal-run initialization;
+- SHA-256-bound run inputs plus versioned finite-metric artifacts;
 - a single `mmprism` CLI surface;
 - dependency-light unit tests;
 - revision and reviewer-evidence management under `paper/manager/`.
@@ -24,7 +25,7 @@ Not yet implemented in the canonical package:
 - radar simulation and FMCW processing;
 - CubeNet/OmniHand training and evaluation;
 - WaveLLM/mT5 training, generation, and evaluation;
-- production data adapters, artifact writers, and GPU integration tests.
+- remaining production data adapters, distributed prediction/checkpoint writers, and GPU integration tests.
 
 Do not interpret the foundation scaffold as a reproducible release of the paper results yet. Read `paper/manager/dashboard.md` for the current blockers and work order.
 
@@ -40,6 +41,16 @@ uv run mmprism plan configs/examples/pose_smoke.yaml
 uv run mmprism manifest tests/fixtures/manifests/pose_smoke.jsonl
 uv run pytest
 ```
+
+Initialize a formal provenance envelope without running a model:
+
+```bash
+uv run mmprism run-init configs/examples/pose_smoke.yaml \
+  --input manifest:data_manifest=tests/fixtures/manifests/pose_smoke.jsonl
+```
+
+This command writes resolved config, environment/Git state and input hashes atomically. Canonical
+`prepare`, `train` and `evaluate` services are still under construction.
 
 Profiles:
 

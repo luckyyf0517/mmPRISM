@@ -4,6 +4,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from mmprism.artifacts import ArtifactError, RunArtifactWriter, RunInput
 from mmprism.config import ConfigError, load_experiment_config
 from mmprism.contracts import ManifestError, SplitContractError, validate_manifest
 from mmprism.data import (
@@ -50,6 +51,19 @@ def _build_parser() -> argparse.ArgumentParser:
     plan_parser = subparsers.add_parser("plan", help="Resolve a side-effect-free run plan")
     plan_parser.add_argument("path", type=Path)
     plan_parser.add_argument("--project-root", type=Path)
+
+    run_init_parser = subparsers.add_parser(
+        "run-init", help="Atomically initialize a formal run artifact directory"
+    )
+    run_init_parser.add_argument("path", type=Path)
+    run_init_parser.add_argument("--project-root", type=Path)
+    run_init_parser.add_argument(
+        "--input",
+        action="append",
+        default=[],
+        metavar="KIND:NAME=PATH",
+        help="Hash and register an immutable run input; may be repeated",
+    )
 
     manifest_parser = subparsers.add_parser("manifest", help="Validate a JSONL data manifest")
     manifest_parser.add_argument("path", type=Path)
@@ -144,9 +158,26 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _capture_run_inputs(specifications: Sequence[str], project_root: Path) -> tuple[RunInput, ...]:
+    inputs: list[RunInput] = []
+    for specification in specifications:
+        identity, separator, path_text = specification.partition("=")
+        kind, kind_separator, name = identity.partition(":")
+        if not separator or not kind_separator or not kind or not name or not path_text:
+            raise ArtifactError(
+                f"invalid --input {specification!r}; expected KIND:NAME=PATH"
+            )
+        path = Path(path_text).expanduser()
+        if not path.is_absolute():
+            path = project_root / path
+        inputs.append(RunInput.capture(name=name, kind=kind, path=path))
+    return tuple(inputs)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
-    arguments = parser.parse_args(argv)
+    effective_argv = list(argv) if argv is not None else sys.argv[1:]
+    arguments = parser.parse_args(effective_argv)
 
     exit_code = 0
     try:
@@ -157,18 +188,33 @@ def main(argv: Sequence[str] | None = None) -> int:
                 else discover_project_root()
             )
             payload = collect_runtime_report(project_root)
-        elif arguments.command in {"config", "plan"}:
+        elif arguments.command in {"config", "plan", "run-init"}:
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
                 else discover_project_root()
             )
             config = load_experiment_config(arguments.path)
-            payload = (
-                config.resolved(project_root).to_dict()
-                if arguments.command == "config"
-                else build_run_plan(config, project_root).to_dict()
-            )
+            if arguments.command == "config":
+                payload = config.resolved(project_root).to_dict()
+            else:
+                plan = build_run_plan(config, project_root)
+                if arguments.command == "plan":
+                    payload = plan.to_dict()
+                else:
+                    inputs = _capture_run_inputs(arguments.input, project_root)
+                    writer = RunArtifactWriter.initialize(
+                        plan,
+                        source_config=arguments.path,
+                        inputs=inputs,
+                        command=("mmprism", *effective_argv),
+                    )
+                    payload = {
+                        "schema_version": "mmprism.run-init-result.v1",
+                        "run_id": writer.run_id,
+                        "run_dir": str(writer.run_dir),
+                        "run_metadata": str(writer.run_dir / "run.json"),
+                    }
         elif arguments.command == "manifest":
             payload = validate_manifest(arguments.path).to_dict()
         elif arguments.command == "split":
@@ -301,6 +347,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             exit_code = 0
     except (
+        ArtifactError,
         ConfigError,
         ManifestError,
         CslNewsAnnotationError,

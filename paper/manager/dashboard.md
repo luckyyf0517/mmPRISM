@@ -37,8 +37,10 @@ Role: `control_panel`
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.4 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；59 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；64 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
+- formal-run artifact writer 与 `run-init` 已实现：原子冻结 resolved config、Git/environment、命令和
+  输入 SHA-256，metrics 强制显式 protocol/样本数/有限值；train/eval/prepare 服务仍待实现。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
 
 ## 当前最高优先级
@@ -66,7 +68,7 @@ Role: `control_panel`
 2. 执行 `DATA-001-K/DATA-005-A`，下载 promotion 和标注前都做完整 ZIP gate；只对通过清单生成 pose。
 3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
-4. 继续 `ARCH-001/002`，完成正式 artifact writer 和 canonical train/eval/prepare CLI。
+4. 继续 `ARCH-001/002`，在已完成的 formal-run writer 上实现 canonical prepare/train/evaluate CLI。
 5. 数据定位后执行 `ARCH-003`，从真实 manifest fixture 建立 radar vertical slice。
 
 ## Source Of Truth

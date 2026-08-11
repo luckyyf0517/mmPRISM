@@ -16,7 +16,12 @@ Validate the example without installing the package:
 uv run mmprism config configs/examples/pose_smoke.yaml
 uv run mmprism plan configs/examples/pose_smoke.yaml
 uv run mmprism manifest tests/fixtures/manifests/pose_smoke.jsonl
+uv run mmprism run-init configs/examples/pose_smoke.yaml \
+  --input manifest:data_manifest=tests/fixtures/manifests/pose_smoke.jsonl
 ```
+
+`run-init` creates only the atomic run provenance envelope. It does not execute training or evaluation.
+The full artifact contract is documented in `docs/architecture/run_artifacts.md`.
 
 Build the pinned CSL-News partial sequence split with:
 
