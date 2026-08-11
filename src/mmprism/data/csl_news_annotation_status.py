@@ -164,16 +164,16 @@ def build_csl_news_annotation_status(
         return registry_path is None or path.parent.name in eligible_archive_stems
 
     sample_root = output_root / "samples"
-    all_npz_paths = [
+    all_npz_paths = sorted(
         path
         for path in sample_root.glob("archive_*/*.npz")
         if not path.name.startswith(".")
-    ]
-    all_sidecar_paths = [
+    )
+    all_sidecar_paths = sorted(
         path
         for path in sample_root.glob("archive_*/*.json")
         if not path.name.startswith(".")
-    ]
+    )
     archive_eligible_npz_paths = [
         path for path in all_npz_paths if output_is_eligible(path)
     ]
@@ -182,10 +182,12 @@ def build_csl_news_annotation_status(
     ]
     source_quarantined_sidecars: list[Path] = []
     duplicate_current_source_samples: list[str] = []
+    recovered_current_source_samples: list[str] = []
+    shadowed_invalid_current_source_sidecars: list[Path] = []
     if registry_path is None:
         sidecar_paths = archive_eligible_sidecar_paths
     else:
-        selected_by_sample: dict[tuple[str, str], Path] = {}
+        candidates_by_sample: dict[tuple[str, str], list[Path]] = {}
         for path in archive_eligible_sidecar_paths:
             payload = _load_json(path)
             source = payload.get("source") if payload is not None else None
@@ -212,14 +214,30 @@ def build_csl_news_annotation_status(
             ):
                 source_quarantined_sidecars.append(path)
                 continue
-            key = (path.parent.name, sample_id)
-            previous = selected_by_sample.get(key)
-            if previous is not None:
-                duplicate_current_source_samples.append(
-                    f"{path.parent.name}/{sample_id}"
-                )
+            candidates_by_sample.setdefault((path.parent.name, sample_id), []).append(
+                path
+            )
+        selected_by_sample: dict[tuple[str, str], Path] = {}
+        for key, candidates in sorted(candidates_by_sample.items()):
+            if len(candidates) == 1:
+                selected_by_sample[key] = candidates[0]
                 continue
-            selected_by_sample[key] = path
+            valid_candidates = [
+                path
+                for path in candidates
+                if _validate_sample(path, config.fingerprint)["passed"] is True
+            ]
+            if len(valid_candidates) == 1:
+                selected_by_sample[key] = valid_candidates[0]
+                recovered_current_source_samples.append(f"{key[0]}/{key[1]}")
+                shadowed_invalid_current_source_sidecars.extend(
+                    path for path in candidates if path != valid_candidates[0]
+                )
+            else:
+                duplicate_current_source_samples.append(
+                    f"{key[0]}/{key[1]}"
+                )
+                selected_by_sample[key] = candidates[0]
         sidecar_paths = sorted(selected_by_sample.values())
     npz_paths = [
         path.with_suffix(".npz")
@@ -434,6 +452,18 @@ def build_csl_news_annotation_status(
             "duplicate_current_source_sample_examples": (
                 duplicate_current_source_samples[:20]
             ),
+            "recovered_current_source_sample_count": len(
+                recovered_current_source_samples
+            ),
+            "recovered_current_source_sample_examples": (
+                recovered_current_source_samples[:20]
+            ),
+            "shadowed_invalid_current_source_sidecar_count": len(
+                shadowed_invalid_current_source_sidecars
+            ),
+            "shadowed_invalid_current_source_sidecar_examples": [
+                str(path) for path in shadowed_invalid_current_source_sidecars[:20]
+            ],
             "ineligible_npz_count": len(all_npz_paths) - len(npz_paths),
             "ineligible_sidecar_count": len(all_sidecar_paths) - len(sidecar_paths),
             "ineligible_archive_marker_count": len(all_marker_paths)

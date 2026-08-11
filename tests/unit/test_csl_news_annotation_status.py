@@ -113,6 +113,100 @@ runtime:
         self.assertEqual(report["annotation"]["remaining_available_sample_count"], 1)
         self.assertEqual(report["sample_validation"]["passed"], 1)
 
+    def test_selects_one_valid_recovery_variant_over_invalid_canonical_pair(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config, canonical_artifact = self._write_fixture(root)
+            archive_path = config.source.archive_root / "archive_001.zip"
+            archive_stat = archive_path.stat()
+            archive_sha256 = "a" * 64
+            labels_sha256 = "c" * 64
+            registry = root / "registry.json"
+            registry.write_text(
+                json.dumps(
+                    {
+                        "schema_version": (
+                            "mmprism.csl_news_source_integrity_registry.v1"
+                        ),
+                        "source": {
+                            "source_id": "fixture",
+                            "source_revision": "revision",
+                            "labels_sha256": labels_sha256,
+                        },
+                        "summary": {
+                            "passed_count": 1,
+                            "failed_count": 0,
+                            "pending_count": 0,
+                            "missing_count": 0,
+                        },
+                        "archives": {
+                            "001": {
+                                "archive_id": "001",
+                                "archive_name": "archive_001.zip",
+                                "status": "passed",
+                                "source_present": True,
+                                "size_bytes": archive_stat.st_size,
+                                "mtime_ns": archive_stat.st_mtime_ns,
+                                "sha256": archive_sha256,
+                                "video_count": 2,
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            canonical_sidecar = canonical_artifact.with_suffix(".json")
+            canonical_payload = json.loads(
+                canonical_sidecar.read_text(encoding="utf-8")
+            )
+            canonical_payload["source"] = {
+                "integrity": {
+                    "archive_sha256": archive_sha256,
+                    "labels_sha256": labels_sha256,
+                }
+            }
+            canonical_payload["artifact"]["sha256"] = "0" * 64
+            canonical_sidecar.write_text(
+                json.dumps(canonical_payload), encoding="utf-8"
+            )
+
+            variant_stem = f"sample--source_{archive_sha256}"
+            variant_artifact = canonical_artifact.with_name(f"{variant_stem}.npz")
+            variant_artifact.write_bytes(canonical_artifact.read_bytes())
+            variant_sidecar = canonical_sidecar.with_name(f"{variant_stem}.json")
+            variant_payload = dict(canonical_payload)
+            variant_payload["artifact"] = {
+                "sha256": hashlib.sha256(variant_artifact.read_bytes()).hexdigest()
+            }
+            variant_sidecar.write_text(
+                json.dumps(variant_payload), encoding="utf-8"
+            )
+
+            report = build_csl_news_annotation_status(
+                config,
+                sample_validate_count=1,
+                integrity_registry_path=registry,
+            )
+
+        self.assertEqual(report["status"], "healthy")
+        self.assertEqual(report["annotation"]["completed_sample_count"], 1)
+        self.assertEqual(
+            report["annotation"]["recovered_current_source_sample_count"], 1
+        )
+        self.assertEqual(
+            report["annotation"]["shadowed_invalid_current_source_sidecar_count"],
+            1,
+        )
+        self.assertEqual(
+            report["annotation"]["duplicate_current_source_sample_count"], 0
+        )
+        self.assertEqual(
+            report["sample_validation"]["samples"][0]["sidecar"],
+            str(variant_sidecar),
+        )
+
     def test_reports_missing_sidecar_as_attention_required(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             config, artifact_path = self._write_fixture(Path(directory))

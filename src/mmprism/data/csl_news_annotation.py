@@ -139,6 +139,14 @@ class CslNewsAnnotationConfig:
 
 
 @dataclass(frozen=True)
+class AnnotationArtifactTarget:
+    npz_path: Path
+    sidecar_path: Path
+    variant: str
+    completed: bool
+
+
+@dataclass(frozen=True)
 class VideoAnnotation:
     native_keypoints_3d: np.ndarray
     native_keypoint_scores: np.ndarray
@@ -1000,25 +1008,66 @@ def annotation_artifact_stem_matches_sample_id(stem: str, sample_id: str) -> boo
     ) is not None
 
 
-def _completed_sidecar_targets_other_source(
-    sidecar_path: Path,
+def _resolve_annotation_artifact_target(
+    config: CslNewsAnnotationConfig,
+    archive_name: str,
+    sample_id: str,
     config_fingerprint: str,
-    expected_integrity: Mapping[str, Any] | None,
-) -> bool:
-    if expected_integrity is None or not sidecar_path.is_file():
-        return False
-    try:
-        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return False
-    if not isinstance(sidecar, Mapping):
-        return False
-    source = sidecar.get("source")
-    return bool(
-        sidecar.get("status") == "completed"
-        and sidecar.get("config_fingerprint") == config_fingerprint
-        and isinstance(source, Mapping)
-        and not _source_identity_matches(source.get("integrity"), expected_integrity)
+    *,
+    archive_size_bytes: int,
+    member_size_bytes: int,
+    member_crc32: int,
+    source_integrity: Mapping[str, Any] | None,
+) -> AnnotationArtifactTarget:
+    """Select an immutable target while preserving any conflicting canonical pair."""
+
+    canonical_npz, canonical_sidecar = _artifact_paths(config, archive_name, sample_id)
+    canonical_completed = is_completed_annotation_sample(
+        canonical_npz,
+        canonical_sidecar,
+        config_fingerprint,
+        archive_size_bytes=archive_size_bytes,
+        member_size_bytes=member_size_bytes,
+        member_crc32=member_crc32,
+        source_integrity=source_integrity,
+    )
+    if canonical_completed or not (
+        canonical_npz.exists() or canonical_sidecar.exists()
+    ):
+        return AnnotationArtifactTarget(
+            npz_path=canonical_npz,
+            sidecar_path=canonical_sidecar,
+            variant="canonical",
+            completed=canonical_completed,
+        )
+    if source_integrity is None:
+        return AnnotationArtifactTarget(
+            npz_path=canonical_npz,
+            sidecar_path=canonical_sidecar,
+            variant="canonical",
+            completed=False,
+        )
+
+    variant_npz, variant_sidecar = _source_variant_artifact_paths(
+        config,
+        archive_name,
+        sample_id,
+        source_integrity,
+    )
+    variant_completed = is_completed_annotation_sample(
+        variant_npz,
+        variant_sidecar,
+        config_fingerprint,
+        archive_size_bytes=archive_size_bytes,
+        member_size_bytes=member_size_bytes,
+        member_crc32=member_crc32,
+        source_integrity=source_integrity,
+    )
+    return AnnotationArtifactTarget(
+        npz_path=variant_npz,
+        sidecar_path=variant_sidecar,
+        variant=f"source_{source_integrity['archive_sha256']}",
+        completed=variant_completed,
     )
 
 
@@ -1338,28 +1387,28 @@ def run_csl_news_annotation(
                         sample_id = stable_sample_id(
                             config.source.source_id, archive_path.name, member_name
                         )
-                        npz_path, sidecar_path = _artifact_paths(
-                            config, archive_path.name, sample_id
-                        )
-                        if _completed_sidecar_targets_other_source(
-                            sidecar_path, config.fingerprint, source_integrity
-                        ):
-                            assert source_integrity is not None
-                            npz_path, sidecar_path = _source_variant_artifact_paths(
-                                config,
-                                archive_path.name,
-                                sample_id,
-                                source_integrity,
-                            )
-                        if is_completed_annotation_sample(
-                            npz_path,
-                            sidecar_path,
+                        target = _resolve_annotation_artifact_target(
+                            config,
+                            archive_path.name,
+                            sample_id,
                             config.fingerprint,
                             archive_size_bytes=archive_path.stat().st_size,
                             member_size_bytes=member.file_size,
                             member_crc32=member.CRC,
                             source_integrity=source_integrity,
-                        ):
+                        )
+                        npz_path = target.npz_path
+                        sidecar_path = target.sidecar_path
+                        if target.variant != "canonical":
+                            _emit(
+                                "sample_routed_to_source_variant",
+                                archive=archive_path.name,
+                                member=member_name,
+                                sample_id=sample_id,
+                                variant=target.variant,
+                                output=str(npz_path),
+                            )
+                        if target.completed:
                             skipped += 1
                             archive_skipped += 1
                             continue
@@ -1475,6 +1524,7 @@ def run_csl_news_annotation(
                                 },
                                 "artifact": {
                                     "path": str(npz_path),
+                                    "variant": target.variant,
                                     "size_bytes": artifact_size,
                                     "sha256": artifact_sha256,
                                 },

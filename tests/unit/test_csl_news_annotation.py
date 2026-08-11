@@ -18,7 +18,7 @@ from mmprism.data import (
 from mmprism.data.csl_news_annotation import (
     CslNewsAnnotationArtifactConflictError,
     _archive_integrity_provenance,
-    _completed_sidecar_targets_other_source,
+    _resolve_annotation_artifact_target,
     _source_variant_artifact_paths,
     _write_npz_atomic,
     discover_complete_archives,
@@ -250,15 +250,17 @@ runtime:
                 is_completed_annotation_sample(artifact, sidecar, "fingerprint")
             )
 
-    def test_resume_binds_source_and_routes_unbound_output_to_variant(self) -> None:
+    def test_resume_routes_unbound_or_invalid_canonical_output_to_variant(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config = load_csl_news_annotation_config(self._write_config(root), root)
-            artifact = root / "sample.npz"
+            sample_root = config.runtime.output_root / "samples" / "archive_005"
+            sample_root.mkdir(parents=True)
+            artifact = sample_root / "sample.npz"
             size_bytes, checksum = _write_npz_atomic(
                 self._valid_arrays(), artifact
             )
-            sidecar = root / "sample.json"
+            sidecar = sample_root / "sample.json"
             sidecar.write_text(
                 json.dumps(
                     {
@@ -294,29 +296,59 @@ runtime:
                     source_integrity=current,
                 )
             )
-            self.assertTrue(
-                _completed_sidecar_targets_other_source(
-                    sidecar, "fingerprint", current
-                )
+            target = _resolve_annotation_artifact_target(
+                config,
+                "archive_005.zip",
+                "sample",
+                "fingerprint",
+                archive_size_bytes=10,
+                member_size_bytes=20,
+                member_crc32=30,
+                source_integrity=current,
             )
+            self.assertFalse(target.completed)
             payload = json.loads(sidecar.read_text(encoding="utf-8"))
             payload["source"]["integrity"] = current
+            payload["artifact"]["size_bytes"] = size_bytes + 1
             sidecar.write_text(json.dumps(payload), encoding="utf-8")
-            self.assertTrue(
-                is_completed_annotation_sample(
-                    artifact,
-                    sidecar,
-                    "fingerprint",
-                    archive_size_bytes=10,
-                    member_size_bytes=20,
-                    member_crc32=30,
-                    source_integrity=current,
-                )
+            invalid_same_source_target = _resolve_annotation_artifact_target(
+                config,
+                "archive_005.zip",
+                "sample",
+                "fingerprint",
+                archive_size_bytes=10,
+                member_size_bytes=20,
+                member_crc32=30,
+                source_integrity=current,
             )
             variant_npz, variant_sidecar = _source_variant_artifact_paths(
                 config, "archive_005.zip", "sample", current
             )
+            variant_size, variant_checksum = _write_npz_atomic(
+                self._valid_arrays(), variant_npz
+            )
+            payload["artifact"] = {
+                "size_bytes": variant_size,
+                "sha256": variant_checksum,
+            }
+            variant_sidecar.write_text(json.dumps(payload), encoding="utf-8")
+            resumed_target = _resolve_annotation_artifact_target(
+                config,
+                "archive_005.zip",
+                "sample",
+                "fingerprint",
+                archive_size_bytes=10,
+                member_size_bytes=20,
+                member_crc32=30,
+                source_integrity=current,
+            )
 
+        self.assertEqual(target.npz_path, variant_npz)
+        self.assertEqual(target.sidecar_path, variant_sidecar)
+        self.assertEqual(invalid_same_source_target.npz_path, variant_npz)
+        self.assertEqual(invalid_same_source_target.sidecar_path, variant_sidecar)
+        self.assertTrue(resumed_target.completed)
+        self.assertEqual(resumed_target.npz_path, variant_npz)
         self.assertEqual(
             variant_npz.name, f"sample--source_{'b' * 64}.npz"
         )

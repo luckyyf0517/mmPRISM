@@ -485,8 +485,9 @@ def _select_current_source_sidecars(
     annotation_root: Path,
     passed_archives: Mapping[int, CslNewsIntegrityArchive],
     labels_sha256: str,
+    excluded_sidecars: set[Path],
 ) -> tuple[list[Path], list[dict[str, Any]]]:
-    selected_by_sample: dict[tuple[int, str], Path] = {}
+    current_by_sample: dict[tuple[int, str], list[Path]] = {}
     quarantined: list[dict[str, Any]] = []
     for sidecar_path in sidecar_paths:
         match = ARCHIVE_DIRECTORY_PATTERN.fullmatch(sidecar_path.parent.name)
@@ -535,15 +536,24 @@ def _select_current_source_sidecars(
                 }
             )
             continue
-        key = (archive_id, sample_id)
-        previous = selected_by_sample.get(key)
-        if previous is not None:
-            raise CslNewsPoseManifestError(
-                "multiple sidecars bind the current source identity for "
-                f"archive_{archive_id:03d}/{sample_id}: {previous}, {sidecar_path}"
-            )
-        selected_by_sample[key] = sidecar_path
-    return sorted(selected_by_sample.values()), quarantined
+        current_by_sample.setdefault((archive_id, sample_id), []).append(sidecar_path)
+
+    selected: list[Path] = []
+    for (archive_id, sample_id), candidates in sorted(current_by_sample.items()):
+        if len(candidates) > 1:
+            unexcluded = [
+                path
+                for path in candidates
+                if path.relative_to(annotation_root) not in excluded_sidecars
+            ]
+            if len(unexcluded) != 1:
+                rendered = ", ".join(str(path) for path in sorted(candidates))
+                raise CslNewsPoseManifestError(
+                    "multiple sidecars bind the current source identity for "
+                    f"archive_{archive_id:03d}/{sample_id}: {rendered}"
+                )
+        selected.extend(candidates)
+    return sorted(selected), quarantined
 
 
 def _verify_artifact_exclusion(
@@ -928,18 +938,19 @@ def build_csl_news_pose_manifest_snapshot(
     archive_eligible_sidecars = [
         path for path in sidecar_paths if path.parent.name in eligible_stems
     ]
-    eligible_sidecars, source_quarantine = _select_current_source_sidecars(
-        archive_eligible_sidecars,
-        annotation_root=config.annotation_root,
-        passed_archives=passed_archives,
-        labels_sha256=labels_sha256,
-    )
     exclusion_by_sidecar = {
         Path("samples")
         / exclusion.archive_directory
         / f"{exclusion.sample_id}.json": exclusion
         for exclusion in config.exclusions
     }
+    eligible_sidecars, source_quarantine = _select_current_source_sidecars(
+        archive_eligible_sidecars,
+        annotation_root=config.annotation_root,
+        passed_archives=passed_archives,
+        labels_sha256=labels_sha256,
+        excluded_sidecars=set(exclusion_by_sidecar),
+    )
     eligible_sidecar_relatives = {
         path.relative_to(config.annotation_root) for path in eligible_sidecars
     }

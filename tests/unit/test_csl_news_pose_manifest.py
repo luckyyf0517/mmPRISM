@@ -457,6 +457,38 @@ output:
         self.assertIn(variant_stem, manifest_record["modalities"]["canonical_pose"]["uri"])
         self.assertIn("source_identity_quarantine.jsonl", checksum_text)
 
+    def test_rejects_duplicate_current_source_sidecars_without_exclusion(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config, _ = self._prepare(root)
+            sample_root = config.annotation_root / "samples" / "archive_001"
+            canonical_sidecar = next(sample_root.glob("*.json"))
+            canonical_artifact = canonical_sidecar.with_suffix(".npz")
+            payload = json.loads(canonical_sidecar.read_text(encoding="utf-8"))
+            sample_id = payload["sample_id"]
+            archive_sha256 = payload["source"]["integrity"]["archive_sha256"]
+            variant_stem = f"{sample_id}--source_{archive_sha256}"
+            variant_artifact = sample_root / f"{variant_stem}.npz"
+            variant_artifact.write_bytes(canonical_artifact.read_bytes())
+            payload["artifact"] = {
+                "path": str(variant_artifact),
+                "size_bytes": variant_artifact.stat().st_size,
+                "sha256": hashlib.sha256(variant_artifact.read_bytes()).hexdigest(),
+            }
+            (sample_root / f"{variant_stem}.json").write_text(
+                json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+            )
+
+            with self.assertRaisesRegex(
+                CslNewsPoseManifestError,
+                "multiple sidecars bind the current source identity",
+            ):
+                build_csl_news_pose_manifest_snapshot(
+                    config,
+                    runtime_report=self._runtime(),
+                    snapshot_id="unapproved-duplicate",
+                )
+
     def test_rejects_artifact_checksum_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -497,6 +529,59 @@ output:
             self.assertEqual(summary["annotation"]["included_sidecar_count"], 1)
             self.assertEqual(evidence_copy.read_bytes(), report_path.read_bytes())
             self.assertIn(exclusion["audit_report_snapshot_path"], checksum_text)
+            self.assertEqual(bad_artifact.read_bytes(), artifact_before)
+            self.assertEqual(bad_sidecar.read_bytes(), sidecar_before)
+
+    def test_excluded_canonical_pair_can_coexist_with_valid_recovery_variant(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config, bad_artifact, bad_sidecar, _ = self._prepare_exclusion(
+                Path(directory)
+            )
+            artifact_before = bad_artifact.read_bytes()
+            sidecar_before = bad_sidecar.read_bytes()
+            payload = json.loads(bad_sidecar.read_text(encoding="utf-8"))
+            sample_id = payload["sample_id"]
+            archive_sha256 = payload["source"]["integrity"]["archive_sha256"]
+            variant_stem = f"{sample_id}--source_{archive_sha256}"
+            variant_artifact = bad_artifact.with_name(f"{variant_stem}.npz")
+            np.savez_compressed(variant_artifact, **self._arrays(frame_count=3))
+            variant_sidecar = bad_sidecar.with_name(f"{variant_stem}.json")
+            payload["artifact"] = {
+                "path": str(variant_artifact),
+                "variant": f"source_{archive_sha256}",
+                "size_bytes": variant_artifact.stat().st_size,
+                "sha256": hashlib.sha256(variant_artifact.read_bytes()).hexdigest(),
+            }
+            variant_sidecar.write_text(
+                json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+            )
+
+            receipt = build_csl_news_pose_manifest_snapshot(
+                config,
+                runtime_report=self._runtime(),
+                snapshot_id="recovery-variant",
+            )
+            records = [
+                json.loads(line)
+                for line in Path(receipt["manifest_path"])
+                .read_text(encoding="utf-8")
+                .splitlines()
+            ]
+            summary = json.loads(
+                Path(receipt["summary_path"]).read_text(encoding="utf-8")
+            )
+
+            self.assertEqual(receipt["record_count"], 2)
+            self.assertEqual(summary["annotation"]["excluded_sidecar_count"], 1)
+            recovered = next(
+                record for record in records if record["sample_id"] == sample_id
+            )
+            self.assertIn(
+                variant_stem,
+                recovered["modalities"]["canonical_pose"]["uri"],
+            )
             self.assertEqual(bad_artifact.read_bytes(), artifact_before)
             self.assertEqual(bad_sidecar.read_bytes(), sidecar_before)
 
