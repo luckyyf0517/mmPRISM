@@ -229,3 +229,7 @@ scripts/run_csl_news_annotation_qc.sh
   近期约 1,409 samples/hour、白名单 ETA 约 15.4 小时。同期 100-sample/24,601-frame QC 为
   `passed`，warning/failure 0；4 个 registry worker 均 `active/running`、`NRestarts=0`。状态仍为
   `attention_required`，原因是 registry 持续保留 3 个 failed source，不是 annotation failure。
+- `17:30Z`，clean commit `1fc0d55` 后手工触发 integrity oneshot 并以 `0/SUCCESS` 完成；新 final
+  `archive_027/030` 均通过完整 CRC/路径安全/label coverage。registry 更新为 20 final、17 passed/
+  27,975 videos。`17:31Z` 状态报告为 3,287 eligible pair、missing artifact/sidecar 0、latest run
+  新失败 0、抽检 3/3，近期约 1,436 samples/hour；四个 worker 均 `active/running`、`NRestarts=0`。

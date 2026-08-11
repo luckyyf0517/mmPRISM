@@ -9,12 +9,12 @@ Role: `DATA-001-K_source_integrity_evidence`
 Current cumulative control artifact:
 
 ```text
-latest registry writer commit: 8b64d0f35b68e1351429121566fc78b78f8ce678
+latest registry writer commit: 1fc0d55decd35e1900d734865344df5a21c5e382
 registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/registry.json
-registry SHA-256 at 2026-08-11T17:14Z: b150b679877568a092f1dcb61b0c9a35648434e339ce7603ff841dde29ae0ce1
+registry SHA-256 at 2026-08-11T17:30Z: ed848abce94683d74aca8bbc985a365315fec5983ed74e44261a09165927d804
 labels SHA-256: 3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5
-present final archives: 18
-passed: 15 archives / 24,618 videos
+present final archives: 20
+passed: 17 archives / 27,975 videos
 failed: 001,005,008
 ```
 
@@ -92,7 +92,7 @@ status: passed
 
 该独立增量报告随后被 cumulative registry 纳入；不再维护手工 fixed lane 清单。
 
-### Latest passed archive: `archive_026`
+### Latest passed archives: `archive_027/030`
 
 `2026-08-11T17:14Z` timer 在 clean commit `8b64d0f` 下自动发现并完整审计新 final
 `archive_026`。逐 member CRC/full read、路径安全和 1,598/1,598 label coverage 均通过：
@@ -106,6 +106,26 @@ status: passed
 
 该周期前一次 timer 在主仓库有未提交稿件审计修改时按设计以 exit 2 拒绝更新；提交后无需人工重启，
 下一周期以 `0/SUCCESS` 恢复。这验证了 registry 不会绑定 dirty builder state。
+
+`2026-08-11T17:30Z` 在 clean commit `1fc0d55` 下手工触发同一 systemd oneshot，完整审计并通过
+新 final `archive_027/030`。两者分别覆盖 1,577 和 1,780 个视频，完整 CRC、路径安全与 label
+coverage 均通过：
+
+```text
+archive_027 audit: manifests/csl_news/source_integrity_v1/audits/archive_027/audit_20260811T173039.942634Z_782f364263aa.json
+archive_027 report SHA-256: 37e598df1ee5705c969c17de89540fa3e3f18c8b97d76849e1b2672cde0dc883
+archive_027 SHA-256: 782f364263aa9e81b7edadd6d70bcdf0242e0024a33edfc05999a676dae56091
+archive_030 audit: manifests/csl_news/source_integrity_v1/audits/archive_030/audit_20260811T173049.343510Z_35aaffe6c97a.json
+archive_030 report SHA-256: 737c7b5b0a8238390dd817030553f62debce61d20d2097f0f553105498d7c597
+archive_030 SHA-256: 35aaffe6c97a602a7ebe979e27468d93d0748b58ae4da86e025a67c0ce2345b2
+```
+
+该 scan 以 `0/SUCCESS` 完成，registry 现为 20 final、17 passed/27,975 videos，失败项仍仅为
+`001/005/008`。四个 GPU worker 未重启且 `NRestarts=0`。`17:31Z` 状态快照记录 3,287 个
+eligible pose/sidecar pair、missing artifact/sidecar 0、latest run 新失败 0、抽检 3/3 通过，近期
+约 1,436 samples/hour；报告 SHA-256 为
+`b0f7b94ed04a0b4e0cf1b5a33786809fb6adf9ad944811de7f8e0a7028ef536b`。状态保持
+`attention_required` 只因为 registry 保留三个 failed source，不是 annotation failure。
 
 ## 3. Evidence Boundary
 

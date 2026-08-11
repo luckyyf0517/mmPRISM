@@ -313,3 +313,10 @@ missing artifact/sidecar 均为 0、latest run 新失败 0、抽检 3/3 通过�
 `passed`、warning/failure 均为 0，共检查 24,601 帧；canonical valid ratio 0.99196、transformed
 in-bounds ratio 0.95260，报告 SHA-256 为
 `c6521e0d1c40fcf92e40a7d71ebf2b31331e190b5225e6139f2226ddc9dbe2ca`。
+
+`17:30 UTC`，提交稿件 display registry 的 clean commit `1fc0d55` 后，手工触发同一 integrity
+oneshot 并以 `0/SUCCESS` 完成；新 final `archive_027/030` 分别以 1,577/1,780 videos 通过完整
+CRC、路径安全和 label coverage。当前 registry 为 20 final、17 passed/27,975 videos，失败项仍仅
+`001/005/008`，SHA-256 为 `ed848abce94683d74aca8bbc985a365315fec5983ed74e44261a09165927d804`。
+`17:31 UTC` 状态快照统计 3,287 个 eligible pair、missing artifact/sidecar 0、latest run 新失败 0、
+抽检 3/3 通过，近期约 1,436 samples/hour；四个 worker 均 `active/running`、`NRestarts=0`。
