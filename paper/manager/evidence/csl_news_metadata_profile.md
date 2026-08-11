@@ -71,7 +71,8 @@ last-write-wins 或静默覆盖。首次发现差异的 failed profile 也保留
 
 因此 `ED-SCI-4`、`R1-4b`、`R2-4` 只能从 `blocked` 推进到 `in_progress`，不能标记完成。后续还需：
 
-1. 确认原稿实际使用的是完整 CSL-News 还是某个子集，并生成对应 manifest hash；
+1. 已生成 11-archive partial manifest；仍需确认原稿实际使用的是完整 CSL-News 还是某个子集，
+   并生成对应 complete/frozen manifest hash；
 2. 从视频/原始数据恢复 signer、场景、方向、遮挡和 non-manual 可用性，无法恢复时在限制中声明；
 3. 对真实 12 人和新增 stress set 分别给出 subject/session/split 统计与 leakage audit；
 4. 将最终数字写入主文/补充材料前，再从 frozen manifest 重新生成 profile。

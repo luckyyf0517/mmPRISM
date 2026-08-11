@@ -158,3 +158,6 @@ scripts/run_csl_news_annotation_qc.sh
   `reports/status_20260811T150003Z.json` 为 `healthy`：11 个完整 archive、18,095 个可用视频、
   291 个成功样本、当前 run 新增失败 0、缺失配对 0、抽样 3/3 通过。worker 保持
   `active/running`、`NRestarts=0`，timer 下一次触发为 `15:30 UTC`。
+- `2026-08-11T15:25Z` clean-commit source snapshot 冻结 11 个 archive/18,095 条 record；
+  对当时 676 个 `archive_003` pose sidecar 逐一检查，stable sample ID 缺失 0、caption mismatch 0。
+  snapshot 为 partial，不暂停或改变 annotation worker。

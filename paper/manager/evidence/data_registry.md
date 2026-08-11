@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | metadata profile ready; source adapter audit in progress; full archive manifest pending | JSON 722,711/722,711 valid unique records; CSV contains 4 conflicting duplicate rows but covers every canonical JSON record; `archive_003`: SHA/CRC/1,657 labels/decode passed; full video validation pending | visual pose/synthetic training and SLU | in_progress |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | partial source snapshot: 11 archives/18,095 records, hash `6984d0cc...`; metadata profile ready; final 436-archive manifest pending | JSON 722,711/722,711 valid unique records; CSV 4 conflicting duplicates isolated; partial manifest contract/portable path/source-to-pose checks passed; full CRC/video validation pending | visual pose/synthetic training and SLU | in_progress |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -91,6 +91,10 @@ Machine-readable profile `profile_20260811T151215Z.json` has SHA-256
 `passed_with_warnings`. The canonical JSON has 722,711 valid unique records; CSV has the same key
 set plus four conflicting duplicate rows. JSON is authoritative and CSV cannot override it. Reviewer-facing
 interpretation and missing fields are recorded in `csl_news_metadata_profile.md`.
+
+The first clean-commit source snapshot is recorded in `csl_news_source_manifest.md`. Its 18,095-record
+manifest has SHA-256 `6984d0cc30a0f5a9e6baa58fa8a764e0c0b70ed1b0bb9224e9fca8faa1b1a1f5`;
+it covers 11/436 archives and remains explicitly partial.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 

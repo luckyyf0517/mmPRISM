@@ -15,7 +15,7 @@ Role: `paper_claim_to_artifact_map`
 | `EVID-REV-ATTN` | Results: articulation recovery | necessity of spatial/channel/SE attention | `R2-5` | pending | `EXP-REV-005` | pose/downstream pending | pending | blocked | not_started |
 | `EVID-REV-EFF` | Methods: model/training; new efficiency table TBD | training/inference efficiency | `R1-2` | pending | `EXP-REV-006` | standard compute profile | pending | blocked | not_started |
 | `EVID-REV-XMODAL` | Introduction comparison table; Results: SLU | positioning against WiFi/acoustic continuous SLU | `R2-6` | pending | `EXP-REV-007` | comparability audit pending | pending | not_started | not_started |
-| `EVID-REV-DATASET` | Methods: Datasets and synthetic data generation | dataset characterization and split transparency | `ED-SCI-4`,`R1-4b`,`R2-4` | pinned CSL-News metadata; remaining datasets/splits pending | `DATA-REV-001-CSLNEWS-META-20260811` | `mmprism.csl_news_metadata_profile.v1`; split audit pending | `evidence/csl_news_metadata_profile.md`; machine report SHA-256 `90e24aa...` | in_progress | not_started |
+| `EVID-REV-DATASET` | Methods: Datasets and synthetic data generation | dataset characterization and split transparency | `ED-SCI-4`,`R1-4b`,`R2-4` | pinned CSL-News metadata + partial source manifest; remaining datasets/splits pending | `DATA-REV-001-CSLNEWS-META-20260811` | metadata profile + `mmprism.sample.v1`; complete split audit pending | `evidence/csl_news_metadata_profile.md`; `evidence/csl_news_source_manifest.md`; partial hash `6984d0cc...` | in_progress | not_started |
 
 ## 推荐粒度
 

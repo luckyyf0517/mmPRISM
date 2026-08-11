@@ -24,6 +24,8 @@ Role: `control_panel`
 - CSL-News metadata profile 已扫描全部 722,711 条 canonical JSON 记录；数据集类型、译文单元和
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
+- 首个 clean-commit CSL-News source snapshot 已验证 11 个 archive、18,095 条 portable record，
+  并与 676 个当前 pose sidecar 做到 ID/text 0 mismatch；它仍是 partial，不作为全量论文数字。
 - `/mnt/gfs` 当前约余 3.6 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
 - canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；24 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。

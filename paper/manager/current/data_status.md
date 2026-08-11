@@ -186,6 +186,12 @@ metadata unit 已于 `2026-08-11T14:57Z` 以 `Result=success`、exit code 0 完�
 固定使用 JSON，CSV 只作交叉审计，不修改任何上游文件。完整译文长度统计、字符集定义和 reviewer
 缺失字段见 `../evidence/csl_news_metadata_profile.md`。
 
+`2026-08-11T15:25Z`，clean commit `96ccc6e` 生成首个 available-archive source snapshot：11 个
+archive、18,095 条 portable `caption/video` record，manifest SHA-256 为
+`6984d0cc30a0f5a9e6baa58fa8a764e0c0b70ed1b0bb9224e9fca8faa1b1a1f5`。通用 contract、绝对路径
+扫描和当前 676 个 pose sidecar 的 ID/text 交叉检查均通过。该 artifact 明确标为 `partial`，详见
+`../evidence/csl_news_source_manifest.md`；最终论文统计必须等待 436-archive complete snapshot。
+
 下载使用 `scripts/download_csl_news.sh`，当前引擎为 aria2：4 个 archive worker、每文件 8 个连接、
 断点续传、`.part` 原子完成、只下载不解压，并保留至少 1 TiB 可用空间。切换前短时基准中，
 单个 aria2 传输稳定约 3.4 MiB/s，原 16 路 curl 同窗口合计约 4.7 MB/s。Legacy 预处理链与接口冲突见

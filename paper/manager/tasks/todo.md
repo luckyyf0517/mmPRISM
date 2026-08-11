@@ -39,7 +39,7 @@ Role: `master_task_index`
 | ID | Task | Dependency | Status | Exit Criterion |
 |---|---|---|---|---|
 | `DATA-002` | 定义 sample/sequence manifest schema | source data audit | in_progress | 通用 schema/validator 已落地；待真实数据 adapter 校准 |
-| `DATA-003` | 为各数据族生成只读 source manifest | `DATA-002` | in_progress | CSL-News source audit 已实现；待覆盖率、缺失率、shape 和全量 manifest 完成 |
+| `DATA-003` | 为各数据族生成只读 source manifest | `DATA-002` | in_progress | CSL-News 11-archive partial manifest 已验证；待 436-archive complete manifest、其他数据族覆盖率/缺失率/shape |
 | `DATA-004` | 重建无泄漏 split | `DATA-003` | not_started | group-disjoint audit 通过 |
 | `ARCH-002` | 完成 package/config/CLI/runtime foundation | environment lock | in_progress | pyproject、strict config、doctor/plan CLI 与 run metadata 完整 |
 | `ARCH-003` | 实现 canonical data/radar vertical slice | `DATA-002`, `ARCH-002` | not_started | manifest fixture 到 radar cube contract 通过 |
