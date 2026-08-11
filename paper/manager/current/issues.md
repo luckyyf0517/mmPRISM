@@ -14,7 +14,7 @@ Role: `risk_register`
 | `BLOCK-SIM-PROVENANCE` | P0 | 稿件声称 MANO mesh/ray tracing，当前可见 legacy 仿真主要使用 skeleton 插值 | 无法确认原投稿 synthetic data 方法或直接复现其结果 | blocked | 上传/定位原始 MANO/mesh/simulator 输入、配置、代码和运行证据 |
 | `ARCH-STALE-001` | P1 | legacy 配置引用已删除的 `cubenet_rtm.py` 等模块 | 旧发布包不可运行，但不再阻断 canonical 新实现 | superseded | 仅纳入 forensic/release exclusion audit，不恢复到新包 |
 | `ARCH-CONFIG-001` | P1 | legacy 配置、入口和代码中存在大量硬编码路径/GPU/dtype | 旧代码不可迁移；canonical release 必须彻底隔离 | in_progress | strict path/runtime/run-plan 已落地，继续完成所有新入口 |
-| `DATA-PATH-001` | P1 | dataset 通过路径字符串替换关联多模态文件 | 易错且不可验证 | not_started | 改为 manifest-driven sample record |
+| `DATA-PATH-001` | P1 | legacy dataset 通过路径字符串替换关联多模态文件 | 易错且不可验证 | in_progress | canonical sample/pose manifest 与 split index 已移除路径替换；待 radar/model-ready adapter 覆盖后关闭 |
 | `DATA-CSLNEWS-META-001` | P1 | 官方 CSL-News CSV 比唯一 JSON 多 4 条冲突重复行 | CSV last-write-wins 会为 4 个视频静默选择错误译文 | mitigated | 固定 JSON 为 canonical source，CSV 只作审计；保留 profile 和四个 key，必要时反馈上游 |
 | `DATA-CSLNEWS-INTEGRITY-001` | P0 | `005/008` member 解压损坏；`001` 因 aria2 403 后被旧脚本误晋升为 incomplete final | `005/008` 的 3,251 个视频及 `001` 均不可作为 source；旧 partial snapshot 不能作为 integrity-verified 输入 | active_mitigated | promotion + cumulative consumption gate 已运行；16:30Z 仅调度 registry 中 14 个 passed archive；保留并 versioned 重下 `001/005/008` |
 | `EXP-TEST-001` | P1 | legacy 无自动化测试；canonical 仅有 foundation fixture/tests | radar/model/训练链仍缺保护 | in_progress | 扩展 shape、split、processor、model smoke tests |

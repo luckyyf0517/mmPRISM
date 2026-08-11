@@ -290,3 +290,12 @@ dynamic run 新失败 0，近期约 1,353 samples/hour。报告保持 `attention
 pair 被保留并排除，eligible NPZ 无未配对项；checksum、portable path、通用 contract 和首/中/末
 adapter 读取均通过。详见 `../evidence/csl_news_pose_manifest.md`。该 snapshot 仍为 partial，后台
 下载和标注继续运行，不能作为全量论文统计。
+
+`16:52 UTC`，clean commit `eb5de64` 对上述 frozen pose manifest 生成首个 canonical partial split。
+协议 `csl_news_pose_sequence_hash_80_10_10_v1` 使用 `sequence_id`、seed `20260811` 和整数权重
+`8/1/1`；train/validation/test 分别为 1,701/219/237 samples。2,157 条 source 全覆盖，2,157 个
+sequence/group 全部唯一，跨 split group leakage、重复 sample、missing/extra coverage 均为 0；
+2,157 个 group ID 和 hash bucket 独立重算一致。assignments SHA-256 为
+`133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`，详见
+`../evidence/csl_news_pose_split.md`。由于 source 仍是 partial 且无 signer/subject metadata，本结果
+只证明 sequence-disjoint split 工程链，不支撑 subject-independent、新用户泛化或最终论文 split。

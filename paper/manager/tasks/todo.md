@@ -40,7 +40,7 @@ Role: `master_task_index`
 |---|---|---|---|---|
 | `DATA-002` | 定义 sample/sequence manifest schema | source data audit | in_progress | 通用 schema/validator 已落地；待真实数据 adapter 校准 |
 | `DATA-003` | 为各数据族生成只读 source manifest | `DATA-002` | in_progress | CSL-News registry 为 14 archive/23,020 videos passed，2,157-record pose+caption partial manifest 已验收；`001/005/008` 隔离；待 replacement 和 436-archive complete manifest |
-| `DATA-004` | 重建无泄漏 split | `DATA-003` | not_started | group-disjoint audit 通过 |
+| `DATA-004` | 重建无泄漏 split | `DATA-003` | in_progress | CSL-News 2,157-record partial sequence split 已通过 coverage/leakage audit；待 complete source、signer/subject 和 final split |
 | `ARCH-002` | 完成 package/config/CLI/runtime foundation | environment lock | in_progress | pyproject、strict config、doctor/plan CLI 与 run metadata 完整 |
 | `ARCH-003` | 实现 canonical data/radar vertical slice | `DATA-002`, `ARCH-002` | not_started | manifest fixture 到 radar cube contract 通过 |
 | `ARCH-004` | 实现 canonical OmniHand vertical slice | `ARCH-003` | not_started | 从头训练的 2-batch/GPU smoke + pose metric artifact |

@@ -24,7 +24,7 @@ Role: `data_execution_tracker`
 | `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | cumulative registry/atomic audit/worker whitelist 已验证；14 archive/23,020 videos passed；2,157-record pose+caption partial manifest/adapter 已验收，待 replacement 和最终 436-archive CRC/coverage/decode report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | `001/005/008` 已进入 cumulative registry failed 项，15 个历史 pose pair 单列 ineligible；待人工复核和 versioned replacement |
-| `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
+| `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | in_progress | 2,157-record CSL-News partial sequence split 已通过 deterministic coverage/leakage audit；待 full manifest、signer/subject metadata 和最终 split |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
 | `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | strict artifact/resume/QC、registry-only 4-worker dynamic shard 和 2,157-record frozen pose manifest 已通过；夜间全量 build 待完成 |
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | not_started | versioned radar output + QC |
@@ -65,6 +65,10 @@ typed passed entry，并保存 registry hash/shard provenance。
 首个 clean-commit pose+caption snapshot 冻结 2,157 条 eligible record，manifest SHA-256 为
 `4161593fdbfc85a5c2fb392e3ef92d40da560db5c75a19d559f1f92878e31600`；15 个 failed-archive
 历史 pair 被保留并排除，首/中/末 adapter checksum/shape/dtype 读取通过。该证据不关闭全量任务。
+
+该 manifest 的 sequence-disjoint partial split 为 train/validation/test 1,701/219/237；assignment
+SHA-256 `133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`，coverage 和
+cross-group leakage audit 通过。缺少 signer/subject 且 source 未完成，因此 `DATA-004-A` 保持进行中。
 
 ## 禁止事项
 

@@ -45,6 +45,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Dataset | Group Rule | Seed/Hash Rule | Train/Val/Test Count | Manifest Hash | Leakage Audit | Status |
 |---|---|---|---|---|---|---|---|
+| `SPLIT-CSL-NEWS-POSE-PARTIAL-V1` | `BUILD-CSL-NEWS-RTMW3D-V1` partial 2,157 records | `sequence_id` -> SHA-256 `group_id`; signer unavailable | seed `20260811`; `sha256_mod_weight_v1`; weights `8/1/1` | 1,701 / 219 / 237 | source `4161593f...`; assignments `133f32d5...` | coverage 2,157/2,157；duplicate/leakage 0；independent bucket recompute passed | partial_evidence_ready |
 | `SPLIT-LEGACY-UNKNOWN` | unknown | unknown | unknown | unknown | unknown | unchecked | blocked |
 
 ## Validation Requirements
@@ -106,6 +107,9 @@ bound to the first pose manifest has SHA-256
 `183743fbb60bb85b75dd63f6c112e0c1a3081b2b6a391e32fa6ce2a21cb5b02d`, with 14 passed archives/
 23,020 videos and failed entries `001/005/008` retained in place. The derived 2,157-record manifest is
 documented in `csl_news_pose_manifest.md`; it is partial pipeline evidence, not the final dataset manifest.
+The first canonical sequence split is recorded in `csl_news_pose_split.md`. It binds that exact partial pose
+manifest and has assignment SHA-256 `133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`.
+It has zero sequence-group leakage but is not subject-independent because signer metadata is unavailable.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 

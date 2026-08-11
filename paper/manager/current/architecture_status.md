@@ -38,16 +38,16 @@ tests/
 
 当前 foundation 已包含 strict config、环境变量展开、manifest v1、无副作用 run plan、runtime
 provenance、统一 CLI 和 dependency-light unit tests。CSL-News RTMW3D 标注已具有独立 strict
-config、原子 artifact、resume/failure contract、GPU smoke、portable pose+caption manifest builder
-和无训练依赖的随机访问 adapter；Radar、OmniHand、WaveLLM 与通用
+config、原子 artifact、resume/failure contract、GPU smoke、portable pose+caption manifest builder、
+无训练依赖的随机访问 adapter 和 deterministic group split；Radar、OmniHand、WaveLLM 与通用
 训练 artifact writer 尚未实现。
 
 Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-51 unit tests passed
-doctor/config/plan/manifest CLI passed
+56 unit tests passed
+doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
 canonical-to-legacy import scan passed
@@ -68,6 +68,8 @@ Registry-aware status excludes quarantined outputs from progress and reports the
 Each sample/failure sidecar and archive marker binds the registry snapshot and archive audit provenance
 Integrity-gated pose+caption snapshot passed 2,157-record contract/checksum/portable-path validation
 Pose manifest adapter loaded first/middle/last native and canonical arrays without training imports
+Partial sequence split passed 2,157/2,157 coverage and zero cross-split group leakage
+All 2,157 group IDs and assignment buckets independently recomputed and matched
 ```
 
 Research profile 已安装 Lightning 2.6.5、Transformers 4.57.6、PEFT 0.20.0、SciPy/HDF5、sentence-transformers、OpenCV、W&B 等核心依赖。DeepSpeed 作为 `distributed` profile 按需安装，不进入默认研究环境。

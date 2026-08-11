@@ -10,6 +10,7 @@ Last Updated: `2026-08-11`
 - `data_registry.md`：数据族、manifest、split、license 和质量状态。
 - `csl_news_source_integrity.md`：CSL-News frozen archive 的完整 CRC、隔离和恢复证据。
 - `csl_news_pose_manifest.md`：CSL-News integrity-gated pose+caption partial snapshot 与 adapter 验收证据。
+- `csl_news_pose_split.md`：CSL-News pose partial manifest 的 sequence-disjoint split 与 leakage audit。
 - `experiment_registry.md`：每次正式 run 的配置、commit、数据、checkpoint、prediction 和 metrics。
 - `paper_evidence_map.md`：paper claim/table/figure 到 data/experiment/reviewer/manuscript 的映射。
 

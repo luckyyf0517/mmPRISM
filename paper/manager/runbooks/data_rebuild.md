@@ -67,6 +67,7 @@ sampled_checksum, detected_family, detected_modality, status
 生成 split 后必须检查：
 
 - group disjointness
+- source manifest SHA-256 和 100% sample coverage
 - class/action/caption distribution
 - sequence length distribution
 - modality missing rate
@@ -77,12 +78,11 @@ sampled_checksum, detected_family, detected_modality, status
 只有正式实验需要的版本才 materialize。每个版本目录必须有：
 
 ```text
-dataset_manifest.jsonl
-split_manifest.json
-build_config.yaml
-build_report.json
-validation_report.json
-provenance.json
+dataset manifest snapshot + SHA-256
+split snapshot/assignments.jsonl + SHA256SUMS
+resolved build config
+build and validation reports
+provenance/runtime metadata
 ```
 
 ## 6. Acceptance
