@@ -41,15 +41,15 @@ Role: `control_panel`
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run writer 与 OmniHand single-device train/evaluate 已实现：原子冻结 config/Git/environment/
   输入哈希，写入 Safetensors、history、实际 runtime、流式逐样本 prediction 和 count-weighted pose
-  metrics；CPU train->reload->evaluate/tamper gate 已通过，clean GPU formal smoke、真实数据、分布式和
-  WaveLLM formal service 仍待完成。
+  metrics；CPU train->reload->evaluate/tamper gate 已通过；clean commit `81e9b89` 的 A100/BF16 formal
+  train/checkpoint/reload/evaluate 及独立 13-gate 审计也已通过。真实数据、分布式和 WaveLLM formal service 仍待完成。
 - fixed-revision SimCSE/SBERT downloader 已完成 14-file checksum manifest；clean commit `3ae69c3`
   上两个真实 CPU loader 均输出 finite `[2,768]` embedding，`ARCH-REV-002` 已达到 evidence ready。
 - clean commit `79b45b5` 上已完成 pinned mT5-base 资产和 A100 两步 geometry-fusion smoke：三路
   adapter 梯度/参数更新、置信度反事实和 beam generation 均通过；该 artifact 明确不是论文结果。
 - clean commit `688d44d` 上 canonical CubeNet/OmniHand 两步 A100 smoke 已两次确定性通过：depthwise
   spatial、8-layer/16-head temporal 和 pose head 均有非零梯度/更新，single-frame 与 mask 反事实通过。
-- 同一 clean commit 的 release audit 已验证 85 个逐文件 hash、152 个 internal/legacy 排除项和 43-module
+- clean commit `81e9b89` 的 release audit 已验证 94 个逐文件 hash、154 个 internal/legacy 排除项和 46-module
   dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。mT5 缺失项已关闭，
   reviewer profile 现只被 LICENSE 和 provenance-gated radar example 两项真实缺失阻塞。
 - `DEC-027` 已固定 mT5-only generation rebuild；legacy Phi-3 不进入 public support，clean commit
@@ -84,7 +84,7 @@ Role: `control_panel`
 2. 执行 `DATA-001-K/DATA-005-A`，下载 promotion 和标注前都做完整 ZIP gate；只对通过清单生成 pose。
 3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
-4. 继续 `ARCH-001/002`：完成 clean-commit OmniHand GPU formal smoke，再实现 prepare、WaveLLM formal
+4. 继续 `ARCH-001/002`：在 OmniHand GPU formal 闭环基础上实现 prepare、WaveLLM formal
    train/evaluate 与 distributed prediction/checkpoint aggregation。
 5. 为 `ARCH-003` 收集 radar acquisition/channel/calibration 证据；绑定真实 manifest fixture 后实现
    beamforming 与完整 cube gate，禁止用 legacy 默认值填补未知项。

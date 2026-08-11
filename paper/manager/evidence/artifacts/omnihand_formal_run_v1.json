@@ -1,0 +1,79 @@
+{
+  "audit": {
+    "path": "/mnt/gfs/yanyifan/mmPRISM/engineering/omnihand_formal_smoke_81e9b89/audit.json",
+    "schema_version": "mmprism.omnihand_formal_smoke_audit.v1",
+    "sha256": "4450c5be6684dc51a1cee43a70361c721707165250f9a4a1709642648b3ea4d4",
+    "status": "passed"
+  },
+  "checks": {
+    "all_artifact_hashes": true,
+    "all_input_hashes": true,
+    "bf16_a100": true,
+    "checkpoint_reference": true,
+    "clean_commit": true,
+    "evaluate_complete": true,
+    "finite_metrics": true,
+    "no_hidden_files": true,
+    "performance_present": true,
+    "prediction_coverage": true,
+    "prediction_replay_identical": true,
+    "summary_replay_identical": true,
+    "train_complete": true
+  },
+  "code_commit": "81e9b89896a25bc26eece5f789b9a842004a4d4a",
+  "evaluate": {
+    "end_to_end_seconds": 3.2977518630214036,
+    "parameter_count": 679097,
+    "peak_allocated_bytes": 18224640,
+    "peak_reserved_bytes": 41943040,
+    "prediction_samples": 2,
+    "prediction_samples_per_second": 2.3129823595505528,
+    "prediction_seconds": 0.8646845021285117,
+    "predictions_sha256": "c80928b022877d4857b87940d109ebf171e7edbbac449daaf87844c491ee0f6c",
+    "run_id": "omnihand-train-smoke__20260811T201630Z__eb99098e",
+    "status": "completed"
+  },
+  "fixture": {
+    "generator": "numpy.default_rng",
+    "train_manifest": {
+      "records": 4,
+      "sha256": "0020607a88dc6c92b3e4067180a40bb294fe6d29501199f33ea0c1cfb34897e7"
+    },
+    "validation_manifest": {
+      "records": 2,
+      "sha256": "48be61e04275f624e075641a8f4127c67bc067d6021e8cc4c15246da39f2bc46"
+    }
+  },
+  "metric_protocol": "mmprism.pose_metric.dual_hand_metric_v1",
+  "paper_use": {
+    "allowed": false,
+    "reason": "Synthetic engineering fixture; no paper dataset, calibrated radar cube, or scientific split is attached.",
+    "scientific_metric_values_included": false
+  },
+  "runtime": {
+    "cuda_runtime": "12.8",
+    "deterministic": true,
+    "device": "cuda:0",
+    "device_name": "NVIDIA A100-SXM4-80GB",
+    "physical_gpu": 5,
+    "precision": "bf16-mixed",
+    "seed": 20260811,
+    "torch_version": "2.11.0+cu128"
+  },
+  "schema_version": "mmprism.omnihand_formal_run_evidence.v1",
+  "scope": "engineering_formal_run_not_paper_evidence",
+  "status": "passed",
+  "train": {
+    "checkpoint_sha256": "18b941a3161a10978ca91033ed670a9881a09339b797c80fc4aed13e9c9b8010",
+    "end_to_end_seconds": 4.06484743533656,
+    "optimizer_steps": 2,
+    "parameter_count": 679097,
+    "peak_allocated_bytes": 48897536,
+    "peak_reserved_bytes": 79691776,
+    "prediction_samples": 2,
+    "predictions_sha256": "c80928b022877d4857b87940d109ebf171e7edbbac449daaf87844c491ee0f6c",
+    "run_id": "omnihand-train-smoke__20260811T201542Z__eb99098e",
+    "status": "completed",
+    "training_seconds": 1.2892116662114859
+  }
+}

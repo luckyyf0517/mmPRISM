@@ -47,6 +47,34 @@ Role: `run_and_artifact_provenance`
 - Paper destination: none; engineering/release evidence only.
 - Status: `passed_engineering_smoke`.
 
+### RUN-20260811-omnihand-formal-gpu-smoke
+
+- Task / Reviewer IDs: `ARCH-004-A`, `ARCH-006-A`, `EXP-001`, `EXP-REV-006` engineering prerequisite.
+- Purpose: verify the full single-device formal train/checkpoint/reload/predict/evaluate lifecycle, not a
+  scientific hypothesis or manuscript result.
+- Git commit / dirty state: `81e9b89896a25bc26eece5f789b9a842004a4d4a` / clean.
+- Environment lock: `uv.lock`; Python 3.12.13; Torch 2.11.0+cu128; CUDA 12.8.
+- Resolved config: run fingerprint `eb99098e6e9ad0b7a5f1f1339bdd01d05ebe200942962db5d4a9d98115698508`;
+  model config SHA-256 `f374c8e3df02ee3db74e1d39b2d74575418d84f6f946f088249460324baa3c42`.
+- Dataset manifest / split: deterministic synthetic model-ready fixture; train 4 records
+  (`0020607a...`), validation/test 2 records (`48be61e0...`). No scientific split.
+- Seed / device / precision: `20260811` / A100 physical GPU 5 exposed as `cuda:0` / `bf16-mixed`.
+- Train run: `omnihand-train-smoke__20260811T201542Z__eb99098e`; 2 optimizer steps; completed.
+- Evaluate run: `omnihand-train-smoke__20260811T201630Z__eb99098e`; checkpoint reload; completed.
+- Checkpoint: Safetensors SHA-256 `18b941a3161a10978ca91033ed670a9881a09339b797c80fc4aed13e9c9b8010`.
+- Predictions: 2/2 records; train and standalone evaluate payloads are byte-identical, SHA-256
+  `c80928b022877d4857b87940d109ebf171e7edbbac449daaf87844c491ee0f6c`.
+- Metrics: `mmprism.pose_metric.dual_hand_metric_v1`; finite count-weighted summary replayed identically.
+  Synthetic values are intentionally excluded from this registry and are not paper evidence.
+- Performance: train 1.2892 s core / 4.0648 s end-to-end / 48,897,536 B peak allocated; evaluate
+  0.8647 s prediction / 3.2978 s end-to-end / 18,224,640 B peak allocated.
+- Validation: independent 13-gate audit passed; all artifact/input hashes, clean Git, A100 BF16,
+  checkpoint linkage, coverage, replay identity, finite metrics, performance fields, and temp-file gate passed.
+- Evidence: `omnihand_formal_run.md`; `artifacts/omnihand_formal_run_v1.json`; mounted audit SHA-256
+  `4450c5be6684dc51a1cee43a70361c721707165250f9a4a1709642648b3ea4d4`.
+- Paper destination: none; engineering/release evidence only.
+- Status: `passed_engineering_formal_run`.
+
 ## New Run Record Template
 
 ```markdown

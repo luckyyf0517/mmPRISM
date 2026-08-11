@@ -10,12 +10,12 @@ Evidence ID: `EVID-CODE-RELEASE-V1`
 ```text
 schema: mmprism.release_audit_report.v1
 release profile: reviewer_release_v1
-builder commit: 688d44d18d7441c0c79706546e97683db2713ce9
+builder commit: 81e9b89896a25bc26eece5f789b9a842004a4d4a
 builder Git state: clean
 config: configs/release/reviewer_release_v1.yaml
-config fingerprint: 1ea72ce529c7570dd255f3ab8dd4efc3d63d066c87f6ad3207eee3ea068bd5e3
+config fingerprint: 1126cd2a33a6ef0a18c6271e3a12cd29888a724d8df2074bf52b040beb4a699a
 artifact: paper/manager/evidence/artifacts/release_audit_v1.json
-artifact SHA-256: d73be10726bdace96b45711fcc4ae71c9876357552e0f4ce527b92efe1fd817a
+artifact SHA-256: f569badc56555ac2dc936c7f74881fcefaf442eb44bd89a49f662fe6ea533a17
 status: failed (expected blockers retained)
 ```
 
@@ -33,13 +33,13 @@ execution failure would return `2`.
 
 | Gate | Result |
 |---|---:|
-| Git tracked files inspected | 274 |
-| release-selected files | 85 |
-| selected bytes | 781,354 |
-| selected files with size + SHA-256 | 85/85 |
-| tracked internal/legacy paths explicitly excluded | 152 |
-| canonical Python modules | 43 |
-| internal dependency edges | 71 |
+| Git tracked files inspected | 285 |
+| release-selected files | 94 |
+| selected bytes | 881,507 |
+| selected files with size + SHA-256 | 94/94 |
+| tracked internal/legacy paths explicitly excluded | 154 |
+| canonical Python modules | 46 |
+| internal dependency edges | 86 |
 | missing canonical import targets | 0 |
 | canonical imports of forbidden legacy namespaces | 0 |
 | relative canonical imports | 0 |
@@ -49,7 +49,7 @@ execution failure would return `2`.
 | unsupported backend content hits | 0 |
 | expected `mmprism = mmprism.cli:main` entrypoint | matched |
 
-The 152 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
+The 154 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
 legacy entrypoints/configuration, legacy `src/*` namespaces, and internal operational scripts. They remain
 in the development repository for evidence recovery and are absent from the release selection.
 
@@ -71,6 +71,10 @@ A100 execution evidence is recorded as `EVID-CODE-MT5-SMOKE-V1`.
 The profile also selects `configs/examples/omnihand_smoke.yaml`, `scripts/run_omnihand_smoke.sh`,
 canonical CubeNet/config/metric/smoke modules and their tests. Clean-commit A100 execution evidence is
 recorded as `EVID-CODE-OMNIHAND-SMOKE-V1`.
+
+The current profile additionally selects the strict model-ready pose adapter, OmniHand formal run config,
+single-device train/evaluate orchestration, Safetensors support, and their tests. Clean-commit A100/BF16
+train/checkpoint/reload/evaluate evidence is recorded as `EVID-CODE-OMNIHAND-FORMAL-V1`.
 
 `scripts/download_models.sh` and `configs/models/evaluation_models_v1.yaml` are now selected and hashed
 by the release profile. Their fixed-revision download, checksum and two-loader execution evidence is
