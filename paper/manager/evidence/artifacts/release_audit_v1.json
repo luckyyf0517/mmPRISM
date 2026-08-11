@@ -11,7 +11,7 @@
       "transformers",
       "yaml"
     ],
-    "internal_edge_count": 102,
+    "internal_edge_count": 105,
     "internal_edges": [
       [
         "mmprism.__main__",
@@ -119,6 +119,10 @@
       ],
       [
         "mmprism.data",
+        "mmprism.data.csl_news_annotation_audit"
+      ],
+      [
+        "mmprism.data",
         "mmprism.data.csl_news_annotation_qc"
       ],
       [
@@ -156,6 +160,10 @@
       [
         "mmprism.data.csl_news_annotation",
         "mmprism.data.csl_news_integrity"
+      ],
+      [
+        "mmprism.data.csl_news_annotation_audit",
+        "mmprism.data.csl_news_annotation"
       ],
       [
         "mmprism.data.csl_news_annotation_qc",
@@ -212,6 +220,10 @@
       [
         "mmprism.data.csl_news_pose_manifest",
         "mmprism.data.csl_news_annotation"
+      ],
+      [
+        "mmprism.data.csl_news_pose_manifest",
+        "mmprism.data.csl_news_annotation_audit"
       ],
       [
         "mmprism.data.csl_news_pose_manifest",
@@ -422,7 +434,7 @@
         "mmprism.training.mt5_config"
       ]
     ],
-    "module_count": 50,
+    "module_count": 51,
     "modules": [
       "mmprism",
       "mmprism.__main__",
@@ -441,6 +453,7 @@
       "mmprism.data",
       "mmprism.data.csl_news",
       "mmprism.data.csl_news_annotation",
+      "mmprism.data.csl_news_annotation_audit",
       "mmprism.data.csl_news_annotation_qc",
       "mmprism.data.csl_news_annotation_status",
       "mmprism.data.csl_news_integrity",
@@ -492,9 +505,9 @@
       "path": "configs/examples/radar_smoke.yaml"
     }
   ],
-  "generated_at": "2026-08-11T20:59:10.612993+00:00",
+  "generated_at": "2026-08-11T21:31:37.068081+00:00",
   "git": {
-    "commit": "30946d92c6977e95a0d8e8a72fce391e1369ae5a",
+    "commit": "4e5e3abd94d803d533e51d7d6df58e4590aecf97",
     "dirty_entry_count": 0,
     "state": "clean"
   },
@@ -633,9 +646,9 @@
         "sha256": "6e04b618bca8fbd740bf77e6d169fca664e74bb4ff8c32853438e98ab25dbd6d"
       },
       {
-        "bytes": 30833,
+        "bytes": 32027,
         "path": "src/mmprism/cli.py",
-        "sha256": "d0c8e5908c17fa6e8f24f02a39792e933fae6c3ae8d479ecac1316a5e05bd282"
+        "sha256": "f6b3fcf1005d718baaac59a436dd76f333a102082993a3d5bc74a13b24792902"
       },
       {
         "bytes": 339,
@@ -673,9 +686,9 @@
         "sha256": "27996a2d5e31462601ae80e17540c6bbcce7274261c700f65318d90c67b11173"
       },
       {
-        "bytes": 5482,
+        "bytes": 5725,
         "path": "src/mmprism/data/__init__.py",
-        "sha256": "34638cac93753f0ea3448b87e3e80521e39233690b75b524e623dca0a57ea646"
+        "sha256": "152d1153c0cc8e5d94f138f89f331b859eae749a5e990e5af16492e44ae907ae"
       },
       {
         "bytes": 14893,
@@ -683,9 +696,14 @@
         "sha256": "ae2846ada26624e69dac910e6d19ed191f0804a400dd11017d3255f3a2537c7e"
       },
       {
-        "bytes": 56762,
+        "bytes": 59469,
         "path": "src/mmprism/data/csl_news_annotation.py",
-        "sha256": "95ef3b504b523e4751a14f9d56bd05aa07f5ac1125f0a46fd403eff0b12912ff"
+        "sha256": "3b7cfef1ea76f34a05849b85893aeaabb6d55758d2a91d7b98849fffe26ba542"
+      },
+      {
+        "bytes": 10908,
+        "path": "src/mmprism/data/csl_news_annotation_audit.py",
+        "sha256": "3ec85f06549a788a997cc4fc94a0ff3443a5b305add259ddb3c9ed488cf5135b"
       },
       {
         "bytes": 13765,
@@ -713,9 +731,9 @@
         "sha256": "0bb769bed8e980391c8457137bf10fc33423aaf8656ae061356a4fd93f19d9c8"
       },
       {
-        "bytes": 39679,
+        "bytes": 55116,
         "path": "src/mmprism/data/csl_news_pose_manifest.py",
-        "sha256": "d63986a486c757a9ad3cd5e7ab4f8543cc27524ef0687def033fff07f1ddd6b6"
+        "sha256": "5e445ff39b96d266bed4d024d7674cd51b3be75961dfe54503e78fe2e71f009c"
       },
       {
         "bytes": 17722,
@@ -908,9 +926,14 @@
         "sha256": "423894b4c1a2a5c964ddd31cefd7266a1186458b0c8b9deaf466129fb07d1512"
       },
       {
-        "bytes": 11264,
+        "bytes": 13433,
         "path": "tests/unit/test_csl_news_annotation.py",
-        "sha256": "a3aed927f48abe014985e90a6fbf7f8e2f02c24644ca7c5c4fd67786370844e8"
+        "sha256": "a40a0ffb39d769c64aae4263be15939a602d6deb0271d1abb33b1cbb68bd80f3"
+      },
+      {
+        "bytes": 7915,
+        "path": "tests/unit/test_csl_news_annotation_audit.py",
+        "sha256": "14ac045426e6145ccc7207371088d009b3c7d7223f6c1b6e5449b6cf79ca0131"
       },
       {
         "bytes": 5206,
@@ -938,9 +961,9 @@
         "sha256": "cb0100c71e732e8dcafcc54e1115476cf43621da7332a84a49a45f15166f328f"
       },
       {
-        "bytes": 13176,
+        "bytes": 20811,
         "path": "tests/unit/test_csl_news_pose_manifest.py",
-        "sha256": "f56668fade2c08cb2cf95fc226bc2ed2fd42655045480024092f4b0771afe78e"
+        "sha256": "17c6a7a7d7b31b5d7ab58423f6a0e57e8a8f46d42c8f07953d70d38f6eec3d82"
       },
       {
         "bytes": 2020,
@@ -1189,9 +1212,9 @@
       "src/utils/unzip_folders.py"
     ],
     "forbidden_tracked_but_excluded_count": 158,
-    "selected_bytes": 1005026,
-    "selected_file_count": 105,
-    "tracked_file_count": 301
+    "selected_bytes": 1053234,
+    "selected_file_count": 107,
+    "tracked_file_count": 304
   },
   "status": "failed"
 }

@@ -104,8 +104,8 @@ Clean mT5 A100 smoke at `79b45b5`: two finite adapter updates, confidence counte
 Clean OmniHand A100 smoke at `688d44d`: two finite updates, single/temporal path, mask counterfactual and deterministic replicate passed
 Clean OmniHand formal A100 run at `81e9b89`: train/checkpoint/reload/evaluate and 13-gate replay/hash audit passed
 Clean WaveLLM formal A100 run at `e31000b`: adapter checkpoint/reload/evaluate and 250-gate replay/hash audit passed
-Clean release audit at `30946d9`: 105 hashed files selected; 158 internal/legacy paths excluded
-Canonical dependency audit: 50 modules / 102 edges / 0 missing targets / 0 legacy imports / 0 cycles
+Clean release audit at `4e5e3ab`: 107 hashed files selected; 158 internal/legacy paths excluded
+Canonical dependency audit: 51 modules / 105 edges / 0 missing targets / 0 legacy imports / 0 cycles
 Reviewer release remains blocked only on LICENSE and the provenance-gated radar example
 Caption-generation support is mT5-only by policy; the unsupported legacy backend is excluded and guarded by a release content test
 ```

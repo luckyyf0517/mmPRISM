@@ -10,12 +10,12 @@ Evidence ID: `EVID-CODE-RELEASE-V1`
 ```text
 schema: mmprism.release_audit_report.v1
 release profile: reviewer_release_v1
-builder commit: 30946d92c6977e95a0d8e8a72fce391e1369ae5a
+builder commit: 4e5e3abd94d803d533e51d7d6df58e4590aecf97
 builder Git state: clean
 config: configs/release/reviewer_release_v1.yaml
 config fingerprint: 0c3ff43885d441ef1af918b1f57d38be8677e8b1919d620978a2775d2cd3915d
 artifact: paper/manager/evidence/artifacts/release_audit_v1.json
-artifact SHA-256: a4721a73cdcfe0d2f0150fb3fabfc99e82c3c1d1b7210e801de75c9950c6bdab
+artifact SHA-256: dd14960f5f331e827a2ebc79ea55b7bf6be718e566c8fc2f816e2bb744fe8951
 status: failed (expected blockers retained)
 ```
 
@@ -35,13 +35,13 @@ execution failure would return `2`.
 
 | Gate | Result |
 |---|---:|
-| Git tracked files inspected | 301 |
-| release-selected files | 105 |
-| selected bytes | 1,005,026 |
-| selected files with size + SHA-256 | 105/105 |
+| Git tracked files inspected | 304 |
+| release-selected files | 107 |
+| selected bytes | 1,053,234 |
+| selected files with size + SHA-256 | 107/107 |
 | tracked internal/legacy paths explicitly excluded | 158 |
-| canonical Python modules | 50 |
-| internal dependency edges | 102 |
+| canonical Python modules | 51 |
+| internal dependency edges | 105 |
 | missing canonical import targets | 0 |
 | canonical imports of forbidden legacy namespaces | 0 |
 | relative canonical imports | 0 |
@@ -77,6 +77,11 @@ recorded as `EVID-CODE-OMNIHAND-SMOKE-V1`.
 The current profile additionally selects the strict model-ready pose adapter, OmniHand formal run config,
 single-device train/evaluate orchestration, Safetensors support, and their tests. Clean-commit A100/BF16
 train/checkpoint/reload/evaluate evidence is recorded as `EVID-CODE-OMNIHAND-FORMAL-V1`.
+
+The profile now includes the CPU-only CSL-News annotation identity audit module and its tests. The audit
+freezes the published sidecar set, streams artifact hashes, records clean Git provenance and reports every
+invalid pair; the pose-manifest builder consumes only checksum-bound exclusion evidence and does not weaken
+ordinary checksum validation.
 
 The profile now also selects strict sign-language-translation manifests, WaveLLM formal configs and
 launcher, the single-device train/evaluate implementation, character-metric protocol, and their tests.
