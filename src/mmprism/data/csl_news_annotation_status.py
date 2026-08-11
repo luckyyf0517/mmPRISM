@@ -144,18 +144,24 @@ def build_csl_news_annotation_status(
             archive_video_counts[archive_path.name] = _count_archive_videos(archive_path)
         except (OSError, RuntimeError, zipfile.BadZipFile) as error:
             archive_errors[archive_path.name] = str(error)
+    eligible_archive_stems = {path.stem for path in archives}
+
+    def output_is_eligible(path: Path) -> bool:
+        return registry_path is None or path.parent.name in eligible_archive_stems
 
     sample_root = output_root / "samples"
-    npz_paths = [
+    all_npz_paths = [
         path
         for path in sample_root.glob("archive_*/*.npz")
         if not path.name.startswith(".")
     ]
-    sidecar_paths = [
+    all_sidecar_paths = [
         path
         for path in sample_root.glob("archive_*/*.json")
         if not path.name.startswith(".")
     ]
+    npz_paths = [path for path in all_npz_paths if output_is_eligible(path)]
+    sidecar_paths = [path for path in all_sidecar_paths if output_is_eligible(path)]
     npz_identities = {path.relative_to(sample_root).with_suffix("") for path in npz_paths}
     sidecar_identities = {
         path.relative_to(sample_root).with_suffix("") for path in sidecar_paths
@@ -211,7 +217,14 @@ def build_csl_news_annotation_status(
         recent_frames / recent_elapsed_seconds if recent_elapsed_seconds > 0 else None
     )
 
-    failure_paths = list((output_root / "failures").glob("archive_*/*/attempt_*.json"))
+    all_failure_paths = list(
+        (output_root / "failures").glob("archive_*/*/attempt_*.json")
+    )
+    failure_paths = [
+        path
+        for path in all_failure_paths
+        if registry_path is None or path.parents[1].name in eligible_archive_stems
+    ]
     failures_since_latest_run = [
         path
         for path in failure_paths
@@ -226,9 +239,15 @@ def build_csl_news_annotation_status(
         if payload is not None and isinstance(payload.get("error_type"), str):
             recent_failure_types[payload["error_type"]] += 1
 
+    all_marker_paths = list((output_root / "archives").glob("archive_*.json"))
+    marker_paths = [
+        path
+        for path in all_marker_paths
+        if registry_path is None or path.stem in eligible_archive_stems
+    ]
     marker_payloads = [
         payload
-        for path in (output_root / "archives").glob("archive_*.json")
+        for path in marker_paths
         if (payload := _load_json(path)) is not None
         and payload.get("config_fingerprint") == config.fingerprint
     ]
@@ -301,9 +320,14 @@ def build_csl_news_annotation_status(
                 else None
             ),
             "archive_marker_statuses": dict(sorted(marker_statuses.items())),
+            "ineligible_npz_count": len(all_npz_paths) - len(npz_paths),
+            "ineligible_sidecar_count": len(all_sidecar_paths) - len(sidecar_paths),
+            "ineligible_archive_marker_count": len(all_marker_paths)
+            - len(marker_paths),
         },
         "failures": {
             "attempt_count": len(failure_paths),
+            "ineligible_attempt_count": len(all_failure_paths) - len(failure_paths),
             "unique_sample_count": len({path.parent.name for path in failure_paths}),
             "since_latest_run_count": len(failures_since_latest_run),
             "recent_error_types": dict(sorted(recent_failure_types.items())),

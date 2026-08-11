@@ -137,6 +137,18 @@ runtime:
             second_archive = config.source.archive_root / "archive_002.zip"
             with zipfile.ZipFile(second_archive, "w") as archive:
                 archive.writestr("excluded.mp4", b"not-eligible")
+            excluded_sample_root = config.runtime.output_root / "samples" / "archive_002"
+            excluded_sample_root.mkdir(parents=True)
+            (excluded_sample_root / "excluded.npz").write_bytes(b"quarantined")
+            (excluded_sample_root / "excluded.json").write_text(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "config_fingerprint": config.fingerprint,
+                    }
+                ),
+                encoding="utf-8",
+            )
             first_archive = config.source.archive_root / "archive_001.zip"
             first_stat = first_archive.stat()
             second_stat = second_archive.stat()
@@ -190,6 +202,9 @@ runtime:
 
         self.assertEqual(report["source"]["complete_archive_count"], 1)
         self.assertEqual(report["source"]["available_video_count"], 2)
+        self.assertEqual(report["annotation"]["completed_sample_count"], 1)
+        self.assertEqual(report["annotation"]["ineligible_npz_count"], 1)
+        self.assertEqual(report["annotation"]["ineligible_sidecar_count"], 1)
         self.assertEqual(report["status"], "attention_required")
 
 
