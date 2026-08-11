@@ -24,6 +24,15 @@ from mmprism.training.omnihand_config import (
     OmniHandTemporalConfig,
     load_omnihand_smoke_config,
 )
+from mmprism.training.omnihand_run_config import (
+    OMNIHAND_RUN_CONFIG_SCHEMA,
+    OmniHandDataConfig,
+    OmniHandEvaluationConfig,
+    OmniHandRunConfig,
+    OmniHandRunError,
+    OmniHandRunOptimizationConfig,
+    load_omnihand_run_config,
+)
 
 __all__ = [
     "MT5_SMOKE_CONFIG_SCHEMA",
@@ -35,15 +44,22 @@ __all__ = [
     "MT5SmokeError",
     "MT5SmokeRuntimeConfig",
     "OMNIHAND_SMOKE_CONFIG_SCHEMA",
+    "OMNIHAND_RUN_CONFIG_SCHEMA",
     "OmniHandBatchConfig",
+    "OmniHandDataConfig",
+    "OmniHandEvaluationConfig",
     "OmniHandMetricConfig",
     "OmniHandModelConfig",
     "OmniHandOptimizationConfig",
     "OmniHandRuntimeConfig",
+    "OmniHandRunConfig",
+    "OmniHandRunError",
+    "OmniHandRunOptimizationConfig",
     "OmniHandSmokeConfig",
     "OmniHandSmokeError",
     "OmniHandSpatialConfig",
     "OmniHandTemporalConfig",
     "load_mt5_smoke_config",
     "load_omnihand_smoke_config",
+    "load_omnihand_run_config",
 ]

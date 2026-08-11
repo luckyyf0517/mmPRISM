@@ -72,6 +72,21 @@ MMPRISM_DEVICE=cuda:0 scripts/run_omnihand_smoke.sh
 16-head temporal contract with a compact synthetic radar cube. It verifies execution and provenance;
 it is not a production data or paper-result configuration.
 
+The formal single-device path separates the experiment envelope from the task recipe:
+
+```bash
+export MMPRISM_DATA_ROOT=/path/to/model-ready-data
+export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
+export MMPRISM_TRAIN_MANIFEST=/path/to/train.jsonl
+export MMPRISM_VALIDATION_MANIFEST=/path/to/validation.jsonl
+scripts/run_omnihand_train.sh
+```
+
+`configs/examples/pose_smoke.yaml` owns roots, seed, device, precision, and determinism;
+`configs/examples/omnihand_train_smoke.yaml` owns CubeNet, loader, optimizer, and metric settings.
+Both source files and both manifests are hashed as formal inputs. The task config is deliberately
+limited to two steps and must not be used as a paper-result protocol.
+
 Build the pinned CSL-News partial sequence split with:
 
 ```bash

@@ -1,6 +1,6 @@
 # Formal Run Artifact Contract
 
-Status: `foundation_implemented`
+Status: `foundation_and_omnihand_single_rank_implemented`
 Last Updated: `2026-08-11`
 Schema: `mmprism.run.v1`
 
@@ -43,7 +43,8 @@ use manifest URIs and the release/export contract; they must not copy these path
 2. Capture every data manifest, split, checkpoint and model asset as a named `RunInput`; initialization
    requires at least one `manifest` input and a non-empty launch command.
 3. Initialize the run atomically. The source YAML must resolve to the exact config hash in the plan.
-4. The task service writes checkpoints/predictions through their future typed writers.
+4. The task service writes typed artifacts. The OmniHand service atomically promotes Safetensors,
+   streams strict JSONL predictions, and registers every completed top-level artifact.
 5. Write `metrics.json` once with `mmprism.metrics.v1`, a non-empty protocol ID, split, sample count and only
    finite numeric values.
 6. Finalize as `completed`, `failed` or `aborted`. `completed` is rejected until `metrics.json` exists;
@@ -51,6 +52,11 @@ use manifest URIs and the release/export contract; they must not copy these path
 
 The writer is rank-zero orchestration. Rank-local prediction append/aggregation remains `ARCH-006-A` and
 must not be implemented by concurrent writes to these JSON files.
+
+The generic JSONL writer consumes an iterable and writes atomically, so single-rank evaluation does not
+retain a full prediction set in memory. Empty streams, non-mapping records, non-finite JSON values,
+collisions, unsafe names, and duplicate registration are rejected. This is not yet a distributed merge
+protocol.
 
 ## CLI Smoke
 

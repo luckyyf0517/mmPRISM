@@ -13,7 +13,7 @@ Role: `master_task_index`
 | `DATA-001` | 定位并分批接收所有 mmPRISM source、权重、日志和论文结果资产 | source location/capacity | in_progress | CSL-News 下载 active；其余 upload gate 通过且 registry 覆盖所有 data family 和历史 run |
 | `OPS-001` | 建立可复现 Python/CUDA 环境 | CUDA/package selection | done | UV/Python 3.12/cu128 lock、wheel、import 与 A100 smoke 通过 |
 | `ARCH-001` | 建立 greenfield package、配置、CLI 与基础 contract | author rebuild decision | in_progress | foundation tests 通过，legacy 隔离规则生效 |
-| `EXP-001` | 建立 canonical OmniHand/WaveLLM 最小 vertical smoke | `DATA-001`, `OPS-001`, `ARCH-001` | in_progress | OmniHand 与 mT5 geometry-fusion synthetic 工程 smoke 已通过；待真实 manifest 上的完整 train/checkpoint/prediction/eval artifact |
+| `EXP-001` | 建立 canonical OmniHand/WaveLLM 最小 vertical smoke | `DATA-001`, `OPS-001`, `ARCH-001` | in_progress | OmniHand/mT5 GPU module smoke 与 OmniHand synthetic-manifest CPU formal train/checkpoint/prediction/eval 已通过；待 clean GPU formal run、WaveLLM formal path 和真实 manifest |
 | `REV-001` | 建立 reviewer diagnosis、tracker 和 closure matrix | `PAPER-001A` | done | 所有评论分类并映射到 task/evidence |
 | `DATA-REV-001` | 完整数据集统计与 split audit | `DATA-001`, manuscript | in_progress | CSL-News metadata profile 已完成；待各数据族 frozen manifest、subject/scene/non-manual 和 leakage report |
 | `DATA-REV-002` | 设计并采集方向/遮挡/新用户真实测试集 | ethics/capacity/protocol | blocked | condition-stratified held-out real manifest |

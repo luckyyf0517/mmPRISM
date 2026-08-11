@@ -1,6 +1,6 @@
 # Canonical OmniHand Reconstruction
 
-Status: `engineering_vertical_slice`
+Status: `single_device_formal_run_implemented_real_data_blocked`
 Last Updated: `2026-08-11`
 
 ## Boundary
@@ -56,3 +56,26 @@ single-frame path and proves that changing masked padding cannot change the fina
 This artifact can establish that the canonical model is runnable. Synthetic smoke metrics cannot be
 used as paper evidence, and the smoke does not close the beamforming, calibration, dataset, split,
 checkpoint, or real-world generalization blockers.
+
+## Formal Train And Evaluate
+
+`mmprism omnihand-train` consumes separate train and validation manifests under
+`mmprism.pose_reconstruction.sample_v1`. It requires a clean Git commit, checks every referenced array,
+rejects sample overlap and train/validation shape or coordinate-frame drift, and obtains seed/device/
+precision only from `mmprism.experiment.v1`. The strict `mmprism.omnihand_run.v1` task config owns the
+model, loader, optimizer, gradient clipping, and evaluation threshold.
+
+A completed training run contains:
+
+- `omnihand.resolved.json` and `omnihand.runtime.json`;
+- `checkpoint.safetensors` and checksum-bound `checkpoint.json`;
+- `history.json`, streaming `predictions.jsonl`, and versioned `metrics.json`;
+- the generic resolved experiment, environment, input-hash, and run lifecycle artifacts.
+
+`mmprism omnihand-evaluate` registers the manifest, weights, metadata, and task config as independent
+inputs. It validates weight checksum, Safetensors format, model-config fingerprint, metric units, and
+coordinate frame before strict state loading. Prediction records retain sample ID, checkpoint hash,
+coordinate frame, metres, valid-joint mask, prediction, optional target, and per-sample absolute MPJPE.
+
+The current orchestrator is deliberately single-device. Resume state and rank-safe distributed
+aggregation remain open; CPU fixture results and synthetic GPU smokes are engineering evidence only.

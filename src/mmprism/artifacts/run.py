@@ -7,7 +7,7 @@ import os
 import re
 import shutil
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -101,14 +101,15 @@ def _atomic_write_json(path: Path, payload: Mapping[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
-def _atomic_write_jsonl(path: Path, records: Sequence[Mapping[str, Any]]) -> None:
-    if not records:
-        raise ArtifactError("JSONL artifacts require at least one record")
+def _atomic_write_jsonl(path: Path, records: Iterable[Mapping[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}")
     try:
         with temporary.open("xb") as handle:
+            record_count = 0
             for index, record in enumerate(records):
+                if not isinstance(record, Mapping):
+                    raise ArtifactError(f"JSONL artifact record {index} must be a mapping")
                 try:
                     line = json.dumps(
                         record,
@@ -122,6 +123,9 @@ def _atomic_write_jsonl(path: Path, records: Sequence[Mapping[str, Any]]) -> Non
                         f"JSONL artifact record {index} is not strict JSON: {error}"
                     ) from error
                 handle.write(line + b"\n")
+                record_count += 1
+            if record_count == 0:
+                raise ArtifactError("JSONL artifacts require at least one record")
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
@@ -356,7 +360,7 @@ class RunArtifactWriter:
         self._register_artifact(name)
         return destination
 
-    def write_jsonl_artifact(self, name: str, records: Sequence[Mapping[str, Any]]) -> Path:
+    def write_jsonl_artifact(self, name: str, records: Iterable[Mapping[str, Any]]) -> Path:
         destination = self.artifact_path(name)
         if destination.exists():
             raise ArtifactError(f"artifact already exists: {destination}")

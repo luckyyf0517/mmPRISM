@@ -52,7 +52,8 @@ Dataset-specific audits:
 - `tensor_contracts.md`: canonical radar/pose/feature axes and the NumPy range-Doppler protocol.
 - `release_audit.md`: Git-backed public inventory, dependency graph, and reviewer-release gates.
 - `model_support.md`: mT5-only generation boundary, verified engineering smoke, and excluded legacy backend.
-- `omnihand.md`: canonical CubeNet input/output, attention, temporal, metric, and smoke contracts.
+- `omnihand.md`: canonical CubeNet input/output, attention, temporal, metric, formal train/evaluate,
+  checkpoint, and prediction contracts.
 
 ## Environment Contract
 

@@ -1,6 +1,7 @@
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -44,6 +45,8 @@ def build_run_plan(
     config: ExperimentConfig,
     project_root: Path,
     created_at: datetime | None = None,
+    *,
+    runtime_report: Mapping[str, Any] | None = None,
 ) -> RunPlan:
     resolved_config = config.resolved(project_root)
     config_payload = resolved_config.to_dict()
@@ -63,7 +66,9 @@ def build_run_plan(
         created_at=timestamp.isoformat().replace("+00:00", "Z"),
         config_sha256=config_sha256,
         resolved_config=config_payload,
-        runtime_report=collect_runtime_report(project_root),
+        runtime_report=dict(
+            collect_runtime_report(project_root) if runtime_report is None else runtime_report
+        ),
         expected_artifacts=(
             "run.json",
             "config.resolved.json",

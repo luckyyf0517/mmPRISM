@@ -47,7 +47,10 @@ config、原子 artifact、resume/failure contract、GPU smoke、portable pose+c
 pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation
 因 provenance 冲突保持 blocked。Canonical OmniHand 工程切片现包含 depthwise CubeNet、3D PAFPN、
 独立 channel/spatial/SE attention、vectorized mask-aware temporal transformer、single-frame path 和
-versioned pose metric；clean commit `688d44d` 上两次 A100 运行确定性通过。Canonical mT5 工程切片
+versioned pose metric；clean commit `688d44d` 上两次 A100 运行确定性通过。其 single-device formal
+service 已在 CPU fixture 上闭合 strict task config、clean-Git/input hash、train/validation manifest、
+mixed-precision orchestration、Safetensors checkpoint、history、streaming sample prediction、checkpoint
+reload/evaluate 和 tamper rejection；clean-commit GPU formal smoke 与真实数据仍待执行。Canonical mT5 工程切片
 包含双手 ST-GCN、radar projector、confidence-aware fusion 和真实 mT5 forward/backward/generate；
 production data training、WaveLLM train/eval、checkpoint/prediction writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
 canonical dependency graph，并自动拒绝 legacy/internal path、硬编码本地路径、缺失 entrypoint 和 import cycle。
@@ -60,7 +63,7 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-135 tests passed（含 OmniHand/CubeNet 和 mT5 forward/backward integration）
+150 tests passed（含 OmniHand formal train/reload/evaluate、CubeNet 和 mT5 integration）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed

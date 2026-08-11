@@ -29,7 +29,15 @@ def collect_runtime_report(project_root: Path) -> dict[str, Any]:
     status = _git_output(project_root, "status", "--porcelain")
     packages = {
         name: _package_version(name)
-        for name in ("numpy", "PyYAML", "torch", "lightning", "transformers", "peft")
+        for name in (
+            "numpy",
+            "PyYAML",
+            "torch",
+            "safetensors",
+            "lightning",
+            "transformers",
+            "peft",
+        )
     }
     return {
         "python": sys.version.split()[0],

@@ -52,8 +52,10 @@ from mmprism.release import (
 from mmprism.runtime import build_run_plan, collect_runtime_report, discover_project_root
 from mmprism.training import (
     MT5SmokeError,
+    OmniHandRunError,
     OmniHandSmokeError,
     load_mt5_smoke_config,
+    load_omnihand_run_config,
     load_omnihand_smoke_config,
 )
 
@@ -229,6 +231,30 @@ def _build_parser() -> argparse.ArgumentParser:
     omnihand_smoke_parser.add_argument("--project-root", type=Path)
     omnihand_smoke_parser.add_argument("--device", default="auto")
     omnihand_smoke_parser.add_argument("--output", type=Path, required=True)
+
+    omnihand_train_parser = subparsers.add_parser(
+        "omnihand-train",
+        help="Train CubeNet from manifest-bound radar cubes and metric poses",
+    )
+    omnihand_train_parser.add_argument("experiment_config", type=Path)
+    omnihand_train_parser.add_argument("task_config", type=Path)
+    omnihand_train_parser.add_argument("--train-manifest", type=Path, required=True)
+    omnihand_train_parser.add_argument("--validation-manifest", type=Path, required=True)
+    omnihand_train_parser.add_argument("--project-root", type=Path)
+
+    omnihand_evaluate_parser = subparsers.add_parser(
+        "omnihand-evaluate",
+        help="Evaluate a checksum-bound CubeNet checkpoint and write predictions",
+    )
+    omnihand_evaluate_parser.add_argument("experiment_config", type=Path)
+    omnihand_evaluate_parser.add_argument("task_config", type=Path)
+    omnihand_evaluate_parser.add_argument("--manifest", type=Path, required=True)
+    omnihand_evaluate_parser.add_argument("--checkpoint", type=Path, required=True)
+    omnihand_evaluate_parser.add_argument("--checkpoint-metadata", type=Path, required=True)
+    omnihand_evaluate_parser.add_argument(
+        "--split", choices=("train", "validation", "test"), default="test"
+    )
+    omnihand_evaluate_parser.add_argument("--project-root", type=Path)
 
     return parser
 
@@ -443,13 +469,55 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_release_audit(payload, arguments.output)
             exit_code = 0 if payload["status"] == "passed" else 1
+        elif arguments.command in {"omnihand-train", "omnihand-evaluate"}:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            experiment_config = load_experiment_config(arguments.experiment_config)
+            omnihand_run_config = load_omnihand_run_config(arguments.task_config)
+            try:
+                from mmprism.training.omnihand_run import (
+                    evaluate_omnihand,
+                    train_omnihand,
+                )
+            except ImportError as error:
+                raise OmniHandRunError(
+                    "OmniHand run dependencies are missing; install the train extra"
+                ) from error
+            if arguments.command == "omnihand-train":
+                payload = train_omnihand(
+                    experiment_config,
+                    omnihand_run_config,
+                    source_experiment_config=arguments.experiment_config,
+                    source_task_config=arguments.task_config,
+                    train_manifest_path=arguments.train_manifest,
+                    validation_manifest_path=arguments.validation_manifest,
+                    project_root=project_root,
+                    command=("mmprism", *effective_argv),
+                )
+            else:
+                payload = evaluate_omnihand(
+                    experiment_config,
+                    omnihand_run_config,
+                    source_experiment_config=arguments.experiment_config,
+                    source_task_config=arguments.task_config,
+                    manifest_path=arguments.manifest,
+                    checkpoint_path=arguments.checkpoint,
+                    checkpoint_metadata_path=arguments.checkpoint_metadata,
+                    split=arguments.split,
+                    project_root=project_root,
+                    command=("mmprism", *effective_argv),
+                )
+            exit_code = 0
         elif arguments.command == "omnihand-smoke":
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
                 else discover_project_root()
             )
-            omnihand_config = load_omnihand_smoke_config(arguments.config)
+            omnihand_smoke_config = load_omnihand_smoke_config(arguments.config)
             try:
                 from mmprism.training.omnihand_smoke import (
                     run_omnihand_smoke,
@@ -460,7 +528,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "OmniHand smoke dependencies are missing; install the train extra"
                 ) from error
             payload = run_omnihand_smoke(
-                omnihand_config,
+                omnihand_smoke_config,
                 device=arguments.device,
                 runtime_report=collect_runtime_report(project_root),
                 command=("mmprism", *effective_argv),
@@ -529,6 +597,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ModelAssetError,
         MT5SmokeError,
         OmniHandSmokeError,
+        OmniHandRunError,
         ReleaseAuditError,
         CslNewsAnnotationError,
         CslNewsAuditError,

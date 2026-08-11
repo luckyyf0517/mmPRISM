@@ -162,6 +162,12 @@ runtime:
                 writer.write_jsonl_artifact("predictions.jsonl", ())
             with self.assertRaisesRegex(ArtifactError, "does not exist"):
                 writer.register_artifact("checkpoint.safetensors")
+            generated = writer.write_jsonl_artifact(
+                "generated.jsonl", ({"index": index} for index in range(2))
+            )
+            self.assertEqual(generated.read_text(encoding="utf-8").count("\n"), 2)
+            with self.assertRaisesRegex(ArtifactError, "must be a mapping"):
+                writer.write_jsonl_artifact("invalid.jsonl", iter(("not-a-record",)))  # type: ignore[arg-type]
             with self.assertRaisesRegex(ArtifactError, "require metrics"):
                 writer.finalize(status="completed")
             writer.finalize(status="failed", failure="intentional test failure")

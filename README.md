@@ -20,6 +20,9 @@ Implemented foundation:
 - a NumPy range-Doppler v1 transform with analytic signal tests;
 - a canonical CubeNet/OmniHand pose regressor with independently ablatable attention,
   mask-aware temporal aggregation, and versioned metric-pose evaluation;
+- a checksum-bound radar-cube/metric-pose adapter with variable-time collation;
+- single-device formal OmniHand train/evaluate services with Safetensors checkpoints, streaming
+  sample predictions, history, runtime identity, and count-weighted metrics;
 - pinned, checksummed SBERT and SimCSE evaluator-model acquisition;
 - pinned mT5-base acquisition plus a two-step pose/radar/fusion train-generate GPU smoke;
 - a single `mmprism` CLI surface;
@@ -28,7 +31,7 @@ Implemented foundation:
 Not yet implemented in the canonical package:
 
 - antenna calibration, beamforming, physical radar axes, and radar simulation;
-- production OmniHand dataset training, checkpointing, and prediction;
+- real-data OmniHand training validation, resumable/distributed training, and distributed prediction;
 - production WaveLLM/mT5 training, checkpointing, prediction, and evaluation;
 - remaining production data adapters, distributed prediction/checkpoint writers, and GPU integration tests.
 
@@ -62,7 +65,8 @@ uv run mmprism run-init configs/examples/pose_smoke.yaml \
 ```
 
 This command writes resolved config, environment/Git state and input hashes atomically. Canonical
-`prepare`, `train` and `evaluate` services are still under construction.
+OmniHand train/evaluate services use that envelope directly; data preparation and WaveLLM formal
+services remain under construction.
 
 Profiles:
 
@@ -124,6 +128,23 @@ padding invariance, sample-level MPJPE, wrist-relative MPJPE/PCK, runtime proven
 memory. Synthetic cubes and targets are used only to validate the executable model boundary; their
 metrics are not paper results. Physical 4D-cube reproduction remains gated on acquisition and
 calibration provenance.
+
+Run formal training after producing disjoint model-ready manifests:
+
+```bash
+export MMPRISM_DATA_ROOT=/path/to/model-ready-data
+export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
+export MMPRISM_TRAIN_MANIFEST=/path/to/train.jsonl
+export MMPRISM_VALIDATION_MANIFEST=/path/to/validation.jsonl
+scripts/run_omnihand_train.sh
+```
+
+`omnihand-train` requires a clean Git worktree and verifies every manifest-bound array checksum. It
+writes a Safetensors checkpoint plus metadata, resolved task/runtime configuration, history,
+validation predictions, and `mmprism.pose_metric.dual_hand_metric_v1` metrics. `omnihand-evaluate`
+requires the checkpoint weights and metadata as separate hashed inputs and rejects any checksum,
+model-config, unit, or coordinate-frame mismatch. The example is a two-step engineering recipe, not a
+paper training protocol.
 
 ## Language Model Support
 

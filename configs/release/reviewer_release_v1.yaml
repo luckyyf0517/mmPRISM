@@ -16,6 +16,7 @@ include:
   - scripts/download_mt5.sh
   - scripts/run_mt5_smoke.sh
   - scripts/run_omnihand_smoke.sh
+  - scripts/run_omnihand_train.sh
   - src/mmprism/**
   - tests/**
 
@@ -33,6 +34,7 @@ required_paths:
   - configs/examples/radar_smoke.yaml
   - configs/examples/mt5_smoke.yaml
   - configs/examples/omnihand_smoke.yaml
+  - configs/examples/omnihand_train_smoke.yaml
   - configs/models/evaluation_models_v1.yaml
   - configs/release/reviewer_release_v1.yaml
   - scripts/bootstrap_env.sh
@@ -40,6 +42,7 @@ required_paths:
   - scripts/download_mt5.sh
   - scripts/run_mt5_smoke.sh
   - scripts/run_omnihand_smoke.sh
+  - scripts/run_omnihand_train.sh
   - src/mmprism/cli.py
   - tests/fixtures/manifests/pose_smoke.jsonl
 
