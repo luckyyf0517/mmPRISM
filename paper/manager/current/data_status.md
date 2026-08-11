@@ -28,7 +28,7 @@ CSL-News 官方源；其他数据族仍未到位。
 | Data Family | 历史用途 | 预期主要模态 | 当前状态 |
 |---|---|---|---|
 | CSL-Daily | OmniHand simulation、WaveLLM caption | images, pose, pred_pose, feature, annotation | missing_location |
-| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_in_progress |
+| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_archives_download_in_progress_metadata_complete |
 | Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | missing_location |
 | Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | missing_location |
 | Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | missing_location |
@@ -170,6 +170,15 @@ incoming: /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121
 systemctl --user status mmprism-csl-news-metadata.service
 systemctl --user status mmprism-csl-news-archives.service
 ```
+
+metadata unit 已于 `2026-08-11T14:57Z` 以 `Result=success`、exit code 0 完成；archive unit
+继续下载。固定 revision 下的 metadata 已原子落盘：
+
+| File | Bytes | SHA-256 |
+|---|---:|---|
+| `CSL_News_Labels.json` | 199,441,318 | `3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5` |
+| `CSL_News_Labels.csv` | 148,851,954 | `683e2c71bc48d9cb6210118799836c7afa4a11269a41bab1dfa4fbbb1d0cee79` |
+| `README.md` | 2,670 | `cc0c6367538d1eedb07f199e1a4d56edf74a2026b0718feae112400911b5ba23` |
 
 下载使用 `scripts/download_csl_news.sh`，当前引擎为 aria2：4 个 archive worker、每文件 8 个连接、
 断点续传、`.part` 原子完成、只下载不解压，并保留至少 1 TiB 可用空间。切换前短时基准中，

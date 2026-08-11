@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | source adapter audit in progress; full manifest pending | `archive_003`: SHA/CRC/1,657 labels/decode passed; full validation pending | visual pose/synthetic training and SLU | in_progress |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | metadata complete; source adapter audit in progress; full archive manifest pending | label JSON/CSV downloaded and checksummed; `archive_003`: SHA/CRC/1,657 labels/decode passed; full validation pending | visual pose/synthetic training and SLU | in_progress |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -80,6 +80,11 @@ Active public-source batch:
 ```text
 /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/
 ```
+
+Metadata at the pinned revision completed on `2026-08-11`: JSON SHA-256
+`3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5`, CSV SHA-256
+`683e2c71bc48d9cb6210118799836c7afa4a11269a41bab1dfa4fbbb1d0cee79`, and README SHA-256
+`cc0c6367538d1eedb07f199e1a4d56edf74a2026b0718feae112400911b5ba23`.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 
