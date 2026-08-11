@@ -131,3 +131,23 @@ The new pipeline will preserve the scientific intent while defining explicit con
 
 The legacy output will only be compared against this pipeline on a small audit subset; no compatibility shim is
 required.
+
+## Source Audit Smoke
+
+`mmprism csl-news-audit` implements the first read-only gate for one complete archive. It rejects `.part`
+inputs and records:
+
+- archive and labels SHA-256;
+- ZIP member counts, unsafe/encrypted/duplicate paths and optional full CRC validation;
+- source-program counts and official label coverage;
+- deterministic sampled MP4 full-decode results when `--decode-samples` is enabled.
+
+The command writes an atomic `mmprism.csl_news_source_audit.v1` JSON report. Sample videos are copied only
+to a temporary directory for decoding and removed before the command returns. This gate does not run pose
+annotation, simulation or model training.
+
+The first real-source trial is scheduled for `2026-08-12 08:00 Asia/Shanghai` and writes under:
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/source_trial_v1/
+```

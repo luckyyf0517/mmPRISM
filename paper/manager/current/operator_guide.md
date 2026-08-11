@@ -62,6 +62,18 @@ du -sh /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121
 
 `.part` 表示可恢复的未完成文件。不要手工重命名、解压或运行 legacy cleanup/check 脚本。
 
+明早 source-audit trial：
+
+```bash
+systemctl --user status mmprism-csl-news-source-trial.timer
+systemctl --user list-timers mmprism-csl-news-source-trial.timer
+journalctl --user -u mmprism-csl-news-source-trial.service
+```
+
+计划时间为 `2026-08-12 08:00 Asia/Shanghai`。它会选择一个已完成的 `.zip`，执行 SHA-256、
+ZIP CRC、标签覆盖和 3 个视频完整解码，并写入
+`/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/source_trial_v1/`。这不是 RTMPose 标注或雷达仿真。
+
 ## 4. 实验操作
 
 正式实验开始前记录：

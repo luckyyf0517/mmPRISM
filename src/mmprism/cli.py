@@ -6,6 +6,7 @@ from pathlib import Path
 
 from mmprism.config import ConfigError, load_experiment_config
 from mmprism.contracts import ManifestError, validate_manifest
+from mmprism.data import CslNewsAuditError, audit_csl_news_archive, write_csl_news_audit
 from mmprism.runtime import build_run_plan, collect_runtime_report, discover_project_root
 
 
@@ -27,6 +28,17 @@ def _build_parser() -> argparse.ArgumentParser:
     manifest_parser = subparsers.add_parser("manifest", help="Validate a JSONL data manifest")
     manifest_parser.add_argument("path", type=Path)
 
+    csl_news_parser = subparsers.add_parser(
+        "csl-news-audit", help="Audit one complete CSL-News archive against official labels"
+    )
+    csl_news_parser.add_argument("archive", type=Path)
+    csl_news_parser.add_argument("--labels", type=Path, required=True)
+    csl_news_parser.add_argument("--source-id", required=True)
+    csl_news_parser.add_argument("--output", type=Path, required=True)
+    csl_news_parser.add_argument("--decode-samples", type=int, default=0)
+    csl_news_parser.add_argument("--scratch-dir", type=Path)
+    csl_news_parser.add_argument("--skip-crc", action="store_true")
+
     return parser
 
 
@@ -34,6 +46,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     arguments = parser.parse_args(argv)
 
+    exit_code = 0
     try:
         if arguments.command == "doctor":
             project_root = (
@@ -54,11 +67,22 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if arguments.command == "config"
                 else build_run_plan(config, project_root).to_dict()
             )
-        else:
+        elif arguments.command == "manifest":
             payload = validate_manifest(arguments.path).to_dict()
-    except (ConfigError, ManifestError, FileNotFoundError) as error:
+        else:
+            payload = audit_csl_news_archive(
+                arguments.archive,
+                arguments.labels,
+                source_id=arguments.source_id,
+                verify_crc=not arguments.skip_crc,
+                decode_sample_count=arguments.decode_samples,
+                scratch_dir=arguments.scratch_dir,
+            )
+            write_csl_news_audit(payload, arguments.output)
+            exit_code = 0 if payload["status"] == "passed" else 1
+    except (ConfigError, ManifestError, CslNewsAuditError, FileNotFoundError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
 
     print(json.dumps(payload, indent=2, sort_keys=True))
-    return 0
+    return exit_code

@@ -151,6 +151,7 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 3. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
 4. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
 5. 监控 CSL-News 下载服务；完成后生成 file/member manifest、SHA-256、ZIP integrity 和 label coverage report。
+6. `2026-08-12 08:00 Asia/Shanghai` 对一个完整 archive 执行 source-audit smoke；该任务不运行姿态标注。
 
 ## 9. CSL-News 官方下载状态
 
@@ -173,3 +174,9 @@ systemctl --user status mmprism-csl-news-archives.service
 下载使用 `scripts/download_csl_news.sh`，16 worker、断点续传、`.part` 原子完成、只下载不解压，
 并保留至少 1 TiB 可用空间。Legacy 预处理链与接口冲突见
 `../../../docs/architecture/csl_news_data.md`。
+
+首批只读审计由 `scripts/run_csl_news_source_trial.sh` 执行，产物写入：
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/source_trial_v1/
+```

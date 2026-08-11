@@ -21,7 +21,7 @@ Role: `data_execution_tracker`
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
-| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | not_started | coverage/shape/annotation report |
+| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | 单 archive source audit 已实现并排期；待 full coverage/shape/annotation report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | not_started | quarantine reason registry |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
@@ -44,6 +44,10 @@ Role: `data_execution_tracker`
 
 当前 public download 由 `mmprism-csl-news-metadata.service` 和
 `mmprism-csl-news-archives.service` 托管；完成前不得解压。
+
+`mmprism-csl-news-source-trial.timer` 已安排在 `2026-08-12 08:00 Asia/Shanghai` 执行一个
+archive 的只读 SHA-256/CRC/label/decode smoke。通过只表示 source intake gate 可用，不表示 pose 或
+simulation pipeline 已完成。
 
 ## 禁止事项
 

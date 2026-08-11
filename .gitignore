@@ -14,7 +14,7 @@ dist/
 .cursor
 .claude
 
-data
+/data/
 dataset/
 demo/
 figures/

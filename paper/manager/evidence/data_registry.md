@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | source manifest pending download | pending ZIP/label validation | visual pose/synthetic training and SLU | in_progress |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | source adapter audit in progress; full manifest pending | first archive audit scheduled; full validation pending | visual pose/synthetic training and SLU | in_progress |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -76,3 +76,11 @@ Active public-source batch:
 ```
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
+
+First source-audit artifact target:
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/source_trial_v1/
+```
+
+This trial is not promoted as dataset validation until its CRC, label coverage and video decode report passes.
