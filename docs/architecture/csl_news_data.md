@@ -219,6 +219,15 @@ The old v1 source snapshot scanned primary ZIP names directly and remains histor
 The v2 builder shares the same registry path semantics as annotation and pose-manifest builders, including the
 versioned replacement paths for `001/005/008`.
 
+The first real v2 snapshot was built from clean commit `7f86516` at
+`source_manifest_v2/snapshot_20260811T224413.526848Z`. It freezes 63 archives and 104,658 records, copies
+registry SHA-256 `dc2d7068...`, and writes manifest SHA-256 `a431d14c...`. Checksum replay, the general
+manifest contract, portable paths, and first/middle/last exact ZIP/member reads passed. Its 4,945 replacement
+records resolve `001/005/008` through their registered versioned paths rather than the preserved corrupt
+primaries. `crc_checked=false` in this snapshot means the manifest builder did not repeat the expensive full
+CRC pass; the copied typed registry already binds full CRC, label-coverage and decode evidence for every
+selected archive. The snapshot remains partial until all 436 archives and 722,711 labels are represented.
+
 The canonical label source is JSON. CSV is retained as immutable cross-check evidence because it contains
 the same 722,711 unique keys but four additional conflicting duplicate rows; it may not override JSON.
 

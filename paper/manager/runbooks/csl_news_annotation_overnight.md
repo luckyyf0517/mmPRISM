@@ -9,7 +9,7 @@ Role: `unattended_pose_annotation_operations`
 - 对已经完整下载并原子命名为 `archive_*.zip` 的 CSL-News 视频持续生成 RTMW3D-L 姿态。
 - 使用 4 个 registry-driven 轮询 worker；每个 worker 只读取 cumulative integrity registry 中
   `status=passed` 的 archive，并按 `archive_id % 4` 分片。GPU 7 总 worker 数上限为 4。
-- 操作者已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停、迁移或退出条件。
+- 项目负责人已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停、迁移或退出条件。
 - 授权边界：可以在已有计算任务的卡上同时运行本 worker；只要满足最低可用显存即可，已有任务的 GPU 利用率不构成冲突或迁移理由。不得为了本任务结束、暂停或修改其他用户进程。
 - 默认启动门槛为 2,048 MiB free memory；该值高于当前单 worker 约 838 MiB 的稳定占用并保留加载余量，可通过 `--min-free-mib` 按模型实测结果调整。30 GiB 不再作为固定门槛。
 - worker 将 OpenMP/BLAS/PyTorch 限制为 4 个 CPU 线程，并将 OpenCV 限制为 1 个线程。
@@ -178,7 +178,7 @@ scripts/run_csl_news_annotation_audit.sh
 - `2026-08-11T14:50Z` 启用 `mmprism-csl-news-annotation-status.timer`，每 30 分钟触发，
   独立 service 设 `CPUQuota=100%`。手工触发验收以 `0/SUCCESS` 完成；快照仍为 `healthy`，
   147 个成功样本、当前 run 新增失败 0、抽样 3/3 通过。首次自动触发为 `15:00 UTC`。
-- `2026-08-11` 操作者再次明确批准 GPU 共享策略：可以与其他任务挤在同一张卡上，调度只看
+- `2026-08-11` 项目负责人再次明确批准 GPU 共享策略：可以与其他任务挤在同一张卡上，调度只看
   可用显存，GPU 利用率不作为 gate。worker 默认启动门槛据实测占用由 30,000 MiB 调整为
   2,048 MiB；当前 worker 继续使用 GPU 7，不因此重启或迁移。
 - `2026-08-11T14:56Z` 首份正式数值 QC 为 `passed`：在 246 个候选产物中确定性抽检
@@ -301,3 +301,13 @@ scripts/run_csl_news_annotation_audit.sh
   102,949 videos、failed 0，SHA-256
   `b461c9efd619ca2a049f4f64c9758bf7d6c64fb603a06ea64123148d13542e1a`。既有 snapshot 仍绑定
   冻结时的 59-archive registry，不追写 live 更新。
+- `22:44Z` clean commit `7f86516` 冻结首个 source-manifest v2 snapshot
+  `snapshot_20260811T224413.526848Z`：复制并绑定 63-archive registry exact bytes，生成 104,658 条
+  source+caption record，manifest SHA-256 为
+  `a431d14cd5f693a82d8f21c3c5c7ee05c9d27d2ee003c801db21dcfdc7434263`。三项 `SHA256SUMS`、
+  通用 manifest contract、portable path scan 和首/中/末 exact ZIP/member 读取全部通过；snapshot
+  仍为 partial。manifest summary 的 `crc_checked=false` 仅表示本次冻结没有重复执行全量 CRC；所选
+  archive 已由复制的 v2 registry 逐一通过完整 CRC、label coverage 和 decode gate。
+- `22:47Z` live v2 registry 已继续推进到 66/66 passed、109,797 videos、failed 0；四个 v3 worker
+  与下载服务均为 `active/running`、`NRestarts=0`。GPU 7 利用率约 99%、可用显存约 77.8 GiB；按
+  项目负责人批准的规则继续共卡运行，不因利用率重启、暂停或迁移，也不干预其他 GPU 任务。

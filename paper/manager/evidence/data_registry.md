@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 registry active；62 archives/102,949 videos passed at 22:32Z；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 partial source snapshot 63 archives/104,658 records, SHA-256 `a431d14c...`；live registry 66 archives/109,797 videos at 22:47Z；final 436-archive snapshot pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -144,10 +144,14 @@ source-identity quarantine ledger has SHA-256
 the general manifest contract, and first/middle/last checksum-validating adapter reads passed. It remains
 partial and is not a paper-facing dataset-size claim.
 
-The source-manifest builder has been upgraded to schema v2 and now consumes the same exact registry path
-semantics as annotation and pose manifests. It rejects archive stat/SHA/video-count drift, copies the frozen
-registry bytes and writes checksum coverage for registry/manifest/summary. Its first real v2 source snapshot
-is pending a clean-commit run; the older 18,095-record v1 snapshot remains historical linkage evidence only.
+The source-manifest v2 snapshot `snapshot_20260811T224413.526848Z` was built on clean commit `7f86516`.
+It freezes 63 archives/104,658 records and registry SHA-256 `dc2d7068...`; manifest SHA-256 is
+`a431d14cd5f693a82d8f21c3c5c7ee05c9d27d2ee003c801db21dcfdc7434263`. All three checksum entries,
+the general manifest contract, portable-path scan and first/middle/last exact ZIP/member reads passed. The
+summary's `crc_checked=false` means CRC was not redundantly rerun while freezing the manifest; the copied v2
+registry had already gated every selected archive with full CRC/coverage/decode. The older 18,095-record v1
+snapshot remains historical linkage evidence only, and the v2 snapshot remains partial until all 436 archives
+and 722,711 labels are represented.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 

@@ -434,6 +434,20 @@ unbound sidecar 进入 `source_identity_quarantine.jsonl`，ledger SHA-256 为
 `b461c9efd619ca2a049f4f64c9758bf7d6c64fb603a06ea64123148d13542e1a`。已发布的 10,011-record
 snapshot 仍绑定其冻结时的 59-archive registry bytes，不受 live registry 后续更新影响。
 
+clean commit `7f86516403612b9bb48a7668c4f78b833929e745` 随后生成首个真实 source-manifest v2 snapshot
+`snapshot_20260811T224413.526848Z`。它冻结 63 个 archive/104,658 records，绑定并复制 exact registry
+bytes（SHA-256 `dc2d7068f562dacb054b709845d38d57b4d6668205007a6f0f7a4900d2b81011`）；manifest/
+summary SHA-256 分别为 `a431d14cd5f693a82d8f21c3c5c7ee05c9d27d2ee003c801db21dcfdc7434263` 和
+`8758923881aa17edd2b89b7e7a24efe3f7850466c2ca3f028b6b4dc1d53ae02b`。三项 checksum、通用 contract、
+portable path 和首/中/末 exact ZIP/member 读取全部通过，replacement `001/005/008` 共 4,945 条记录。
+summary 的 `crc_checked=false` 只表示 manifest 冻结时未重复执行全量 CRC；复制的 registry 已对所有
+入选 archive 完成逐 member CRC、label coverage 和 decode gate。该 snapshot 覆盖 14.4813% labels，
+仍是 partial evidence，不能作为最终数据集规模。
+
+`22:47 UTC` live v2 registry 已继续更新为 66/66 passed、109,797 videos、failed 0；该更新不追写
+上述 frozen snapshot。下载、integrity timer 和四个 GPU 7 v3 worker 继续运行，worker 均为
+`NRestarts=0`；项目负责人已批准共卡运行，GPU 利用率不作为启动、暂停或迁移条件。
+
 `22:30 UTC` 自动 status 报告返回 `attention_required`，唯一新增 failure 是已登记的
 `archive_006/3af7...` 在当前 worker run 中再次触发 preserve-on-conflict；没有新增 sample identity，
 current-source duplicate 0、missing pair 0、抽检 3/3 通过。status service 以 exit 1 保留该告警，

@@ -23,12 +23,12 @@ v2 registry 不再假设 `archive_NNN.zip` 必须来自 primary root；每项显
 `archive_path_relative` 和 `source_kind`，worker 必须读取该精确路径。primary 坏文件保持不变，
 replacement 位于 versioned overlay；registry 仍为 436-archive 下载中的 partial snapshot。
 
-The live registry subsequently advanced at `2026-08-11T22:32Z` under clean commit `11014a8`:
+The live registry subsequently advanced at `2026-08-11T22:47Z`:
 
 ```text
-registry SHA-256: b461c9efd619ca2a049f4f64c9758bf7d6c64fb603a06ea64123148d13542e1a
-present/passed: 62/62 archives
-videos: 102,949
+registry SHA-256: 1a50f062d332379f125a215937225a5735d91bf07e8f5fc0389cacf2a545f0a2
+present/passed: 66/66 archives
+videos: 109,797
 failed: 0
 selected replacements: 001,005,008
 ```
