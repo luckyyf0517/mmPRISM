@@ -28,7 +28,7 @@ CSL-News 官方源；其他数据族仍未到位。
 | Data Family | 历史用途 | 预期主要模态 | 当前状态 |
 |---|---|---|---|
 | CSL-Daily | OmniHand simulation、WaveLLM caption | images, pose, pred_pose, feature, annotation | missing_location |
-| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_48_archives_passed_pose_manifest_partial |
+| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_v2_registry_59_archives_97997_videos_passed |
 | Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | missing_location |
 | Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | missing_location |
 | Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | missing_location |
@@ -170,7 +170,8 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 3. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
 4. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
 5. 监控 CSL-News 下载服务；每个 final ZIP 必须先通过完整 CRC gate，才可进入标注或 manifest promotion。
-6. 保留异常 `archive_001/005/008`、partial output 和失败 sidecar；人工复核后 versioned 重下并比对。
+6. 保留 primary 异常 `archive_001/005/008`、partial output 和失败 sidecar；当前只通过 v2 registry
+   选择已验证的 versioned replacement，不移动、覆盖或删除原件。
 
 ## 9. CSL-News 官方下载状态
 
@@ -216,7 +217,7 @@ archive、18,095 条 portable `caption/video` record，manifest SHA-256 为
 `/mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/audit_20260811T154138Z`；
 11 个 archive 中 9 个通过（14,844 videos）、2 个失败（3,251 videos），missing label/empty text 均为 0。
 总表 SHA-256 为 `ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`。
-`005/008` 保持原位并排除出标注池，等待人工复核和 versioned replacement；详见
+primary `005/008` 保持原位并作为历史 source failure 排除；当前 replacement 已由 v2 registry 验收；详见
 `../evidence/csl_news_source_integrity.md`。
 
 `2026-08-11T15:51Z`，新出现的 `archive_001.zip` 无法打开 central directory。下载日志确认 aria2
@@ -236,6 +237,22 @@ archive、18,095 条 portable `caption/video` record，manifest SHA-256 为
 12 个通过、3 个失败（`001/005/008`），白名单共 19,760 videos；该快照 SHA-256 为
 `070bcc4446894577cab6e05f632049a2a53143b508e50523dd27c20daea52b66`。每个 archive 有独立
 SHA-256、source stat、audit report/hash 和 clean builder commit；标签 hash 变化会强制全部重审。
+
+`2026-08-11T22:10Z`，source-integrity v2 registry 完成 replacement overlay 切换。primary
+`001/005/008` 保持原位；通过验证的新文件位于
+`replacements/20260811_recovery_hf_3a060121/rgb_archives/`，registry 逐项保存精确相对路径和
+`source_kind=replacement`。三份 replacement 均通过完整 SHA-256、逐 member CRC、label coverage
+和单视频 decode：
+
+| Archive | Replacement SHA-256 | Videos | Audit SHA-256 |
+|---|---|---:|---|
+| `001` | `911ed805d80842867c0ecebc86c2f8ad0fbd6790269861dbdc964ebaa9bab7ec` | 1,694 | `eee22ef84c43c62f623b660985c246970b2bcabf31a30e9a02faac3398f0978a` |
+| `005` | `3450d136994df60739ff8bf62382b36005de81a91c911921348e88f378542dd3` | 1,632 | `0a3542633b0aac14c5b6b0bff3d559565a8dd03b10121634110e8ddfba7303de` |
+| `008` | `b258e4bebaf36623e65066438c3956a6f0ba8579e8df36f4a399297d5b291153` | 1,619 | `39615ae9f529f6b11c025062f4f2a5ddcee89e5daa16fd237e2c601da2c747c6` |
+
+该 registry byte snapshot SHA-256 为
+`ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c`，覆盖 59 个 present archive，
+59/59 passed、97,997 videos、failed 0。它仍是 436-archive 下载中的 partial registry。
 
 下载使用 `scripts/download_csl_news.sh`，当前引擎为 aria2：4 个 archive worker、每文件 8 个连接、
 断点续传、ZIP 完整性通过后原子 promotion、只下载不展开，并保留至少 1 TiB 可用空间。切换前短时基准中，
@@ -261,7 +278,8 @@ canonical pose annotation 使用 `configs/data/csl_news_rtmw3d_overnight.yaml` �
 `[T,133,3]` 与 canonical `[T,2,24,3]`，全部数值有限，峰值显存约 262 MiB；正式输出和
 scratch 在次晨人工检查前全部保留。
 
-夜间 4-worker pool 固定 GPU 7，现由 cumulative registry 动态分片；只有 `passed` archive 可见，
+夜间 4-worker pool 固定 GPU 7，现由 source-integrity v2 registry 动态分片；只有 `passed` archive
+的精确登记路径可见，
 新 final 由 5 分钟 integrity timer 审计后自动进入对应 worker。运行后由
 `csl-news-annotation-status` 做只读健康快照。
 `2026-08-11T14:47Z` 报告为 `healthy`：10 个完整 archive、16,476 个当前可用视频、
@@ -391,3 +409,9 @@ registry 为 22 final、19 passed/31,423 videos，失败项仍仅 `001/005/008`�
 0、抽检 3/3 通过，近期约 1,488 samples/hour；报告 SHA-256 为
 `b60c277162be81e981a9c261e10c0dbfc2d71ba0db2f037e2d9ed21f8db6e27e`。四个 registry worker 均
 `active/running`、`NRestarts=0`；`attention_required` 仍只来自三个已隔离 source failure。
+
+`22:13 UTC` 的 v2 source-aware 状态报告为 `healthy`：59 个 archive/97,997 videos 可调度，
+9,394 个当前来源 NPZ/sidecar pair，缺失 pair 0，当前来源重复 0，latest run 新失败 0，抽检 3/3
+通过。另外 1,875 个缺少或不匹配当前 source identity 的历史 pair 单独隔离且不计入完成度。四个
+`registry{0..3}-v3` worker 的 orchestration metadata 分别为 `worker_index=0..3`、
+`worker_count=4`，共同使用 GPU 7；GPU 利用率不作为停止条件。

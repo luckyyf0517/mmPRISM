@@ -2,7 +2,7 @@ schema_version: mmprism.csl_news_pose_manifest.v1
 source:
   data_root: ${MMPRISM_DATA_ROOT}
   labels_path: incoming/20260811_csl_news_hf_3a060121/metadata/CSL_News_Labels.json
-  integrity_registry: manifests/csl_news/source_integrity_v1/registry.json
+  integrity_registry: manifests/csl_news/source_integrity_v2/registry.json
   source_id: huggingface:ZechengLi19/CSL-News
   source_revision: 3a0601210333fe760efd09b5d9e2ae5f341ce339
   expected_archive_count: 436

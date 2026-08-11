@@ -138,3 +138,24 @@ status: partial
 通用 manifest contract 为 9,551 records/9 modalities；排除 sample ID 在 JSONL 中零命中；首/中/末
 adapter 以 `verify_checksum=True` 读取 3/3 通过。该 snapshot 仍不代表 436 archive 全量完成，也不替代
 基于 signer/subject 的最终 split 或任何论文结果。
+
+## 8. Current v2 Source-Bound State
+
+source-integrity v2 将 `001/005/008` 切换到 versioned replacement 后，旧 sidecar 不能因 archive ID
+相同而被静默复用。annotation resume 现在要求 archive SHA-256、labels SHA-256、member size 和 CRC
+全部匹配；不匹配或缺少 identity 时，重算产物使用：
+
+```text
+<sample-id>--source_<full-archive-sha256>.npz
+<sample-id>--source_<full-archive-sha256>.json
+```
+
+原产物不删除、不覆盖。pose-manifest builder 对每个 sample 只接受一个与当前 v2 entry 完全匹配的
+sidecar；旧来源、unbound 或 superseded candidate 写入 `source_identity_quarantine.jsonl`，并由
+snapshot `SHA256SUMS` 覆盖。
+
+`2026-08-11T22:13Z` 的只读 source-aware 状态报告绑定 registry SHA-256
+`ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c`：当前来源 pair 9,394，
+旧来源/unbound 隔离 pair 1,875，当前来源重复 0，missing pair 0，抽检 3/3 通过，状态 `healthy`。
+此前 v1-bound snapshot 保留为 pipeline/incident evidence，不作为 current-source training manifest。
+新 v2-bound partial snapshot 必须在 clean full identity audit 后另行冻结和验收。

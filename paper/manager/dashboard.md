@@ -29,9 +29,10 @@ Role: `control_panel`
 - CSL-News metadata profile 已扫描全部 722,711 条 canonical JSON 记录；数据集类型、译文单元和
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
-- 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；cumulative integrity registry
-  在 `21:24Z` 覆盖 51 个 final ZIP，其中 `001/005/008` 失败并隔离，48 个 archive/79,813 videos
-  通过；4 个 registry worker 持续运行。
+- 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；source-integrity v2 registry
+  当前覆盖 59 个 archive/97,997 videos，全部通过完整 CRC、label coverage 和 decode probe。
+  `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；4 个 source-aware registry
+  worker 在 GPU 7 持续运行。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
   5 个 represented archive、15 个 failed-archive 历史 pair 明确排除；checksum/contract/adapter 验收通过。
 - clean commit `3bdd31f` 的全量 published-pair identity audit 冻结 9,519 对、实际哈希 5.116 GB，
@@ -41,7 +42,7 @@ Role: `control_panel`
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.2 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；173 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；178 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run writer 与 OmniHand/WaveLLM single-device train/evaluate 已实现：原子冻结
   config/Git/environment/输入哈希，写入 Safetensors、history、runtime/performance、逐样本 prediction
@@ -71,8 +72,8 @@ Role: `control_panel`
 
 ## 当前 Blocker
 
-- `DATA-CSLNEWS-INTEGRITY-001`：`005/008` member 解压失败，`001` 为 HTTP 403 后误晋升的
-  incomplete final；promotion gate 已修复，原件保留并等待 versioned 重下验证。
+- `DATA-CSLNEWS-INTEGRITY-001`：`001/005/008` 的当前来源已由 versioned replacement 恢复并通过
+  source-integrity v2 gate；原坏文件和旧来源产物继续隔离。全量 436-archive 下载尚未完成。
 - `BLOCK-DATA-ROOT`：CSL-News source 已进入下载，但私人 collected、CSL-Daily 和历史 run 仍未知。
 - `BLOCK-SIM-PROVENANCE`：稿件 MANO mesh/ray-tracing 描述与当前可见 skeleton 仿真路径不一致。
 - `BLOCK-RADAR-PROVENANCE`：稿件与 legacy 的 chirp、带宽、clutter、阵列规模和共轭约定冲突；

@@ -36,7 +36,7 @@ mmpose: 759b39c13fea6ba094afc1fa932f51dc1b11cbf9
 checkpoint SHA-256: 794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed
 config: configs/data/csl_news_rtmw3d_overnight.yaml
 integrity config: configs/data/csl_news_source_integrity.yaml
-integrity registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/registry.json
+integrity registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v2/registry.json
 ```
 
 环境使用 `mmcv-lite 2.1.0`。MMPose 会 eager import 与本任务无关的 EDPose head，而该 head 需要
@@ -277,3 +277,13 @@ scripts/run_csl_news_annotation_audit.sh
   或其他 GPU 进程。最终四个 worker 均 `active/running`、`NRestarts=0`，run metadata 的 Git commit/
   dirty state 全部为 `e821044`/`false`，四个 shard 均重新加载模型并产出新样本。`21:34Z` 当前 NPZ/
   sidecar 为 9,907/9,907。
+- `22:05Z–22:10Z` versioned recovery 完成并切换到 source-integrity v2。replacement `001/005/008`
+  全部通过 SHA-256、逐 member CRC、label coverage 和单视频 decode；primary 坏 ZIP 未移动或覆盖。
+  v2 registry SHA-256 为 `ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c`，
+  59/59 present archive passed、97,997 videos、failed 0。
+- 四个 `registry{0..3}-v3` worker 在 GPU 7 滚动启动，实际 process argv 和 run metadata 均确认
+  `worker_index=0..3/worker_count=4`、registry v2、Git `0f2e635` clean；未停止下载、timer 或其他
+  GPU 进程。source identity 不匹配时写 `--source_<archive-sha256>` 变体，不覆盖旧产物。
+- `22:13Z` 手工 source-aware 状态报告为 `healthy`：9,394 个 current-source pair、1,875 个
+  old/unbound quarantine pair、duplicate-current-source 0、missing pair 0、latest run 新失败 0、
+  抽检 3/3 通过；四个 worker `active/running`、`NRestarts=0`。

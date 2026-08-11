@@ -34,9 +34,34 @@ rename. After disabling aria2's per-fragment low-speed cutoff, a 60-second five-
 reported 9.95 MB/s of effective writes with all processes healthy.
 
 This promotion gate was added after `archive_001` received HTTP 403 at 93% and the former `xargs` child shell
-failed to propagate aria2's non-zero exit, causing an incomplete `.part` to be renamed. `archive_001`, plus
-member-corrupt `archive_005` and `archive_008`, remain immutable quarantine candidates. Only archives in a
-full-read integrity report's passed list may enter annotation or manifest promotion.
+failed to propagate aria2's non-zero exit, causing an incomplete `.part` to be renamed. The primary
+`archive_001`, plus member-corrupt primary `archive_005` and `archive_008`, remain immutable quarantine
+candidates. Only archives in a full-read integrity report's passed list may enter annotation or manifest
+promotion.
+
+## Replacement Overlay And Source Identity
+
+Source-integrity registry v2 resolves one exact source path for every archive. A registry entry contains the
+relative path, `source_kind` (`primary` or `replacement`), SHA-256, stat, audit path/hash and label identity.
+Consumers must open `archive_path_relative`; reconstructing a path from `archive_id` is forbidden.
+
+The verified replacement overlay is:
+
+```text
+incoming/20260811_csl_news_hf_3a060121/rgb_archives/
+  replacements/20260811_recovery_hf_3a060121/rgb_archives/archive_{001,005,008}.zip
+```
+
+The three replacements passed full CRC, label coverage and deterministic decode validation. Their primary
+counterparts are not moved, deleted or overwritten. The v2 registry snapshot at `2026-08-11T22:10Z` has
+SHA-256 `ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c` and contains 59 passed
+archives/97,997 videos with zero failed entries; it remains partial relative to 436 archives.
+
+Annotation reuse is source-bound. Archive SHA-256, labels SHA-256, member size and CRC must match the current
+entry. Existing unbound or different-source output is retained, while recomputation is published beside it as
+`<sample-id>--source_<full-archive-sha256>.{npz,json}`. A pose manifest selects exactly one current-source
+sidecar and writes every superseded/unbound candidate to a checksum-covered
+`source_identity_quarantine.jsonl`.
 
 ## Legacy Preprocessing Flow
 
@@ -184,6 +209,10 @@ stable-ID collisions, source files that change during the scan, insufficient dis
 It validates the generated JSONL through the general manifest contract before atomically renaming the whole
 snapshot directory. Available-archive snapshots are intentionally `partial`; a final snapshot is complete
 only when all 436 archives and every canonical label are represented.
+
+The current source-manifest implementation scans the configured primary archive root directly and does not
+yet resolve v2 replacement paths. It must not be used as the final source manifest until it consumes the same
+typed registry entries and exact relative paths as annotation and pose-manifest builders.
 
 The canonical label source is JSON. CSV is retained as immutable cross-check evidence because it contains
 the same 722,711 unique keys but four additional conflicting duplicate rows; it may not override JSON.

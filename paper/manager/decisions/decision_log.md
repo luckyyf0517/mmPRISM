@@ -35,6 +35,7 @@ Role: `cross_workstream_decisions`
 | `DEC-027` | 2026-08-11 | canonical caption-generation 只以 mT5 为重建目标，Phi-3 不列为 supported backend | legacy Phi-3 只有底层类，无 runnable config/train/eval/checkpoint evidence；greenfield 重构无需保留伪支持 | accepted | reviewer release 排除 legacy 类和 claim，并以 content gate 防止回流；只有完成 canonical contract、配置、训练/生成/评测与 provenance 后才可重新提案 |
 | `DEC-028` | 2026-08-11 | OmniHand model-ready 输入使用 checksum-bound manifest，训练产物统一由 formal-run writer 登记 | 模型内解析路径或各训练脚本自由落盘会重新引入硬编码、模态错配和不可审计 checkpoint | accepted | model 只接收 tensor；adapter 严格校验相对 `.npy`、单位/坐标与 mask；checkpoint/prediction/config/history 由 orchestration 原子写入并绑定 run provenance |
 | `DEC-029` | 2026-08-11 | 已发布 pose sidecar/NPZ identity conflict 只能通过 clean-run 全量审计绑定的显式排除处理 | 覆盖坏 sidecar 会销毁 incident evidence，直接放宽 manifest checksum gate 会掩盖其他损坏 | accepted | 原 pair、失败 snapshot 和 failure records 永久保留；排除项必须同时匹配 sample/archive、sidecar SHA、声明/实际 NPZ identity、audit report SHA 和 clean Git commit，证据复制进 snapshot `SHA256SUMS`；任一漂移硬失败 |
+| `DEC-030` | 2026-08-11 | CSL-News source 恢复采用不可变 replacement overlay、registry 精确路径绑定和 source-versioned annotation artifact | 直接覆盖 primary ZIP 或按 archive ID 复用旧 pose 会销毁事故证据，并可能把不同 source bytes 静默混入同一训练集 | accepted | primary/旧产物永久保留；v2 entry 显式记录 `archive_path_relative/source_kind/SHA`；resume 绑定 archive+labels+member identity；不匹配产物用完整 source SHA 后缀共存；manifest 唯一选择 current-source sidecar 并输出 checksum-covered quarantine ledger |
 
 ## 决策记录模板
 

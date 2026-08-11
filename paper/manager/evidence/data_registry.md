@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | cumulative registry active；48 archives/79,813 videos passed at 21:24Z；9,551-record pose+caption partial manifest verified；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；`001/005/008` source failures isolated；9,519-pair identity audit found one checksum-bound exclusion | visual pose/synthetic training and SLU | in_progress_integrity_failure |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 registry active；59 archives/97,997 videos passed at 22:10Z；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -39,7 +39,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 registry workers active；clean identity audit 9,518/9,519 passed；second frozen manifest 9,551 records/9 archives, SHA-256 `8e3db871...`；15 failed-source pairs and one exact identity conflict retained/excluded | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 v2 registry workers active；9,394 current-source pairs healthy；1,875 old/unbound pairs quarantined；source-versioned recomputation in progress；prior v1 snapshot retained as historical evidence | in_progress |
 
 ## Model-ready Contracts
 
@@ -125,6 +125,15 @@ identity conflict. It contains 9,551 records from 9 archives, manifest SHA-256
 The first canonical sequence split is recorded in `csl_news_pose_split.md`. It binds that exact partial pose
 manifest and has assignment SHA-256 `133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`.
 It has zero sequence-group leakage but is not subject-independent because signer metadata is unavailable.
+
+The current source control plane is
+`manifests/csl_news/source_integrity_v2/registry.json`. Snapshot SHA-256
+`ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c` binds 59 passed archives/
+97,997 videos and exact replacement paths for `001/005/008`; failed count is zero. The prior v1 registry and
+pose snapshots remain immutable incident/pipeline evidence but are not the current training source because
+their source identities predate replacement selection. The live v2 status at `22:13Z` counted 9,394
+current-source pairs, 1,875 quarantined old/unbound pairs, zero duplicate-current-source samples and 3/3
+validated samples. A new v2-bound pose snapshot requires a clean full identity audit and is tracked separately.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 

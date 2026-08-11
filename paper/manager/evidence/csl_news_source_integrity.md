@@ -1,12 +1,29 @@
 # CSL-News Source Integrity Evidence
 
-Status: `cumulative_registry_active_failures_isolated`
+Status: `v2_replacement_overlay_verified_download_partial`
 Last Updated: `2026-08-11`
 Role: `DATA-001-K_source_integrity_evidence`
 
 ## 1. Audit Identity
 
-Recorded cumulative control snapshot (the registry continues to update in place):
+Current cumulative control snapshot (the registry continues to update in place):
+
+```text
+registry writer commit: 0f2e635114e4bda3b359c9b795e50d9dd4b2532c
+registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v2/registry.json
+registry SHA-256 at 2026-08-11T22:10Z: ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c
+labels SHA-256: 3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5
+present archives: 59
+passed: 59 archives / 97,997 videos
+failed: 0
+selected replacements: 001,005,008
+```
+
+v2 registry 不再假设 `archive_NNN.zip` 必须来自 primary root；每项显式保存
+`archive_path_relative` 和 `source_kind`，worker 必须读取该精确路径。primary 坏文件保持不变，
+replacement 位于 versioned overlay；registry 仍为 436-archive 下载中的 partial snapshot。
+
+Historical v1 cumulative snapshot retained for incident provenance:
 
 ```text
 registry writer commit at snapshot: 8c27fb95b221c19f00a8a4d89c7073d1f4b34f6d
@@ -22,6 +39,23 @@ Registry 更新使用非阻塞 `flock`、per-archive audit 和原子替换。arc
 变化时旧结果不可复用；标注 worker 同时核对 source ID/revision/stat，只消费 typed `passed` entry。
 registry 以单次 byte snapshot 读取并同时计算 hash；成功/失败 sidecar 和 archive marker 都记录该
 snapshot hash 及对应 archive audit provenance，避免长运行 worker 只绑定启动时的旧 registry。
+
+## 2. Replacement Recovery Result
+
+`mmprism-csl-news-recovery-20260811.service` 已以 `Result=success` 完成。三份 replacement 均通过
+完整 SHA-256、逐 member CRC、路径/重复/encryption 检查、canonical label coverage 和一个确定性
+视频全解码 probe：
+
+| Archive | Primary SHA-256 | Replacement SHA-256 | Videos | Audit SHA-256 |
+|---|---|---|---:|---|
+| `001` | `07c9b956e9c42f9623b5bce57cc6e49de4fa2e0554c4963d99770e4b92beabdc` | `911ed805d80842867c0ecebc86c2f8ad0fbd6790269861dbdc964ebaa9bab7ec` | 1,694 | `eee22ef84c43c62f623b660985c246970b2bcabf31a30e9a02faac3398f0978a` |
+| `005` | `fbc00d7148c2cc23717c21026775b3ce09a702b32201cd6a2fedce3f3ee18b6a` | `3450d136994df60739ff8bf62382b36005de81a91c911921348e88f378542dd3` | 1,632 | `0a3542633b0aac14c5b6b0bff3d559565a8dd03b10121634110e8ddfba7303de` |
+| `008` | `ec596092c412e5a8530911c3be4855ecc715af208a7e4419c0b94f76756ecbe7` | `b258e4bebaf36623e65066438c3956a6f0ba8579e8df36f4a399297d5b291153` | 1,619 | `39615ae9f529f6b11c025062f4f2a5ddcee89e5daa16fd237e2c601da2c747c6` |
+
+恢复结果关闭的是这三个 archive 的当前-source 缺口，不关闭 436-archive 下载任务。primary 文件、
+v1 registry、历史 pose 和 failure sidecar 均保留；任何下游输入必须绑定 v2 entry 的精确来源 identity。
+
+## 3. Historical v1 Evidence
 
 Initial frozen manual audit retained for historical provenance:
 
@@ -40,7 +74,7 @@ status: failed_with_corrupt_archives
 审计逐 member 完整读取数据并检查 ZIP 解压/CRC、member safety、重复、加密和官方标签覆盖；
 本批未执行额外视频 decode probe。
 
-## 2. Results
+### Initial Results
 
 | Result | Archive IDs | Videos |
 |---|---|---:|
@@ -165,20 +199,21 @@ registry 更新为 32 final、29 passed/48,210 videos，失败仍仅 `001/005/00
 `b60c277162be81e981a9c261e10c0dbfc2d71ba0db2f037e2d9ed21f8db6e27e`。四个 registry worker 均
 `active/running`、`NRestarts=0`；`attention_required` 仅表示三个已知 failed source 被保留。
 
-## 3. Evidence Boundary
+## 4. Evidence Boundary
 
 - 先前 18,095-record source snapshot 使用 `verify_crc=false`，因此只证明 manifest contract、
   portable URI、stable identity 和 source-to-pose text linkage；它不再被称为 source-integrity verified。
-- `001`、`005`、`008` 及其已生成的 partial pose/failure artifact 全部保留，但不得进入 processed dataset、
-  split、训练或论文统计。
-- 只有当前 cumulative registry 的 typed `passed` entry 可以进入标注池；历史 summary 只作证据。
+- primary `001`、`005`、`008` 及其旧来源 partial pose/failure artifact 全部保留，但不得进入 processed
+  dataset、split、训练或论文统计；v2 replacement 是当前可用来源。
+- 只有当前 v2 cumulative registry 的 typed `passed` entry 及其精确 `archive_path_relative` 可以进入
+  标注池；历史 summary 只作证据。
 - `archive_003` 另有 CRC + deterministic video decode smoke；本批其余通过 archive 尚未做 decode probe。
 - frozen manual report 仅覆盖当时的 11/436 archives；cumulative registry 仍是 partial，不是完整数据集验证。
 
-## 4. Recovery Gate
+## 5. Ongoing Gate
 
 1. 不删除、移动或覆盖当前 ZIP、`.part`、pose、scratch 或 failure sidecar。
-2. 人工复核后，把 `001`、`005`、`008` 重新下载到新的 versioned incoming/recovery 位置。
-3. 对 replacement 执行完整 SHA-256、逐 member CRC、label coverage 和 decode probe。
-4. replacement 通过前保持原文件为 quarantine candidate；通过后登记新 source identity，再决定 promotion。
-5. 后续每个新完成 archive 必须先通过同等完整 CRC gate，才能调度标注。
+2. `001`、`005`、`008` replacement 已固定在 versioned recovery overlay；不得将其覆盖回 primary 路径。
+3. annotation resume 必须匹配 archive/labels SHA-256、member size/CRC；不匹配时写 source-versioned 新产物。
+4. pose manifest 必须只选与当前 v2 source identity 唯一匹配的 sidecar，其余候选写入 quarantine 清单。
+5. 后续每个新完成 archive 必须先通过同等完整 CRC/coverage/decode gate，才能调度标注。

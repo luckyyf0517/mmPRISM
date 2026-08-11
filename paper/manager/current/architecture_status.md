@@ -42,8 +42,9 @@ provenance、原子 formal-run artifact writer、统一 CLI 和 dependency-light
 metric protocol 写入有限数值；domain writer 还可原子写入 strict JSON/JSONL，并登记外部原子完成的
 checkpoint 等顶层 artifact。Model-ready pose adapter 现严格读取 manifest 绑定的 radar-cube/metric-pose
 `.npy`、校验 shape/dtype/checksum/单位/坐标系，并对变长时间序列执行零填充和 mask。CSL-News RTMW3D 标注已具有独立 strict
-config、durable atomic artifact、resume/conflict/failure contract、CPU-only 全量 identity audit、
-checksum-bound explicit quarantine、GPU smoke、portable pose+caption manifest builder、无训练依赖的随机
+config、durable atomic artifact、source-bound resume/conflict/failure contract、CPU-only 全量 identity audit、
+不可变 replacement overlay、source-versioned artifact、checksum-bound explicit quarantine、GPU smoke、
+portable pose+caption manifest builder、无训练依赖的随机
 访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
 pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation
 因 provenance 冲突保持 blocked。Canonical OmniHand 工程切片现包含 depthwise CubeNet、3D PAFPN、
@@ -85,10 +86,12 @@ Deterministic annotation QC passed on 100 live samples / 24,628 frames with no w
 Full 722,711-record CSL-News JSON/CSV metadata profiler completed with explicit limitations
 Portable CSL-News source-manifest builder passed atomic/clean-Git/coverage contract tests
 CSL-News download promotion requires transfer success, no residual aria2 control file, and full ZIP CRC
+Source-integrity v2 binds exact primary/replacement paths; `001/005/008` replacements passed CRC/coverage/decode
+Annotation resume binds archive/labels/member identity and preserves source-versioned recomputations side by side
 Unreadable and member-corrupt final ZIPs produce structured audit evidence and remain excluded
 Cumulative integrity registry uses clean-Git provenance, flock, per-archive audit and atomic updates
 Four annotation workers consume only registry-passed archives with stable modulo sharding
-Registry-aware status excludes quarantined outputs from progress and reports them separately
+Registry-aware status selects one current-source artifact per sample and reports old/unbound outputs separately
 Each sample/failure sidecar and archive marker binds the registry snapshot and archive audit provenance
 Integrity-gated pose+caption snapshot passed 2,157-record contract/checksum/portable-path validation
 Pose manifest adapter loaded first/middle/last native and canonical arrays without training imports
