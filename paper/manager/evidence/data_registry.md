@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | cumulative integrity registry active；14 archives/23,020 videos passed at 16:42Z；2,157-record pose+caption partial manifest verified；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；`001/005/008` failed and isolated；promotion + consumption + derived-manifest gates active | visual pose/synthetic training and SLU | in_progress_integrity_failure |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | cumulative integrity registry active；15 archives/24,618 videos passed at 17:14Z；2,157-record pose+caption partial manifest verified；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；`001/005/008` failed and isolated；promotion + consumption + derived-manifest gates active | visual pose/synthetic training and SLU | in_progress_integrity_failure |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |

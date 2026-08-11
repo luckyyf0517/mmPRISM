@@ -9,12 +9,12 @@ Role: `DATA-001-K_source_integrity_evidence`
 Current cumulative control artifact:
 
 ```text
-latest registry writer commit: 390093b95c5da9d74924029ae5a8496bc1a01cb4
+latest registry writer commit: 8b64d0f35b68e1351429121566fc78b78f8ce678
 registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/registry.json
-registry SHA-256 at 2026-08-11T16:42Z: 183743fbb60bb85b75dd63f6c112e0c1a3081b2b6a391e32fa6ce2a21cb5b02d
+registry SHA-256 at 2026-08-11T17:14Z: b150b679877568a092f1dcb61b0c9a35648434e339ce7603ff841dde29ae0ce1
 labels SHA-256: 3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5
-present final archives: 17
-passed: 14 archives / 23,020 videos
+present final archives: 18
+passed: 15 archives / 24,618 videos
 failed: 001,005,008
 ```
 
@@ -91,6 +91,21 @@ status: passed
 ```
 
 该独立增量报告随后被 cumulative registry 纳入；不再维护手工 fixed lane 清单。
+
+### Latest passed archive: `archive_026`
+
+`2026-08-11T17:14Z` timer 在 clean commit `8b64d0f` 下自动发现并完整审计新 final
+`archive_026`。逐 member CRC/full read、路径安全和 1,598/1,598 label coverage 均通过：
+
+```text
+artifact: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/audits/archive_026/audit_20260811T171449.865453Z_812389d64074.json
+report SHA-256: 5b8a4a64d85a15857e67936921c80446bfacf513c15a4d40c57c5b0429c9cd18
+archive SHA-256: 812389d6407443529655182b510bf0563c159a65f238aebffc41cc7df300231a
+status: passed
+```
+
+该周期前一次 timer 在主仓库有未提交稿件审计修改时按设计以 exit 2 拒绝更新；提交后无需人工重启，
+下一周期以 `0/SUCCESS` 恢复。这验证了 registry 不会绑定 dirty builder state。
 
 ## 3. Evidence Boundary
 

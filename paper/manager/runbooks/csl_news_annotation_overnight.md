@@ -221,3 +221,11 @@ scripts/run_csl_news_annotation_qc.sh
   未配对为 0。manifest SHA-256 为 `4161593fdbfc85a5c2fb392e3ef92d40da560db5c75a19d559f1f92878e31600`；
   `SHA256SUMS`、portable path scan 和首/中/末 adapter 读取均通过。后台 4 worker 未暂停，后续
   新 artifact 只进入新 snapshot。
+- `17:09Z` integrity timer 因主仓库正在编辑、Git state 非 clean 而按设计以 exit 2 拒绝写 registry；
+  `8b64d0f` 提交后，`17:14Z` 下一周期自动以 `0/SUCCESS` 恢复并完整审计通过 `archive_026`。
+  当前 registry 为 18 final、15 passed/24,618 videos，失败项仍仅 `001/005/008`，SHA-256 为
+  `b150b679877568a092f1dcb61b0c9a35648434e339ce7603ff841dde29ae0ce1`。
+- `17:15Z` 状态报告：2,916 eligible pair、missing artifact/sidecar 0、当前 run 新失败 0、抽检 3/3，
+  近期约 1,409 samples/hour、白名单 ETA 约 15.4 小时。同期 100-sample/24,601-frame QC 为
+  `passed`，warning/failure 0；4 个 registry worker 均 `active/running`、`NRestarts=0`。状态仍为
+  `attention_required`，原因是 registry 持续保留 3 个 failed source，不是 annotation failure。

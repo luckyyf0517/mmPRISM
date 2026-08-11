@@ -28,14 +28,14 @@ Role: `control_panel`
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；cumulative integrity registry
-  在 `16:30Z` 覆盖 17 个 final ZIP，其中 `001/005/008` 失败并隔离，14 个 archive/23,020 videos 通过。
+  在 `17:14Z` 覆盖 18 个 final ZIP，其中 `001/005/008` 失败并隔离，15 个 archive/24,618 videos 通过。
   5 分钟增量扫描和 4 个 registry-only dynamic annotation worker 已运行。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
   5 个 represented archive、15 个 failed-archive 历史 pair 明确排除；checksum/contract/adapter 验收通过。
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
-- `/mnt/gfs` 当前约余 3.6 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；56 项测试、Ruff、Mypy、wheel、
+- `/mnt/gfs` 当前约余 3.4 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；59 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
 

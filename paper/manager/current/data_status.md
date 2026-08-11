@@ -299,3 +299,17 @@ sequence/group 全部唯一，跨 split group leakage、重复 sample、missing/
 `133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`，详见
 `../evidence/csl_news_pose_split.md`。由于 source 仍是 partial 且无 signer/subject metadata，本结果
 只证明 sequence-disjoint split 工程链，不支撑 subject-independent、新用户泛化或最终论文 split。
+
+`17:14 UTC`，integrity timer 在 clean commit `8b64d0f` 下自动审计通过新晋升的 `archive_026`：
+1,598 videos、完整 CRC/label coverage 通过。当前 registry 覆盖 18 个 final，15 个通过、24,618 videos，
+失败项仍仅为 `001/005/008`；registry SHA-256 为
+`b150b679877568a092f1dcb61b0c9a35648434e339ce7603ff841dde29ae0ce1`。上一周期因主仓库有未提交
+稿件审计修改而按 clean-Git gate 拒绝更新，提交后下一周期自动恢复，无需重启 worker。
+
+`17:15 UTC` 状态快照统计 2,916 个 eligible pose/sidecar pair、21,702 个当前白名单剩余样本，
+missing artifact/sidecar 均为 0、latest run 新失败 0、抽检 3/3 通过；近期约 1,409 samples/hour，
+当前白名单 ETA 约 15.4 小时。报告 SHA-256 为
+`a43efcb4c7529809323b4b300cd890a6ef060afb341bf510b307913c89ba5139`。同期 100-sample QC 为
+`passed`、warning/failure 均为 0，共检查 24,601 帧；canonical valid ratio 0.99196、transformed
+in-bounds ratio 0.95260，报告 SHA-256 为
+`c6521e0d1c40fcf92e40a7d71ebf2b31331e190b5225e6139f2226ddc9dbe2ca`。
