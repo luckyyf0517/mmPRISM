@@ -6,10 +6,10 @@ Role: `DATA-001-K_source_integrity_evidence`
 
 ## 1. Audit Identity
 
-Current cumulative control artifact:
+Recorded cumulative control snapshot (the registry continues to update in place):
 
 ```text
-latest registry writer commit: 8c27fb95b221c19f00a8a4d89c7073d1f4b34f6d
+registry writer commit at snapshot: 8c27fb95b221c19f00a8a4d89c7073d1f4b34f6d
 registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/registry.json
 registry SHA-256 at 2026-08-11T17:52Z: 6ad8310cdbe934ff291a3e68d6ea151231e2b84c13c650e3cc939f8bf23b1338
 labels SHA-256: 3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5
