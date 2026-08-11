@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -62,12 +63,10 @@ _POSE_EXPORTS = frozenset(
 
 def __getattr__(name: str) -> Any:
     if name in _LANGUAGE_EXPORTS:
-        from mmprism.evaluation import language
-
+        language = import_module("mmprism.evaluation.language")
         return getattr(language, name)
     if name in _POSE_EXPORTS:
-        from mmprism.evaluation import pose
-
+        pose = import_module("mmprism.evaluation.pose")
         return getattr(pose, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
