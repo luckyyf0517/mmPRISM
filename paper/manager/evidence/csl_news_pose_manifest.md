@@ -85,3 +85,56 @@ provenance；这不等同于篡改旧 sidecar。
 - 后台 worker 在 snapshot 之后继续产生 artifact；它们只会进入后续新 snapshot。
 - `DATA-003-B`、`DATA-005-A` 和 `ARCH-003-A` 保持 `in_progress`，直到全量 source、pose build、
   final manifest、split 和 leakage audit 完成。
+
+## 6. Clean Identity Audit And Second Snapshot
+
+`2026-08-11T21:23:25Z`，clean commit `3bdd31f6b0b9f43c8c3458df79a653346eda8c4e`
+运行 CPU-only `csl-news-annotation-audit`。命令在开始时冻结全部非隐藏 published sidecar，逐对流式
+校验 JSON/schema/sample/config identity、NPZ 存在性、声明 size/SHA-256、实际 SHA-256，以及 sidecar
+和 artifact 的 hash 前后 stat 稳定性；不会加载姿态数组。
+
+```text
+report: interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1/identity_audits/audit_20260811T212324Z.json
+report SHA-256: 55478cbb6078d7e4c7b0c9a95577e6260e249239514ec584d082d5b0b4c538b4
+frozen sidecar list SHA-256: 1d5f9704a7d597c015b0e45b19a8c4e1eaf5669ba38a5a281efd5ccc00ddeb8e
+audited pairs: 9,519
+passed pairs: 9,518
+failed pairs: 1
+artifact bytes hashed: 5,115,703,846
+audit failures: none
+```
+
+唯一异常为 `archive_006/3af7db9841fb2ac483721620`：sidecar 声明 0 bytes/空文件 SHA-256，
+实际 NPZ 为 813,674 bytes，SHA-256
+`6914b6bb0f26304d87b14d7cd7e8b00ac13e6d65202a97c0d4a89e3b0d38bca3`；sidecar SHA-256 为
+`d7791e9633a48a40f587e5c6b6281cfff6623d68ed09f785334de2166dc18142`。两文件在审计前后
+device/inode/size/mtime/ctime 完全一致，未发现第二个异常。该 pair、failure records 和失败 snapshot
+临时目录均未删除、移动或覆盖。
+
+`DEC-029` 固定处理方式为 checksum-bound explicit exclusion。manifest builder 不放宽普通 checksum
+gate；只有同时匹配 sample/archive、sidecar SHA、声明/实际 NPZ identity、clean-run audit report SHA
+与 clean Git provenance 的条目才能排除，任一漂移硬失败。audit report 会复制进 snapshot 并进入
+`SHA256SUMS`。
+
+随后 clean commit `98549a92b7ca22adbcbed6a241d139f07ed64ec0` 生成第二个 partial snapshot：
+
+```text
+snapshot: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/pose_manifest_v1/snapshot_20260811T212450.135852Z
+snapshot config fingerprint: 8344e14ef984580c0f1b5bff2eacce3adb386b4d8de0ae5e0f53775320e83c4c
+integrity registry SHA-256: c94763b4cd2e77a670be7de9f66f44a716a4adba2af86e3fdc99354984e205b4
+manifest SHA-256: 8e3db8712bc61848e9d6dea9f5b3a3821365ffd102d6643977ad43107b2db0c4
+summary SHA-256: 99f7c3ec92cb4255c2600766b7014f7ad642e19444d41e0e6ad943ef528843ae
+SHA256SUMS SHA-256: ae1914651f0b10d39342e0c58959cf27356e41aba373be3c901e4962cb3c124a
+records: 9,551
+represented archives: 9
+frozen eligible sidecars: 9,552
+explicit exclusions: 1
+unpaired eligible NPZ: 0
+referenced artifact bytes: 5,135,316,654
+status: partial
+```
+
+独立验收结果：registry/manifest/summary/copied audit evidence 的四项 `SHA256SUMS` 全部 `OK`；
+通用 manifest contract 为 9,551 records/9 modalities；排除 sample ID 在 JSONL 中零命中；首/中/末
+adapter 以 `verify_checksum=True` 读取 3/3 通过。该 snapshot 仍不代表 436 archive 全量完成，也不替代
+基于 signer/subject 的最终 split 或任何论文结果。

@@ -195,6 +195,17 @@ artifacts whose archive has a typed `passed` entry in one exact cumulative integ
 It then validates stable identity, canonical JSON caption, annotation fingerprint, NPZ shape/dtype contract,
 artifact size and optional SHA-256 before atomically publishing the snapshot.
 
+`mmprism csl-news-annotation-audit` is the CPU-only full identity gate for a live annotation root. It freezes
+the visible non-hidden sidecar list at start, hashes each paired NPZ as a stream, compares declared size and
+SHA-256, and requires sidecar/artifact stat stability before and after reads. It accumulates every invalid pair
+without loading NPZ arrays. Reports bind the frozen list hash, runtime Git state and aggregate bytes hashed.
+
+An identity mismatch is never repaired in place and does not weaken the normal manifest checksum gate.
+`validation.exclusions` can quarantine only an exact known pair: archive/sample ID, sidecar SHA-256,
+declared and observed NPZ identities, clean-run audit path/SHA-256 and reason must all match. Every configured
+entry must be present and applied exactly once; unused or drifted entries fail the snapshot. Accepted audit
+evidence is copied into the immutable snapshot and included in `SHA256SUMS`.
+
 Each output is a portable `mmprism.sample.v1` JSONL manifest. Native 133-joint arrays, transformed 2D
 keypoints, frame/timestamp arrays and canonical `[T,2,24,3]` pose/confidence/valid arrays reference one NPZ
 through relative URIs. The caption is inline. Source archive/audit, labels, annotation sidecar/model/transform,
@@ -214,3 +225,11 @@ artifacts. Fifteen historical artifact/sidecar pairs from failed archives were r
 manifest SHA-256 is `4161593fdbfc85a5c2fb392e3ef92d40da560db5c75a19d559f1f92878e31600`.
 This snapshot is contract and pipeline evidence only; the final dataset requires all 436 archives to pass the
 source gate and a new complete snapshot.
+
+The first live publication conflict was discovered while building a later snapshot: one GalaxyFS-visible
+sidecar declared the empty-file identity although its atomically promoted NPZ was complete. The original pair,
+failure records and failed snapshot temp directory remain unchanged. Clean commit `3bdd31f` audited 9,519
+published pairs and found only this mismatch. Clean commit `98549a9` then produced
+`snapshot_20260811T212450.135852Z` with 9,551 included records, one checksum-bound exclusion, zero unpaired
+eligible NPZ and manifest SHA-256
+`8e3db8712bc61848e9d6dea9f5b3a3821365ffd102d6643977ad43107b2db0c4`. This remains a partial snapshot.

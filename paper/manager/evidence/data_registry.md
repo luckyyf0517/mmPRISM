@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | cumulative integrity registry active；29 archives/48,210 videos passed at 19:30Z；2,157-record pose+caption partial manifest verified；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；`001/005/008` failed and isolated；promotion + consumption + derived-manifest gates active | visual pose/synthetic training and SLU | in_progress_integrity_failure |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | cumulative registry active；48 archives/79,813 videos passed at 21:24Z；9,551-record pose+caption partial manifest verified；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；`001/005/008` source failures isolated；9,519-pair identity audit found one checksum-bound exclusion | visual pose/synthetic training and SLU | in_progress_integrity_failure |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -39,7 +39,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 registry workers active；first frozen manifest has 2,157 records/5 archives and SHA-256 `4161593f...`；15 ineligible historical pairs retained and excluded | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 registry workers active；clean identity audit 9,518/9,519 passed；second frozen manifest 9,551 records/9 archives, SHA-256 `8e3db871...`；15 failed-source pairs and one exact identity conflict retained/excluded | in_progress |
 
 ## Model-ready Contracts
 
@@ -113,6 +113,15 @@ bound to the first pose manifest has SHA-256
 `183743fbb60bb85b75dd63f6c112e0c1a3081b2b6a391e32fa6ce2a21cb5b02d`, with 14 passed archives/
 23,020 videos and failed entries `001/005/008` retained in place. The derived 2,157-record manifest is
 documented in `csl_news_pose_manifest.md`; it is partial pipeline evidence, not the final dataset manifest.
+At `21:24Z`, the cumulative registry reached 51 final archives: 48 passed/79,813 videos and the same three
+failed IDs. A clean-commit CPU-only audit froze 9,519 published sidecar/NPZ pairs, streamed 5,115,703,846
+artifact bytes, and reported exactly one mismatch. Report SHA-256 is
+`55478cbb6078d7e4c7b0c9a95577e6260e249239514ec584d082d5b0b4c538b4`; the affected
+`archive_006/3af7db9841fb2ac483721620` pair remains unchanged. Snapshot
+`snapshot_20260811T212450.135852Z` binds that clean report and excludes only the exact declared/observed
+identity conflict. It contains 9,551 records from 9 archives, manifest SHA-256
+`8e3db8712bc61848e9d6dea9f5b3a3821365ffd102d6643977ad43107b2db0c4`, and passed all four
+`SHA256SUMS` entries plus first/middle/last checksum-validating adapter reads. It remains partial evidence.
 The first canonical sequence split is recorded in `csl_news_pose_split.md`. It binds that exact partial pose
 manifest and has assignment SHA-256 `133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`.
 It has zero sequence-group leakage but is not subject-independent because signer metadata is unavailable.

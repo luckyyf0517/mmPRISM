@@ -140,11 +140,23 @@ scripts/run_csl_news_annotation_qc.sh
 
 报告保存在 `.../rtmw3d_l_794dbc78_v1/qc/qc_<UTC>.json`；失败返回非零，warning 保留报告但不自动停止 worker。
 
+冻结当前全部 published sidecar/NPZ pair 的 CPU-only identity audit：
+
+```bash
+scripts/run_csl_news_annotation_audit.sh
+```
+
+报告保存在 `.../rtmw3d_l_794dbc78_v1/identity_audits/audit_<UTC>.json`。命令只流式读取字节并校验
+声明/实际 size、SHA-256 和 hash 前后 stat，不加载 pose arrays。存在任何 mismatch 时返回非零，但仍写出
+包含全部异常的报告；不得据此自动删除、覆盖或重算原 pair。正式 quarantine 只能使用 clean Git 报告，
+并由 `configs/data/csl_news_pose_manifest_available.yaml` 中 checksum-bound exclusion 精确绑定。
+
 ## 8. 次晨验收
 
 - 服务状态、实际 GPU、下载与标注并行状态；
 - completed/failed/skipped 数和最近一次失败原因；
 - 随机检查至少 3 个 NPZ/sidecar，核对 shape、文本、checksum、帧数和 finite values；
+- 运行一次 clean-Git 全量 identity audit，确认异常集合未扩张；
 - 统计速度、峰值显存、磁盘占用和预计完成时间；
 - 人工确认前保持全部源、scratch、失败与输出不变。
 
@@ -245,3 +257,18 @@ scripts/run_csl_news_annotation_qc.sh
   registry 更新为 32 final、29 passed/48,210 videos。`19:30Z` 自动报告已有 6,017 eligible pair、
   missing artifact/sidecar 0、latest run 新失败 0、抽检 3/3，近期约 1,488 samples/hour；四个 worker
   继续 `active/running`、`NRestarts=0`，未清理任何 source、scratch、failure 或 pose artifact。
+- `21:00Z` 后一次 pose-manifest snapshot 在 `archive_006/3af7db9841fb2ac483721620` 按 checksum
+  gate 失败：sidecar 错误声明 0 bytes/空文件 SHA，实际 NPZ 为 813,674 bytes、SHA-256
+  `6914b6bb0f26304d87b14d7cd7e8b00ac13e6d65202a97c0d4a89e3b0d38bca3`。失败 snapshot temp、
+  原 pair 和 failure records 全部保留；worker publisher 已加 fsync、promotion 后 identity 重验和
+  preserve-on-conflict 后继续，四个 worker 均以 `NRestarts=0` 恢复持续产出。
+- `21:23Z` clean commit `3bdd31f` 执行 CPU-only 全量 identity audit：冻结 9,519 个 published pair、
+  流式哈希 5,115,703,846 bytes，9,518 通过且唯一异常仍为上述 pair；hash 前后 stat 稳定，未发现
+  第二个异常。报告 `identity_audits/audit_20260811T212324Z.json` SHA-256 为
+  `55478cbb6078d7e4c7b0c9a95577e6260e249239514ec584d082d5b0b4c538b4`，Git clean，
+  `audit_failures` 为空。
+- `21:24Z` registry 为 51 final、48 passed/79,813 videos，失败仍仅 `001/005/008`。clean commit
+  `98549a9` 的新 pose snapshot 冻结 9,552 eligible sidecar，通过 checksum-bound exclusion 精确隔离
+  一个 preserved conflict，写入 9,551 records/9 archives、0 unpaired NPZ；manifest SHA-256 为
+  `8e3db8712bc61848e9d6dea9f5b3a3821365ffd102d6643977ad43107b2db0c4`，四项 `SHA256SUMS`、
+  contract 和首/中/末 adapter 读取全部通过。后台下载和四个 GPU 7 worker 未暂停。

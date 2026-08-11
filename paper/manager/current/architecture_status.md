@@ -42,8 +42,9 @@ provenance、原子 formal-run artifact writer、统一 CLI 和 dependency-light
 metric protocol 写入有限数值；domain writer 还可原子写入 strict JSON/JSONL，并登记外部原子完成的
 checkpoint 等顶层 artifact。Model-ready pose adapter 现严格读取 manifest 绑定的 radar-cube/metric-pose
 `.npy`、校验 shape/dtype/checksum/单位/坐标系，并对变长时间序列执行零填充和 mask。CSL-News RTMW3D 标注已具有独立 strict
-config、原子 artifact、resume/failure contract、GPU smoke、portable pose+caption manifest builder、
-无训练依赖的随机访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
+config、durable atomic artifact、resume/conflict/failure contract、CPU-only 全量 identity audit、
+checksum-bound explicit quarantine、GPU smoke、portable pose+caption manifest builder、无训练依赖的随机
+访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
 pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation
 因 provenance 冲突保持 blocked。Canonical OmniHand 工程切片现包含 depthwise CubeNet、3D PAFPN、
 独立 channel/spatial/SE attention、vectorized mask-aware temporal transformer、single-frame path 和
@@ -69,7 +70,7 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-163 tests passed（含 OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
+173 tests passed（含 annotation identity/quarantine、OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -91,6 +92,8 @@ Registry-aware status excludes quarantined outputs from progress and reports the
 Each sample/failure sidecar and archive marker binds the registry snapshot and archive audit provenance
 Integrity-gated pose+caption snapshot passed 2,157-record contract/checksum/portable-path validation
 Pose manifest adapter loaded first/middle/last native and canonical arrays without training imports
+Clean CPU-only identity audit streamed 9,519 published pairs / 5.116 GB and reported exactly one stable conflict
+Checksum-bound quarantine preserved that pair and produced a 9,551-record/9-archive partial snapshot with 0 unpaired NPZ
 Partial sequence split passed 2,157/2,157 coverage and zero cross-split group leakage
 All 2,157 group IDs and assignment buckets independently recomputed and matched
 Formal run initialization atomically writes config/environment/input hashes and refuses collisions

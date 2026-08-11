@@ -28,7 +28,7 @@ CSL-News 官方源；其他数据族仍未到位。
 | Data Family | 历史用途 | 预期主要模态 | 当前状态 |
 |---|---|---|---|
 | CSL-Daily | OmniHand simulation、WaveLLM caption | images, pose, pred_pose, feature, annotation | missing_location |
-| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_archives_download_in_progress_metadata_complete |
+| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_48_archives_passed_pose_manifest_partial |
 | Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | missing_location |
 | Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | missing_location |
 | Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | missing_location |
@@ -318,6 +318,30 @@ sequence/group 全部唯一，跨 split group leakage、重复 sample、missing/
 `133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`，详见
 `../evidence/csl_news_pose_split.md`。由于 source 仍是 partial 且无 signer/subject metadata，本结果
 只证明 sequence-disjoint split 工程链，不支撑 subject-independent、新用户泛化或最终论文 split。
+
+## 10. CSL-News Derived Identity Incident And Recovery
+
+`2026-08-11T21:00Z` 后一次 pose-manifest 构建在
+`archive_006/3af7db9841fb2ac483721620` 处按 checksum gate 停止。sidecar 声明 0 bytes 和空文件
+SHA-256，但实际 NPZ 为 813,674 bytes，SHA-256 为
+`6914b6bb0f26304d87b14d7cd7e8b00ac13e6d65202a97c0d4a89e3b0d38bca3`。原 pair、failure records
+和 `.snapshot_20260811T210301.065913Z.tmp.925176` 均保留，未覆盖或清理。annotation publisher 已加入
+same-directory temp、flush/fsync、promotion 后 size/SHA 重验、size+SHA resume gate 和 conflict-continue。
+
+clean commit `3bdd31f6b0b9f43c8c3458df79a653346eda8c4e` 的 CPU-only full identity audit 冻结
+9,519 个 published pair，流式哈希 5,115,703,846 bytes；9,518 通过，唯一异常即上述 pair，且其
+sidecar/NPZ 在 hash 前后 stat 完全稳定。报告位于
+`identity_audits/audit_20260811T212324Z.json`，SHA-256 为
+`55478cbb6078d7e4c7b0c9a95577e6260e249239514ec584d082d5b0b4c538b4`，`audit_failures` 为空。
+
+按 `DEC-029`，该异常不做原地修补，而由 versioned checksum-bound exclusion 隔离。clean commit
+`98549a92b7ca22adbcbed6a241d139f07ed64ec0` 生成
+`snapshot_20260811T212450.135852Z`：冻结 9,552 个 eligible sidecar，显式排除 1 个，最终 manifest
+9,551 records/9 represented archives、0 unpaired NPZ，manifest SHA-256
+`8e3db8712bc61848e9d6dea9f5b3a3821365ffd102d6643977ad43107b2db0c4`。四项 `SHA256SUMS`、通用
+contract 和首/中/末 checksum-validating adapter 读取均通过。snapshot 绑定的 registry 覆盖 51 个
+final archive，其中 48 passed/79,813 videos，失败仍仅 `001/005/008`。这些都是 partial pipeline
+evidence，不作为最终数据规模或论文指标。
 
 `17:14 UTC`，integrity timer 在 clean commit `8b64d0f` 下自动审计通过新晋升的 `archive_026`：
 1,598 videos、完整 CRC/label coverage 通过。当前 registry 覆盖 18 个 final，15 个通过、24,618 videos，
