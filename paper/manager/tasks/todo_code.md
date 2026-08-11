@@ -17,7 +17,7 @@ Role: `architecture_execution_tracker`
 | `ARCH-003-B` | P1 | 从明确契约实现 Processor/Simulation | in_progress | NumPy range-Doppler 与 17 项 analytic/error tests 通过；beamforming/physical axes/simulation 等 provenance 后实现 |
 | `ARCH-004-A` | P1 | 实现 canonical OmniHand model/training/evaluation | not_started | 2-batch smoke + metric artifact |
 | `ARCH-004-B` | P1 | 实现 batch-first temporal processing | not_started | contract 正确、性能报告完整 |
-| `ARCH-005-A` | P1 | 清理 model factory 与 MT5/Phi-3 支持边界 | not_started | supported model matrix + tests |
+| `ARCH-005-A` | P1 | 清理 model factory 与 MT5/Phi-3 支持边界 | in_progress | mT5-only public boundary 和 unsupported-backend release test 已固定；canonical mT5 factory/vertical slice 待实现 |
 | `ARCH-005-B` | P1 | 实现 canonical WaveLLM modality/fusion/LLM components | not_started | pose-only/feature-only/fused tests |
 | `ARCH-006-A` | P2 | 统一 prediction/result artifact schema | not_started | distributed-safe writer/aggregator |
 | `ARCH-006-B` | P2 | 建立 metric protocol versioning | not_started | legacy/current protocol 并存可识别 |
@@ -26,7 +26,7 @@ Role: `architecture_execution_tracker`
 | `ARCH-REV-001` | P0 | 将审稿人点名脚本的本地路径改为 config/CLI | in_progress | clean-machine path smoke |
 | `ARCH-REV-002` | P0 | 修复 `download_models.sh` 的 SBERT/SimCSE 完整准备 | evidence_ready | fixed HF commits、14-file checksum manifest、atomic/reuse gates 和两个真实 loader CPU smoke 通过；artifact `evaluation_models_smoke_v1.json` |
 | `ARCH-REV-003` | P0 | 公共 release 文件清单、README 对齐、排除 `CLAUDE.md` 和 manager/private docs | in_progress | README 与 allowlist audit 已落地；model downloader/config 已补，待 LICENSE、radar/mT5 examples 后 reviewer profile 全绿 |
-| `ARCH-REV-004` | P0 | Phi-3 支持范围决策与实现 | blocked | runnable config/script 或移除支持声明 |
+| `ARCH-REV-004` | P0 | Phi-3 支持范围决策与实现 | evidence_ready | `DEC-027` 选择移除 public support；66-file clean release 零命中，legacy 类排除且 content gate 回归测试通过 |
 | `OPS-REV-002` | P0 | 经作者确认后添加许可证 | blocked | LICENSE 与 README/checklist 一致 |
 
 ## 重构顺序规则

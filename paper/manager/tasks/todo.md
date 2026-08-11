@@ -28,7 +28,7 @@ Role: `master_task_index`
 | `ARCH-REV-001` | eliminate hard-coded release paths | architecture foundation | in_progress | clean-machine config/CLI path smoke |
 | `ARCH-REV-002` | complete SBERT/SimCSE evaluator setup | environment | evidence_ready | pinned download + checksum + real SimCSE/SBERT loader smoke passed；`EVID-CODE-MODELS-V1` |
 | `ARCH-REV-003` | align release docs/files and exclude internal docs | architecture audit | in_progress | release manifest contains only existing paths |
-| `ARCH-REV-004` | decide and validate Phi-3 support boundary | author decision | blocked | runnable Phi-3 or removed unsupported claim |
+| `ARCH-REV-004` | decide and validate Phi-3 support boundary | greenfield scope policy | evidence_ready | unsupported public claim removed；release exclusion + zero-hit regression gate verified |
 | `OPS-REV-001` | editorial compliance package | manuscript/data/code | in_progress | checklists/availability/source data/colour/ORCID tracked |
 | `OPS-REV-002` | confirm and add code license | author approval | blocked | LICENSE and README agree |
 | `PAPER-REV-001` | related work, 4D notation and sober-language revision | manuscript import | in_progress | 可重复 scan 和 30 项语言清单已完成；待核实文献、证据 gate 后修订正文并重扫 |

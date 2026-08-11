@@ -54,7 +54,7 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-109 tests passed（含 10 项 model asset、9 项 tensor contract、17 项 range-Doppler 和 9 项 release audit tests）
+110 tests passed（含 10 项 model asset、9 项 tensor contract、17 项 range-Doppler 和 10 项 release audit tests）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -81,9 +81,10 @@ All 2,157 group IDs and assignment buckets independently recomputed and matched
 Formal run initialization atomically writes config/environment/input hashes and refuses collisions
 Metrics require a versioned protocol, sample count and finite values; completed runs require metrics
 Pinned SimCSE/SBERT acquisition passed 14-file checksum validation and real CPU `[2,768]` loader smoke
-Clean release audit at `288955e`: 66 hashed files selected; 149 internal/legacy paths excluded
+Clean release audit at `812c117`: 66 hashed files selected; 149 internal/legacy paths excluded
 Canonical dependency audit: 35 modules / 54 edges / 0 missing targets / 0 legacy imports / 0 cycles
 Reviewer release remains blocked only on LICENSE, radar example and mT5 example; model download is verified
+Caption-generation support is mT5-only by policy; the unsupported legacy backend is excluded and guarded by a release content test
 ```
 
 Research profile 已安装 Lightning 2.6.5、Transformers 4.57.6、PEFT 0.20.0、SciPy/HDF5、sentence-transformers、OpenCV、W&B 等核心依赖。DeepSpeed 作为 `distributed` profile 按需安装，不进入默认研究环境。
@@ -121,7 +122,7 @@ predicted pose [B,T,2,24,3] and/or feature [B,T,D]
 | `ARCH-004` | dataset 用字符串替换推断模态路径 | 路径脆弱、难做 provenance | manifest record 显式列出每个 modality |
 | `ARCH-005` | `cubenet_rtm.py` 等模块已删除但配置仍引用 | 配置启动失败 | 先 forensic audit，再归档/恢复/替换 |
 | `ARCH-006` | README、CLAUDE、脚本与当前源码漂移 | 新执行者容易跑错 | 文档由 validated commands 反向生成/维护 |
-| `ARCH-007` | model factory 重复定义，Phi-3 API 与 base 不一致 | 支持范围不清 | 明确 MT5 baseline；Phi-3 单独验收或移除 |
+| `ARCH-007` | legacy model factory 重复定义，Phi-3 API 与 base 不一致 | 若公开会造成伪支持 | `DEC-027` 固定 canonical mT5-only；legacy Phi-3 排除并由 release content gate 防回流 |
 | `ARCH-008` | temporal frame processing 使用 Python 循环 | 性能和显存低效 | 正确性冻结后再 batch flatten/vectorize |
 | `ARCH-009` | 测试期间逐 batch 读写同一 JSON | 慢且易损坏 | rank-local append/aggregate artifact writer |
 | `ARCH-010` | 指标、模型、运行脚本没有 protocol version | 数值漂移难解释 | metric/data/model protocol 显式版本化 |

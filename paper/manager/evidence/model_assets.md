@@ -62,5 +62,6 @@ status: passed
 | `SentenceTransformer` (SBERT) | `[2, 768]` | float32 | yes | 17.894876 | 0.99999982 |
 
 This closes model acquisition and loader readiness for `ARCH-REV-002`. It does not yet validate the
-full canonical translation metric protocol, paper-level metric parity, or Phi-3/mT5 checkpoints; those
-remain under `ARCH-006-B`, `ARCH-REV-004`, and the WaveLLM vertical slice.
+full canonical translation metric protocol, paper-level metric parity, or mT5 checkpoints; those remain
+under `ARCH-006-B` and the WaveLLM vertical slice. The unsupported legacy generation backend boundary is
+closed separately by `EVID-CODE-MODEL-SUPPORT-V1`.

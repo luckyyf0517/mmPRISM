@@ -43,9 +43,11 @@ Role: `control_panel`
   输入 SHA-256，metrics 强制显式 protocol/样本数/有限值；train/eval/prepare 服务仍待实现。
 - fixed-revision SimCSE/SBERT downloader 已完成 14-file checksum manifest；clean commit `3ae69c3`
   上两个真实 CPU loader 均输出 finite `[2,768]` embedding，`ARCH-REV-002` 已达到 evidence ready。
-- clean commit `288955e` release audit 已验证 66 个逐文件 hash、149 个 internal/legacy 排除项和
+- clean commit `812c117` release audit 已验证 66 个逐文件 hash、149 个 internal/legacy 排除项和
   35-module dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。Reviewer
   profile 现只被 LICENSE、radar example、mT5 example 三项真实缺失阻塞。
+- `DEC-027` 已固定 mT5-only generation rebuild；legacy Phi-3 不进入 public support，clean commit
+  `812c117` 的 66-file release content gate 零命中并有回归测试，`ARCH-REV-004` 达到 evidence ready。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
 
 ## 当前最高优先级

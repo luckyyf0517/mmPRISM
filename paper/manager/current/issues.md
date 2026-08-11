@@ -20,14 +20,14 @@ Role: `risk_register`
 | `DATA-CSLNEWS-INTEGRITY-001` | P0 | `005/008` member 解压损坏；`001` 因 aria2 403 后被旧脚本误晋升为 incomplete final | `005/008` 的 3,251 个视频及 `001` 均不可作为 source；旧 partial snapshot 不能作为 integrity-verified 输入 | active_mitigated | promotion + cumulative consumption gate 已运行；17:53Z 仅调度 registry 中 19 个 passed archive；保留并 versioned 重下 `001/005/008` |
 | `EXP-TEST-001` | P1 | legacy 无自动化测试；canonical 仅有 foundation fixture/tests | radar/model/训练链仍缺保护 | in_progress | 扩展 shape、split、processor、model smoke tests |
 | `DOC-DRIFT-001` | P2 | legacy CLAUDE 描述多个不存在模块；旧公开 README 曾与代码漂移 | 直接复制开发仓库会误导执行 | mitigated | canonical README 已重写，release audit 确认 CLAUDE/internal/legacy 未被选择；最终 archive 继续执行同一 gate |
-| `ARCH-LLM-001` | P2 | Phi-3 路径与当前 base API 不一致，现有配置主要只支持 MT5 | 模型支持边界不清 | not_started | 决定删除、修复或降级为 unsupported |
+| `ARCH-LLM-001` | P2 | legacy Phi-3 路径与 base API 不一致且无 runnable evidence | 若公开会造成伪支持 | mitigated | `DEC-027` 固定 mT5-only rebuild；legacy Phi-3 排除且 release content gate 生效，后续只实现 canonical mT5 |
 | `REV-ARCH-001` | P0 | 两阶段架构缺少 matched direct end-to-end baseline | 核心增益归因不充分 | blocked | `EXP-REV-001` |
 | `REV-DA-001` | P0 | shallow adaptation 缺少 full/adversarial/MMD 横向比较 | “最优/高效”主张不充分 | blocked | `EXP-REV-002` |
 | `REV-REAL-001` | P0 | 方向、遮挡、新用户和真实多样性证据不足 | 编辑明确要求 real-world generalization | blocked | `DATA-REV-002`, `EXP-REV-003` |
 | `REV-SYNREAL-001` | P0 | 合成数据与真实数据 closeness 未直接衡量 | synthetic-trained 真实性依据不足 | blocked | `DATA-REV-003`, `EXP-REV-004` |
 | `REV-ATTN-001` | P0 | spatial/channel/SE 缺少 leave-one-out | 模块堆叠可能被认为任意 | blocked | `EXP-REV-005` |
 | `REV-XMODAL-001` | P1 | WiFi/声学 baseline 请求存在协议不可比风险 | 错误比较会产生新公平性问题 | not_started | 先做 `EXP-REV-007` feasibility audit |
-| `REV-CODE-001` | P0 | Reviewer 已明确列出硬编码、SBERT、文档、LICENSE、Phi-3 问题 | code availability 可能直接阻断返修 | in_progress | `ARCH-REV-002` 已有下载/checksum/双 loader smoke 证据；继续 `ARCH-REV-001/003/004`, `OPS-REV-002` |
+| `REV-CODE-001` | P0 | Reviewer 已明确列出硬编码、SBERT、文档、LICENSE、Phi-3 问题 | code availability 可能直接阻断返修 | in_progress | `ARCH-REV-002/004` evidence ready；继续 `ARCH-REV-001/003`, `OPS-REV-002` 和 final archive smoke |
 | `BLOCK-REAL-COLLECTION` | P0 | 新增参与者、方向/遮挡采集与伦理条件未知 | P0 real-world evidence 无法排期 | blocked | 作者确认资源、伦理和可采集范围 |
 
 ## 风险关闭规则

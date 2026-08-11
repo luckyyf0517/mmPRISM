@@ -10,12 +10,12 @@ Evidence ID: `EVID-CODE-RELEASE-V1`
 ```text
 schema: mmprism.release_audit_report.v1
 release profile: reviewer_release_v1
-builder commit: 288955e70d3afca0c4eb3ca2ce8bcb1f250b3e46
+builder commit: 812c11716ecd65195d3c1d91933427b3b09af064
 builder Git state: clean
 config: configs/release/reviewer_release_v1.yaml
-config fingerprint: 2c8d073ea0e32566f17614e006bff7aec7a1a25d807407f83f944d31a687a71a
+config fingerprint: 9f6fe0a0d5a5dd676c1819734edd8ef06b6aeaaa43cc84b3b89140370688a99f
 artifact: paper/manager/evidence/artifacts/release_audit_v1.json
-artifact SHA-256: a11cbf0aa8f0cadab07fc25c57bfde680c3438bec6d4399b4f0c76265cda8a26
+artifact SHA-256: e2742e31032c9378cbc44106cd405cf6f90107f20e74a590ac09458233d251ff
 status: failed (expected blockers retained)
 ```
 
@@ -33,9 +33,9 @@ execution failure would return `2`.
 
 | Gate | Result |
 |---|---:|
-| Git tracked files inspected | 250 |
+| Git tracked files inspected | 251 |
 | release-selected files | 66 |
-| selected bytes | 651,268 |
+| selected bytes | 652,545 |
 | selected files with size + SHA-256 | 66/66 |
 | tracked internal/legacy paths explicitly excluded | 149 |
 | canonical Python modules | 35 |
@@ -46,6 +46,7 @@ execution failure would return `2`.
 | import cycles | 0 |
 | forbidden selected paths | 0 |
 | local absolute path/token content hits | 0 |
+| unsupported backend content hits | 0 |
 | expected `mmprism = mmprism.cli:main` entrypoint | matched |
 
 The 149 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
@@ -73,7 +74,7 @@ recorded separately as `EVID-CODE-MODELS-V1`; therefore `ARCH-REV-002` is no lon
 - This report verifies selection, hashes, text/path safety, entrypoints, and static dependency structure.
 - This audit does not itself create a ZIP, test installation inside a clean container, download models, or execute
   prepare/train/evaluate.
-- It does not close `R2-CODE-3` until the four blockers are resolved and a final reviewer archive passes the
+- It does not close `R2-CODE-3` until the three blockers are resolved and a final reviewer archive passes the
   same audit plus clean-environment execution.
-- Phi-3 is not selected or advertised by the canonical README. A final support/removal decision remains
-  separately tracked under `ARCH-REV-004`.
+- Phi-3 is intentionally unsupported, excluded from the selected surface and protected by a zero-hit
+  content regression gate. See `EVID-CODE-MODEL-SUPPORT-V1`.

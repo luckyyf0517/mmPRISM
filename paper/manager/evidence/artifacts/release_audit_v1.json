@@ -1,5 +1,5 @@
 {
-  "config_fingerprint": "2c8d073ea0e32566f17614e006bff7aec7a1a25d807407f83f944d31a687a71a",
+  "config_fingerprint": "9f6fe0a0d5a5dd676c1819734edd8ef06b6aeaaa43cc84b3b89140370688a99f",
   "dependencies": {
     "cycles": [],
     "external_imports": [
@@ -289,9 +289,9 @@
       "path": "configs/examples/radar_smoke.yaml"
     }
   ],
-  "generated_at": "2026-08-11T18:35:54.741062+00:00",
+  "generated_at": "2026-08-11T18:39:56.549085+00:00",
   "git": {
-    "commit": "288955e70d3afca0c4eb3ca2ce8bcb1f250b3e46",
+    "commit": "812c11716ecd65195d3c1d91933427b3b09af064",
     "dirty_entry_count": 0,
     "state": "clean"
   },
@@ -305,9 +305,9 @@
         "sha256": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d"
       },
       {
-        "bytes": 7045,
+        "bytes": 7446,
         "path": "README.md",
-        "sha256": "642f948ba6193c275ef6db1245c0107ad94d38f53b77734c0c857db104030178"
+        "sha256": "c86f2f99c4a99855658111e8538628a42027e68e71832426a35801cdd06f4da7"
       },
       {
         "bytes": 330,
@@ -320,9 +320,9 @@
         "sha256": "047e073ee0b511d0fe442177d9532eb56fd94b8acc4a5f2edbcc3426c223b464"
       },
       {
-        "bytes": 1458,
+        "bytes": 1509,
         "path": "configs/release/reviewer_release_v1.yaml",
-        "sha256": "8a69fb77a3e1397017bf900fb7f806a58354660a5fa21874cfbb7a5ea197508d"
+        "sha256": "c76da11826e0d06f3719dd47d63b5498789f1091996f8c3b9e5b5b1652a34c45"
       },
       {
         "bytes": 2539,
@@ -605,9 +605,9 @@
         "sha256": "0bffa9713a1991369e5f645343806f30aec4d43fd370d265d1aa96883cb843bb"
       },
       {
-        "bytes": 6608,
+        "bytes": 7433,
         "path": "tests/unit/test_release_audit.py",
-        "sha256": "ec919c6405b781330cd08e8dfaa94c28c2cdd90e5c37acbdbfa83eb6c4f394cc"
+        "sha256": "2ce46b590a9c1814af59f70167df6e5938eb410d623bd4acbc305b9e128f9565"
       },
       {
         "bytes": 2284,
@@ -782,9 +782,9 @@
       "src/utils/unzip_folders.py"
     ],
     "forbidden_tracked_but_excluded_count": 149,
-    "selected_bytes": 651268,
+    "selected_bytes": 652545,
     "selected_file_count": 66,
-    "tracked_file_count": 250
+    "tracked_file_count": 251
   },
   "status": "failed"
 }
