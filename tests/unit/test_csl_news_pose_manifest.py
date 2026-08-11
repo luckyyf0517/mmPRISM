@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
+import yaml
 
 from mmprism.contracts import validate_manifest
 from mmprism.data import (
@@ -214,6 +215,118 @@ output:
     def _runtime(self, *, dirty: bool = False) -> dict[str, object]:
         return {"git": {"commit": "f" * 40, "dirty": dirty}, "python": "3.12"}
 
+    def _prepare_exclusion(
+        self, root: Path
+    ) -> tuple[CslNewsPoseManifestConfig, Path, Path, Path]:
+        config, _ = self._prepare(root)
+        labels = json.loads(config.labels_path.read_text(encoding="utf-8"))
+        second_video = "Common-Concerns_20200103_0-100_3.mp4"
+        second_caption = "保留文本"
+        labels.append(
+            {
+                "video": second_video,
+                "pose": second_video.replace(".mp4", ".pkl"),
+                "text": second_caption,
+            }
+        )
+        config.labels_path.write_text(
+            json.dumps(labels, ensure_ascii=False), encoding="utf-8"
+        )
+        labels_sha256 = hashlib.sha256(config.labels_path.read_bytes()).hexdigest()
+        registry = json.loads(
+            config.integrity_registry_path.read_text(encoding="utf-8")
+        )
+        registry["source"]["labels_sha256"] = labels_sha256
+        registry["archives"]["001"]["video_count"] = 2
+        config.integrity_registry_path.write_text(
+            json.dumps(registry, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        self._write_sample(
+            config,
+            archive_id=1,
+            video_name=second_video,
+            caption=second_caption,
+        )
+
+        bad_video = labels[0]["video"]
+        bad_sample_id = stable_sample_id(
+            config.source_id, "archive_001.zip", bad_video
+        )
+        bad_sidecar = (
+            config.annotation_root
+            / "samples"
+            / "archive_001"
+            / f"{bad_sample_id}.json"
+        )
+        bad_artifact = bad_sidecar.with_suffix(".npz")
+        payload = json.loads(bad_sidecar.read_text(encoding="utf-8"))
+        payload["artifact"]["size_bytes"] = 0
+        payload["artifact"]["sha256"] = hashlib.sha256(b"").hexdigest()
+        bad_sidecar.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        sidecar_sha256 = hashlib.sha256(bad_sidecar.read_bytes()).hexdigest()
+        artifact_sha256 = hashlib.sha256(bad_artifact.read_bytes()).hexdigest()
+        sidecar_relative = bad_sidecar.relative_to(config.annotation_root).as_posix()
+        artifact_relative = bad_artifact.relative_to(config.annotation_root).as_posix()
+        report = {
+            "schema_version": "mmprism.csl_news_pose_annotation_identity_audit.v1",
+            "status": "failed",
+            "runtime": {"git": {"commit": "e" * 40, "dirty": False}},
+            "scope": {"config_fingerprint": "a" * 64},
+            "invalid_pairs": [
+                {
+                    "sample_id": bad_sample_id,
+                    "sidecar": sidecar_relative,
+                    "artifact": artifact_relative,
+                    "failures": [
+                        "artifact_sha256_mismatch",
+                        "artifact_size_mismatch",
+                    ],
+                    "sidecar_identity": {"sha256": sidecar_sha256},
+                    "observed_artifact": {
+                        "size_bytes": bad_artifact.stat().st_size,
+                        "sha256": artifact_sha256,
+                    },
+                    "declared_artifact": {
+                        "size_bytes": 0,
+                        "sha256": hashlib.sha256(b"").hexdigest(),
+                    },
+                }
+            ],
+        }
+        report_path = config.annotation_root / "identity_audits" / "audit_fixture.json"
+        report_path.parent.mkdir(parents=True)
+        report_path.write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        report_sha256 = hashlib.sha256(report_path.read_bytes()).hexdigest()
+
+        config_path = root / "pose_manifest.yaml"
+        config_payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        config_payload["validation"]["exclusions"] = [
+            {
+                "sample_id": bad_sample_id,
+                "archive_directory": "archive_001",
+                "sidecar_sha256": sidecar_sha256,
+                "artifact_size_bytes": bad_artifact.stat().st_size,
+                "artifact_sha256": artifact_sha256,
+                "declared_artifact_size_bytes": 0,
+                "declared_artifact_sha256": hashlib.sha256(b"").hexdigest(),
+                "audit_report": "identity_audits/audit_fixture.json",
+                "audit_report_sha256": report_sha256,
+                "reason": "sidecar_artifact_identity_conflict",
+            }
+        ]
+        config_path.write_text(
+            yaml.safe_dump(config_payload, sort_keys=False), encoding="utf-8"
+        )
+        with patch.dict(os.environ, {"MMPRISM_TEST_DATA_ROOT": str(root)}):
+            excluded_config = load_csl_news_pose_manifest_config(config_path)
+        return excluded_config, bad_artifact, bad_sidecar, report_path
+
     def test_builds_portable_snapshot_and_adapter_loads_arrays(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -277,6 +390,62 @@ output:
                     config,
                     runtime_report=self._runtime(),
                     snapshot_id="checksum",
+                )
+
+    def test_applies_only_checksum_bound_exclusion_and_copies_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config, bad_artifact, bad_sidecar, report_path = self._prepare_exclusion(
+                Path(directory)
+            )
+            artifact_before = bad_artifact.read_bytes()
+            sidecar_before = bad_sidecar.read_bytes()
+            receipt = build_csl_news_pose_manifest_snapshot(
+                config,
+                runtime_report=self._runtime(),
+                snapshot_id="excluded",
+            )
+            snapshot = Path(receipt["snapshot_dir"])
+            summary = json.loads(
+                Path(receipt["summary_path"]).read_text(encoding="utf-8")
+            )
+            exclusion = summary["annotation"]["exclusions"][0]
+            evidence_copy = snapshot / exclusion["audit_report_snapshot_path"]
+            checksum_text = (snapshot / "SHA256SUMS").read_text(encoding="ascii")
+
+            self.assertEqual(receipt["record_count"], 1)
+            self.assertEqual(summary["annotation"]["excluded_sidecar_count"], 1)
+            self.assertEqual(summary["annotation"]["included_sidecar_count"], 1)
+            self.assertEqual(evidence_copy.read_bytes(), report_path.read_bytes())
+            self.assertIn(exclusion["audit_report_snapshot_path"], checksum_text)
+            self.assertEqual(bad_artifact.read_bytes(), artifact_before)
+            self.assertEqual(bad_sidecar.read_bytes(), sidecar_before)
+
+    def test_exclusion_rejects_observed_artifact_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config, bad_artifact, _, _ = self._prepare_exclusion(Path(directory))
+            bad_artifact.write_bytes(bad_artifact.read_bytes() + b"drift")
+
+            with self.assertRaisesRegex(
+                CslNewsPoseManifestError, "observed identity mismatch"
+            ):
+                build_csl_news_pose_manifest_snapshot(
+                    config,
+                    runtime_report=self._runtime(),
+                    snapshot_id="artifact-drift",
+                )
+
+    def test_exclusion_rejects_audit_report_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config, _, _, report_path = self._prepare_exclusion(Path(directory))
+            report_path.write_text("{}\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                CslNewsPoseManifestError, "report SHA-256 mismatch"
+            ):
+                build_csl_news_pose_manifest_snapshot(
+                    config,
+                    runtime_report=self._runtime(),
+                    snapshot_id="report-drift",
                 )
 
     def test_rejects_absolute_storage_relationship(self) -> None:

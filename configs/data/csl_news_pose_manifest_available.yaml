@@ -14,5 +14,16 @@ validation:
   verify_artifact_checksum: true
   validate_artifact_contract: true
   minimum_free_bytes: 1099511627776
+  exclusions:
+    - sample_id: 3af7db9841fb2ac483721620
+      archive_directory: archive_006
+      sidecar_sha256: d7791e9633a48a40f587e5c6b6281cfff6623d68ed09f785334de2166dc18142
+      artifact_size_bytes: 813674
+      artifact_sha256: 6914b6bb0f26304d87b14d7cd7e8b00ac13e6d65202a97c0d4a89e3b0d38bca3
+      declared_artifact_size_bytes: 0
+      declared_artifact_sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      audit_report: identity_audits/audit_20260811T211640Z.json
+      audit_report_sha256: a99f21e3e8db0b3e9b36ff03a0bbb5afa34e776de19a9873f217589fffd7aa16
+      reason: sidecar_artifact_identity_conflict
 output:
   snapshot_root: manifests/csl_news/pose_manifest_v1

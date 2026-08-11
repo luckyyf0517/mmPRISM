@@ -20,6 +20,10 @@ from mmprism.data.csl_news_annotation import (
     stable_sample_id,
     validate_annotation_output,
 )
+from mmprism.data.csl_news_annotation_audit import (
+    build_csl_news_annotation_identity_audit,
+    write_csl_news_annotation_identity_audit,
+)
 from mmprism.data.csl_news_annotation_qc import (
     build_csl_news_annotation_qc,
     write_csl_news_annotation_qc,
@@ -143,6 +147,7 @@ __all__ = [
     "build_data_split_snapshot",
     "build_csl_news_annotation_status",
     "build_csl_news_annotation_qc",
+    "build_csl_news_annotation_identity_audit",
     "canonicalize_hands",
     "collate_pose_reconstruction_samples",
     "collate_sign_language_translation_samples",
@@ -166,6 +171,7 @@ __all__ = [
     "verify_zip_crc",
     "write_csl_news_annotation_status",
     "write_csl_news_annotation_qc",
+    "write_csl_news_annotation_identity_audit",
     "write_csl_news_audit",
     "write_csl_news_metadata_profile",
 ]

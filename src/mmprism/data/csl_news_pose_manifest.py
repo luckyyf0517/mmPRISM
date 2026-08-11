@@ -24,6 +24,7 @@ from mmprism.data.csl_news_annotation import (
     stable_sample_id,
     validate_annotation_output,
 )
+from mmprism.data.csl_news_annotation_audit import IDENTITY_AUDIT_SCHEMA_VERSION
 from mmprism.data.csl_news_integrity import (
     CslNewsIntegrityArchive,
     passed_csl_news_integrity_archives,
@@ -35,6 +36,8 @@ POSE_MANIFEST_SUMMARY_SCHEMA = "mmprism.csl_news_pose_manifest_snapshot.v1"
 POSE_SAMPLE_SCHEMA = "mmprism.csl_news_pose_sample.v1"
 ARCHIVE_DIRECTORY_PATTERN = re.compile(r"^archive_(\d{3})$")
 SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
+SAMPLE_ID_PATTERN = re.compile(r"[0-9a-f]{24}")
+EXCLUSION_REASON = "sidecar_artifact_identity_conflict"
 
 ARRAY_DTYPES = {
     "native_keypoints_3d": "float32",
@@ -125,6 +128,34 @@ def _runtime_git_commit(runtime_report: Mapping[str, Any]) -> str:
 
 
 @dataclass(frozen=True)
+class PoseArtifactExclusion:
+    sample_id: str
+    archive_directory: str
+    sidecar_sha256: str
+    artifact_size_bytes: int
+    artifact_sha256: str
+    declared_artifact_size_bytes: int
+    declared_artifact_sha256: str
+    audit_report_relative: Path
+    audit_report_sha256: str
+    reason: str
+
+    def portable_dict(self) -> dict[str, Any]:
+        return {
+            "sample_id": self.sample_id,
+            "archive_directory": self.archive_directory,
+            "sidecar_sha256": self.sidecar_sha256,
+            "artifact_size_bytes": self.artifact_size_bytes,
+            "artifact_sha256": self.artifact_sha256,
+            "declared_artifact_size_bytes": self.declared_artifact_size_bytes,
+            "declared_artifact_sha256": self.declared_artifact_sha256,
+            "audit_report": self.audit_report_relative.as_posix(),
+            "audit_report_sha256": self.audit_report_sha256,
+            "reason": self.reason,
+        }
+
+
+@dataclass(frozen=True)
 class CslNewsPoseManifestConfig:
     data_root: Path
     labels_path_relative: Path
@@ -139,6 +170,7 @@ class CslNewsPoseManifestConfig:
     verify_artifact_checksum: bool
     validate_artifact_contract: bool
     minimum_free_bytes: int
+    exclusions: tuple[PoseArtifactExclusion, ...]
 
     @property
     def labels_path(self) -> Path:
@@ -175,6 +207,7 @@ class CslNewsPoseManifestConfig:
                 "verify_artifact_checksum": self.verify_artifact_checksum,
                 "validate_artifact_contract": self.validate_artifact_contract,
                 "minimum_free_bytes": self.minimum_free_bytes,
+                "exclusions": [item.portable_dict() for item in self.exclusions],
             },
             "output": {"snapshot_root": self.snapshot_root_relative.as_posix()},
         }
@@ -232,7 +265,12 @@ def load_csl_news_pose_manifest_config(
     validation = _mapping(root.get("validation"), "validation")
     _reject_unknown(
         validation,
-        {"verify_artifact_checksum", "validate_artifact_contract", "minimum_free_bytes"},
+        {
+            "verify_artifact_checksum",
+            "validate_artifact_contract",
+            "minimum_free_bytes",
+            "exclusions",
+        },
         "validation",
     )
     output = _mapping(root.get("output"), "output")
@@ -245,6 +283,90 @@ def load_csl_news_pose_manifest_config(
         raise CslNewsPoseManifestError(
             "annotation.config_fingerprint must be a lowercase SHA-256 digest"
         )
+    raw_exclusions = validation.get("exclusions", [])
+    if not isinstance(raw_exclusions, list):
+        raise CslNewsPoseManifestError("validation.exclusions must be a list")
+    exclusions: list[PoseArtifactExclusion] = []
+    exclusion_keys: set[tuple[str, str]] = set()
+    for index, raw_exclusion in enumerate(raw_exclusions):
+        location = f"validation.exclusions[{index}]"
+        exclusion = _mapping(raw_exclusion, location)
+        _reject_unknown(
+            exclusion,
+            {
+                "sample_id",
+                "archive_directory",
+                "sidecar_sha256",
+                "artifact_size_bytes",
+                "artifact_sha256",
+                "declared_artifact_size_bytes",
+                "declared_artifact_sha256",
+                "audit_report",
+                "audit_report_sha256",
+                "reason",
+            },
+            location,
+        )
+        sample_id = _text(exclusion, "sample_id", location)
+        archive_directory = _text(exclusion, "archive_directory", location)
+        if not SAMPLE_ID_PATTERN.fullmatch(sample_id):
+            raise CslNewsPoseManifestError(
+                f"{location}.sample_id must be a 24-character lowercase hex ID"
+            )
+        if ARCHIVE_DIRECTORY_PATTERN.fullmatch(archive_directory) is None:
+            raise CslNewsPoseManifestError(
+                f"{location}.archive_directory must match archive_NNN"
+            )
+
+        digests: dict[str, str] = {}
+        for digest_key in (
+            "sidecar_sha256",
+            "artifact_sha256",
+            "declared_artifact_sha256",
+            "audit_report_sha256",
+        ):
+            digest = _text(exclusion, digest_key, location)
+            if not SHA256_PATTERN.fullmatch(digest):
+                raise CslNewsPoseManifestError(
+                    f"{location}.{digest_key} must be a lowercase SHA-256 digest"
+                )
+            digests[digest_key] = digest
+        audit_report = _relative_path(exclusion, "audit_report", location)
+        reason = _text(exclusion, "reason", location)
+        if reason != EXCLUSION_REASON:
+            raise CslNewsPoseManifestError(
+                f"{location}.reason must be {EXCLUSION_REASON}"
+            )
+        exclusion_key = (archive_directory, sample_id)
+        if exclusion_key in exclusion_keys:
+            raise CslNewsPoseManifestError(
+                f"duplicate pose exclusion for {archive_directory}/{sample_id}"
+            )
+        exclusion_keys.add(exclusion_key)
+        exclusions.append(
+            PoseArtifactExclusion(
+                sample_id=sample_id,
+                archive_directory=archive_directory,
+                sidecar_sha256=digests["sidecar_sha256"],
+                artifact_size_bytes=_integer(
+                    exclusion, "artifact_size_bytes", location, minimum=1
+                ),
+                artifact_sha256=digests["artifact_sha256"],
+                declared_artifact_size_bytes=_integer(
+                    exclusion,
+                    "declared_artifact_size_bytes",
+                    location,
+                    minimum=0,
+                ),
+                declared_artifact_sha256=digests[
+                    "declared_artifact_sha256"
+                ],
+                audit_report_relative=audit_report,
+                audit_report_sha256=digests["audit_report_sha256"],
+                reason=reason,
+            )
+        )
+
     return CslNewsPoseManifestConfig(
         data_root=Path(_text(source, "data_root", "source")).expanduser().resolve(),
         labels_path_relative=_relative_path(source, "labels_path", "source"),
@@ -269,6 +391,7 @@ def load_csl_news_pose_manifest_config(
         minimum_free_bytes=_integer(
             validation, "minimum_free_bytes", "validation", minimum=0
         ),
+        exclusions=tuple(exclusions),
     )
 
 
@@ -350,6 +473,196 @@ def _verify_sidecar_integrity(
             + ", ".join(mismatches)
         )
     return True
+
+
+def _verify_artifact_exclusion(
+    config: CslNewsPoseManifestConfig,
+    exclusion: PoseArtifactExclusion,
+    sidecar_path: Path,
+) -> dict[str, Any]:
+    expected_sidecar = (
+        config.annotation_root
+        / "samples"
+        / exclusion.archive_directory
+        / f"{exclusion.sample_id}.json"
+    )
+    if sidecar_path != expected_sidecar:
+        raise CslNewsPoseManifestError(
+            f"pose exclusion path mismatch: {sidecar_path}"
+        )
+    artifact_path = sidecar_path.with_suffix(".npz")
+
+    sidecar_stat_before = sidecar_path.stat()
+    payload = _load_json(sidecar_path, "excluded annotation sidecar")
+    sidecar_sha256 = sha256_file(sidecar_path)
+    sidecar_stat_after = sidecar_path.stat()
+    if (
+        sidecar_stat_before.st_size,
+        sidecar_stat_before.st_mtime_ns,
+    ) != (sidecar_stat_after.st_size, sidecar_stat_after.st_mtime_ns):
+        raise CslNewsPoseManifestError(
+            f"excluded sidecar changed during verification: {sidecar_path}"
+        )
+    if sidecar_sha256 != exclusion.sidecar_sha256:
+        raise CslNewsPoseManifestError(
+            f"excluded sidecar SHA-256 mismatch: {sidecar_path}"
+        )
+    if payload.get("sample_id") != exclusion.sample_id:
+        raise CslNewsPoseManifestError(
+            f"excluded sidecar sample ID mismatch: {sidecar_path}"
+        )
+    if payload.get("config_fingerprint") != config.annotation_config_fingerprint:
+        raise CslNewsPoseManifestError(
+            f"excluded sidecar config fingerprint mismatch: {sidecar_path}"
+        )
+    source = _mapping(payload.get("source"), "excluded sidecar.source")
+    if source.get("archive") != f"{exclusion.archive_directory}.zip":
+        raise CslNewsPoseManifestError(
+            f"excluded sidecar archive mismatch: {sidecar_path}"
+        )
+    declared = _mapping(payload.get("artifact"), "excluded sidecar.artifact")
+    if (
+        declared.get("size_bytes") != exclusion.declared_artifact_size_bytes
+        or declared.get("sha256") != exclusion.declared_artifact_sha256
+    ):
+        raise CslNewsPoseManifestError(
+            f"excluded sidecar declared identity mismatch: {sidecar_path}"
+        )
+
+    artifact_stat_before = artifact_path.stat()
+    artifact_sha256 = sha256_file(artifact_path)
+    artifact_stat_after = artifact_path.stat()
+    if (
+        artifact_stat_before.st_size,
+        artifact_stat_before.st_mtime_ns,
+    ) != (artifact_stat_after.st_size, artifact_stat_after.st_mtime_ns):
+        raise CslNewsPoseManifestError(
+            f"excluded artifact changed during verification: {artifact_path}"
+        )
+    if (
+        artifact_stat_before.st_size != exclusion.artifact_size_bytes
+        or artifact_sha256 != exclusion.artifact_sha256
+    ):
+        raise CslNewsPoseManifestError(
+            f"excluded artifact observed identity mismatch: {artifact_path}"
+        )
+
+    report_path = (config.annotation_root / exclusion.audit_report_relative).resolve()
+    try:
+        report_path.relative_to(config.annotation_root)
+    except ValueError as error:
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report escapes annotation root: {report_path}"
+        ) from error
+    report_stat_before = report_path.stat()
+    report = _load_json(report_path, "annotation identity audit")
+    report_sha256 = sha256_file(report_path)
+    report_stat_after = report_path.stat()
+    if (
+        report_stat_before.st_size,
+        report_stat_before.st_mtime_ns,
+    ) != (report_stat_after.st_size, report_stat_after.st_mtime_ns):
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report changed during verification: {report_path}"
+        )
+    if report_sha256 != exclusion.audit_report_sha256:
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report SHA-256 mismatch: {report_path}"
+        )
+    if (
+        report.get("schema_version") != IDENTITY_AUDIT_SCHEMA_VERSION
+        or report.get("status") != "failed"
+    ):
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report has an invalid schema or status: {report_path}"
+        )
+    report_runtime = _mapping(
+        report.get("runtime"), "annotation identity audit.runtime"
+    )
+    report_git = _mapping(
+        report_runtime.get("git"), "annotation identity audit.runtime.git"
+    )
+    audit_git_commit = report_git.get("commit")
+    if (
+        not isinstance(audit_git_commit, str)
+        or re.fullmatch(r"[0-9a-f]{40}", audit_git_commit) is None
+        or report_git.get("dirty") is not False
+    ):
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report was not generated from a clean Git commit: {report_path}"
+        )
+    scope = _mapping(report.get("scope"), "annotation identity audit.scope")
+    if scope.get("config_fingerprint") != config.annotation_config_fingerprint:
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report config fingerprint mismatch: {report_path}"
+        )
+    invalid_pairs = report.get("invalid_pairs")
+    if not isinstance(invalid_pairs, list):
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report has no invalid_pairs list: {report_path}"
+        )
+    expected_sidecar_relative = sidecar_path.relative_to(
+        config.annotation_root
+    ).as_posix()
+    matches = [
+        item
+        for item in invalid_pairs
+        if isinstance(item, Mapping)
+        and item.get("sidecar") == expected_sidecar_relative
+        and item.get("sample_id") == exclusion.sample_id
+    ]
+    if len(matches) != 1:
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report does not uniquely bind {expected_sidecar_relative}"
+        )
+    evidence = matches[0]
+    sidecar_identity = _mapping(
+        evidence.get("sidecar_identity"), "annotation identity audit.sidecar_identity"
+    )
+    observed = _mapping(
+        evidence.get("observed_artifact"),
+        "annotation identity audit.observed_artifact",
+    )
+    report_declared = _mapping(
+        evidence.get("declared_artifact"),
+        "annotation identity audit.declared_artifact",
+    )
+    failures = evidence.get("failures")
+    if (
+        sidecar_identity.get("sha256") != exclusion.sidecar_sha256
+        or observed.get("size_bytes") != exclusion.artifact_size_bytes
+        or observed.get("sha256") != exclusion.artifact_sha256
+        or report_declared.get("size_bytes")
+        != exclusion.declared_artifact_size_bytes
+        or report_declared.get("sha256") != exclusion.declared_artifact_sha256
+        or not isinstance(failures, list)
+        or set(failures)
+        != {"artifact_size_mismatch", "artifact_sha256_mismatch"}
+    ):
+        raise CslNewsPoseManifestError(
+            f"pose exclusion report identity mismatch: {report_path}"
+        )
+
+    evidence_snapshot_path = (
+        Path("exclusion_evidence")
+        / f"{exclusion.audit_report_sha256[:12]}_{report_path.name}"
+    )
+    return {
+        "sample_id": exclusion.sample_id,
+        "archive_directory": exclusion.archive_directory,
+        "reason": exclusion.reason,
+        "sidecar_path": expected_sidecar_relative,
+        "sidecar_sha256": exclusion.sidecar_sha256,
+        "artifact_path": artifact_path.relative_to(config.annotation_root).as_posix(),
+        "artifact_size_bytes": exclusion.artifact_size_bytes,
+        "artifact_sha256": exclusion.artifact_sha256,
+        "declared_artifact_size_bytes": exclusion.declared_artifact_size_bytes,
+        "declared_artifact_sha256": exclusion.declared_artifact_sha256,
+        "audit_report_source_path": exclusion.audit_report_relative.as_posix(),
+        "audit_report_snapshot_path": evidence_snapshot_path.as_posix(),
+        "audit_report_sha256": exclusion.audit_report_sha256,
+        "audit_git_commit": audit_git_commit,
+    }
 
 
 def _manifest_record(
@@ -544,6 +857,24 @@ def build_csl_news_pose_manifest_snapshot(
     eligible_sidecars = [
         path for path in sidecar_paths if path.parent.name in eligible_stems
     ]
+    exclusion_by_sidecar = {
+        Path("samples")
+        / exclusion.archive_directory
+        / f"{exclusion.sample_id}.json": exclusion
+        for exclusion in config.exclusions
+    }
+    eligible_sidecar_relatives = {
+        path.relative_to(config.annotation_root) for path in eligible_sidecars
+    }
+    unmatched_exclusions = sorted(
+        path.as_posix()
+        for path in set(exclusion_by_sidecar) - eligible_sidecar_relatives
+    )
+    if unmatched_exclusions:
+        raise CslNewsPoseManifestError(
+            "configured pose exclusions are not frozen eligible sidecars: "
+            + ", ".join(unmatched_exclusions)
+        )
     ineligible_sidecar_count = len(sidecar_paths) - len(eligible_sidecars)
     ineligible_npz_count = sum(
         path.parent.name not in eligible_stems for path in npz_paths
@@ -564,6 +895,10 @@ def build_csl_news_pose_manifest_snapshot(
         )
     if not eligible_sidecars:
         raise CslNewsPoseManifestError("no eligible completed pose sidecars are available")
+    if len(eligible_sidecars) == len(config.exclusions):
+        raise CslNewsPoseManifestError(
+            "all eligible pose sidecars are excluded; no manifest records remain"
+        )
 
     manifest_path = temporary / "manifest.jsonl"
     sample_ids: set[str] = set()
@@ -571,8 +906,16 @@ def build_csl_news_pose_manifest_snapshot(
     program_counts: Counter[str] = Counter()
     sidecar_integrity_present_count = 0
     artifact_bytes = 0
+    applied_exclusions: list[dict[str, Any]] = []
     with manifest_path.open("w", encoding="utf-8") as manifest_stream:
         for sidecar_path in eligible_sidecars:
+            sidecar_relative = sidecar_path.relative_to(config.annotation_root)
+            exclusion = exclusion_by_sidecar.get(sidecar_relative)
+            if exclusion is not None:
+                applied_exclusions.append(
+                    _verify_artifact_exclusion(config, exclusion, sidecar_path)
+                )
+                continue
             match = ARCHIVE_DIRECTORY_PATTERN.fullmatch(sidecar_path.parent.name)
             if match is None:
                 raise CslNewsPoseManifestError(
@@ -727,6 +1070,28 @@ def build_csl_news_pose_manifest_snapshot(
             program_counts[csl_news_source_program(video_name)] += 1
             artifact_bytes += artifact_stat_before.st_size
 
+    if len(applied_exclusions) != len(config.exclusions):
+        raise CslNewsPoseManifestError(
+            "not every configured pose exclusion was applied exactly once"
+        )
+
+    exclusion_evidence_checksums: dict[str, str] = {}
+    for applied in applied_exclusions:
+        exclusion = exclusion_by_sidecar[Path(applied["sidecar_path"])]
+        destination_relative = Path(applied["audit_report_snapshot_path"])
+        destination_path = temporary / destination_relative
+        if destination_relative.as_posix() in exclusion_evidence_checksums:
+            continue
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path = config.annotation_root / exclusion.audit_report_relative
+        shutil.copyfile(source_path, destination_path)
+        copied_sha256 = sha256_file(destination_path)
+        if copied_sha256 != exclusion.audit_report_sha256:
+            raise CslNewsPoseManifestError(
+                f"copied pose exclusion evidence hash mismatch: {source_path}"
+            )
+        exclusion_evidence_checksums[destination_relative.as_posix()] = copied_sha256
+
     contract_summary = validate_manifest(manifest_path)
     if contract_summary.record_count != len(sample_ids):
         raise CslNewsPoseManifestError(
@@ -740,7 +1105,7 @@ def build_csl_news_pose_manifest_snapshot(
         raise CslNewsPoseManifestError("copied integrity registry hash mismatch")
     complete = (
         len(passed_archives) == config.expected_archive_count
-        and len(sample_ids) == len(labels)
+        and len(sample_ids) + len(applied_exclusions) == len(labels)
     )
     summary = {
         "schema_version": POSE_MANIFEST_SUMMARY_SCHEMA,
@@ -764,10 +1129,13 @@ def build_csl_news_pose_manifest_snapshot(
             "dataset_id": config.dataset_id,
             "config_fingerprint": config.annotation_config_fingerprint,
             "frozen_sidecar_count": len(eligible_sidecars),
+            "included_sidecar_count": len(sample_ids),
+            "excluded_sidecar_count": len(applied_exclusions),
+            "exclusions": applied_exclusions,
             "represented_archive_count": len(represented_archives),
             "represented_archive_sample_counts": dict(sorted(represented_archives.items())),
             "sidecar_integrity_present_count": sidecar_integrity_present_count,
-            "sidecar_integrity_missing_count": len(eligible_sidecars)
+            "sidecar_integrity_missing_count": len(sample_ids)
             - sidecar_integrity_present_count,
             "ineligible_sidecar_count": ineligible_sidecar_count,
             "ineligible_npz_count": ineligible_npz_count,
@@ -796,6 +1164,7 @@ def build_csl_news_pose_manifest_snapshot(
         encoding="utf-8",
     )
     checksums = {
+        **exclusion_evidence_checksums,
         "integrity_registry.json": registry_sha256,
         "manifest.jsonl": manifest_sha256,
         "summary.json": sha256_file(summary_path),

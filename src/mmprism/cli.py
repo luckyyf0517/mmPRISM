@@ -25,6 +25,7 @@ from mmprism.data import (
     CslNewsSourceManifestError,
     DataSplitError,
     audit_csl_news_archive,
+    build_csl_news_annotation_identity_audit,
     build_csl_news_annotation_qc,
     build_csl_news_annotation_status,
     build_csl_news_metadata_profile,
@@ -38,6 +39,7 @@ from mmprism.data import (
     load_data_split_config,
     run_csl_news_annotation,
     scan_csl_news_source_integrity,
+    write_csl_news_annotation_identity_audit,
     write_csl_news_annotation_qc,
     write_csl_news_annotation_status,
     write_csl_news_audit,
@@ -135,6 +137,14 @@ def _build_parser() -> argparse.ArgumentParser:
     status_parser.add_argument("--recent-window", type=int, default=200)
     status_parser.add_argument("--output", type=Path)
     status_parser.add_argument("--integrity-registry", type=Path)
+
+    identity_audit_parser = subparsers.add_parser(
+        "csl-news-annotation-audit",
+        help="Stream-audit every CSL-News pose artifact identity visible at start",
+    )
+    identity_audit_parser.add_argument("config", type=Path)
+    identity_audit_parser.add_argument("--project-root", type=Path)
+    identity_audit_parser.add_argument("--output", type=Path)
 
     qc_parser = subparsers.add_parser(
         "csl-news-annotation-qc",
@@ -425,6 +435,22 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_csl_news_annotation_status(payload, arguments.output)
             exit_code = 0 if payload["status"] == "healthy" else 1
+        elif arguments.command == "csl-news-annotation-audit":
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            annotation_config = load_csl_news_annotation_config(
+                arguments.config, project_root
+            )
+            payload = build_csl_news_annotation_identity_audit(
+                annotation_config,
+                runtime_report=collect_runtime_report(project_root),
+            )
+            if arguments.output:
+                write_csl_news_annotation_identity_audit(payload, arguments.output)
+            exit_code = 0 if payload["status"] == "passed" else 1
         elif arguments.command == "csl-news-annotation-qc":
             project_root = (
                 arguments.project_root.resolve()
