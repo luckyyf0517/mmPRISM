@@ -25,7 +25,7 @@ Role: `control_panel`
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；cumulative integrity registry
-  当前覆盖 15 个 final ZIP，其中 `001/005/008` 失败并隔离，12 个 archive/19,760 videos 通过。
+  在 `16:30Z` 覆盖 17 个 final ZIP，其中 `001/005/008` 失败并隔离，14 个 archive/23,020 videos 通过。
   5 分钟增量扫描和 4 个 registry-only dynamic annotation worker 已运行。
 - `/mnt/gfs` 当前约余 3.6 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
 - canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；46 项测试、Ruff、Mypy、wheel、

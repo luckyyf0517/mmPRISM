@@ -21,7 +21,7 @@ Role: `data_execution_tracker`
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
-| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | cumulative registry/atomic audit/worker whitelist 已验证；当前 12 archive/19,760 videos passed，待 replacement 和最终 436-archive CRC/coverage/decode report |
+| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | cumulative registry/atomic audit/worker whitelist 已验证；16:30Z 为 14 archive/23,020 videos passed，待 replacement 和最终 436-archive CRC/coverage/decode report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | `001/005/008` 已进入 cumulative registry failed 项，15 个历史 pose pair 单列 ineligible；待人工复核和 versioned replacement |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
@@ -59,7 +59,7 @@ SHA-256 为 `379b72f34a1f749a246891901e746defae3331dcb65fab64662686a7f260a723`�
 exit、残留 `.aria2` 和完整 `unzip -t` 三重 gate，并恢复断点下载。
 新 gate 首个晋升的 `archive_002` 已通过 1,624-video canonical audit，report SHA-256 为
 `3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`。cumulative registry
-现由 5 分钟 timer 增量维护，当前 12 个 archive/19,760 videos passed；4 个 dynamic worker 仅消费
+现由 5 分钟 timer 增量维护，`16:30Z` 为 14 个 archive/23,020 videos passed；4 个 dynamic worker 仅消费
 typed passed entry，并保存 registry hash/shard provenance。
 
 ## 禁止事项

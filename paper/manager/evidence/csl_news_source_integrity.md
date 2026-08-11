@@ -11,10 +11,10 @@ Current cumulative control artifact:
 ```text
 builder commit: b18251204ece87b67702d1f6735c9eb9cb416a9b
 registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/registry.json
-registry SHA-256 at 2026-08-11T16:17Z: 070bcc4446894577cab6e05f632049a2a53143b508e50523dd27c20daea52b66
+registry SHA-256 at 2026-08-11T16:30Z: d48a35dc8196400b962ba704258136edc25553a491917371795236b9d9299512
 labels SHA-256: 3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5
-present final archives: 15
-passed: 12 archives / 19,760 videos
+present final archives: 17
+passed: 14 archives / 23,020 videos
 failed: 001,005,008
 ```
 

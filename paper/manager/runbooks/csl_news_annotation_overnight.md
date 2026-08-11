@@ -213,3 +213,6 @@ scripts/run_csl_news_annotation_qc.sh
 - `mmprism-csl-news-integrity-scan.timer` 每 5 分钟运行一次，使用 `flock` 防止重叠并原子更新 registry。
   `16:20Z` 白名单状态报告统计 1,687 个 eligible NPZ，另有 15 个来自损坏 archive 的历史 NPZ/
   sidecar 被标为 ineligible、未计入进度；抽检 3/3 通过，当前 run 新失败 0。
+- `16:24Z` 与 `16:29Z` timer 自动审计通过新晋升的 `007/013`；`16:30Z` registry 为 14 个 passed
+  archive/23,020 videos。提交 `7847f4f` 后平滑替换为 `registry{0..3}-v2`，重启前 `007` 尚无产物；
+  v2 的首个新 sidecar 已核对包含 registry snapshot、archive/audit/labels hash 和 builder commit。

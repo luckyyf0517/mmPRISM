@@ -213,8 +213,8 @@ archive、18,095 条 portable `caption/video` record，manifest SHA-256 为
 
 `2026-08-11T16:16Z` 起，`configs/data/csl_news_source_integrity.yaml` 和
 `csl-news-integrity-scan` 维护 cumulative atomic registry。首次 clean-commit 扫描覆盖 14 个 final ZIP，
-后续增量扫描复用全部 14 个结果并自动审计新晋升的 `archive_017`。当前 registry 覆盖 15 个 final：
-12 个通过、3 个失败（`001/005/008`），白名单共 19,760 videos；registry SHA-256 为
+后续增量扫描复用全部 14 个结果并自动审计新晋升的 `archive_017`。`16:17Z` registry 覆盖 15 个 final：
+12 个通过、3 个失败（`001/005/008`），白名单共 19,760 videos；该快照 SHA-256 为
 `070bcc4446894577cab6e05f632049a2a53143b508e50523dd27c20daea52b66`。每个 archive 有独立
 SHA-256、source stat、audit report/hash 和 clean builder commit；标签 hash 变化会强制全部重审。
 
@@ -275,3 +275,9 @@ archive、18,095 个可用视频、291 个成功样本、当前 run 新增失败
 15 个来自损坏 archive 的历史 NPZ/sidecar 单列为 ineligible 且不抵扣进度；最新 3/3 校验通过、
 dynamic run 新失败 0，近期约 1,353 samples/hour。报告保持 `attention_required`，原因是 registry
 显式保留 3 个失败 source，而不是 annotation 失败。
+
+`16:30 UTC`，两个后续 timer 周期自动审计通过 `archive_007/013`。当前 registry 覆盖 17 个 final，
+14 个通过/23,020 videos，失败项仍仅为 `001/005/008`；registry SHA-256 为
+`d48a35dc8196400b962ba704258136edc25553a491917371795236b9d9299512`。同步状态报告统计
+1,889 个 eligible NPZ、15 个 ineligible 历史 pair、抽检 3/3、dynamic run 新失败 0，近期约
+1,428 samples/hour。
