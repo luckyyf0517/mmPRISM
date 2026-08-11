@@ -39,6 +39,7 @@ Role: `cross_workstream_decisions`
 | `DEC-031` | 2026-08-11 | CSL-News source manifest v2 只从一个冻结的 source-integrity v2 registry 构建 | glob primary root 无法表达 replacement，并会重新选中已知坏原件；live registry 更新也不能改变已发布 manifest | accepted | 配置必须注入 registry；逐 entry 校验 exact path/source kind/stat/SHA/video count/audit；snapshot 复制 registry 原始字节并以 `SHA256SUMS` 覆盖 registry/manifest/summary；v1 snapshot 仅保留为历史 linkage evidence |
 | `DEC-032` | 2026-08-11 | formal train/evaluate 必须注册一个 canonical split assignment，并在写入前支持统一无副作用 preflight | 仅记录 manifest 或接受 CLI `--split` 标签无法证明样本真实属于声明 split，且失败到运行中才发现会浪费算力并留下无效目录 | accepted | `mmprism prepare` 在 clean Git 上验证配置、输入哈希、目标、manifest/split contract、全覆盖和无重叠且不写目录；OmniHand/WaveLLM 运行时重复 membership gate，并把 split 文件写入 `inputs.json` |
 | `DEC-033` | 2026-08-11 | 已发布 canonical pose 冲突通过确定性的 full-source-SHA variant 恢复，原文件永久只读 | 覆盖或删除 canonical pair 会销毁 incident evidence，仅排除又会永久丢失可恢复样本 | accepted | recovery 只在 canonical 当前来源不完整/不一致时路由到 `--source_<archive-sha256>`；resume 和 status 只接受唯一有效 variant；manifest 必须继续验证并复制 canonical exclusion evidence，同时纳入恢复 record；多有效 variant 硬失败 |
+| `DEC-034` | 2026-08-11 | prediction artifact 采用 rank-local immutable shard/receipt 与 rank-zero exact-coverage 聚合 | 多 rank 并发写最终 JSONL 或共享 `run.json` 会损坏 provenance；全量 pose payload 内存排序不可扩展 | accepted | rank 只做 no-clobber publish；rank 0 验证完整 rank/checksum/schema/ID coverage，以 SQLite 确定性排序并一次性登记 shard、receipt、index 和 final JSONL；原 shard 永久保留 |
 
 ## 决策记录模板
 

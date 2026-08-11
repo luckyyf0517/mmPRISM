@@ -350,7 +350,10 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
         "inputs.json",
         "metrics.json",
         "performance.json",
+        "predictions.index.json",
         "predictions.jsonl",
+        "predictions.rank-00000-of-00001.json",
+        "predictions.rank-00000-of-00001.jsonl",
         "run.json",
         "wavellm.resolved.json",
         "wavellm.runtime.json",
@@ -370,9 +373,20 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
     checkpoint_payload = json.loads(
         (train_run / "checkpoint.json").read_text(encoding="utf-8")
     )
+    prediction_index = json.loads(
+        (train_run / "predictions.index.json").read_text(encoding="utf-8")
+    )
     train_predictions = (train_run / "predictions.jsonl").read_bytes()
     checkpoint_state = load_file(train_run / "checkpoint.safetensors")
     assert run_payload["status"] == "completed"
+    assert prediction_index["prediction_schema"] == "mmprism.translation_prediction.v1"
+    assert prediction_index["record_count"] == 2
+    assert prediction_index["coverage"] == {
+        "expected": 2,
+        "extra": 0,
+        "missing": 0,
+        "observed": 2,
+    }
     assert checkpoint_payload["weights"]["scope"] == "adapter_only"
     assert checkpoint_payload["weights"]["sha256"] == _sha256(
         train_run / "checkpoint.safetensors"

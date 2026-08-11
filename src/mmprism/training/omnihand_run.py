@@ -27,6 +27,7 @@ from mmprism.artifacts import (
     RunInput,
     sha256_file,
     validate_split_bindings,
+    write_single_rank_predictions,
 )
 from mmprism.config import ExperimentConfig, RuntimeConfig, Task
 from mmprism.data import (
@@ -688,9 +689,10 @@ def train_omnihand(
             pck_threshold_mm=task_config.evaluation.pck_threshold_mm
         )
         prediction_started = time.perf_counter()
-        writer.write_jsonl_artifact(
-            "predictions.jsonl",
-            _prediction_records(
+        write_single_rank_predictions(
+            writer,
+            prediction_schema=OMNIHAND_PREDICTION_SCHEMA,
+            records=_prediction_records(
                 model,
                 validation_loader,
                 accumulator,
@@ -699,6 +701,7 @@ def train_omnihand(
                 checkpoint_sha256=weights_sha256,
                 save_targets=task_config.evaluation.save_targets,
             ),
+            expected_sample_ids=(record.sample_id for record in validation_manifest.records),
         )
         prediction_seconds = time.perf_counter() - prediction_started
         metrics = accumulator.values()
@@ -839,9 +842,10 @@ def evaluate_omnihand(
             pck_threshold_mm=task_config.evaluation.pck_threshold_mm
         )
         prediction_started = time.perf_counter()
-        writer.write_jsonl_artifact(
-            "predictions.jsonl",
-            _prediction_records(
+        write_single_rank_predictions(
+            writer,
+            prediction_schema=OMNIHAND_PREDICTION_SCHEMA,
+            records=_prediction_records(
                 model,
                 loader,
                 accumulator,
@@ -850,6 +854,7 @@ def evaluate_omnihand(
                 checkpoint_sha256=checkpoint_sha256,
                 save_targets=task_config.evaluation.save_targets,
             ),
+            expected_sample_ids=(record.sample_id for record in manifest.records),
         )
         prediction_seconds = time.perf_counter() - prediction_started
         metrics = accumulator.values()

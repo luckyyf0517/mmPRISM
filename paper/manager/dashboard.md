@@ -59,6 +59,9 @@ Role: `control_panel`
   config/Git/environment/输入哈希，写入 Safetensors、history、runtime/performance、逐样本 prediction
   和版本化 count-weighted metrics；OmniHand `81e9b89` 的 13-gate 与 WaveLLM `e31000b` 的 250-gate
   A100/BF16 独立审计均通过。真实数据、resume、分布式和 production language metrics 仍待完成。
+- `ARCH-006-A` 已实现 distributed-safe prediction artifact：rank-local immutable shard/receipt 不触碰
+  共享 `run.json`，rank 0 对完整 rank 集、checksum、schema、重复 ID 和 exact manifest coverage 做硬校验，
+  经 SQLite 确定性排序后原子登记全套 shard/index/final JSONL；两条 world-size-one 正式路径与 196 项测试已覆盖。
 - clean commit `766453b` 已增加 side-effect-free `mmprism.prepare` 和 formal split provenance：真实 CLI
   验证 config/Git/destination/input hash、manifest/split contract、显式 membership 和无重叠，执行前后
   artifact/cache 目标均不存在；两条正式训练/评估路径会重复 gate 并记录 assignment SHA-256。
@@ -103,8 +106,8 @@ Role: `control_panel`
 2. 执行 `DATA-001-K/DATA-005-A`，下载 promotion 和标注前都做完整 ZIP gate；只对通过清单生成 pose。
 3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
-4. 继续 `ARCH-006-A`：为 OmniHand/WaveLLM 补 resume、distributed
-   prediction/checkpoint aggregation 和 real-data integration。
+4. 继续 formal training orchestration：为 OmniHand/WaveLLM 补 resume、DDP model execution、
+   checkpoint aggregation 和 real-data integration；prediction aggregation 已由 `ARCH-006-A` 闭合。
 5. 为 `ARCH-003` 收集 radar acquisition/channel/calibration 证据；绑定真实 manifest fixture 后实现
    beamforming 与完整 cube gate，禁止用 legacy 默认值填补未知项。
 

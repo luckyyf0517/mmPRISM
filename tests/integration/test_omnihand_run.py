@@ -233,7 +233,10 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
         "omnihand.resolved.json",
         "omnihand.runtime.json",
         "performance.json",
+        "predictions.index.json",
         "predictions.jsonl",
+        "predictions.rank-00000-of-00001.json",
+        "predictions.rank-00000-of-00001.jsonl",
         "run.json",
     }
     assert {path.name for path in train_run.iterdir()} == expected_train_artifacts
@@ -246,11 +249,22 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
     }
     run_payload = json.loads((train_run / "run.json").read_text(encoding="utf-8"))
     checkpoint_payload = json.loads((train_run / "checkpoint.json").read_text(encoding="utf-8"))
+    prediction_index = json.loads(
+        (train_run / "predictions.index.json").read_text(encoding="utf-8")
+    )
     predictions = [
         json.loads(line)
         for line in (train_run / "predictions.jsonl").read_text(encoding="utf-8").splitlines()
     ]
     assert run_payload["status"] == "completed"
+    assert prediction_index["prediction_schema"] == "mmprism.pose_prediction.v1"
+    assert prediction_index["record_count"] == 2
+    assert prediction_index["coverage"] == {
+        "expected": 2,
+        "extra": 0,
+        "missing": 0,
+        "observed": 2,
+    }
     assert checkpoint_payload["weights"]["sha256"] == _sha256(train_run / "checkpoint.safetensors")
     assert checkpoint_payload["runtime"]["device"] == "cpu"
     performance = json.loads((train_run / "performance.json").read_text(encoding="utf-8"))

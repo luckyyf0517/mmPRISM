@@ -371,11 +371,39 @@ class RunArtifactWriter:
     def register_artifact(self, name: str) -> Path:
         """Register an atomically completed artifact created by a domain writer."""
 
-        destination = self.artifact_path(name)
-        if not destination.is_file():
-            raise ArtifactError(f"artifact does not exist: {destination}")
-        self._register_artifact(name)
-        return destination
+        return self.register_artifacts((name,))[0]
+
+    def register_artifacts(self, names: Sequence[str]) -> tuple[Path, ...]:
+        """Atomically register a completed set of domain artifacts in run metadata."""
+
+        if not names:
+            raise ArtifactError("artifact registration requires at least one name")
+        if len(set(names)) != len(names):
+            raise ArtifactError("artifact registration names must be unique")
+
+        destinations = tuple(self.artifact_path(name) for name in names)
+        missing = [str(path) for path in destinations if not path.is_file()]
+        if missing:
+            raise ArtifactError(f"artifact does not exist: {missing[0]}")
+
+        payload = self._read_run()
+        artifacts = payload.get("artifacts")
+        if not isinstance(artifacts, dict):
+            raise ArtifactError("run metadata artifacts must be a mapping")
+        collisions = sorted(name for name in names if name in artifacts)
+        if collisions:
+            raise ArtifactError(f"artifact is already registered: {collisions[0]}")
+
+        captured = {
+            name: {
+                "sha256": sha256_file(destination),
+                "size_bytes": destination.stat().st_size,
+            }
+            for name, destination in zip(names, destinations, strict=True)
+        }
+        artifacts.update(captured)
+        _atomic_write_json(self.run_dir / "run.json", payload)
+        return destinations
 
     def finalize(
         self,
@@ -417,15 +445,4 @@ class RunArtifactWriter:
         return payload
 
     def _register_artifact(self, name: str) -> None:
-        artifact = self.run_dir / name
-        payload = self._read_run()
-        artifacts = payload.get("artifacts")
-        if not isinstance(artifacts, dict):
-            raise ArtifactError("run metadata artifacts must be a mapping")
-        if name in artifacts:
-            raise ArtifactError(f"artifact is already registered: {name}")
-        artifacts[name] = {
-            "sha256": sha256_file(artifact),
-            "size_bytes": artifact.stat().st_size,
-        }
-        _atomic_write_json(self.run_dir / "run.json", payload)
+        self.register_artifacts((name,))

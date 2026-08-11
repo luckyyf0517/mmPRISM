@@ -27,6 +27,7 @@ from mmprism.artifacts import (
     RunInput,
     sha256_file,
     validate_split_bindings,
+    write_single_rank_predictions,
 )
 from mmprism.assets import (
     ModelAssetSetConfig,
@@ -966,9 +967,10 @@ def train_wavellm(
 
         accumulator = LanguageMetricAccumulator()
         prediction_started = time.perf_counter()
-        writer.write_jsonl_artifact(
-            "predictions.jsonl",
-            _prediction_records(
+        write_single_rank_predictions(
+            writer,
+            prediction_schema=WAVELLM_PREDICTION_SCHEMA,
+            records=_prediction_records(
                 model,
                 tokenizer,
                 validation_loader,
@@ -978,6 +980,7 @@ def train_wavellm(
                 precision=resolved_experiment.runtime.precision,
                 checkpoint_sha256=weights_sha256,
             ),
+            expected_sample_ids=(record.sample_id for record in validation_manifest.records),
         )
         prediction_seconds = time.perf_counter() - prediction_started
         metrics = accumulator.values()
@@ -1126,9 +1129,10 @@ def evaluate_wavellm(
         )
         accumulator = LanguageMetricAccumulator()
         prediction_started = time.perf_counter()
-        writer.write_jsonl_artifact(
-            "predictions.jsonl",
-            _prediction_records(
+        write_single_rank_predictions(
+            writer,
+            prediction_schema=WAVELLM_PREDICTION_SCHEMA,
+            records=_prediction_records(
                 model,
                 tokenizer,
                 loader,
@@ -1138,6 +1142,7 @@ def evaluate_wavellm(
                 precision=resolved_experiment.runtime.precision,
                 checkpoint_sha256=checkpoint_sha256,
             ),
+            expected_sample_ids=(record.sample_id for record in manifest.records),
         )
         prediction_seconds = time.perf_counter() - prediction_started
         metrics = accumulator.values()
