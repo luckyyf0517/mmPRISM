@@ -58,6 +58,7 @@ forbidden_paths:
 forbidden_content_patterns:
   local_absolute_path: '/(?:home|mnt|root)/[^\s`"'']+'
   overleaf_token: 'olp_[A-Za-z0-9]+'
+  unsupported_language_backend: '(?i)ph[i][-_ ]?3'
 
 python_roots:
   - src/mmprism

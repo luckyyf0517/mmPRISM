@@ -50,12 +50,12 @@ The reviewer profile deliberately requires artifacts that are not yet available,
 become a misleading partial archive:
 
 - an author-approved `LICENSE`;
-- a complete `scripts/download_models.sh` covering supported evaluation models;
 - a runnable portable radar example;
 - a runnable portable mT5 example.
 
-Phi-3 is not listed as supported. It may enter the profile only after a complete train/evaluate smoke path
-exists; otherwise its legacy implementation and claims remain excluded.
+Phi-3 is not supported. Its legacy implementation and claims remain excluded, and the release content
+gate rejects reintroduction of its name into the selected public surface. The full re-entry requirements
+are documented in `model_support.md`.
 
 ## Command
 

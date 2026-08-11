@@ -35,7 +35,11 @@ def _write_project(root: Path, *, core_source: str = "import json\n") -> tuple[s
     return tuple(sorted(files))
 
 
-def _config(*, required_paths: list[str] | None = None) -> ReleaseAuditConfig:
+def _config(
+    *,
+    required_paths: list[str] | None = None,
+    forbidden_content_patterns: dict[str, str] | None = None,
+) -> ReleaseAuditConfig:
     return ReleaseAuditConfig.from_mapping(
         {
             "schema_version": "mmprism.release_audit_config.v1",
@@ -45,9 +49,8 @@ def _config(*, required_paths: list[str] | None = None) -> ReleaseAuditConfig:
             "required_paths": required_paths
             or ["README.md", "pyproject.toml", "src/mmprism/cli.py"],
             "forbidden_paths": ["CLAUDE.md", "src/fmcw/**"],
-            "forbidden_content_patterns": {
-                "local_path": r"/(?:home|root)/[^\s]+"
-            },
+            "forbidden_content_patterns": forbidden_content_patterns
+            or {"local_path": r"/(?:home|root)/[^\s]+"},
             "python_roots": ["src/mmprism"],
             "forbidden_import_prefixes": ["src.fmcw"],
             "expected_entrypoints": {"mmprism": "mmprism.cli:main"},
@@ -115,6 +118,31 @@ def test_release_audit_detects_internal_import_cycle(tmp_path: Path) -> None:
     assert report["status"] == "failed"
     assert report["dependencies"]["cycles"] == [["mmprism.a", "mmprism.b"]]
     assert any(item["code"] == "IMPORT_CYCLE" for item in report["findings"])
+
+
+def test_release_audit_rejects_an_unsupported_model_claim(tmp_path: Path) -> None:
+    tracked = _write_project(tmp_path)
+    (tmp_path / "README.md").write_text(
+        "# Fixture\nSupported backend: " + "Phi" + "-3\n", encoding="utf-8"
+    )
+
+    report = audit_release(
+        _config(
+            forbidden_content_patterns={
+                "unsupported_language_backend": r"(?i)ph[i][-_ ]?3"
+            }
+        ),
+        project_root=tmp_path,
+        repository_snapshot=_snapshot(tracked),
+    )
+
+    assert report["status"] == "failed"
+    assert any(
+        finding["code"] == "FORBIDDEN_CONTENT"
+        and finding["path"] == "README.md"
+        and finding["line"] == 2
+        for finding in report["findings"]
+    )
 
 
 @pytest.mark.parametrize(

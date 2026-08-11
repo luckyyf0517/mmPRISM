@@ -99,6 +99,13 @@ materialized `simcse/` and `sbert/` directories plus their manifests.
 The wrapper defaults `HF_HUB_DISABLE_XET=1` after an observed stalled Xet transfer; explicitly set it
 to `0` before invocation if a deployment has a validated Xet path.
 
+## Language Model Support
+
+No language-generation backend is currently advertised as runnable in the canonical package. mT5 is
+the selected rebuild target, and the reviewer release deliberately remains blocked until its portable
+train/generate/evaluate smoke exists. Historical alternative backend definitions are excluded from the
+release rather than exposed as unverified classes or configuration.
+
 ## Canonical Layout
 
 ```text

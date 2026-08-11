@@ -32,6 +32,7 @@ Role: `cross_workstream_decisions`
 | `DEC-024` | 2026-08-11 | canonical radar v1 先冻结显式张量轴并只实现 NumPy range-Doppler，beamforming 等 provenance 恢复后再实现 | 稿件与 legacy 在 chirp 数、带宽、clutter 顺序、116/86 阵列和 `A^H` 共轭上冲突 | accepted | 新处理器不硬编码 64/32，保留复数精度；beamforming、物理轴和 simulation 保持 blocked，不能据此声称完整 4D cube 已复现 |
 | `DEC-025` | 2026-08-11 | reviewer release 从 Git tracked allowlist 构建并自动审计，不直接复制开发仓库 | legacy、CLAUDE、manager、manuscript 和私有运维配置仍需取证但不得进入公开包 | accepted | 每个 selected file 绑定 hash；检查 required/forbidden path、绝对路径/凭据、entrypoint、missing/legacy import 和 cycle；LICENSE/model download/radar+mT5 examples 缺失时 release 必须失败 |
 | `DEC-026` | 2026-08-11 | evaluator 模型通过 fixed HF commit、selected-file checksum manifest 和原子晋升管理 | moving `main` 与手写 wget 文件清单不能证明下载完整，历史脚本也遗漏 SBERT | accepted | canonical `scripts/download_models.sh` 同时准备 SimCSE/SBERT；坏 final 不覆盖，重复运行先复验；权重不进入 reviewer Git archive，按上游 license 下载 |
+| `DEC-027` | 2026-08-11 | canonical caption-generation 只以 mT5 为重建目标，Phi-3 不列为 supported backend | legacy Phi-3 只有底层类，无 runnable config/train/eval/checkpoint evidence；greenfield 重构无需保留伪支持 | accepted | reviewer release 排除 legacy 类和 claim，并以 content gate 防止回流；只有完成 canonical contract、配置、训练/生成/评测与 provenance 后才可重新提案 |
 
 ## 决策记录模板
 
