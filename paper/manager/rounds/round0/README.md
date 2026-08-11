@@ -16,7 +16,7 @@ Role: `round0_control`
 | Manuscript intake | `PAPER-001B` | in_progress | current manuscript/supplement static inventory complete; original submission and display provenance pending |
 | Asset discovery | `DATA-001` | in_progress | CSL-News source download active; private data/checkpoint/result inventory pending |
 | Runtime bootstrap | `OPS-001` | done | UV/Python 3.12/cu128 lock + wheel + A100 smoke |
-| Greenfield foundation | `ARCH-001`, `ARCH-002` | in_progress | pyproject + strict config + contracts + CLI + CPU tests |
+| Greenfield foundation | `ARCH-001`, `ARCH-002` | in_progress | pyproject + strict config + contracts + CLI + side-effect-free formal preflight + CPU tests |
 | Canonical smoke | `EXP-001` | evidence_ready | OmniHand + WaveLLM clean-commit synthetic formal train/eval passed；real-data reproduction moves to `EXP-003` |
 | Management control plane | documentation bootstrap | done | `paper/manager/` |
 
@@ -34,6 +34,8 @@ Role: `round0_control`
 - `PAPER-AUDIT-001` 已登记当前 19 个 environment 中的 20 个 display item（主文 9、supplementary 11）；主文引用完整，
   supplementary ZIP CRC 通过，Availability 缺失和 30 个语言命中已进入独立清单。
 - 作者确认不保留旧训练链兼容；新实现以 `src/mmprism` 为唯一主线，legacy 代码只读取证。
+- clean commit `766453b` 已通过 formal preflight/split provenance 验收：187 tests、Ruff、Mypy 全绿，
+  真实 `mmprism.prepare` 在 clean Git 上通过且未创建 artifact/cache 目标。
 
 ## Exit Criteria
 

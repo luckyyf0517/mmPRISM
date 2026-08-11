@@ -11,8 +11,8 @@ Role: `architecture_execution_tracker`
 | `ARCH-001-C` | P0 | 定义 radar、pose、feature、caption 的 shape/dtype contract | evidence_ready | explicit axes/dtype/finite/value/unit/coordinate-frame validators 与 9 项 contract tests 通过 |
 | `ARCH-002-A` | P1 | 建立 `pyproject.toml` 和版本锁定方案 | done | Python 3.12、UV lock、research extras、wheel 与 A100 smoke 通过 |
 | `ARCH-002-B` | P1 | 建立 strict typed config 与 validation | evidence_ready | unknown key、类型、环境路径和 protocol version 启动前校验 |
-| `ARCH-002-C` | P1 | 建立统一 path/runtime/run config | evidence_ready | path/runtime/run-plan 与原子 formal-run writer 已落地；resolved config、Git/environment、命令、输入 hash、metric protocol/status contract 通过 |
-| `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | in_progress | OmniHand/WaveLLM train/evaluate 与既有 doctor/config/manifest/plan/run-init/split/release/model/CSL-News 命令已落地；prepare 待实现 |
+| `ARCH-002-C` | P1 | 建立统一 path/runtime/run config | evidence_ready | path/runtime/run-plan、原子 writer、manifest/split membership 与 split input provenance 已落地；resolved config、Git/environment、命令、输入 hash、metric protocol/status contract 通过 |
+| `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | evidence_ready | clean commit `766453b` 的 `mmprism.prepare` 以 JSON 报告验证 config/Git/destination/hash/manifest/split 且不创建目录；OmniHand/WaveLLM train/evaluate 重复 split gate；`EVID-CODE-FORMAL-PREFLIGHT-V1` |
 | `ARCH-003-A` | P1 | 实现 manifest-driven dataset adapters | in_progress | CSL-News source-manifest v2 真实 104,658-record snapshot、pose+caption adapter 与 dependency-light SplitIndex 已通过；待其他数据族/radar adapter |
 | `ARCH-003-B` | P1 | 从明确契约实现 Processor/Simulation | in_progress | NumPy range-Doppler 与 17 项 analytic/error tests 通过；beamforming/physical axes/simulation 等 provenance 后实现 |
 | `ARCH-004-A` | P1 | 实现 canonical OmniHand model/training/evaluation | evidence_ready | 模型 smoke 与 clean commit `81e9b89` A100/BF16 formal train/checkpoint/reload/evaluate、prediction replay 和独立审计均通过；待真实 manifest |

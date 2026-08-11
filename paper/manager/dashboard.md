@@ -49,12 +49,15 @@ Role: `control_panel`
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.1 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；182 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；187 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run writer 与 OmniHand/WaveLLM single-device train/evaluate 已实现：原子冻结
   config/Git/environment/输入哈希，写入 Safetensors、history、runtime/performance、逐样本 prediction
   和版本化 count-weighted metrics；OmniHand `81e9b89` 的 13-gate 与 WaveLLM `e31000b` 的 250-gate
   A100/BF16 独立审计均通过。真实数据、resume、分布式和 production language metrics 仍待完成。
+- clean commit `766453b` 已增加 side-effect-free `mmprism.prepare` 和 formal split provenance：真实 CLI
+  验证 config/Git/destination/input hash、manifest/split contract、显式 membership 和无重叠，执行前后
+  artifact/cache 目标均不存在；两条正式训练/评估路径会重复 gate 并记录 assignment SHA-256。
 - fixed-revision SimCSE/SBERT downloader 已完成 14-file checksum manifest；clean commit `3ae69c3`
   上两个真实 CPU loader 均输出 finite `[2,768]` embedding，`ARCH-REV-002` 已达到 evidence ready。
 - clean commit `79b45b5` 上已完成 pinned mT5-base 资产和 A100 两步 geometry-fusion smoke：三路
@@ -96,7 +99,7 @@ Role: `control_panel`
 2. 执行 `DATA-001-K/DATA-005-A`，下载 promotion 和标注前都做完整 ZIP gate；只对通过清单生成 pose。
 3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
-4. 继续 `ARCH-001/002`：实现 prepare，并为 OmniHand/WaveLLM 补 resume、distributed
+4. 继续 `ARCH-006-A`：为 OmniHand/WaveLLM 补 resume、distributed
    prediction/checkpoint aggregation 和 real-data integration。
 5. 为 `ARCH-003` 收集 radar acquisition/channel/calibration 证据；绑定真实 manifest fixture 后实现
    beamforming 与完整 cube gate，禁止用 legacy 默认值填补未知项。

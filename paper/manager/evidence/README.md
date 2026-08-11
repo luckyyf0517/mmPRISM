@@ -21,6 +21,7 @@ Last Updated: `2026-08-11`
 - `omnihand_vertical_smoke.md`：canonical CubeNet/OmniHand 两步 GPU smoke、pose metric 和非论文证据边界。
 - `omnihand_formal_run.md`：clean-commit A100 上 train/checkpoint/reload/prediction/evaluate 正式闭环证据。
 - `wavellm_formal_run.md`：clean-commit A100 上 mT5 adapter train/checkpoint/reload/prediction/evaluate 正式闭环证据。
+- `formal_run_preflight.md`：统一无副作用 preflight、manifest/split membership 和 formal input provenance 证据。
 - `artifacts/manuscript_inventory_v2.json`：由审计工具生成的逐文件、逐行、逐 display item 机器可读 inventory。
 - `artifacts/manuscript_inventory_v1.json`：首次环境级审计的历史快照，不再作为当前 canonical inventory。
 - `artifacts/release_audit_v1.json`：clean commit 上生成的 reviewer release 机器可读预审报告。

@@ -37,7 +37,10 @@ tests/
 ```
 
 当前 foundation 已包含 strict config、环境变量展开、manifest v1、无副作用 run plan、runtime
-provenance、原子 formal-run artifact writer、统一 CLI 和 dependency-light unit tests。正式 run 现可
+provenance、原子 formal-run artifact writer、统一 CLI、formal-run preflight 和 dependency-light unit tests。
+clean commit `766453b` 上的 `mmprism.prepare` 已验证 clean Git、source config、data/destination、输入
+hash、manifest/split contract、manifest 无重叠和显式 split membership，且执行前后未创建计划目录。
+OmniHand/WaveLLM train/evaluate 会重复 membership gate，并把 assignment 注册为 formal input。正式 run 现可
 冻结 resolved config、环境/Git、命令以及 manifest/split/checkpoint/model 输入 SHA-256，并以显式
 metric protocol 写入有限数值；domain writer 还可原子写入 strict JSON/JSONL，并登记外部原子完成的
 checkpoint 等顶层 artifact。Model-ready pose adapter 现严格读取 manifest 绑定的 radar-cube/metric-pose
@@ -71,8 +74,8 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-173 tests passed（含 annotation identity/quarantine、OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
-doctor/config/plan/manifest/split CLI passed
+187 tests passed（含 formal preflight/split binding、annotation identity/quarantine、OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
+doctor/config/plan/prepare/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
 canonical-to-legacy import scan passed
@@ -104,6 +107,7 @@ All five v2 snapshot checksums, general manifest contract, and first/middle/last
 Partial sequence split passed 2,157/2,157 coverage and zero cross-split group leakage
 All 2,157 group IDs and assignment buckets independently recomputed and matched
 Formal run initialization atomically writes config/environment/input hashes and refuses collisions
+Clean `mmprism prepare` at `766453b` passed manifest/split membership and left artifact/cache roots absent
 Metrics require a versioned protocol, sample count and finite values; completed runs require metrics
 Pinned SimCSE/SBERT acquisition passed 14-file checksum validation and real CPU `[2,768]` loader smoke
 Pinned mT5-base acquisition passed 6-file checksum validation at immutable revision `2eb15465...`
