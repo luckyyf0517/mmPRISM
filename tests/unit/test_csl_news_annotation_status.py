@@ -1,0 +1,135 @@
+import hashlib
+import json
+import tempfile
+import unittest
+import zipfile
+from pathlib import Path
+
+import numpy as np
+
+from mmprism.data import (
+    CslNewsAnnotationConfig,
+    build_csl_news_annotation_status,
+    load_csl_news_annotation_config,
+    write_csl_news_annotation_status,
+)
+
+
+class CslNewsAnnotationStatusTest(unittest.TestCase):
+    def _config(self, root: Path) -> CslNewsAnnotationConfig:
+        path = root / "status.yaml"
+        path.write_text(
+            f"""schema_version: mmprism.csl_news_pose_annotation.v1
+source:
+  archive_root: {root / 'archives'}
+  labels_path: {root / 'labels.json'}
+  source_id: fixture
+  source_revision: revision
+  expected_archive_count: 1
+model:
+  mmpose_root: {root / 'mmpose'}
+  mmpose_commit: commit
+  project_dir: {root / 'project'}
+  config_path: {root / 'model.py'}
+  checkpoint_path: {root / 'model.pth'}
+  checkpoint_sha256: {'a' * 64}
+  device: cuda:0
+transform:
+  crop_top: 20
+  crop_left: 20
+  crop_right: 20
+  confidence_threshold: 0.3
+runtime:
+  output_root: {root / 'output'}
+  scratch_root: {root / 'scratch'}
+  worker_index: 0
+  worker_count: 1
+  poll_seconds: 60
+  min_free_bytes: 0
+  max_consecutive_oom: 2
+""",
+            encoding="utf-8",
+        )
+        return load_csl_news_annotation_config(path, root)
+
+    def _write_fixture(self, root: Path) -> tuple[CslNewsAnnotationConfig, Path]:
+        config = self._config(root)
+        config.source.archive_root.mkdir(parents=True)
+        with zipfile.ZipFile(config.source.archive_root / "archive_001.zip", "w") as archive:
+            archive.writestr("first.mp4", b"video-one")
+            archive.writestr("second.mp4", b"video-two")
+
+        sample_root = config.runtime.output_root / "samples" / "archive_001"
+        sample_root.mkdir(parents=True)
+        artifact_path = sample_root / "sample.npz"
+        frame_count = 2
+        np.savez_compressed(
+            artifact_path,
+            native_keypoints_3d=np.zeros((frame_count, 133, 3), dtype=np.float32),
+            native_keypoint_scores=np.ones((frame_count, 133), dtype=np.float32),
+            transformed_keypoints_2d=np.zeros((frame_count, 133, 2), dtype=np.float32),
+            frame_indices=np.arange(frame_count, dtype=np.int64),
+            timestamps_seconds=np.arange(frame_count, dtype=np.float64) / 25,
+            canonical_pose=np.zeros((frame_count, 2, 24, 3), dtype=np.float32),
+            canonical_confidence=np.ones((frame_count, 2, 24), dtype=np.float32),
+            canonical_valid=np.ones((frame_count, 2, 24), dtype=np.bool_),
+        )
+        checksum = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+        (sample_root / "sample.json").write_text(
+            json.dumps(
+                {
+                    "status": "completed",
+                    "generated_at": "2026-08-11T14:00:00+00:00",
+                    "sample_id": "sample",
+                    "config_fingerprint": config.fingerprint,
+                    "annotation": {"text": "测试文本"},
+                    "video": {"decoded_frame_count": frame_count},
+                    "elapsed_seconds": 1.0,
+                    "artifact": {"sha256": checksum},
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        run_root = config.runtime.output_root / "runs"
+        run_root.mkdir(parents=True)
+        (run_root / "run_fixture.json").write_text(
+            json.dumps({"started_at": "2026-08-11T13:59:00+00:00"}),
+            encoding="utf-8",
+        )
+        return config, artifact_path
+
+    def test_reports_progress_and_validates_recent_sample(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config, artifact_path = self._write_fixture(Path(directory))
+            artifact_path.with_name(".sample.npz.tmp.123.npz").write_bytes(b"partial")
+            report = build_csl_news_annotation_status(config, sample_validate_count=1)
+
+        self.assertEqual(report["status"], "healthy")
+        self.assertEqual(report["source"]["complete_archive_count"], 1)
+        self.assertEqual(report["source"]["available_video_count"], 2)
+        self.assertEqual(report["annotation"]["completed_sample_count"], 1)
+        self.assertEqual(report["annotation"]["npz_count"], 1)
+        self.assertEqual(report["annotation"]["remaining_available_sample_count"], 1)
+        self.assertEqual(report["sample_validation"]["passed"], 1)
+
+    def test_reports_missing_sidecar_as_attention_required(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config, artifact_path = self._write_fixture(Path(directory))
+            artifact_path.with_suffix(".json").unlink()
+            report = build_csl_news_annotation_status(config, sample_validate_count=0)
+
+        self.assertEqual(report["status"], "attention_required")
+        self.assertEqual(report["annotation"]["missing_sidecar_count"], 1)
+
+    def test_writes_status_atomically(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "reports" / "status.json"
+            written = write_csl_news_annotation_status({"status": "healthy"}, output)
+            payload = json.loads(written.read_text(encoding="utf-8"))
+
+        self.assertEqual(payload, {"status": "healthy"})
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -103,6 +103,16 @@ systemctl --user status mmprism-csl-news-annotation.service
 journalctl --user -u mmprism-csl-news-annotation.service -f
 ```
 
+机器可读状态快照由独立 CPU-only 命令生成，不导入 MMPose/PyTorch，也不读取隐藏临时文件：
+
+```bash
+scripts/run_csl_news_annotation_status.sh
+systemctl --user status mmprism-csl-news-annotation-status.timer
+```
+
+快照保存在 `.../rtmw3d_l_794dbc78_v1/reports/status_<UTC>.json`，包括 archive/video
+可用量、成功/失败/缺失配对、latest run 吞吐和 ETA，以及最近 3 个样本的 contract/checksum 校验。
+
 ## 8. 次晨验收
 
 - 服务状态、实际 GPU、下载与标注并行状态；
@@ -123,3 +133,6 @@ journalctl --user -u mmprism-csl-news-annotation.service -f
 - `2026-08-11T14:41Z` 健康检查：`active/running`、`NRestarts=0`、GPU memory 约 838 MiB，
   累计 19 个成功 NPZ。抽查最近 3 个样本的 shape、finite values、非空文本和 SHA-256 均通过。
 - failure 目录中保留 2 个正式启动前的依赖诊断记录；最终恢复后未观察到新增失败。
+- `2026-08-11T14:47Z` 首份修正后 status report 为 `healthy`：10 个完整 archive、
+  16,476 个可用视频、101 个成功样本、当前 run 新增失败 0、缺失配对 0、抽样 3/3 通过；
+  近期约 786 samples/hour、59.1 frames/s，当前已下载 archive ETA 约 20.8 小时。

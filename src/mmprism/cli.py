@@ -10,8 +10,10 @@ from mmprism.data import (
     CslNewsAnnotationError,
     CslNewsAuditError,
     audit_csl_news_archive,
+    build_csl_news_annotation_status,
     load_csl_news_annotation_config,
     run_csl_news_annotation,
+    write_csl_news_annotation_status,
     write_csl_news_audit,
 )
 from mmprism.runtime import build_run_plan, collect_runtime_report, discover_project_root
@@ -57,6 +59,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--once", action="store_true", help="Process currently complete archives and exit"
     )
 
+    status_parser = subparsers.add_parser(
+        "csl-news-annotation-status",
+        help="Summarize CSL-News annotation progress and output integrity",
+    )
+    status_parser.add_argument("config", type=Path)
+    status_parser.add_argument("--project-root", type=Path)
+    status_parser.add_argument("--sample-validate", type=int, default=3)
+    status_parser.add_argument("--recent-window", type=int, default=200)
+    status_parser.add_argument("--output", type=Path)
+
     return parser
 
 
@@ -98,7 +110,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             write_csl_news_audit(payload, arguments.output)
             exit_code = 0 if payload["status"] == "passed" else 1
-        else:
+        elif arguments.command == "csl-news-annotate":
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
@@ -114,6 +126,23 @@ def main(argv: Sequence[str] | None = None) -> int:
                 archive_id=arguments.archive_id,
             )
             exit_code = 0 if payload["failed"] == 0 else 1
+        else:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            annotation_config = load_csl_news_annotation_config(
+                arguments.config, project_root
+            )
+            payload = build_csl_news_annotation_status(
+                annotation_config,
+                sample_validate_count=arguments.sample_validate,
+                recent_window=arguments.recent_window,
+            )
+            if arguments.output:
+                write_csl_news_annotation_status(payload, arguments.output)
+            exit_code = 0 if payload["status"] == "healthy" else 1
     except (
         ConfigError,
         ManifestError,

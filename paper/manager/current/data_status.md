@@ -194,3 +194,12 @@ canonical pose annotation 使用 `configs/data/csl_news_rtmw3d_overnight.yaml` �
 `paper/manager/runbooks/csl_news_annotation_overnight.md`。首个真实样本生成 125 帧原生
 `[T,133,3]` 与 canonical `[T,2,24,3]`，全部数值有限，峰值显存约 262 MiB；正式输出和
 scratch 在次晨人工检查前全部保留。
+
+夜间 worker 固定 GPU 7，运行后由 `csl-news-annotation-status` 做只读健康快照。
+`2026-08-11T14:47Z` 报告为 `healthy`：10 个完整 archive、16,476 个当前可用视频、
+101 个成功样本、latest run 新增失败 0、缺失 artifact/sidecar 0、抽样校验 3/3 通过。
+报告目录为：
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1/reports/
+```
