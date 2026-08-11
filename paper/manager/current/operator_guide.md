@@ -62,6 +62,15 @@ du -sh /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121
 
 `.part` 表示可恢复的未完成文件。不要手工重命名、解压或运行 legacy cleanup/check 脚本。
 
+当前 archive 和 metadata service 使用 aria2。运行参数为 4 个 archive worker、每文件 8 个连接；
+`MMPRISM_ARIA2_BIN` 和可选 `MMPRISM_ARIA2_LIBRARY_PATH` 由 systemd service 注入。切回 curl 时使用：
+
+```bash
+scripts/download_csl_news.sh --engine curl --workers 16
+```
+
+切换引擎不得删除 `.part`；两个引擎都只在命令成功后执行最终原子重命名。
+
 明早 source-audit trial：
 
 ```bash

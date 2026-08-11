@@ -171,8 +171,9 @@ systemctl --user status mmprism-csl-news-metadata.service
 systemctl --user status mmprism-csl-news-archives.service
 ```
 
-下载使用 `scripts/download_csl_news.sh`，16 worker、断点续传、`.part` 原子完成、只下载不解压，
-并保留至少 1 TiB 可用空间。Legacy 预处理链与接口冲突见
+下载使用 `scripts/download_csl_news.sh`，当前引擎为 aria2：4 个 archive worker、每文件 8 个连接、
+断点续传、`.part` 原子完成、只下载不解压，并保留至少 1 TiB 可用空间。切换前短时基准中，
+单个 aria2 传输稳定约 3.4 MiB/s，原 16 路 curl 同窗口合计约 4.7 MB/s。Legacy 预处理链与接口冲突见
 `../../../docs/architecture/csl_news_data.md`。
 
 首批只读审计由 `scripts/run_csl_news_source_trial.sh` 执行，产物写入：

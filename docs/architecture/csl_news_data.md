@@ -25,6 +25,12 @@ The official RGB source is being downloaded without extraction to:
 The download is resumable and managed by `scripts/download_csl_news.sh`. Archives remain immutable until
 checksum, ZIP integrity, label coverage and license metadata are validated.
 
+The downloader supports `curl` and `aria2` engines. The active intake uses four archive workers with eight
+aria2 connections per archive after a controlled benchmark showed about 3.4 MiB/s for one aria2 transfer
+while the previous sixteen single-connection curl transfers delivered about 4.7 MB/s in aggregate. Existing
+curl `.part` files are contiguous prefixes and are resumed by aria2; the final atomic rename contract is
+unchanged.
+
 ## Legacy Preprocessing Flow
 
 The following describes the code that exists in the historical implementation. It is forensic evidence, not
