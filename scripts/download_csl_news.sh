@@ -148,7 +148,7 @@ run_aria2() {
     --retry-wait=10
     --connect-timeout=30
     --timeout=300
-    --lowest-speed-limit=1K
+    --lowest-speed-limit=0
     --summary-interval=30
     --dir="$(dirname "$part_path")"
     --out="$(basename "$part_path")"
