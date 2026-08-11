@@ -49,7 +49,7 @@ Role: `control_panel`
   adapter 梯度/参数更新、置信度反事实和 beam generation 均通过；该 artifact 明确不是论文结果。
 - clean commit `688d44d` 上 canonical CubeNet/OmniHand 两步 A100 smoke 已两次确定性通过：depthwise
   spatial、8-layer/16-head temporal 和 pose head 均有非零梯度/更新，single-frame 与 mask 反事实通过。
-- WaveLLM formal implementation 后的 clean release audit 已验证 105 个逐文件 hash 和 50-module/
+- clean commit `30946d9` 的 release audit 已验证 105 个逐文件 hash 和 50-module/
   102-edge dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。mT5/WaveLLM 缺失项已关闭，
   reviewer profile 现只被 LICENSE 和 provenance-gated radar example 两项真实缺失阻塞。
 - `DEC-027` 已固定 mT5-only generation rebuild；legacy Phi-3 不进入 public support，clean commit

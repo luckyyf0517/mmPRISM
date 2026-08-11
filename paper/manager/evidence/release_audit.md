@@ -10,20 +10,22 @@ Evidence ID: `EVID-CODE-RELEASE-V1`
 ```text
 schema: mmprism.release_audit_report.v1
 release profile: reviewer_release_v1
-builder commit: 81e9b89896a25bc26eece5f789b9a842004a4d4a
+builder commit: 30946d92c6977e95a0d8e8a72fce391e1369ae5a
 builder Git state: clean
 config: configs/release/reviewer_release_v1.yaml
-config fingerprint: 1126cd2a33a6ef0a18c6271e3a12cd29888a724d8df2074bf52b040beb4a699a
+config fingerprint: 0c3ff43885d441ef1af918b1f57d38be8677e8b1919d620978a2775d2cd3915d
 artifact: paper/manager/evidence/artifacts/release_audit_v1.json
-artifact SHA-256: f569badc56555ac2dc936c7f74881fcefaf442eb44bd89a49f662fe6ea533a17
+artifact SHA-256: a4721a73cdcfe0d2f0150fb3fabfc99e82c3c1d1b7210e801de75c9950c6bdab
 status: failed (expected blockers retained)
 ```
 
 Reproduction command:
 
 ```bash
-uv run mmprism release-audit configs/release/reviewer_release_v1.yaml \
-  --output paper/manager/evidence/artifacts/release_audit_v1.json
+uv run --frozen --extra train mmprism release-audit \
+  configs/release/reviewer_release_v1.yaml \
+  --project-root "$PWD" \
+  --output /tmp/mmprism-release-audit.json
 ```
 
 Exit code `1` means the structured audit completed but the release gate did not pass. Configuration or
@@ -33,13 +35,13 @@ execution failure would return `2`.
 
 | Gate | Result |
 |---|---:|
-| Git tracked files inspected | 285 |
-| release-selected files | 94 |
-| selected bytes | 881,507 |
-| selected files with size + SHA-256 | 94/94 |
-| tracked internal/legacy paths explicitly excluded | 154 |
-| canonical Python modules | 46 |
-| internal dependency edges | 86 |
+| Git tracked files inspected | 301 |
+| release-selected files | 105 |
+| selected bytes | 1,005,026 |
+| selected files with size + SHA-256 | 105/105 |
+| tracked internal/legacy paths explicitly excluded | 158 |
+| canonical Python modules | 50 |
+| internal dependency edges | 102 |
 | missing canonical import targets | 0 |
 | canonical imports of forbidden legacy namespaces | 0 |
 | relative canonical imports | 0 |
@@ -49,7 +51,7 @@ execution failure would return `2`.
 | unsupported backend content hits | 0 |
 | expected `mmprism = mmprism.cli:main` entrypoint | matched |
 
-The 154 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
+The 158 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
 legacy entrypoints/configuration, legacy `src/*` namespaces, and internal operational scripts. They remain
 in the development repository for evidence recovery and are absent from the release selection.
 
@@ -75,6 +77,11 @@ recorded as `EVID-CODE-OMNIHAND-SMOKE-V1`.
 The current profile additionally selects the strict model-ready pose adapter, OmniHand formal run config,
 single-device train/evaluate orchestration, Safetensors support, and their tests. Clean-commit A100/BF16
 train/checkpoint/reload/evaluate evidence is recorded as `EVID-CODE-OMNIHAND-FORMAL-V1`.
+
+The profile now also selects strict sign-language-translation manifests, WaveLLM formal configs and
+launcher, the single-device train/evaluate implementation, character-metric protocol, and their tests.
+Clean-commit A100/BF16 adapter-checkpoint/reload/evaluate evidence is recorded as
+`EVID-CODE-WAVELLM-FORMAL-V1`.
 
 `scripts/download_models.sh` and `configs/models/evaluation_models_v1.yaml` are now selected and hashed
 by the release profile. Their fixed-revision download, checksum and two-loader execution evidence is

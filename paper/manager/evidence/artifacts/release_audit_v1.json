@@ -1,5 +1,5 @@
 {
-  "config_fingerprint": "1126cd2a33a6ef0a18c6271e3a12cd29888a724d8df2074bf52b040beb4a699a",
+  "config_fingerprint": "0c3ff43885d441ef1af918b1f57d38be8677e8b1919d620978a2775d2cd3915d",
   "dependencies": {
     "cycles": [],
     "external_imports": [
@@ -11,7 +11,7 @@
       "transformers",
       "yaml"
     ],
-    "internal_edge_count": 86,
+    "internal_edge_count": 102,
     "internal_edges": [
       [
         "mmprism.__main__",
@@ -82,6 +82,10 @@
         "mmprism.training.omnihand_smoke"
       ],
       [
+        "mmprism.cli",
+        "mmprism.training.wavellm_run"
+      ],
+      [
         "mmprism.config",
         "mmprism.config.loader"
       ],
@@ -140,6 +144,10 @@
       [
         "mmprism.data",
         "mmprism.data.pose_reconstruction"
+      ],
+      [
+        "mmprism.data",
+        "mmprism.data.sign_language_translation"
       ],
       [
         "mmprism.data",
@@ -214,12 +222,20 @@
         "mmprism.contracts"
       ],
       [
+        "mmprism.data.sign_language_translation",
+        "mmprism.contracts"
+      ],
+      [
         "mmprism.data.split",
         "mmprism.config"
       ],
       [
         "mmprism.data.split",
         "mmprism.contracts"
+      ],
+      [
+        "mmprism.evaluation",
+        "mmprism.evaluation.language"
       ],
       [
         "mmprism.evaluation",
@@ -284,6 +300,10 @@
       [
         "mmprism.training",
         "mmprism.training.omnihand_run_config"
+      ],
+      [
+        "mmprism.training",
+        "mmprism.training.wavellm_run_config"
       ],
       [
         "mmprism.training.mt5_config",
@@ -356,9 +376,53 @@
       [
         "mmprism.training.omnihand_smoke",
         "mmprism.training.omnihand_config"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.artifacts"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.assets"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.assets.models"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.data"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.evaluation"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.models"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.runtime"
+      ],
+      [
+        "mmprism.training.wavellm_run",
+        "mmprism.training.wavellm_run_config"
+      ],
+      [
+        "mmprism.training.wavellm_run_config",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.training.wavellm_run_config",
+        "mmprism.training.mt5_config"
       ]
     ],
-    "module_count": 46,
+    "module_count": 50,
     "modules": [
       "mmprism",
       "mmprism.__main__",
@@ -384,8 +448,10 @@
       "mmprism.data.csl_news_metadata",
       "mmprism.data.csl_news_pose_manifest",
       "mmprism.data.pose_reconstruction",
+      "mmprism.data.sign_language_translation",
       "mmprism.data.split",
       "mmprism.evaluation",
+      "mmprism.evaluation.language",
       "mmprism.evaluation.pose",
       "mmprism.models",
       "mmprism.models.cubenet",
@@ -405,7 +471,9 @@
       "mmprism.training.omnihand_config",
       "mmprism.training.omnihand_run",
       "mmprism.training.omnihand_run_config",
-      "mmprism.training.omnihand_smoke"
+      "mmprism.training.omnihand_smoke",
+      "mmprism.training.wavellm_run",
+      "mmprism.training.wavellm_run_config"
     ]
   },
   "entrypoints": {
@@ -424,9 +492,9 @@
       "path": "configs/examples/radar_smoke.yaml"
     }
   ],
-  "generated_at": "2026-08-11T20:19:53.721146+00:00",
+  "generated_at": "2026-08-11T20:59:10.612993+00:00",
   "git": {
-    "commit": "81e9b89896a25bc26eece5f789b9a842004a4d4a",
+    "commit": "30946d92c6977e95a0d8e8a72fce391e1369ae5a",
     "dirty_entry_count": 0,
     "state": "clean"
   },
@@ -440,9 +508,9 @@
         "sha256": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d"
       },
       {
-        "bytes": 10614,
+        "bytes": 11774,
         "path": "README.md",
-        "sha256": "9c7d1b9942baab69a460f01cbd1265a798caa0cae4fe794ee1b5735baf6a6ebb"
+        "sha256": "45702d0cf7996213f44bcd4f6291ada2193720ba3cb150d1202ab81bc547892c"
       },
       {
         "bytes": 710,
@@ -470,6 +538,16 @@
         "sha256": "a292312fa29b82fbd0e61623c008e68ecf2c831fb1b56795e8586c42ad531888"
       },
       {
+        "bytes": 704,
+        "path": "configs/examples/wavellm_train_smoke.yaml",
+        "sha256": "3f6d381f7aa759298ac0689d3b36c4ea853b3ee56f331af0f687add15a212efc"
+      },
+      {
+        "bytes": 354,
+        "path": "configs/examples/wavellm_train_smoke_experiment.yaml",
+        "sha256": "023a5d390f5a7c1c7f2758403dc99783c897b2dbbcd027b0fcf39e745d9af33a"
+      },
+      {
         "bytes": 851,
         "path": "configs/models/evaluation_models_v1.yaml",
         "sha256": "047e073ee0b511d0fe442177d9532eb56fd94b8acc4a5f2edbcc3426c223b464"
@@ -480,9 +558,9 @@
         "sha256": "e247779055482d99ce6cb82ecebc6620fe6bfadd0105bb68d00a10a614b6d5d7"
       },
       {
-        "bytes": 1905,
+        "bytes": 2074,
         "path": "configs/release/reviewer_release_v1.yaml",
-        "sha256": "3faa812a7696c6e9c49706aa2b50734b4fb39531a52f9d9022a9933ee944c0d4"
+        "sha256": "2abeb1fac9c98e7c0808ab0ce52767b0439f009136e7c4202c2cc27e12758dee"
       },
       {
         "bytes": 2539,
@@ -520,6 +598,11 @@
         "sha256": "dae48ff50244c22202bf2718087206e14d89b92e9f6bcf007b6a7c2f9bbd2241"
       },
       {
+        "bytes": 1015,
+        "path": "scripts/run_wavellm_train.sh",
+        "sha256": "5cd5cd372dd334e40778a2f14d1663c2a0a36445f84caa1410dd1fad92ab4bec"
+      },
+      {
         "bytes": 65,
         "path": "src/mmprism/__init__.py",
         "sha256": "746ea58e243e7c0faf1981b9113f2f4b25ec297a6f2cb26153848ecdebccd693"
@@ -550,9 +633,9 @@
         "sha256": "6e04b618bca8fbd740bf77e6d169fca664e74bb4ff8c32853438e98ab25dbd6d"
       },
       {
-        "bytes": 26708,
+        "bytes": 30833,
         "path": "src/mmprism/cli.py",
-        "sha256": "0cc1d0593ddd5ec457540029f8794ac7958bb9028d44902a88297e334e152feb"
+        "sha256": "d0c8e5908c17fa6e8f24f02a39792e933fae6c3ae8d479ecac1316a5e05bd282"
       },
       {
         "bytes": 339,
@@ -590,9 +673,9 @@
         "sha256": "27996a2d5e31462601ae80e17540c6bbcce7274261c700f65318d90c67b11173"
       },
       {
-        "bytes": 4413,
+        "bytes": 5482,
         "path": "src/mmprism/data/__init__.py",
-        "sha256": "2e674fa1fb0d6814a26f7934747cbe913b7ff2eac543e295e7ab83a247e48869"
+        "sha256": "34638cac93753f0ea3448b87e3e80521e39233690b75b524e623dca0a57ea646"
       },
       {
         "bytes": 14893,
@@ -640,14 +723,24 @@
         "sha256": "6b9724a34d54162d8df82ccb33b1b8b3f822e9f4801d2f2e6f691cd63a7463c3"
       },
       {
+        "bytes": 20656,
+        "path": "src/mmprism/data/sign_language_translation.py",
+        "sha256": "7d70bcf7c55825f21f026ab47d94a035e972101cd08845a24a6d345799962f40"
+      },
+      {
         "bytes": 19337,
         "path": "src/mmprism/data/split.py",
         "sha256": "bdaaa6b538d5490e432dab9da3acc789815980718ac25d9e66ebf44e27fdafaf"
       },
       {
-        "bytes": 438,
+        "bytes": 2254,
         "path": "src/mmprism/evaluation/__init__.py",
-        "sha256": "e277aa92eb139c2e9f24bc3463d5e927bedf051a631b0728f340901a592a6e96"
+        "sha256": "ffad499d487caefc17432668909b4f135bfdeb73e9a02c1f9f602785dbf44502"
+      },
+      {
+        "bytes": 4153,
+        "path": "src/mmprism/evaluation/language.py",
+        "sha256": "e8a68e374ae7d2ffff82fab49cf48221148c08a287d1291fd32de27fe9a8098d"
       },
       {
         "bytes": 7081,
@@ -720,9 +813,9 @@
         "sha256": "0a125f2f4511b426ef2ccac8e2881dee08497b8d2aeacbc902b8aaf35b664322"
       },
       {
-        "bytes": 1724,
+        "bytes": 2228,
         "path": "src/mmprism/training/__init__.py",
-        "sha256": "137eb1a23e73b1eb07abcfe0eb76a9cd2d7d5b840a2e2bded9dbbb9da5ee0ac1"
+        "sha256": "10df64fb3d58fef31382503b53a2b0e43962b4b07fa65e0682433463a69398de"
       },
       {
         "bytes": 12568,
@@ -755,6 +848,16 @@
         "sha256": "c2823c8280e630d68cd2ac2341643f164cbc2e962187c7e35e0f4bf1620e22f9"
       },
       {
+        "bytes": 45193,
+        "path": "src/mmprism/training/wavellm_run.py",
+        "sha256": "1a831eb4c3d2acd491a5ae6de08a184b18682e2e7ac2df903debb71a490628ef"
+      },
+      {
+        "bytes": 10718,
+        "path": "src/mmprism/training/wavellm_run_config.py",
+        "sha256": "a1041aa012c6e635023798607145e30823b785a4123491789061e943a66da98d"
+      },
+      {
         "bytes": 412,
         "path": "tests/README.md",
         "sha256": "c726bbb8e970d73fdc3d12df5a7b1c2c451c82197f59f8d7b317befdc6e6c179"
@@ -783,6 +886,11 @@
         "bytes": 11363,
         "path": "tests/integration/test_omnihand_run.py",
         "sha256": "e8624aab87be50ddc499d32eeef0367a84ae518954fd81273ff73adcc1f7b83b"
+      },
+      {
+        "bytes": 21814,
+        "path": "tests/integration/test_wavellm_run.py",
+        "sha256": "e2447dc3d5a8fec2f03b915e2519767b0daf0e3a6947fb77d3b6a03dda6fe62d"
       },
       {
         "bytes": 10324,
@@ -833,6 +941,11 @@
         "bytes": 13176,
         "path": "tests/unit/test_csl_news_pose_manifest.py",
         "sha256": "f56668fade2c08cb2cf95fc226bc2ed2fd42655045480024092f4b0771afe78e"
+      },
+      {
+        "bytes": 2020,
+        "path": "tests/unit/test_language_metrics.py",
+        "sha256": "e61203865c29709206ab4e49294503dad023abcc9bf037365097a003a47130f3"
       },
       {
         "bytes": 2850,
@@ -895,9 +1008,19 @@
         "sha256": "6532b569fd8082317fa48296ccb270a79500d10b6d81f92ea771e1cd623a24a0"
       },
       {
+        "bytes": 5238,
+        "path": "tests/unit/test_sign_language_translation_data.py",
+        "sha256": "badc4f02d580d67df40e120fb95ae3d60b7292e0a667334fced0c49712bf3aaa"
+      },
+      {
         "bytes": 7767,
         "path": "tests/unit/test_split.py",
         "sha256": "4cd7c93d34bdab355d00d40b9be03c8aaf13b5c2aecb284125e8dd8575e61c8e"
+      },
+      {
+        "bytes": 2811,
+        "path": "tests/unit/test_wavellm_run_config.py",
+        "sha256": "3f7b070174d44733175ebc4eee5dac583bcd0a05c020334dfa5ef8fa9aa6a6a6"
       },
       {
         "bytes": 144206,
@@ -946,8 +1069,10 @@
       "paper/manager/evidence/artifacts/manuscript_inventory_v1.json",
       "paper/manager/evidence/artifacts/manuscript_inventory_v2.json",
       "paper/manager/evidence/artifacts/mt5_smoke_v1.json",
+      "paper/manager/evidence/artifacts/omnihand_formal_run_v1.json",
       "paper/manager/evidence/artifacts/omnihand_smoke_v1.json",
       "paper/manager/evidence/artifacts/release_audit_v1.json",
+      "paper/manager/evidence/artifacts/wavellm_formal_run_v1.json",
       "paper/manager/evidence/csl_news_metadata_profile.md",
       "paper/manager/evidence/csl_news_pose_manifest.md",
       "paper/manager/evidence/csl_news_pose_split.md",
@@ -960,10 +1085,12 @@
       "paper/manager/evidence/model_assets.md",
       "paper/manager/evidence/model_support_boundary.md",
       "paper/manager/evidence/mt5_vertical_smoke.md",
+      "paper/manager/evidence/omnihand_formal_run.md",
       "paper/manager/evidence/omnihand_vertical_smoke.md",
       "paper/manager/evidence/paper_evidence_map.md",
       "paper/manager/evidence/radar_contract_audit.md",
       "paper/manager/evidence/release_audit.md",
+      "paper/manager/evidence/wavellm_formal_run.md",
       "paper/manager/original_submission/README.md",
       "paper/manager/reviews/README.md",
       "paper/manager/reviews/analysis.md",
@@ -1061,10 +1188,10 @@
       "src/utils/tools.py",
       "src/utils/unzip_folders.py"
     ],
-    "forbidden_tracked_but_excluded_count": 154,
-    "selected_bytes": 881507,
-    "selected_file_count": 94,
-    "tracked_file_count": 285
+    "forbidden_tracked_but_excluded_count": 158,
+    "selected_bytes": 1005026,
+    "selected_file_count": 105,
+    "tracked_file_count": 301
   },
   "status": "failed"
 }
