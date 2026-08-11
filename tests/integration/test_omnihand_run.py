@@ -205,6 +205,7 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
         "metrics.json",
         "omnihand.resolved.json",
         "omnihand.runtime.json",
+        "performance.json",
         "predictions.jsonl",
         "run.json",
     }
@@ -218,6 +219,12 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
     assert run_payload["status"] == "completed"
     assert checkpoint_payload["weights"]["sha256"] == _sha256(train_run / "checkpoint.safetensors")
     assert checkpoint_payload["runtime"]["device"] == "cpu"
+    performance = json.loads((train_run / "performance.json").read_text(encoding="utf-8"))
+    assert performance["mode"] == "train"
+    assert performance["optimizer_steps"] == 1
+    assert performance["prediction_samples"] == 2
+    assert performance["cuda_memory"] is None
+    assert performance["end_to_end_seconds"] > 0
     assert [record["sample_id"] for record in predictions] == [
         "validation-001",
         "validation-002",
@@ -256,6 +263,11 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
     assert evaluation_metrics["split"] == "test"
     assert evaluation_metrics["sample_count"] == 2
     assert evaluation_result["metrics"] == evaluation_metrics["values"]
+    evaluation_performance = json.loads(
+        (evaluation_run / "performance.json").read_text(encoding="utf-8")
+    )
+    assert evaluation_performance["mode"] == "evaluate"
+    assert evaluation_performance["prediction_samples"] == 2
 
     tampered_checkpoint = tmp_path / "tampered.safetensors"
     tampered_checkpoint.write_bytes((train_run / "checkpoint.safetensors").read_bytes() + b"x")

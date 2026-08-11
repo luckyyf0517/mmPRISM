@@ -5,6 +5,7 @@ import math
 import os
 import random
 import re
+import time
 import uuid
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
@@ -42,6 +43,7 @@ from mmprism.training.omnihand_run_config import (
 OMNIHAND_CHECKPOINT_SCHEMA = "mmprism.omnihand_checkpoint.v1"
 OMNIHAND_HISTORY_SCHEMA = "mmprism.omnihand_history.v1"
 OMNIHAND_PREDICTION_SCHEMA = "mmprism.pose_prediction.v1"
+OMNIHAND_PERFORMANCE_SCHEMA = "mmprism.omnihand_performance.v1"
 OMNIHAND_RUN_RESULT_SCHEMA = "mmprism.omnihand_run_result.v1"
 OMNIHAND_RUNTIME_SCHEMA = "mmprism.omnihand_runtime.v1"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -185,6 +187,15 @@ def _runtime_payload(
         "torch_version": torch.__version__,
         "cuda_runtime": torch.version.cuda,
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+    }
+
+
+def _cuda_memory_payload(device: torch.device) -> dict[str, int] | None:
+    if device.type != "cuda":
+        return None
+    return {
+        "peak_allocated_bytes": torch.cuda.max_memory_allocated(device),
+        "peak_reserved_bytes": torch.cuda.max_memory_reserved(device),
     }
 
 
@@ -564,6 +575,7 @@ def train_omnihand(
     runtime_report: Mapping[str, Any] | None = None,
     created_at: datetime | None = None,
 ) -> dict[str, object]:
+    run_started = time.perf_counter()
     writer, paths, input_hashes, report = _prepare_run(
         experiment_config,
         task_config,
@@ -606,6 +618,8 @@ def train_omnihand(
 
         device = _resolve_device(resolved_experiment.runtime)
         _seed_runtime(resolved_experiment.runtime.seed, resolved_experiment.runtime.deterministic)
+        if device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(device)
         model = _build_model(task_config).to(device)
         actual_runtime = _runtime_payload(model, resolved_experiment.runtime, device)
         writer.write_json_artifact("omnihand.runtime.json", actual_runtime)
@@ -623,6 +637,7 @@ def train_omnihand(
             seed=resolved_experiment.runtime.seed,
             device=device,
         )
+        training_started = time.perf_counter()
         history, global_step = _train_model(
             model,
             train_loader,
@@ -631,6 +646,7 @@ def train_omnihand(
             device=device,
             precision=resolved_experiment.runtime.precision,
         )
+        training_seconds = time.perf_counter() - training_started
 
         weights_path = writer.artifact_path("checkpoint.safetensors")
         weights_sha256 = _save_checkpoint(model, weights_path)
@@ -654,6 +670,7 @@ def train_omnihand(
         accumulator = PoseMetricAccumulator(
             pck_threshold_mm=task_config.evaluation.pck_threshold_mm
         )
+        prediction_started = time.perf_counter()
         writer.write_jsonl_artifact(
             "predictions.jsonl",
             _prediction_records(
@@ -666,6 +683,7 @@ def train_omnihand(
                 save_targets=task_config.evaluation.save_targets,
             ),
         )
+        prediction_seconds = time.perf_counter() - prediction_started
         metrics = accumulator.values()
         metric_values: dict[str, int | float] = {
             **metrics,
@@ -683,6 +701,24 @@ def train_omnihand(
                 "epochs_executed": len(history),
                 "records": history,
                 "final_validation": metrics,
+            },
+        )
+        writer.write_json_artifact(
+            "performance.json",
+            {
+                "schema_version": OMNIHAND_PERFORMANCE_SCHEMA,
+                "mode": "train",
+                "device": str(device),
+                "precision": resolved_experiment.runtime.precision,
+                "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+                "optimizer_steps": global_step,
+                "training_seconds": training_seconds,
+                "optimizer_steps_per_second": global_step / training_seconds,
+                "prediction_samples": accumulator.sample_count,
+                "prediction_seconds": prediction_seconds,
+                "prediction_samples_per_second": accumulator.sample_count / prediction_seconds,
+                "end_to_end_seconds": time.perf_counter() - run_started,
+                "cuda_memory": _cuda_memory_payload(device),
             },
         )
         writer.write_metrics(
@@ -725,6 +761,7 @@ def evaluate_omnihand(
     runtime_report: Mapping[str, Any] | None = None,
     created_at: datetime | None = None,
 ) -> dict[str, object]:
+    run_started = time.perf_counter()
     if split not in {"train", "validation", "test"}:
         raise OmniHandRunError("evaluation split must be train, validation, or test")
     writer, paths, _, _ = _prepare_run(
@@ -752,6 +789,8 @@ def evaluate_omnihand(
         _validate_manifest_for_model(manifest, task_config, role="evaluation")
         device = _resolve_device(resolved_experiment.runtime)
         _seed_runtime(resolved_experiment.runtime.seed, resolved_experiment.runtime.deterministic)
+        if device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(device)
         model = _build_model(task_config)
         checkpoint_sha256 = _load_checkpoint(
             model,
@@ -775,6 +814,7 @@ def evaluate_omnihand(
         accumulator = PoseMetricAccumulator(
             pck_threshold_mm=task_config.evaluation.pck_threshold_mm
         )
+        prediction_started = time.perf_counter()
         writer.write_jsonl_artifact(
             "predictions.jsonl",
             _prediction_records(
@@ -787,6 +827,7 @@ def evaluate_omnihand(
                 save_targets=task_config.evaluation.save_targets,
             ),
         )
+        prediction_seconds = time.perf_counter() - prediction_started
         metrics = accumulator.values()
         metric_values: dict[str, int | float] = {
             **metrics,
@@ -797,6 +838,21 @@ def evaluate_omnihand(
             split=split,
             values=metric_values,
             sample_count=accumulator.sample_count,
+        )
+        writer.write_json_artifact(
+            "performance.json",
+            {
+                "schema_version": OMNIHAND_PERFORMANCE_SCHEMA,
+                "mode": "evaluate",
+                "device": str(device),
+                "precision": resolved_experiment.runtime.precision,
+                "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+                "prediction_samples": accumulator.sample_count,
+                "prediction_seconds": prediction_seconds,
+                "prediction_samples_per_second": accumulator.sample_count / prediction_seconds,
+                "end_to_end_seconds": time.perf_counter() - run_started,
+                "cuda_memory": _cuda_memory_payload(device),
+            },
         )
         writer.finalize(status="completed")
     except KeyboardInterrupt as error:

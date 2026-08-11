@@ -69,7 +69,7 @@ A completed training run contains:
 
 - `omnihand.resolved.json` and `omnihand.runtime.json`;
 - `checkpoint.safetensors` and checksum-bound `checkpoint.json`;
-- `history.json`, streaming `predictions.jsonl`, and versioned `metrics.json`;
+- `history.json`, `performance.json`, streaming `predictions.jsonl`, and versioned `metrics.json`;
 - the generic resolved experiment, environment, input-hash, and run lifecycle artifacts.
 
 `mmprism omnihand-evaluate` registers the manifest, weights, metadata, and task config as independent

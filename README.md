@@ -22,7 +22,7 @@ Implemented foundation:
   mask-aware temporal aggregation, and versioned metric-pose evaluation;
 - a checksum-bound radar-cube/metric-pose adapter with variable-time collation;
 - single-device formal OmniHand train/evaluate services with Safetensors checkpoints, streaming
-  sample predictions, history, runtime identity, and count-weighted metrics;
+  sample predictions, history, runtime/performance identity, and count-weighted metrics;
 - pinned, checksummed SBERT and SimCSE evaluator-model acquisition;
 - pinned mT5-base acquisition plus a two-step pose/radar/fusion train-generate GPU smoke;
 - a single `mmprism` CLI surface;

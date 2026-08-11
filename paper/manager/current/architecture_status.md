@@ -50,7 +50,8 @@ pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamformin
 versioned pose metric；clean commit `688d44d` 上两次 A100 运行确定性通过。其 single-device formal
 service 已在 CPU fixture 上闭合 strict task config、clean-Git/input hash、train/validation manifest、
 mixed-precision orchestration、Safetensors checkpoint、history、streaming sample prediction、checkpoint
-reload/evaluate 和 tamper rejection；clean-commit GPU formal smoke 与真实数据仍待执行。Canonical mT5 工程切片
+reload/evaluate、tamper rejection 和独立耗时/吞吐/CUDA peak-memory artifact；clean-commit GPU formal
+smoke 与真实数据仍待执行。Canonical mT5 工程切片
 包含双手 ST-GCN、radar projector、confidence-aware fusion 和真实 mT5 forward/backward/generate；
 production data training、WaveLLM train/eval、checkpoint/prediction writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
 canonical dependency graph，并自动拒绝 legacy/internal path、硬编码本地路径、缺失 entrypoint 和 import cycle。
