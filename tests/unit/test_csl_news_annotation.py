@@ -18,6 +18,8 @@ from mmprism.data import (
 from mmprism.data.csl_news_annotation import (
     CslNewsAnnotationArtifactConflictError,
     _archive_integrity_provenance,
+    _completed_sidecar_targets_other_source,
+    _source_variant_artifact_paths,
     _write_npz_atomic,
     discover_complete_archives,
 )
@@ -247,6 +249,80 @@ runtime:
             self.assertTrue(
                 is_completed_annotation_sample(artifact, sidecar, "fingerprint")
             )
+
+    def test_resume_binds_source_and_routes_unbound_output_to_variant(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_csl_news_annotation_config(self._write_config(root), root)
+            artifact = root / "sample.npz"
+            size_bytes, checksum = _write_npz_atomic(
+                self._valid_arrays(), artifact
+            )
+            sidecar = root / "sample.json"
+            sidecar.write_text(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "config_fingerprint": "fingerprint",
+                        "source": {
+                            "archive_size_bytes": 10,
+                            "member_size_bytes": 20,
+                            "member_crc32": 30,
+                            "integrity": None,
+                        },
+                        "artifact": {
+                            "sha256": checksum,
+                            "size_bytes": size_bytes,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            current = {
+                "archive_sha256": "b" * 64,
+                "labels_sha256": "c" * 64,
+            }
+
+            self.assertFalse(
+                is_completed_annotation_sample(
+                    artifact,
+                    sidecar,
+                    "fingerprint",
+                    archive_size_bytes=10,
+                    member_size_bytes=20,
+                    member_crc32=30,
+                    source_integrity=current,
+                )
+            )
+            self.assertTrue(
+                _completed_sidecar_targets_other_source(
+                    sidecar, "fingerprint", current
+                )
+            )
+            payload = json.loads(sidecar.read_text(encoding="utf-8"))
+            payload["source"]["integrity"] = current
+            sidecar.write_text(json.dumps(payload), encoding="utf-8")
+            self.assertTrue(
+                is_completed_annotation_sample(
+                    artifact,
+                    sidecar,
+                    "fingerprint",
+                    archive_size_bytes=10,
+                    member_size_bytes=20,
+                    member_crc32=30,
+                    source_integrity=current,
+                )
+            )
+            variant_npz, variant_sidecar = _source_variant_artifact_paths(
+                config, "archive_005.zip", "sample", current
+            )
+
+        self.assertEqual(
+            variant_npz.name, f"sample--source_{'b' * 64}.npz"
+        )
+        self.assertEqual(
+            variant_sidecar.name, f"sample--source_{'b' * 64}.json"
+        )
 
     def test_retries_archive_markers_with_unresolved_failures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

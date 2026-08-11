@@ -942,8 +942,87 @@ def _artifact_paths(
     return sample_root / f"{sample_id}.npz", sample_root / f"{sample_id}.json"
 
 
+def _source_variant_artifact_paths(
+    config: CslNewsAnnotationConfig,
+    archive_name: str,
+    sample_id: str,
+    source_integrity: Mapping[str, Any],
+) -> tuple[Path, Path]:
+    archive_sha256 = source_integrity.get("archive_sha256")
+    if not isinstance(archive_sha256, str) or not re.fullmatch(
+        r"[0-9a-f]{64}", archive_sha256
+    ):
+        raise CslNewsAnnotationError(
+            "source-integrity provenance has no valid archive SHA-256"
+        )
+    archive_stem = Path(archive_name).stem
+    sample_root = config.runtime.output_root / "samples" / archive_stem
+    variant_stem = f"{sample_id}--source_{archive_sha256}"
+    return sample_root / f"{variant_stem}.npz", sample_root / f"{variant_stem}.json"
+
+
+def _source_variant_marker_path(
+    config: CslNewsAnnotationConfig,
+    archive_name: str,
+    source_integrity: Mapping[str, Any],
+) -> Path:
+    archive_sha256 = source_integrity.get("archive_sha256")
+    if not isinstance(archive_sha256, str) or not re.fullmatch(
+        r"[0-9a-f]{64}", archive_sha256
+    ):
+        raise CslNewsAnnotationError(
+            "source-integrity provenance has no valid archive SHA-256"
+        )
+    return (
+        config.runtime.output_root
+        / "archives"
+        / f"{Path(archive_name).stem}--source_{archive_sha256}.json"
+    )
+
+
+def _source_identity_matches(
+    sidecar_integrity: object,
+    expected_integrity: Mapping[str, Any],
+) -> bool:
+    if not isinstance(sidecar_integrity, Mapping):
+        return False
+    return all(
+        sidecar_integrity.get(key) == expected_integrity.get(key)
+        for key in ("archive_sha256", "labels_sha256")
+    )
+
+
+def _completed_sidecar_targets_other_source(
+    sidecar_path: Path,
+    config_fingerprint: str,
+    expected_integrity: Mapping[str, Any] | None,
+) -> bool:
+    if expected_integrity is None or not sidecar_path.is_file():
+        return False
+    try:
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not isinstance(sidecar, Mapping):
+        return False
+    source = sidecar.get("source")
+    return bool(
+        sidecar.get("status") == "completed"
+        and sidecar.get("config_fingerprint") == config_fingerprint
+        and isinstance(source, Mapping)
+        and not _source_identity_matches(source.get("integrity"), expected_integrity)
+    )
+
+
 def is_completed_annotation_sample(
-    npz_path: Path, sidecar_path: Path, config_fingerprint: str
+    npz_path: Path,
+    sidecar_path: Path,
+    config_fingerprint: str,
+    *,
+    archive_size_bytes: int | None = None,
+    member_size_bytes: int | None = None,
+    member_crc32: int | None = None,
+    source_integrity: Mapping[str, Any] | None = None,
 ) -> bool:
     if not sidecar_path.is_file() or not validate_annotation_output(npz_path):
         return False
@@ -952,12 +1031,27 @@ def is_completed_annotation_sample(
     except (OSError, json.JSONDecodeError):
         return False
     artifact = sidecar.get("artifact")
+    source = sidecar.get("source")
+    source_matches = source_integrity is None or bool(
+        isinstance(source, Mapping)
+        and _source_identity_matches(source.get("integrity"), source_integrity)
+        and (
+            archive_size_bytes is None
+            or source.get("archive_size_bytes") == archive_size_bytes
+        )
+        and (
+            member_size_bytes is None
+            or source.get("member_size_bytes") == member_size_bytes
+        )
+        and (member_crc32 is None or source.get("member_crc32") == member_crc32)
+    )
     return bool(
         sidecar.get("status") == "completed"
         and sidecar.get("config_fingerprint") == config_fingerprint
         and isinstance(artifact, dict)
         and artifact.get("size_bytes") == npz_path.stat().st_size
         and artifact.get("sha256") == sha256_file(npz_path)
+        and source_matches
     )
 
 
@@ -965,6 +1059,7 @@ def is_completed_annotation_archive(
     marker_path: Path,
     config_fingerprint: str,
     archive_size_bytes: int | None = None,
+    source_integrity: Mapping[str, Any] | None = None,
 ) -> bool:
     """Return whether an archive marker represents a fully successful pass."""
 
@@ -974,12 +1069,17 @@ def is_completed_annotation_archive(
         marker = json.loads(marker_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return False
+    marker_integrity = marker.get("source_integrity")
     return bool(
         marker.get("status") == "completed"
         and marker.get("config_fingerprint") == config_fingerprint
         and (
             archive_size_bytes is None
             or marker.get("archive_size_bytes") == archive_size_bytes
+        )
+        and (
+            source_integrity is None
+            or _source_identity_matches(marker_integrity, source_integrity)
         )
     )
 
@@ -1163,19 +1263,30 @@ def run_csl_news_annotation(
                 )
         made_progress = False
         for archive_path in archives:
+            source_integrity = _archive_integrity_provenance(
+                config, registry_path, archive_path
+            )
             marker_path = (
                 config.runtime.output_root / "archives" / f"{archive_path.stem}.json"
             )
+            if marker_path.exists() and not is_completed_annotation_archive(
+                marker_path,
+                config.fingerprint,
+                archive_path.stat().st_size,
+                source_integrity,
+            ):
+                assert source_integrity is not None
+                marker_path = _source_variant_marker_path(
+                    config, archive_path.name, source_integrity
+                )
             if max_videos is None and is_completed_annotation_archive(
                 marker_path,
                 config.fingerprint,
                 archive_path.stat().st_size,
+                source_integrity,
             ):
                 continue
 
-            source_integrity = _archive_integrity_provenance(
-                config, registry_path, archive_path
-            )
             _ensure_disk_floor(config)
             archive_processed = 0
             archive_skipped = 0
@@ -1222,8 +1333,24 @@ def run_csl_news_annotation(
                         npz_path, sidecar_path = _artifact_paths(
                             config, archive_path.name, sample_id
                         )
+                        if _completed_sidecar_targets_other_source(
+                            sidecar_path, config.fingerprint, source_integrity
+                        ):
+                            assert source_integrity is not None
+                            npz_path, sidecar_path = _source_variant_artifact_paths(
+                                config,
+                                archive_path.name,
+                                sample_id,
+                                source_integrity,
+                            )
                         if is_completed_annotation_sample(
-                            npz_path, sidecar_path, config.fingerprint
+                            npz_path,
+                            sidecar_path,
+                            config.fingerprint,
+                            archive_size_bytes=archive_path.stat().st_size,
+                            member_size_bytes=member.file_size,
+                            member_crc32=member.CRC,
+                            source_integrity=source_integrity,
                         ):
                             skipped += 1
                             archive_skipped += 1
