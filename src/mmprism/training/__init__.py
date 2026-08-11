@@ -33,6 +33,16 @@ from mmprism.training.omnihand_run_config import (
     OmniHandRunOptimizationConfig,
     load_omnihand_run_config,
 )
+from mmprism.training.wavellm_run_config import (
+    WAVELLM_RUN_CONFIG_SCHEMA,
+    WaveLLMDataConfig,
+    WaveLLMEvaluationConfig,
+    WaveLLMGenerationConfig,
+    WaveLLMRunConfig,
+    WaveLLMRunError,
+    WaveLLMRunOptimizationConfig,
+    load_wavellm_run_config,
+)
 
 __all__ = [
     "MT5_SMOKE_CONFIG_SCHEMA",
@@ -59,7 +69,15 @@ __all__ = [
     "OmniHandSmokeError",
     "OmniHandSpatialConfig",
     "OmniHandTemporalConfig",
+    "WAVELLM_RUN_CONFIG_SCHEMA",
+    "WaveLLMDataConfig",
+    "WaveLLMEvaluationConfig",
+    "WaveLLMGenerationConfig",
+    "WaveLLMRunConfig",
+    "WaveLLMRunError",
+    "WaveLLMRunOptimizationConfig",
     "load_mt5_smoke_config",
     "load_omnihand_smoke_config",
     "load_omnihand_run_config",
+    "load_wavellm_run_config",
 ]

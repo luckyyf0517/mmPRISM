@@ -54,9 +54,11 @@ from mmprism.training import (
     MT5SmokeError,
     OmniHandRunError,
     OmniHandSmokeError,
+    WaveLLMRunError,
     load_mt5_smoke_config,
     load_omnihand_run_config,
     load_omnihand_smoke_config,
+    load_wavellm_run_config,
 )
 
 
@@ -255,6 +257,34 @@ def _build_parser() -> argparse.ArgumentParser:
         "--split", choices=("train", "validation", "test"), default="test"
     )
     omnihand_evaluate_parser.add_argument("--project-root", type=Path)
+
+    wavellm_train_parser = subparsers.add_parser(
+        "wavellm-train",
+        help="Train geometry-guided mT5 from manifest-bound pose, confidence, and radar features",
+    )
+    wavellm_train_parser.add_argument("experiment_config", type=Path)
+    wavellm_train_parser.add_argument("task_config", type=Path)
+    wavellm_train_parser.add_argument("--model-assets", type=Path, required=True)
+    wavellm_train_parser.add_argument("--model-root", type=Path)
+    wavellm_train_parser.add_argument("--train-manifest", type=Path, required=True)
+    wavellm_train_parser.add_argument("--validation-manifest", type=Path, required=True)
+    wavellm_train_parser.add_argument("--project-root", type=Path)
+
+    wavellm_evaluate_parser = subparsers.add_parser(
+        "wavellm-evaluate",
+        help="Evaluate a checksum-bound geometry-guided mT5 checkpoint",
+    )
+    wavellm_evaluate_parser.add_argument("experiment_config", type=Path)
+    wavellm_evaluate_parser.add_argument("task_config", type=Path)
+    wavellm_evaluate_parser.add_argument("--model-assets", type=Path, required=True)
+    wavellm_evaluate_parser.add_argument("--model-root", type=Path)
+    wavellm_evaluate_parser.add_argument("--manifest", type=Path, required=True)
+    wavellm_evaluate_parser.add_argument("--checkpoint", type=Path, required=True)
+    wavellm_evaluate_parser.add_argument("--checkpoint-metadata", type=Path, required=True)
+    wavellm_evaluate_parser.add_argument(
+        "--split", choices=("train", "validation", "test"), default="test"
+    )
+    wavellm_evaluate_parser.add_argument("--project-root", type=Path)
 
     return parser
 
@@ -511,6 +541,56 @@ def main(argv: Sequence[str] | None = None) -> int:
                     command=("mmprism", *effective_argv),
                 )
             exit_code = 0
+        elif arguments.command in {"wavellm-train", "wavellm-evaluate"}:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            experiment_config = load_experiment_config(arguments.experiment_config)
+            wavellm_run_config = load_wavellm_run_config(arguments.task_config)
+            model_asset_config = load_model_asset_config(arguments.model_assets)
+            model_root = _resolve_mt5_model_root(arguments.model_root, project_root)
+            try:
+                from mmprism.training.wavellm_run import (
+                    evaluate_wavellm,
+                    train_wavellm,
+                )
+            except ImportError as error:
+                raise WaveLLMRunError(
+                    "WaveLLM run dependencies are missing; install the train extra"
+                ) from error
+            if arguments.command == "wavellm-train":
+                payload = train_wavellm(
+                    experiment_config,
+                    wavellm_run_config,
+                    model_asset_config,
+                    model_root,
+                    source_experiment_config=arguments.experiment_config,
+                    source_task_config=arguments.task_config,
+                    source_asset_config=arguments.model_assets,
+                    train_manifest_path=arguments.train_manifest,
+                    validation_manifest_path=arguments.validation_manifest,
+                    project_root=project_root,
+                    command=("mmprism", *effective_argv),
+                )
+            else:
+                payload = evaluate_wavellm(
+                    experiment_config,
+                    wavellm_run_config,
+                    model_asset_config,
+                    model_root,
+                    source_experiment_config=arguments.experiment_config,
+                    source_task_config=arguments.task_config,
+                    source_asset_config=arguments.model_assets,
+                    manifest_path=arguments.manifest,
+                    checkpoint_path=arguments.checkpoint,
+                    checkpoint_metadata_path=arguments.checkpoint_metadata,
+                    split=arguments.split,
+                    project_root=project_root,
+                    command=("mmprism", *effective_argv),
+                )
+            exit_code = 0
         elif arguments.command == "omnihand-smoke":
             project_root = (
                 arguments.project_root.resolve()
@@ -598,6 +678,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         MT5SmokeError,
         OmniHandSmokeError,
         OmniHandRunError,
+        WaveLLMRunError,
         ReleaseAuditError,
         CslNewsAnnotationError,
         CslNewsAuditError,

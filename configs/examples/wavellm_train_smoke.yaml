@@ -1,0 +1,39 @@
+schema_version: mmprism.wavellm_run.v1
+
+model:
+  asset_id: mt5_base
+  hidden_size: 768
+  radar_feature_dim: 1024
+  joint_count: 24
+  coordinate_dim: 3
+  pose_channels: [32, 64]
+  temporal_kernel_size: 5
+  dropout: 0.0
+  label_smoothing: 0.0
+  freeze_language_model: true
+
+data:
+  batch_size: 2
+  num_workers: 0
+  verify_checksums: true
+  shuffle: true
+  max_frames: 8
+  prompt: "Translate hand sign language videos to Chinese:"
+  max_prompt_length: 32
+  max_target_length: 64
+
+optimization:
+  epochs: 2
+  max_steps: 2
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  beta1: 0.9
+  beta2: 0.98
+  gradient_clip_norm: 1.0
+
+generation:
+  max_new_tokens: 16
+  num_beams: 2
+
+evaluation:
+  save_references: true

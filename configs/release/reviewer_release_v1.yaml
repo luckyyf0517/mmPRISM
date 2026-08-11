@@ -17,6 +17,7 @@ include:
   - scripts/run_mt5_smoke.sh
   - scripts/run_omnihand_smoke.sh
   - scripts/run_omnihand_train.sh
+  - scripts/run_wavellm_train.sh
   - src/mmprism/**
   - tests/**
 
@@ -36,6 +37,8 @@ required_paths:
   - configs/examples/omnihand_smoke.yaml
   - configs/examples/omnihand_train_smoke_experiment.yaml
   - configs/examples/omnihand_train_smoke.yaml
+  - configs/examples/wavellm_train_smoke_experiment.yaml
+  - configs/examples/wavellm_train_smoke.yaml
   - configs/models/evaluation_models_v1.yaml
   - configs/release/reviewer_release_v1.yaml
   - scripts/bootstrap_env.sh
@@ -44,6 +47,7 @@ required_paths:
   - scripts/run_mt5_smoke.sh
   - scripts/run_omnihand_smoke.sh
   - scripts/run_omnihand_train.sh
+  - scripts/run_wavellm_train.sh
   - src/mmprism/cli.py
   - tests/fixtures/manifests/pose_smoke.jsonl
 
