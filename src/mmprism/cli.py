@@ -9,14 +9,17 @@ from mmprism.contracts import ManifestError, validate_manifest
 from mmprism.data import (
     CslNewsAnnotationError,
     CslNewsAuditError,
+    CslNewsMetadataError,
     audit_csl_news_archive,
     build_csl_news_annotation_qc,
     build_csl_news_annotation_status,
+    build_csl_news_metadata_profile,
     load_csl_news_annotation_config,
     run_csl_news_annotation,
     write_csl_news_annotation_qc,
     write_csl_news_annotation_status,
     write_csl_news_audit,
+    write_csl_news_metadata_profile,
 )
 from mmprism.runtime import build_run_plan, collect_runtime_report, discover_project_root
 
@@ -79,6 +82,17 @@ def _build_parser() -> argparse.ArgumentParser:
     qc_parser.add_argument("--project-root", type=Path)
     qc_parser.add_argument("--sample-count", type=int, default=100)
     qc_parser.add_argument("--output", type=Path)
+
+    metadata_parser = subparsers.add_parser(
+        "csl-news-metadata-profile",
+        help="Validate and characterize pinned CSL-News label metadata",
+    )
+    metadata_parser.add_argument("--labels-json", type=Path, required=True)
+    metadata_parser.add_argument("--labels-csv", type=Path, required=True)
+    metadata_parser.add_argument("--dataset-card", type=Path, required=True)
+    metadata_parser.add_argument("--source-id", required=True)
+    metadata_parser.add_argument("--source-revision", required=True)
+    metadata_parser.add_argument("--output", type=Path)
 
     return parser
 
@@ -154,7 +168,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_csl_news_annotation_status(payload, arguments.output)
             exit_code = 0 if payload["status"] == "healthy" else 1
-        else:
+        elif arguments.command == "csl-news-annotation-qc":
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
@@ -169,11 +183,23 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_csl_news_annotation_qc(payload, arguments.output)
             exit_code = 1 if payload["status"] == "failed" else 0
+        else:
+            payload = build_csl_news_metadata_profile(
+                arguments.labels_json,
+                arguments.labels_csv,
+                arguments.dataset_card,
+                source_id=arguments.source_id,
+                source_revision=arguments.source_revision,
+            )
+            if arguments.output:
+                write_csl_news_metadata_profile(payload, arguments.output)
+            exit_code = 1 if payload["status"] == "failed" else 0
     except (
         ConfigError,
         ManifestError,
         CslNewsAnnotationError,
         CslNewsAuditError,
+        CslNewsMetadataError,
         FileNotFoundError,
     ) as error:
         print(f"error: {error}", file=sys.stderr)

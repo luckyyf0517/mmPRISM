@@ -23,12 +23,19 @@ from mmprism.data.csl_news_annotation_status import (
     build_csl_news_annotation_status,
     write_csl_news_annotation_status,
 )
+from mmprism.data.csl_news_metadata import (
+    CslNewsMetadataError,
+    build_csl_news_metadata_profile,
+    write_csl_news_metadata_profile,
+)
 
 __all__ = [
     "CslNewsAnnotationConfig",
     "CslNewsAnnotationError",
     "CslNewsAuditError",
+    "CslNewsMetadataError",
     "audit_csl_news_archive",
+    "build_csl_news_metadata_profile",
     "build_csl_news_annotation_status",
     "build_csl_news_annotation_qc",
     "canonicalize_hands",
@@ -40,4 +47,5 @@ __all__ = [
     "write_csl_news_annotation_status",
     "write_csl_news_annotation_qc",
     "write_csl_news_audit",
+    "write_csl_news_metadata_profile",
 ]

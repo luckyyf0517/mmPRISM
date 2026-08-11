@@ -13,7 +13,7 @@ Role: `reviewer_response_index`
 | `ED-SCI-1` | EMPIRICAL_SUPPORT | P0 | 用架构、DA、真实 stress、fidelity、ablation 组成 stronger validation package | `EXP-REV-001`–`006` | `EVID-REV-*` | blocked | High |
 | `ED-SCI-2` | FAIR_COMPARISON | P0 | matched direct 4D-cube-to-LLM baseline | `EXP-REV-001` | `EVID-REV-ARCH` | blocked | High |
 | `ED-SCI-3` | FAIR_COMPARISON | P0 | shallow/full/adversarial/MMD 相同预算比较 | `EXP-REV-002` | `EVID-REV-DA` | blocked | High |
-| `ED-SCI-4` | REPRODUCIBILITY | P0 | 完整数据统计、split 与 provenance | `DATA-REV-001` | `EVID-REV-DATASET` | blocked | High |
+| `ED-SCI-4` | REPRODUCIBILITY | P0 | 完整数据统计、split 与 provenance | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |
 | `ED-SCI-5` | GENERALIZATION | P0 | 方向、遮挡、场景、新用户真实测试 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
 | `ED-WRITE-1/2` | SCOPE_OR_OVERCLAIM | P0 | 全文 sober-language scan 与 claim narrowing | `PAPER-REV-001` | manuscript diff | in_progress | Medium |
 | `ED-WRITE-3/4/5` | REVIEW_PROCESS | P0 | 原文逐条回复、修改标记、未完成项解释 | `PAPER-REV-002` | response/manuscript | blocked | High |
@@ -27,7 +27,7 @@ Role: `reviewer_response_index`
 | `R1-2` | EFFICIENCY | P0 | 参数、FLOPs、GPU-hours、显存、latency、throughput | `EXP-REV-006` | `EVID-REV-EFF` | blocked | Medium |
 | `R1-3` | GENERALIZATION | P0 | 0°/30°/60° orientation-stratified real test | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
 | `R1-4a` | EMPIRICAL_SUPPORT | P0 | paired/category-matched synthetic-real fidelity | `DATA-REV-003`, `EXP-REV-004` | `EVID-REV-SYNREAL` | blocked | High |
-| `R1-4b` | REPRODUCIBILITY | P0 | synthetic/train/test 数据详情和 split audit | `DATA-REV-001` | `EVID-REV-DATASET` | blocked | High |
+| `R1-4b` | REPRODUCIBILITY | P0 | synthetic/train/test 数据详情和 split audit | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |
 | `R1-4c` | GENERALIZATION | P0/P1 | 扩充真实参与者并记录多样性 | `DATA-REV-002` | `EVID-REV-REAL` | blocked | High |
 | `R1-4d` | GENERALIZATION | P0 | held-out user 与 low-data adaptation 分析 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
 | `R1-5` | ROBUSTNESS | P0 | hand-overlap/occlusion stratified pose+translation test 与机制解释 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
@@ -40,7 +40,7 @@ Role: `reviewer_response_index`
 | `R2-1` | FAIR_COMPARISON | P0 | matched direct end-to-end baseline | `EXP-REV-001` | `EVID-REV-ARCH` | blocked | High |
 | `R2-2` | FAIR_COMPARISON | P0 | DA method matrix under equal real-data budget | `EXP-REV-002` | `EVID-REV-DA` | blocked | High |
 | `R2-3` | ROBUSTNESS | P0 | orientation + hand/object occlusion，pose+translation 双任务 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
-| `R2-4` | REPRODUCIBILITY | P0 | sign type/vocab/sentences/length/non-manual/split statistics | `DATA-REV-001` | `EVID-REV-DATASET` | blocked | High |
+| `R2-4` | REPRODUCIBILITY | P0 | sign type/vocab/sentences/length/non-manual/split statistics | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |
 | `R2-5` | EMPIRICAL_SUPPORT | P0 | spatial/channel/SE leave-one-out ablation | `EXP-REV-005` | `EVID-REV-ATTN` | blocked | High |
 | `R2-6` | MISSING_BASELINE | P1 | 先做 cross-modal protocol feasibility audit，再决定重实现/定位 | `EXP-REV-007` | `EVID-REV-XMODAL` | not_started | Medium |
 

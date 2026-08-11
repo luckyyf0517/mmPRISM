@@ -21,6 +21,9 @@ Role: `control_panel`
   其他 mmPRISM/CSL/OmniHand/WaveLLM 数据仍未到位。
 - `archive_003` 的 SHA-256/CRC/722,711 条标签覆盖与视频解码审计通过；canonical RTMW3D
   worker 已在 GPU 7 持续运行，CPU/GPU/磁盘受限且当前健康。
+- CSL-News metadata profile 已扫描全部 722,711 条 canonical JSON 记录；数据集类型、译文单元和
+  长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
+  4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - `/mnt/gfs` 当前约余 3.6 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
 - canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；24 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
@@ -46,7 +49,8 @@ Role: `control_panel`
 
 1. 继续执行 `PAPER-001B`，登记当前 manuscript/supplement，并导入原投稿定稿。
 2. 执行 `DATA-001-K/DATA-005-A`，持续校验新 archive，并以可恢复单 worker 生成 pose。
-3. 对 `DATA-REV-002` 做作者/伦理/采集资源确认。
+3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
+   subject/non-manual/scene/split 与伦理资源。
 4. 继续 `ARCH-001/002`，完成正式 artifact writer 和 canonical train/eval/prepare CLI。
 5. 数据定位后执行 `ARCH-003`，从真实 manifest fixture 建立 radar vertical slice。
 

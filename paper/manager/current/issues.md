@@ -15,6 +15,7 @@ Role: `risk_register`
 | `ARCH-STALE-001` | P1 | legacy 配置引用已删除的 `cubenet_rtm.py` 等模块 | 旧发布包不可运行，但不再阻断 canonical 新实现 | superseded | 仅纳入 forensic/release exclusion audit，不恢复到新包 |
 | `ARCH-CONFIG-001` | P1 | legacy 配置、入口和代码中存在大量硬编码路径/GPU/dtype | 旧代码不可迁移；canonical release 必须彻底隔离 | in_progress | strict path/runtime/run-plan 已落地，继续完成所有新入口 |
 | `DATA-PATH-001` | P1 | dataset 通过路径字符串替换关联多模态文件 | 易错且不可验证 | not_started | 改为 manifest-driven sample record |
+| `DATA-CSLNEWS-META-001` | P1 | 官方 CSL-News CSV 比唯一 JSON 多 4 条冲突重复行 | CSV last-write-wins 会为 4 个视频静默选择错误译文 | mitigated | 固定 JSON 为 canonical source，CSV 只作审计；保留 profile 和四个 key，必要时反馈上游 |
 | `EXP-TEST-001` | P1 | legacy 无自动化测试；canonical 仅有 foundation fixture/tests | radar/model/训练链仍缺保护 | in_progress | 扩展 shape、split、processor、model smoke tests |
 | `DOC-DRIFT-001` | P2 | README/CLAUDE 描述多个当前不存在的模块和脚本 | 误导执行 | evidence_ready | legacy baseline 后统一重写文档 |
 | `ARCH-LLM-001` | P2 | Phi-3 路径与当前 base API 不一致，现有配置主要只支持 MT5 | 模型支持边界不清 | not_started | 决定删除、修复或降级为 unsupported |

@@ -12,7 +12,7 @@ Role: `reviewer_perspective_audit`
 | R1 efficiency | yes | missing | not imported | not drafted | unchecked | Medium | open |
 | R1/R2 orientation/occlusion/real generalization | yes | missing | not imported | not drafted | unchecked | High | open |
 | R1 synthetic-real closeness | yes | missing | not imported | not drafted | unchecked | High | open |
-| R1/R2 dataset transparency/new users | yes | missing | not imported | not drafted | unchecked | High | open |
+| R1/R2 dataset transparency/new users | yes | CSL-News metadata partial；subjects/splits/non-manual missing | not imported | not drafted | unchecked | High | open |
 | R2 architecture necessity | yes | missing | not imported | not drafted | unchecked | High | open |
 | R2 domain adaptation | yes | missing | not imported | not drafted | unchecked | High | open |
 | R2 attention ablation | yes | missing | not imported | not drafted | unchecked | High | open |

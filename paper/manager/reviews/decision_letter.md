@@ -29,7 +29,7 @@ Role: `editorial_requirements_source_of_truth`
 | `ED-SCI-1` | substantially stronger validation of the proposed framework | not_started | `R1-3`, `R1-4`, `R1-5`, `R2-1`–`R2-6` |
 | `ED-SCI-2` | comparisons against alternative architectures | not_started | `R2-1` |
 | `ED-SCI-3` | comparisons against domain adaptation strategies | not_started | `R2-2` |
-| `ED-SCI-4` | clearer dataset characterization | not_started | `R1-4`, `R2-4` |
+| `ED-SCI-4` | clearer dataset characterization | in_progress | `R1-4`, `R2-4` |
 | `ED-SCI-5` | evidence of real-world generalization | not_started | `R1-3`, `R1-4`, `R1-5`, `R2-3` |
 | `ED-WRITE-1` | remove novelty/primacy language such as new, novel, first, unique, unprecedented | not_started | whole manuscript |
 | `ED-WRITE-2` | remove exaggerated/subjective language such as superior, remarkable, pave the way/open new avenues | not_started | whole manuscript |

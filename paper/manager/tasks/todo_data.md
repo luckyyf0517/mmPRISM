@@ -21,7 +21,7 @@ Role: `data_execution_tracker`
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
-| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | `archive_003` SHA/CRC/label/decode audit 已通过；待 full coverage/shape/annotation report |
+| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | metadata profile 与 `archive_003` SHA/CRC/label/decode audit 已通过；CSV 4 条冲突重复已登记；待 full video coverage/shape/annotation report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | not_started | quarantine reason registry |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
@@ -30,7 +30,7 @@ Role: `data_execution_tracker`
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | not_started | versioned radar output + QC |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | not_started | validation report + manifest hash |
-| `DATA-REV-001` | P0 | 统计 sign type/vocab/sentences/length/non-manual/subjects/scenes/splits | blocked | manuscript-ready table + machine-readable summary |
+| `DATA-REV-001` | P0 | 统计 sign type/vocab/sentences/length/non-manual/subjects/scenes/splits | in_progress | CSL-News 722,711 条 metadata profile 已生成；sign vocab/non-manual/subjects/scenes/splits 仍缺，待 manuscript-ready table + frozen manifest summary |
 | `DATA-REV-002` | P0 | 方向/双手重叠/物体遮挡/新用户真实数据 protocol 与采集 | blocked | ethics-cleared held-out manifest and QC |
 | `DATA-REV-003` | P0 | paired/category-matched synthetic-real evaluation set | blocked | same-sign fidelity manifest |
 

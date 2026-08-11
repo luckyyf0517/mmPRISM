@@ -180,6 +180,12 @@ metadata unit 已于 `2026-08-11T14:57Z` 以 `Result=success`、exit code 0 完�
 | `CSL_News_Labels.csv` | 148,851,954 | `683e2c71bc48d9cb6210118799836c7afa4a11269a41bab1dfa4fbbb1d0cee79` |
 | `README.md` | 2,670 | `cc0c6367538d1eedb07f199e1a4d56edf74a2026b0718feae112400911b5ba23` |
 
+`csl-news-metadata-profile` 对固定 revision 的三份 metadata 做完整扫描。报告
+`profile_20260811T151215Z.json` 为 `passed_with_warnings`：JSON 的 722,711 条记录全部有效、
+非空且 video/pose key 唯一；CSV 覆盖所有 JSON key，但包含 4 个冲突重复行。canonical pipeline
+固定使用 JSON，CSV 只作交叉审计，不修改任何上游文件。完整译文长度统计、字符集定义和 reviewer
+缺失字段见 `../evidence/csl_news_metadata_profile.md`。
+
 下载使用 `scripts/download_csl_news.sh`，当前引擎为 aria2：4 个 archive worker、每文件 8 个连接、
 断点续传、`.part` 原子完成、只下载不解压，并保留至少 1 TiB 可用空间。切换前短时基准中，
 单个 aria2 传输稳定约 3.4 MiB/s，原 16 路 curl 同窗口合计约 4.7 MB/s。Legacy 预处理链与接口冲突见

@@ -15,7 +15,7 @@ Role: `master_task_index`
 | `ARCH-001` | 建立 greenfield package、配置、CLI 与基础 contract | author rebuild decision | in_progress | foundation tests 通过，legacy 隔离规则生效 |
 | `EXP-001` | 建立 canonical OmniHand/WaveLLM 最小 vertical smoke | `DATA-001`, `OPS-001`, `ARCH-001` | blocked | 两条新链各有可重复 smoke/eval artifact |
 | `REV-001` | 建立 reviewer diagnosis、tracker 和 closure matrix | `PAPER-001A` | done | 所有评论分类并映射到 task/evidence |
-| `DATA-REV-001` | 完整数据集统计与 split audit | `DATA-001`, manuscript | blocked | 主文/补充材料所需统计和 leakage report |
+| `DATA-REV-001` | 完整数据集统计与 split audit | `DATA-001`, manuscript | in_progress | CSL-News metadata profile 已完成；待各数据族 frozen manifest、subject/scene/non-manual 和 leakage report |
 | `DATA-REV-002` | 设计并采集方向/遮挡/新用户真实测试集 | ethics/capacity/protocol | blocked | condition-stratified held-out real manifest |
 | `DATA-REV-003` | 建立 matched synthetic-real fidelity set | `DATA-001` | blocked | paired/category-matched manifest |
 | `EXP-REV-001` | matched direct end-to-end architecture baseline | baseline/data ready | blocked | 多 seed pose/translation + matched compute |
