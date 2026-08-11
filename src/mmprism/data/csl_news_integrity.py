@@ -294,6 +294,20 @@ def load_csl_news_integrity_registry_snapshot(
 ) -> tuple[dict[str, Any], str]:
     """Load one registry byte snapshot and return its validated payload and hash."""
 
+    registry, digest, _ = read_csl_news_integrity_registry_snapshot(
+        path, source_id=source_id, source_revision=source_revision
+    )
+    return registry, digest
+
+
+def read_csl_news_integrity_registry_snapshot(
+    path: str | Path,
+    *,
+    source_id: str | None = None,
+    source_revision: str | None = None,
+) -> tuple[dict[str, Any], str, bytes]:
+    """Read and validate one exact registry snapshot, retaining its source bytes."""
+
     registry_path = Path(path).expanduser().resolve()
     try:
         serialized = registry_path.read_bytes()
@@ -313,7 +327,7 @@ def load_csl_news_integrity_registry_snapshot(
     if source_revision is not None and source.get("source_revision") != source_revision:
         raise CslNewsIntegrityError("integrity registry source_revision mismatch")
     _mapping(registry.get("archives"), "registry.archives")
-    return registry, hashlib.sha256(serialized).hexdigest()
+    return registry, hashlib.sha256(serialized).hexdigest(), serialized
 
 
 def passed_csl_news_integrity_archives(

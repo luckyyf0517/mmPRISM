@@ -11,14 +11,17 @@ from mmprism.data import (
     CslNewsAuditError,
     CslNewsIntegrityError,
     CslNewsMetadataError,
+    CslNewsPoseManifestError,
     CslNewsSourceManifestError,
     audit_csl_news_archive,
     build_csl_news_annotation_qc,
     build_csl_news_annotation_status,
     build_csl_news_metadata_profile,
+    build_csl_news_pose_manifest_snapshot,
     build_csl_news_source_manifest_snapshot,
     load_csl_news_annotation_config,
     load_csl_news_integrity_config,
+    load_csl_news_pose_manifest_config,
     load_csl_news_source_manifest_config,
     run_csl_news_annotation,
     scan_csl_news_source_integrity,
@@ -110,6 +113,14 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     source_manifest_parser.add_argument("config", type=Path)
     source_manifest_parser.add_argument("--project-root", type=Path)
+
+    pose_manifest_parser = subparsers.add_parser(
+        "csl-news-pose-manifest",
+        help="Freeze validated CSL-News pose and caption artifacts into a manifest",
+    )
+    pose_manifest_parser.add_argument("config", type=Path)
+    pose_manifest_parser.add_argument("--project-root", type=Path)
+    pose_manifest_parser.add_argument("--snapshot-id")
 
     integrity_parser = subparsers.add_parser(
         "csl-news-integrity-scan",
@@ -238,6 +249,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 runtime_report=collect_runtime_report(project_root),
             )
             exit_code = 0
+        elif arguments.command == "csl-news-pose-manifest":
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            pose_manifest_config = load_csl_news_pose_manifest_config(
+                arguments.config
+            )
+            payload = build_csl_news_pose_manifest_snapshot(
+                pose_manifest_config,
+                runtime_report=collect_runtime_report(project_root),
+                snapshot_id=arguments.snapshot_id,
+            )
+            exit_code = 0
         else:
             project_root = (
                 arguments.project_root.resolve()
@@ -259,6 +285,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         CslNewsAuditError,
         CslNewsIntegrityError,
         CslNewsMetadataError,
+        CslNewsPoseManifestError,
         CslNewsSourceManifestError,
         FileNotFoundError,
     ) as error:
