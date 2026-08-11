@@ -18,6 +18,7 @@ Implemented foundation:
 - SHA-256-bound run inputs plus versioned finite-metric artifacts;
 - explicit radar, pose, feature, and caption tensor contracts;
 - a NumPy range-Doppler v1 transform with analytic signal tests;
+- pinned, checksummed SBERT and SimCSE evaluator-model acquisition;
 - a single `mmprism` CLI surface;
 - dependency-light unit and contract tests.
 
@@ -42,6 +43,7 @@ uv run mmprism doctor
 uv run mmprism config configs/examples/pose_smoke.yaml
 uv run mmprism plan configs/examples/pose_smoke.yaml
 uv run mmprism manifest tests/fixtures/manifests/pose_smoke.jsonl
+uv run mmprism models-plan configs/models/evaluation_models_v1.yaml
 # Expected to return 1 while the listed reviewer-release blockers remain.
 uv run mmprism release-audit configs/release/reviewer_release_v1.yaml
 uv run pytest
@@ -71,7 +73,29 @@ Machine-specific roots are injected through environment variables:
 export MMPRISM_DATA_ROOT=/path/to/mmprism-data
 export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
 export MMPRISM_CACHE_ROOT=/path/to/mmprism-cache
+export MMPRISM_MODEL_ROOT=/path/to/mmprism-models
 ```
+
+## Evaluation Models
+
+The semantic evaluators are pinned to immutable Hugging Face commits in
+`configs/models/evaluation_models_v1.yaml`. The canonical downloader acquires both SimCSE and SBERT,
+materializes only the declared files, records per-file SHA-256 checksums, and atomically promotes each
+verified asset. It never resolves the moving `main` branch.
+
+```bash
+export MMPRISM_MODEL_ROOT=/path/to/mmprism-models
+scripts/download_models.sh
+uv run --frozen --extra evaluation mmprism models-smoke \
+  configs/models/evaluation_models_v1.yaml \
+  --output-root "${MMPRISM_MODEL_ROOT}" \
+  --device cpu
+```
+
+`models-plan` is dependency-light and network-free. `models-download` reuses a complete verified
+asset, but refuses a corrupt or unexpected existing directory instead of overwriting it. Download
+resume state remains under `${MMPRISM_MODEL_ROOT}/.cache/huggingface`; consumers use only the
+materialized `simcse/` and `sbert/` directories plus their manifests.
 
 ## Canonical Layout
 
@@ -80,6 +104,7 @@ configs/                 validated experiment configuration
 docs/architecture/       package boundaries and rebuild design
 src/mmprism/
   contracts/             data and artifact schemas
+  assets/                pinned external model acquisition and verification
   config/                strict configuration loading
   data/                  manifest-backed datasets and splits
   radar/                 simulation and signal processing

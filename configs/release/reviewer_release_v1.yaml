@@ -9,6 +9,7 @@ include:
   - pyproject.toml
   - uv.lock
   - configs/examples/**
+  - configs/models/**
   - configs/release/**
   - scripts/bootstrap_env.sh
   - scripts/download_models.sh
@@ -28,6 +29,7 @@ required_paths:
   - configs/examples/pose_smoke.yaml
   - configs/examples/radar_smoke.yaml
   - configs/examples/mt5_smoke.yaml
+  - configs/models/evaluation_models_v1.yaml
   - configs/release/reviewer_release_v1.yaml
   - scripts/bootstrap_env.sh
   - scripts/download_models.sh

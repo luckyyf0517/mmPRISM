@@ -32,6 +32,22 @@ uv run mmprism release-audit configs/release/reviewer_release_v1.yaml
 This command is expected to return `1` until every required release deliverable is present. A structured
 failed report is a valid blocker inventory; configuration or execution errors return `2`.
 
+Prepare and validate the pinned semantic-evaluation models with:
+
+```bash
+export MMPRISM_MODEL_ROOT=/path/to/mmprism-models
+uv run mmprism models-plan configs/models/evaluation_models_v1.yaml \
+  --output-root "${MMPRISM_MODEL_ROOT}"
+scripts/download_models.sh
+uv run --frozen --extra evaluation mmprism models-smoke \
+  configs/models/evaluation_models_v1.yaml \
+  --output-root "${MMPRISM_MODEL_ROOT}" \
+  --device cpu
+```
+
+The config contains immutable upstream commits and portable relative destinations only. The output
+root is always supplied by CLI or `MMPRISM_MODEL_ROOT`; it does not belong in versioned config.
+
 Build the pinned CSL-News partial sequence split with:
 
 ```bash

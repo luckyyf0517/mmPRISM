@@ -1,0 +1,31 @@
+schema_version: mmprism.model_asset_config.v1
+asset_set_id: evaluation_models_v1
+
+models:
+  - asset_id: simcse
+    repo_id: cyclone/simcse-chinese-roberta-wwm-ext
+    revision: 871d7039a3fccd4869d545a25b63c545341ca7f4
+    destination: simcse
+    loader: transformers_auto
+    required_files:
+      - config.json
+      - pytorch_model.bin
+      - special_tokens_map.json
+      - tokenizer.json
+      - tokenizer_config.json
+      - vocab.txt
+
+  - asset_id: sbert
+    repo_id: shibing624/text2vec-base-chinese
+    revision: 183bb99aa7af74355fb58d16edf8c13ae7c5433e
+    destination: sbert
+    loader: sentence_transformers
+    required_files:
+      - 1_Pooling/config.json
+      - config.json
+      - model.safetensors
+      - modules.json
+      - sentence_bert_config.json
+      - special_tokens_map.json
+      - tokenizer_config.json
+      - vocab.txt

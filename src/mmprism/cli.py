@@ -1,10 +1,19 @@
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
 from mmprism.artifacts import ArtifactError, RunArtifactWriter, RunInput
+from mmprism.assets import (
+    ModelAssetError,
+    download_model_assets,
+    load_model_asset_config,
+    plan_model_assets,
+    run_model_asset_smoke,
+    write_model_asset_smoke,
+)
 from mmprism.config import ConfigError, load_experiment_config
 from mmprism.contracts import ManifestError, SplitContractError, validate_manifest
 from mmprism.data import (
@@ -169,7 +178,43 @@ def _build_parser() -> argparse.ArgumentParser:
     release_parser.add_argument("--project-root", type=Path)
     release_parser.add_argument("--output", type=Path)
 
+    models_plan_parser = subparsers.add_parser(
+        "models-plan",
+        help="Inspect pinned model assets without network access or writes",
+    )
+    models_plan_parser.add_argument("config", type=Path)
+    models_plan_parser.add_argument("--project-root", type=Path)
+    models_plan_parser.add_argument("--output-root", type=Path)
+
+    models_download_parser = subparsers.add_parser(
+        "models-download",
+        help="Download and checksum pinned model assets atomically",
+    )
+    models_download_parser.add_argument("config", type=Path)
+    models_download_parser.add_argument("--project-root", type=Path)
+    models_download_parser.add_argument("--output-root", type=Path)
+
+    models_smoke_parser = subparsers.add_parser(
+        "models-smoke",
+        help="Load pinned evaluator models and validate finite embeddings",
+    )
+    models_smoke_parser.add_argument("config", type=Path)
+    models_smoke_parser.add_argument("--project-root", type=Path)
+    models_smoke_parser.add_argument("--output-root", type=Path)
+    models_smoke_parser.add_argument("--device", default="cpu")
+    models_smoke_parser.add_argument("--output", type=Path)
+
     return parser
+
+
+def _resolve_model_root(argument: Path | None, project_root: Path) -> Path:
+    value: str | Path
+    if argument is not None:
+        value = argument
+    else:
+        value = os.environ.get("MMPRISM_MODEL_ROOT", "pretrained_models")
+    path = Path(value).expanduser()
+    return path.resolve() if path.is_absolute() else (project_root / path).resolve()
 
 
 def _capture_run_inputs(specifications: Sequence[str], project_root: Path) -> tuple[RunInput, ...]:
@@ -360,7 +405,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 archive_id=arguments.archive_id,
             )
             exit_code = 0
-        else:
+        elif arguments.command == "release-audit":
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
@@ -371,10 +416,36 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_release_audit(payload, arguments.output)
             exit_code = 0 if payload["status"] == "passed" else 1
+        else:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            model_config = load_model_asset_config(arguments.config)
+            model_root = _resolve_model_root(arguments.output_root, project_root)
+            if arguments.command == "models-plan":
+                payload = plan_model_assets(model_config, model_root)
+                exit_code = 0 if payload["status"] == "ready" else 1
+            elif arguments.command == "models-download":
+                payload = download_model_assets(
+                    model_config,
+                    model_root,
+                    runtime_report=collect_runtime_report(project_root),
+                )
+                exit_code = 0
+            else:
+                payload = run_model_asset_smoke(
+                    model_config, model_root, device=arguments.device
+                )
+                if arguments.output:
+                    write_model_asset_smoke(payload, arguments.output)
+                exit_code = 0
     except (
         ArtifactError,
         ConfigError,
         ManifestError,
+        ModelAssetError,
         ReleaseAuditError,
         CslNewsAnnotationError,
         CslNewsAuditError,
