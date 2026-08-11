@@ -1,6 +1,6 @@
 # CSL-News Source and Rebuild Contract
 
-Status: `official_download_active_legacy_pipeline_audited`
+Status: `official_download_and_canonical_pose_rebuild_active`
 Last Updated: `2026-08-11`
 Role: `dataset_specific_architecture_contract`
 
@@ -187,3 +187,30 @@ only when all 436 archives and every canonical label are represented.
 
 The canonical label source is JSON. CSV is retained as immutable cross-check evidence because it contains
 the same 722,711 unique keys but four additional conflicting duplicate rows; it may not override JSON.
+
+## Canonical Pose And Caption Manifest
+
+`mmprism csl-news-pose-manifest` freezes completed RTMW3D sidecars visible at scan start. It only accepts
+artifacts whose archive has a typed `passed` entry in one exact cumulative integrity-registry byte snapshot.
+It then validates stable identity, canonical JSON caption, annotation fingerprint, NPZ shape/dtype contract,
+artifact size and optional SHA-256 before atomically publishing the snapshot.
+
+Each output is a portable `mmprism.sample.v1` JSONL manifest. Native 133-joint arrays, transformed 2D
+keypoints, frame/timestamp arrays and canonical `[T,2,24,3]` pose/confidence/valid arrays reference one NPZ
+through relative URIs. The caption is inline. Source archive/audit, labels, annotation sidecar/model/transform,
+builder config and clean Git commit remain explicit provenance. A dependency-light `CslNewsPoseManifest`
+adapter provides random access and revalidates the shared container, shape and dtype contract without importing
+PyTorch, Lightning or Transformers.
+
+The first real partial snapshot was created from clean commit `390093b`:
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/pose_manifest_v1/
+  snapshot_20260811T164204Z_partial/
+```
+
+It contains 2,157 records from 5 integrity-passed archives and references 1,169,173,125 bytes of pose
+artifacts. Fifteen historical artifact/sidecar pairs from failed archives were retained but excluded. Its
+manifest SHA-256 is `4161593fdbfc85a5c2fb392e3ef92d40da560db5c75a19d559f1f92878e31600`.
+This snapshot is contract and pipeline evidence only; the final dataset requires all 436 archives to pass the
+source gate and a new complete snapshot.

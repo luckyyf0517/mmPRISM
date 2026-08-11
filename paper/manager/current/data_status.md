@@ -281,3 +281,12 @@ dynamic run 新失败 0，近期约 1,353 samples/hour。报告保持 `attention
 `d48a35dc8196400b962ba704258136edc25553a491917371795236b9d9299512`。同步状态报告统计
 1,889 个 eligible NPZ、15 个 ineligible 历史 pair、抽检 3/3、dynamic run 新失败 0，近期约
 1,428 samples/hour。
+
+`16:42 UTC`，clean commit `390093b` 生成首个 integrity-gated pose+caption partial snapshot：
+2,157 条 record、5 个 represented archive、1,169,173,125 bytes referenced artifact。snapshot 绑定
+当时 14 passed archive/23,020 videos 的 exact registry bytes（SHA-256
+`183743fbb60bb85b75dd63f6c112e0c1a3081b2b6a391e32fa6ce2a21cb5b02d`），manifest SHA-256 为
+`4161593fdbfc85a5c2fb392e3ef92d40da560db5c75a19d559f1f92878e31600`。15 个 failed-archive 历史
+pair 被保留并排除，eligible NPZ 无未配对项；checksum、portable path、通用 contract 和首/中/末
+adapter 读取均通过。详见 `../evidence/csl_news_pose_manifest.md`。该 snapshot 仍为 partial，后台
+下载和标注继续运行，不能作为全量论文统计。

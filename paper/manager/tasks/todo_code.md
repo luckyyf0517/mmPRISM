@@ -12,8 +12,8 @@ Role: `architecture_execution_tracker`
 | `ARCH-002-A` | P1 | 建立 `pyproject.toml` 和版本锁定方案 | done | Python 3.12、UV lock、research extras、wheel 与 A100 smoke 通过 |
 | `ARCH-002-B` | P1 | 建立 strict typed config 与 validation | evidence_ready | unknown key、类型、环境路径和 protocol version 启动前校验 |
 | `ARCH-002-C` | P1 | 建立统一 path/runtime/run config | in_progress | path/runtime/run-plan 已落地；正式 artifact writer 待实现 |
-| `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | in_progress | doctor/config/manifest/plan、CSL-News audit/integrity registry/annotate/status/QC/metadata profile/source manifest 已落地；train/eval/prepare 待实现 |
-| `ARCH-003-A` | P1 | 实现 manifest-driven dataset adapters | in_progress | 通用 manifest 支持 portable URI/inline text；CSL-News source snapshot builder 已落地，读取 adapter 待实现 |
+| `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | in_progress | doctor/config/manifest/plan、CSL-News audit/integrity/annotate/status/QC/metadata/source/pose manifest 已落地；train/eval/prepare 待实现 |
+| `ARCH-003-A` | P1 | 实现 manifest-driven dataset adapters | in_progress | 通用 manifest 支持 portable URI/inline text；CSL-News pose+caption random-access adapter 已通过真实 snapshot，其他数据族/radar adapter 待实现 |
 | `ARCH-003-B` | P1 | 从明确契约实现 Processor/Simulation | not_started | CPU/GPU shape + numerical tests |
 | `ARCH-004-A` | P1 | 实现 canonical OmniHand model/training/evaluation | not_started | 2-batch smoke + metric artifact |
 | `ARCH-004-B` | P1 | 实现 batch-first temporal processing | not_started | contract 正确、性能报告完整 |

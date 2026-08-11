@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | cumulative integrity registry active；14 archives/23,020 videos passed at 16:30Z；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；`001/005/008` failed and isolated；promotion + consumption gates active | visual pose/synthetic training and SLU | in_progress_integrity_failure |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | cumulative integrity registry active；14 archives/23,020 videos passed at 16:42Z；2,157-record pose+caption partial manifest verified；final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；`001/005/008` failed and isolated；promotion + consumption + derived-manifest gates active | visual pose/synthetic training and SLU | in_progress_integrity_failure |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -39,7 +39,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 registry workers active；per-sample registry/audit provenance enabled；1,889 eligible NPZ at 16:30Z；15 ineligible historical pairs retained and excluded | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 registry workers active；first frozen manifest has 2,157 records/5 archives and SHA-256 `4161593f...`；15 ineligible historical pairs retained and excluded | in_progress |
 
 ## Split Registry
 
@@ -101,9 +101,11 @@ The same evidence document records the later `archive_001` incomplete-final inci
 `379b72f34a1f749a246891901e746defae3331dcb65fab64662686a7f260a723`, plus the first fixed-gate
 promotion `archive_002` with passed report SHA-256
 `3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`.
-The cumulative registry supersedes manual scheduling lists; its `2026-08-11T16:17Z` SHA-256 is
-`070bcc4446894577cab6e05f632049a2a53143b508e50523dd27c20daea52b66`, with 12 passed archives/
-19,760 videos and failed entries `001/005/008` retained in place.
+The cumulative registry supersedes manual scheduling lists. The exact `2026-08-11T16:42Z` byte snapshot
+bound to the first pose manifest has SHA-256
+`183743fbb60bb85b75dd63f6c112e0c1a3081b2b6a391e32fa6ce2a21cb5b02d`, with 14 passed archives/
+23,020 videos and failed entries `001/005/008` retained in place. The derived 2,157-record manifest is
+documented in `csl_news_pose_manifest.md`; it is partial pipeline evidence, not the final dataset manifest.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 

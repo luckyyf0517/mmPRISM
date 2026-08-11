@@ -216,3 +216,8 @@ scripts/run_csl_news_annotation_qc.sh
 - `16:24Z` 与 `16:29Z` timer 自动审计通过新晋升的 `007/013`；`16:30Z` registry 为 14 个 passed
   archive/23,020 videos。提交 `7847f4f` 后平滑替换为 `registry{0..3}-v2`，重启前 `007` 尚无产物；
   v2 的首个新 sidecar 已核对包含 registry snapshot、archive/audit/labels hash 和 builder commit。
+- `16:42Z`，clean commit `390093b` 首次生成 integrity-gated pose+caption partial snapshot：冻结
+  2,157 条 record/5 个 represented archive，15 个 failed-archive 历史 pair 保留但排除，eligible NPZ
+  未配对为 0。manifest SHA-256 为 `4161593fdbfc85a5c2fb392e3ef92d40da560db5c75a19d559f1f92878e31600`；
+  `SHA256SUMS`、portable path scan 和首/中/末 adapter 读取均通过。后台 4 worker 未暂停，后续
+  新 artifact 只进入新 snapshot。
