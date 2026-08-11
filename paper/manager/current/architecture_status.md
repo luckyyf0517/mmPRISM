@@ -43,9 +43,11 @@ metric protocol 写入有限数值。CSL-News RTMW3D 标注已具有独立 stric
 config、原子 artifact、resume/failure contract、GPU smoke、portable pose+caption manifest builder、
 无训练依赖的随机访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
 pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation
-因 provenance 冲突保持 blocked。Canonical mT5 工程切片现包含双手 ST-GCN、radar projector、
-confidence-aware fusion 和真实 mT5 forward/backward/generate；OmniHand、production WaveLLM 与通用
-训练/评估服务、checkpoint/prediction writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
+因 provenance 冲突保持 blocked。Canonical OmniHand 工程切片现包含 depthwise CubeNet、3D PAFPN、
+独立 channel/spatial/SE attention、vectorized mask-aware temporal transformer、single-frame path 和
+versioned pose metric；clean commit `688d44d` 上两次 A100 运行确定性通过。Canonical mT5 工程切片
+包含双手 ST-GCN、radar projector、confidence-aware fusion 和真实 mT5 forward/backward/generate；
+production data training、WaveLLM train/eval、checkpoint/prediction writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
 canonical dependency graph，并自动拒绝 legacy/internal path、硬编码本地路径、缺失 entrypoint 和 import cycle。
 外部 evaluator 资产现由 `mmprism.assets` 管理：strict config 固定 Hugging Face commit 和相对目标，
 下载使用可恢复 cache、逐文件 SHA-256 与同文件系统原子晋升，现有目录只有在完整复验后才复用；
@@ -56,7 +58,7 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-119 tests passed（含 mT5 strict config 和真实 tiny-model forward/backward/generate integration）
+135 tests passed（含 OmniHand/CubeNet 和 mT5 forward/backward integration）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -85,8 +87,9 @@ Metrics require a versioned protocol, sample count and finite values; completed 
 Pinned SimCSE/SBERT acquisition passed 14-file checksum validation and real CPU `[2,768]` loader smoke
 Pinned mT5-base acquisition passed 6-file checksum validation at immutable revision `2eb15465...`
 Clean mT5 A100 smoke at `79b45b5`: two finite adapter updates, confidence counterfactual and beam generation passed
-Clean release audit at `7aaa156`: 76 hashed files selected; 152 internal/legacy paths excluded
-Canonical dependency audit: 39 modules / 64 edges / 0 missing targets / 0 legacy imports / 0 cycles
+Clean OmniHand A100 smoke at `688d44d`: two finite updates, single/temporal path, mask counterfactual and deterministic replicate passed
+Clean release audit at `688d44d`: 85 hashed files selected; 152 internal/legacy paths excluded
+Canonical dependency audit: 43 modules / 71 edges / 0 missing targets / 0 legacy imports / 0 cycles
 Reviewer release remains blocked only on LICENSE and the provenance-gated radar example
 Caption-generation support is mT5-only by policy; the unsupported legacy backend is excluded and guarded by a release content test
 ```
@@ -98,13 +101,15 @@ Research profile 已安装 Lightning 2.6.5、Transformers 4.57.6、PEFT 0.20.0�
 ### OmniHand
 
 ```text
-raw complex radar or simulated pose/velocity
-  -> Processor(range optional, Doppler FFT, beamforming)
-  -> [B, 64, 32, 32, 32] cube
-  -> CubeNet / MMHandEncoder / CubeNetTransformer
-  -> linear regressor
-  -> [B, 2, 24, 3] joints
+non-negative radar-cube power [B,T,Doppler,Range,Azimuth,Elevation]
+  -> vectorized depthwise CubeNet + optional 3D PAFPN
+  -> independently configurable channel/spatial/SE attention
+  -> mask-aware temporal transformer + learned CLS/mean/attention mixture
+  -> metric pose regressor [B,2,24,3]
 ```
+
+该边界已在 synthetic tensor 上完成工程验证；raw ADC 到物理 radar cube 的 beamforming 和坐标校准
+仍由 `BLOCK-RADAR-PROVENANCE` 阻塞，不能用本 smoke 代替。
 
 ### WaveLLM
 

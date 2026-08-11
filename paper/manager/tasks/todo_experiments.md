@@ -4,13 +4,13 @@ Status: `blocked_on_baseline_and_reviews`
 Last Updated: `2026-08-11`
 Role: `experiment_execution_tracker`
 
-## A. Legacy Baseline
+## A. Canonical Baseline Bootstrap
 
 | ID | Experiment | Status | Required Artifact |
 |---|---|---|---|
 | `EXP-001-A` | Processor fixed-input golden run | blocked | input fixture, output tensor/hash, config |
-| `EXP-001-B` | OmniHand single-frame smoke | blocked | resolved config, ckpt/init, MPJPE output |
-| `EXP-001-C` | OmniHand temporal smoke | blocked | shape/performance/memory report |
+| `EXP-001-B` | OmniHand single-frame smoke | passed_engineering | clean init/config、finite `[2,2,24,3]`、sample MPJPE；`EVID-CODE-OMNIHAND-SMOKE-V1` |
+| `EXP-001-C` | OmniHand temporal smoke | passed_engineering | 10-frame shape、mask invariance、gradient/update、time/memory 与 deterministic replicate report |
 | `EXP-001-D` | WaveLLM pose-only smoke | blocked | loss/generation/sample output |
 | `EXP-001-E` | WaveLLM feature-only smoke | blocked | loss/generation/sample output |
 | `EXP-001-F` | WaveLLM multimodal smoke | blocked | fusion/generation/sample output |

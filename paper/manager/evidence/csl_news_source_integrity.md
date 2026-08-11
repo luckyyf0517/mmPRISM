@@ -147,6 +147,24 @@ archive_034 audit SHA-256: e2d79f81bb93d314333ae73fd83d5239203267fb64d1cd23820a2
 `cd7718e92c3a0aa50b76151416bb3fbd493743d052a676e676939ddf6bc8da66`。四个 worker、下载服务和
 integrity timer 均保持 active；`attention_required` 仍只表示三个历史 failed source 被保留。
 
+### Latest passed archive: `archive_052`
+
+`2026-08-11T19:23Z` integrity timer 在 clean commit `10a30e5` 下完整审计 `archive_052`。该 archive
+包含 1,689 个视频，逐 member CRC/full read、路径安全和 label coverage 全部通过：
+
+```text
+archive SHA-256: dfa60be4fb10bd3eb46465e62f62f0938677795e88b9f08134614c90af86ecc0
+audit: manifests/csl_news/source_integrity_v1/audits/archive_052/audit_20260811T192349.038520Z_dfa60be4fb10.json
+audit SHA-256: 3fb760832e7b26a3b5ed7c34f2bd7936fe60bd908c89cf156dd21cb9a72a3ba1
+```
+
+registry 更新为 32 final、29 passed/48,210 videos，失败仍仅 `001/005/008`，SHA-256 为
+`f1a5cd753c32df399dbac59d9102470bdec7262396ca0f0b50c6245386c3ce94`。`19:30Z` 状态报告统计
+6,017 个 eligible pair、missing artifact/sidecar 0、latest run 新失败 0、抽检 3/3，近期约
+1,488 samples/hour；报告 SHA-256 为
+`b60c277162be81e981a9c261e10c0dbfc2d71ba0db2f037e2d9ed21f8db6e27e`。四个 registry worker 均
+`active/running`、`NRestarts=0`；`attention_required` 仅表示三个已知 failed source 被保留。
+
 ## 3. Evidence Boundary
 
 - 先前 18,095-record source snapshot 使用 `verify_crc=false`，因此只证明 manifest contract、

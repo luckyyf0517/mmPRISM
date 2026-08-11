@@ -15,8 +15,8 @@ Role: `architecture_execution_tracker`
 | `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | in_progress | doctor/config/manifest/plan/run-init/split/release-audit/models-plan/download/smoke、CSL-News audit/integrity/annotate/status/QC/metadata/source/pose manifest 已落地；train/eval/prepare 待实现 |
 | `ARCH-003-A` | P1 | 实现 manifest-driven dataset adapters | in_progress | CSL-News pose+caption adapter 与 dependency-light SplitIndex 已通过真实 snapshot；其他数据族/radar adapter 待实现 |
 | `ARCH-003-B` | P1 | 从明确契约实现 Processor/Simulation | in_progress | NumPy range-Doppler 与 17 项 analytic/error tests 通过；beamforming/physical axes/simulation 等 provenance 后实现 |
-| `ARCH-004-A` | P1 | 实现 canonical OmniHand model/training/evaluation | not_started | 2-batch smoke + metric artifact |
-| `ARCH-004-B` | P1 | 实现 batch-first temporal processing | not_started | contract 正确、性能报告完整 |
+| `ARCH-004-A` | P1 | 实现 canonical OmniHand model/training/evaluation | evidence_ready | depthwise CubeNet、PAFPN、三类独立 attention、pose objective/metric 与两步 A100 artifact 通过；`EVID-CODE-OMNIHAND-SMOKE-V1` |
+| `ARCH-004-B` | P1 | 实现 batch-first temporal processing | evidence_ready | 10-frame vectorized encoder、8-layer/16-head mask-aware transformer、single-frame path、padding counterfactual和显存/吞吐报告通过 |
 | `ARCH-005-A` | P1 | 清理 model factory 与 MT5/Phi-3 支持边界 | evidence_ready | mT5-only boundary、pinned asset、canonical wrapper、两步 train/generate GPU smoke 和 unsupported-backend release gate 均通过；`EVID-CODE-MT5-SMOKE-V1` |
 | `ARCH-005-B` | P1 | 实现 canonical WaveLLM modality/fusion/LLM components | in_progress | 双手 ST-GCN、radar projector、confidence-aware fusion 和 tiny/real-mT5 integration 已通过；待 production pose/feature/fused train-eval |
 | `ARCH-006-A` | P2 | 统一 prediction/result artifact schema | not_started | distributed-safe writer/aggregator |

@@ -30,14 +30,14 @@ Role: `control_panel`
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；cumulative integrity registry
-  在 `19:18Z` 覆盖 31 个 final ZIP，其中 `001/005/008` 失败并隔离，28 个 archive/46,521 videos
-  通过；`19:17Z` 已有 5,710 个 eligible pose/sidecar pair，latest run 新失败 0，抽检 3/3 通过。
+  在 `19:30Z` 覆盖 32 个 final ZIP，其中 `001/005/008` 失败并隔离，29 个 archive/48,210 videos
+  通过；状态报告已有 6,017 个 eligible pose/sidecar pair，latest run 新失败 0，抽检 3/3 通过。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
   5 个 represented archive、15 个 failed-archive 历史 pair 明确排除；checksum/contract/adapter 验收通过。
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.4 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；119 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；135 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run artifact writer 与 `run-init` 已实现：原子冻结 resolved config、Git/environment、命令和
   输入 SHA-256，metrics 强制显式 protocol/样本数/有限值；train/eval/prepare 服务仍待实现。
@@ -45,7 +45,9 @@ Role: `control_panel`
   上两个真实 CPU loader 均输出 finite `[2,768]` embedding，`ARCH-REV-002` 已达到 evidence ready。
 - clean commit `79b45b5` 上已完成 pinned mT5-base 资产和 A100 两步 geometry-fusion smoke：三路
   adapter 梯度/参数更新、置信度反事实和 beam generation 均通过；该 artifact 明确不是论文结果。
-- clean commit `7aaa156` 的 release audit 已验证 76 个逐文件 hash、152 个 internal/legacy 排除项和 39-module
+- clean commit `688d44d` 上 canonical CubeNet/OmniHand 两步 A100 smoke 已两次确定性通过：depthwise
+  spatial、8-layer/16-head temporal 和 pose head 均有非零梯度/更新，single-frame 与 mask 反事实通过。
+- 同一 clean commit 的 release audit 已验证 85 个逐文件 hash、152 个 internal/legacy 排除项和 43-module
   dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。mT5 缺失项已关闭，
   reviewer profile 现只被 LICENSE 和 provenance-gated radar example 两项真实缺失阻塞。
 - `DEC-027` 已固定 mT5-only generation rebuild；legacy Phi-3 不进入 public support，clean commit
@@ -58,7 +60,8 @@ Role: `control_panel`
 2. 按已建立的 sober-language 与 Availability 清单准备回写；不在新增实验完成前强化结果主张。
 3. 监控 CSL-News 官方下载和夜间姿态标注，同时收集私人历史 archive/目录的名称、大小和可重下标记。
 4. 确认可新增真实数据的人数、伦理边界、方向/遮挡采集条件和时间预算。
-5. 在 mT5 工程切片已通过的基础上，待真实 source 到位后完成 OmniHand、data/radar 和 production WaveLLM GPU smoke。
+5. 在 OmniHand 与 mT5 synthetic 工程切片已通过的基础上，待真实 source 到位后完成 data/radar、
+   production training/checkpoint/prediction/evaluation 闭环。
 
 ## 当前 Blocker
 

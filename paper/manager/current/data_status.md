@@ -355,3 +355,15 @@ registry 为 22 final、19 passed/31,423 videos，失败项仍仅 `001/005/008`�
 1,484 samples/hour；报告 SHA-256 为
 `01f489f238891cf6fd3ff392bfcbb57efc2ce708a40cb793f2bfa3e67196df0a`。四个 registry worker 均
 `active/running`、`NRestarts=0`；status 的 `attention_required` 只来自三个已隔离 source failure。
+
+`19:23 UTC`，integrity timer 在 clean commit `10a30e5` 下完整审计并通过 `archive_052`：1,689 个
+视频的逐 member CRC、路径安全和 label coverage 均通过，archive SHA-256 为
+`dfa60be4fb10bd3eb46465e62f62f0938677795e88b9f08134614c90af86ecc0`，audit SHA-256 为
+`3fb760832e7b26a3b5ed7c34f2bd7936fe60bd908c89cf156dd21cb9a72a3ba1`。registry 更新为 32 final、
+29 passed/48,210 videos，失败仍仅 `001/005/008`，SHA-256 为
+`f1a5cd753c32df399dbac59d9102470bdec7262396ca0f0b50c6245386c3ce94`。
+
+`19:30 UTC` 自动状态报告统计 6,017 个 eligible pair、missing artifact/sidecar 0、latest run 新失败
+0、抽检 3/3 通过，近期约 1,488 samples/hour；报告 SHA-256 为
+`b60c277162be81e981a9c261e10c0dbfc2d71ba0db2f037e2d9ed21f8db6e27e`。四个 registry worker 均
+`active/running`、`NRestarts=0`；`attention_required` 仍只来自三个已隔离 source failure。

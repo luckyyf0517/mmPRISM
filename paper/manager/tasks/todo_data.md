@@ -59,7 +59,7 @@ SHA-256 为 `379b72f34a1f749a246891901e746defae3331dcb65fab64662686a7f260a723`�
 exit、残留 `.aria2` 和完整 `unzip -t` 三重 gate，并恢复断点下载。
 新 gate 首个晋升的 `archive_002` 已通过 1,624-video canonical audit，report SHA-256 为
 `3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`。cumulative registry
-现由 5 分钟 timer 增量维护，`19:18Z` 为 28 个 archive/46,521 videos passed；4 个 dynamic worker 仅消费
+现由 5 分钟 timer 增量维护，`19:30Z` 为 29 个 archive/48,210 videos passed；4 个 dynamic worker 仅消费
 typed passed entry，并保存 registry hash/shard provenance。
 
 首个 clean-commit pose+caption snapshot 冻结 2,157 条 eligible record，manifest SHA-256 为

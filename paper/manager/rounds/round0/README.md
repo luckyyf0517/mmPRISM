@@ -17,7 +17,7 @@ Role: `round0_control`
 | Asset discovery | `DATA-001` | in_progress | CSL-News source download active; private data/checkpoint/result inventory pending |
 | Runtime bootstrap | `OPS-001` | done | UV/Python 3.12/cu128 lock + wheel + A100 smoke |
 | Greenfield foundation | `ARCH-001`, `ARCH-002` | in_progress | pyproject + strict config + contracts + CLI + CPU tests |
-| Canonical smoke | `EXP-001` | blocked | new OmniHand + WaveLLM minimal artifacts |
+| Canonical smoke | `EXP-001` | in_progress | OmniHand + mT5 synthetic engineering artifacts passed；real-manifest train/eval pending |
 | Management control plane | documentation bootstrap | done | `paper/manager/` |
 
 ## Known Findings
@@ -41,7 +41,7 @@ Role: `round0_control`
 - [ ] 当前稿件与 supplementary 已接入并完成静态资产登记；仍需导入原投稿定稿和逐 display provenance。
 - [ ] 数据、checkpoint、log、metrics 位置已确认。
 - [x] UV 环境可重建且 CPU/GPU import smoke 通过。
-- [ ] 至少一个 canonical OmniHand 与 WaveLLM 路径有 smoke artifact，或 blocker 有完整解释。
+- [x] canonical OmniHand 与 mT5/WaveLLM 路径均有 clean-commit synthetic engineering smoke artifact。
 - [x] legacy 边界已决定为 forensic-only，不恢复到 canonical package。
 - [ ] Round1 的数据 inventory 范围和存储预算已拍板。
 

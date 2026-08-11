@@ -17,8 +17,8 @@ Role: `risk_register`
 | `ARCH-CONFIG-001` | P1 | legacy 配置、入口和代码中存在大量硬编码路径/GPU/dtype | 旧代码不可迁移；canonical release 必须彻底隔离 | in_progress | strict path/runtime/run-plan 已落地，继续完成所有新入口 |
 | `DATA-PATH-001` | P1 | legacy dataset 通过路径字符串替换关联多模态文件 | 易错且不可验证 | in_progress | canonical sample/pose manifest 与 split index 已移除路径替换；待 radar/model-ready adapter 覆盖后关闭 |
 | `DATA-CSLNEWS-META-001` | P1 | 官方 CSL-News CSV 比唯一 JSON 多 4 条冲突重复行 | CSV last-write-wins 会为 4 个视频静默选择错误译文 | mitigated | 固定 JSON 为 canonical source，CSV 只作审计；保留 profile 和四个 key，必要时反馈上游 |
-| `DATA-CSLNEWS-INTEGRITY-001` | P0 | `005/008` member 解压损坏；`001` 因 aria2 403 后被旧脚本误晋升为 incomplete final | `005/008` 的 3,251 个视频及 `001` 均不可作为 source；旧 partial snapshot 不能作为 integrity-verified 输入 | active_mitigated | promotion + cumulative consumption gate 已运行；19:18Z 仅调度 registry 中 28 个 passed archive；保留并 versioned 重下 `001/005/008` |
-| `EXP-TEST-001` | P1 | legacy 无自动化测试；canonical 已覆盖 foundation、radar 和 mT5 工程切片 | production OmniHand/WaveLLM、checkpoint 与分布式链仍缺保护 | in_progress | 扩展真实 manifest、训练、checkpoint、prediction 和 metric integration tests |
+| `DATA-CSLNEWS-INTEGRITY-001` | P0 | `005/008` member 解压损坏；`001` 因 aria2 403 后被旧脚本误晋升为 incomplete final | `005/008` 的 3,251 个视频及 `001` 均不可作为 source；旧 partial snapshot 不能作为 integrity-verified 输入 | active_mitigated | promotion + cumulative consumption gate 已运行；19:30Z 仅调度 registry 中 29 个 passed archive；保留并 versioned 重下 `001/005/008` |
+| `EXP-TEST-001` | P1 | legacy 无自动化测试；canonical 已覆盖 foundation、radar、OmniHand 和 mT5 工程切片 | production dataset training、checkpoint、prediction 与分布式链仍缺保护 | in_progress | 扩展真实 manifest、训练、checkpoint、prediction 和 metric integration tests |
 | `DOC-DRIFT-001` | P2 | legacy CLAUDE 描述多个不存在模块；旧公开 README 曾与代码漂移 | 直接复制开发仓库会误导执行 | mitigated | canonical README 已重写，release audit 确认 CLAUDE/internal/legacy 未被选择；最终 archive 继续执行同一 gate |
 | `ARCH-LLM-001` | P2 | legacy Phi-3 路径与 base API 不一致且无 runnable evidence | 若公开会造成伪支持 | mitigated | `DEC-027` 固定 mT5-only；legacy Phi-3 排除，canonical mT5 工程 smoke 已通过；后续只扩展 mT5 production path |
 | `REV-ARCH-001` | P0 | 两阶段架构缺少 matched direct end-to-end baseline | 核心增益归因不充分 | blocked | `EXP-REV-001` |

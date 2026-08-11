@@ -1,0 +1,163 @@
+{
+  "architecture": {
+    "attention": {
+      "channel": true,
+      "se": true,
+      "spatial": true
+    },
+    "depthwise_separable_residual": true,
+    "input_axes": [
+      "batch",
+      "time",
+      "doppler",
+      "range",
+      "azimuth",
+      "elevation"
+    ],
+    "output_axes": [
+      "batch",
+      "hand",
+      "joint",
+      "coordinate"
+    ],
+    "output_units": "m",
+    "pafpn": true,
+    "temporal_aggregation": "mask_aware_transformer_cls_mean_attention_v1"
+  },
+  "config_fingerprint": "9111d597d37b2eab5662b2c492a5ce09caef21733afbac2c0540d419df39c13b",
+  "cuda_memory": {
+    "peak_allocated_bytes": 48904704,
+    "peak_reserved_bytes": 77594624
+  },
+  "elapsed_seconds": 1.3698887778446078,
+  "metrics": {
+    "absolute_mpjpe_mm": 748.1575317382812,
+    "pck_threshold_mm": 40.0,
+    "protocol": "mmprism.pose_metric.dual_hand_metric_v1",
+    "root_relative_mpjpe_mm": 1032.020751953125,
+    "root_relative_pck": 0.0,
+    "samples": [
+      {
+        "absolute_mpjpe_mm": 749.96240234375,
+        "sample_id": "synthetic_pose_smoke_00"
+      },
+      {
+        "absolute_mpjpe_mm": 746.314208984375,
+        "sample_id": "synthetic_pose_smoke_01"
+      }
+    ]
+  },
+  "parameter_count": {
+    "frozen": 0,
+    "total": 679097,
+    "trainable": 679097
+  },
+  "runtime": {
+    "device": {
+      "compute_capability": [
+        8,
+        0
+      ],
+      "index": 5,
+      "name": "NVIDIA A100-SXM4-80GB",
+      "requested_type": "cuda",
+      "resolved": "cuda:5",
+      "total_memory_bytes": 85095874560
+    },
+    "dtype": "bfloat16",
+    "git": {
+      "commit": "688d44d18d7441c0c79706546e97683db2713ce9",
+      "dirty": false
+    },
+    "packages": {
+      "numpy": "2.5.2",
+      "torch": "2.11.0+cu128"
+    },
+    "platform": "Linux-5.15.0-119-generic-x86_64-with-glibc2.35",
+    "python": "3.12.13",
+    "torch_cuda": "12.8"
+  },
+  "samples_per_second": 2.9199450821793187,
+  "schema_version": "mmprism.omnihand_vertical_smoke.v1",
+  "scope": "engineering_vertical_smoke_not_paper_evidence",
+  "single_frame": {
+    "finite": true,
+    "joints_shape": [
+      2,
+      2,
+      24,
+      3
+    ]
+  },
+  "smoke_id": "omnihand_cubenet_v1",
+  "status": "passed",
+  "temporal_mask_counterfactual": {
+    "masked_padding_max_abs_difference": 0.0
+  },
+  "training": {
+    "objective": "masked_coordinate_l1_metres_v1",
+    "parameter_max_abs_delta": {
+      "pose_head.1.weight": 0.00200093537569046,
+      "spatial_encoder.stem.conv.weight": 0.0020009055733680725,
+      "temporal_aggregator.encoder.layers.0.self_attn.in_proj_weight": 0.0020009130239486694
+    },
+    "steps": [
+      {
+        "absolute_mpjpe_mm": 984.8758544921875,
+        "frame_feature_shape": [
+          2,
+          10,
+          64
+        ],
+        "gradient_norms": {
+          "pose_head": 0.6468903741155606,
+          "spatial_encoder": 0.7289725147958689,
+          "temporal_aggregator": 0.5711764264585572
+        },
+        "input_batch_sha256": "dfb5a9169eddcdcc9d32f311b31d4443fd14bb6ba63a8e3ecb297e1af8f64323",
+        "joints_shape": [
+          2,
+          2,
+          24,
+          3
+        ],
+        "loss_l1_metres": 0.5010122060775757,
+        "root_relative_mpjpe_mm": 1320.591064453125,
+        "root_relative_pck": 0.0,
+        "sequence_feature_shape": [
+          2,
+          64
+        ],
+        "step": 0
+      },
+      {
+        "absolute_mpjpe_mm": 914.9119873046875,
+        "frame_feature_shape": [
+          2,
+          10,
+          64
+        ],
+        "gradient_norms": {
+          "pose_head": 0.6465849207571709,
+          "spatial_encoder": 0.44582182640276,
+          "temporal_aggregator": 0.41495082642967984
+        },
+        "input_batch_sha256": "9bf5ed66d893d8532598944d17f3a426a1082723d36bf5635c5b18fc8f306b1e",
+        "joints_shape": [
+          2,
+          2,
+          24,
+          3
+        ],
+        "loss_l1_metres": 0.4481300413608551,
+        "root_relative_mpjpe_mm": 1150.4638671875,
+        "root_relative_pck": 0.0,
+        "sequence_feature_shape": [
+          2,
+          64
+        ],
+        "step": 1
+      }
+    ]
+  }
+}

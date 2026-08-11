@@ -28,6 +28,25 @@ Role: `run_and_artifact_provenance`
 - Paper destination: none; engineering/release evidence only.
 - Status: `passed_engineering_smoke`.
 
+### RUN-20260811-omnihand-cubenet-smoke
+
+- Task / Reviewer IDs: `ARCH-004-A`, `ARCH-004-B`, `EXP-001-B`, `EXP-001-C`.
+- Purpose: verify the canonical CubeNet reconstruction model and metric boundary, not a scientific
+  hypothesis or paper result.
+- Git commit / dirty state: `688d44d18d7441c0c79706546e97683db2713ce9` / clean.
+- Environment lock: `uv.lock`; Python 3.12.13; Torch 2.11.0+cu128; CUDA 12.8.
+- Resolved config: fingerprint `9111d597d37b2eab5662b2c492a5ce09caef21733afbac2c0540d419df39c13b`.
+- Dataset manifest / split: none; deterministic synthetic non-negative cube and metric-pose tensors only.
+- Seed / device / precision: `20260811` / A100 GPU 5 / bfloat16 autocast.
+- Training: random initialization; two finite masked-L1 optimizer updates; all spatial, temporal and
+  pose-head gradient norms and tracked parameter deltas nonzero.
+- Predictions: two sample-level synthetic pose metric records; not scientifically meaningful.
+- Validation: single-frame finite output, temporal padding invariance `0.0`, independent attention
+  toggles, PAFPN odd-shape checks, 135-test suite, deterministic normalized replicate hash `282bd16e...`.
+- Evidence: `omnihand_vertical_smoke.md`; `artifacts/omnihand_smoke_v1.json`.
+- Paper destination: none; engineering/release evidence only.
+- Status: `passed_engineering_smoke`.
+
 ## New Run Record Template
 
 ```markdown

@@ -241,3 +241,7 @@ scripts/run_csl_news_annotation_qc.sh
   `0/SUCCESS` 完成；registry 更新为 31 final、28 passed/46,521 videos，失败仍仅 `001/005/008`。
   `19:17Z` 状态报告已有 5,710 eligible pair、missing artifact/sidecar 0、latest run 新失败 0、
   抽检 3/3，近期约 1,484 samples/hour；四个 registry worker 均 active 且 `NRestarts=0`。
+- `19:23Z` integrity timer 在 clean commit `10a30e5` 下审计通过 `archive_052` 的 1,689 个视频；
+  registry 更新为 32 final、29 passed/48,210 videos。`19:30Z` 自动报告已有 6,017 eligible pair、
+  missing artifact/sidecar 0、latest run 新失败 0、抽检 3/3，近期约 1,488 samples/hour；四个 worker
+  继续 `active/running`、`NRestarts=0`，未清理任何 source、scratch、failure 或 pose artifact。

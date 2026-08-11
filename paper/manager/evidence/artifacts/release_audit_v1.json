@@ -1,5 +1,5 @@
 {
-  "config_fingerprint": "1c39365a3109b2ca34a6597b3ee25bc22d674dd6d78e270a3baae8d60e468abf",
+  "config_fingerprint": "1ea72ce529c7570dd255f3ab8dd4efc3d63d066c87f6ad3207eee3ea068bd5e3",
   "dependencies": {
     "cycles": [],
     "external_imports": [
@@ -10,7 +10,7 @@
       "transformers",
       "yaml"
     ],
-    "internal_edge_count": 64,
+    "internal_edge_count": 71,
     "internal_edges": [
       [
         "mmprism.__main__",
@@ -71,6 +71,10 @@
       [
         "mmprism.cli",
         "mmprism.training.mt5_smoke"
+      ],
+      [
+        "mmprism.cli",
+        "mmprism.training.omnihand_smoke"
       ],
       [
         "mmprism.config",
@@ -206,6 +210,10 @@
       ],
       [
         "mmprism.models",
+        "mmprism.models.cubenet"
+      ],
+      [
+        "mmprism.models",
         "mmprism.models.stgcn"
       ],
       [
@@ -253,6 +261,10 @@
         "mmprism.training.mt5_config"
       ],
       [
+        "mmprism.training",
+        "mmprism.training.omnihand_config"
+      ],
+      [
         "mmprism.training.mt5_config",
         "mmprism.config"
       ],
@@ -267,9 +279,25 @@
       [
         "mmprism.training.mt5_smoke",
         "mmprism.training.mt5_config"
+      ],
+      [
+        "mmprism.training.omnihand_config",
+        "mmprism.config"
+      ],
+      [
+        "mmprism.training.omnihand_smoke",
+        "mmprism.evaluation.pose"
+      ],
+      [
+        "mmprism.training.omnihand_smoke",
+        "mmprism.models.cubenet"
+      ],
+      [
+        "mmprism.training.omnihand_smoke",
+        "mmprism.training.omnihand_config"
       ]
     ],
-    "module_count": 39,
+    "module_count": 43,
     "modules": [
       "mmprism",
       "mmprism.__main__",
@@ -296,7 +324,9 @@
       "mmprism.data.csl_news_pose_manifest",
       "mmprism.data.split",
       "mmprism.evaluation",
+      "mmprism.evaluation.pose",
       "mmprism.models",
+      "mmprism.models.cubenet",
       "mmprism.models.stgcn",
       "mmprism.models.translation",
       "mmprism.radar",
@@ -309,7 +339,9 @@
       "mmprism.runtime.provenance",
       "mmprism.training",
       "mmprism.training.mt5_config",
-      "mmprism.training.mt5_smoke"
+      "mmprism.training.mt5_smoke",
+      "mmprism.training.omnihand_config",
+      "mmprism.training.omnihand_smoke"
     ]
   },
   "entrypoints": {
@@ -328,9 +360,9 @@
       "path": "configs/examples/radar_smoke.yaml"
     }
   ],
-  "generated_at": "2026-08-11T19:16:35.935289+00:00",
+  "generated_at": "2026-08-11T19:38:38.723867+00:00",
   "git": {
-    "commit": "7aaa1568ac1f83efbdc99693c146b4adcb292b85",
+    "commit": "688d44d18d7441c0c79706546e97683db2713ce9",
     "dirty_entry_count": 0,
     "state": "clean"
   },
@@ -344,14 +376,19 @@
         "sha256": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d"
       },
       {
-        "bytes": 8033,
+        "bytes": 9415,
         "path": "README.md",
-        "sha256": "a723392b6075e72ebe11c40e05c7ee24ad8b36bace7a7e574421273872ffbf4a"
+        "sha256": "41ea030546278a4ce05ff50098e61d8cfe3668539f3b2aca363da19d4d67ca7f"
       },
       {
         "bytes": 710,
         "path": "configs/examples/mt5_smoke.yaml",
         "sha256": "8f604e6203403c7945f9bd49926e39b69c3be42ddadb14a3736fc97e69c780e9"
+      },
+      {
+        "bytes": 725,
+        "path": "configs/examples/omnihand_smoke.yaml",
+        "sha256": "5f4621a514b6f7e966ad68ca0b251ebd8b4a41b98cb323ab823d4b1a477cb2d7"
       },
       {
         "bytes": 330,
@@ -369,9 +406,9 @@
         "sha256": "e247779055482d99ce6cb82ecebc6620fe6bfadd0105bb68d00a10a614b6d5d7"
       },
       {
-        "bytes": 1623,
+        "bytes": 1732,
         "path": "configs/release/reviewer_release_v1.yaml",
-        "sha256": "052e7679635ce7a8d913427aad4f07cb86d64a5514524c1b866544cf0feb7463"
+        "sha256": "6e27f8cfb3ed8b91a0c91873ae1a747d4d97fbd798d7a368003460e40b8ffc8c"
       },
       {
         "bytes": 2539,
@@ -397,6 +434,11 @@
         "bytes": 566,
         "path": "scripts/run_mt5_smoke.sh",
         "sha256": "fbf8f938fefb5154a224209f42766b74e33f62f57bb4f31c41552ad13ea1acae"
+      },
+      {
+        "bytes": 403,
+        "path": "scripts/run_omnihand_smoke.sh",
+        "sha256": "e26d0c63744b3735956969bf87627512272cbaaf372a6fe65d1a61291c1a469b"
       },
       {
         "bytes": 65,
@@ -429,9 +471,9 @@
         "sha256": "6e04b618bca8fbd740bf77e6d169fca664e74bb4ff8c32853438e98ab25dbd6d"
       },
       {
-        "bytes": 21903,
+        "bytes": 23286,
         "path": "src/mmprism/cli.py",
-        "sha256": "bbf748ae45f881d3265c85731ace8cbd293b77597f2baeeda476768884f3ed94"
+        "sha256": "f91cdeb348dbeb33d0e676fe8d3d1b93b91f01cc3269cd817743990b006c7a13"
       },
       {
         "bytes": 321,
@@ -524,9 +566,19 @@
         "sha256": "9852052356bc8b0642ba727fac25c5d0a064a3747d2823bff6718df0ec0d5a95"
       },
       {
-        "bytes": 637,
+        "bytes": 3433,
+        "path": "src/mmprism/evaluation/pose.py",
+        "sha256": "1e63fd5f6ee93d7a5b7bb8cb82ea54552fdd3f6d36581d138a374d02ce0bf111"
+      },
+      {
+        "bytes": 1178,
         "path": "src/mmprism/models/__init__.py",
-        "sha256": "f40123011ce90b0d9f059a688162fc8c4ad07e58078761b7a2062672f787aba6"
+        "sha256": "21d7c4059d98c818d22ffdd8b6b34d31e9c59b429f90a0623501062028bd54ba"
+      },
+      {
+        "bytes": 18142,
+        "path": "src/mmprism/models/cubenet.py",
+        "sha256": "0febec34209e68641040d84bd79de39b797b196e98f1a0e41db3ef1442e3df03"
       },
       {
         "bytes": 7075,
@@ -584,9 +636,9 @@
         "sha256": "ca32e27e104a9202287dd2fa2ec753325719539d9453a46481f3bfc9cc0ac54f"
       },
       {
-        "bytes": 584,
+        "bytes": 1265,
         "path": "src/mmprism/training/__init__.py",
-        "sha256": "f81bc35e205bfa1d043e53dc9503a8cad9574ff9ebd76bc794edbef82d1af2cf"
+        "sha256": "50561ecc4aecdb1ac4f5de705d14a355cbd09594096736438418900794e8edd0"
       },
       {
         "bytes": 12568,
@@ -597,6 +649,16 @@
         "bytes": 17999,
         "path": "src/mmprism/training/mt5_smoke.py",
         "sha256": "2be41df8f89809988c6cc2924d5263c2d4ba1f21415e9eb0b3d36aff572f6ddf"
+      },
+      {
+        "bytes": 15213,
+        "path": "src/mmprism/training/omnihand_config.py",
+        "sha256": "0f3ad115beff5c057fb817258a88045e4bce216ca27d493a3c9fd03aab43839c"
+      },
+      {
+        "bytes": 17166,
+        "path": "src/mmprism/training/omnihand_smoke.py",
+        "sha256": "c2823c8280e630d68cd2ac2341643f164cbc2e962187c7e35e0f4bf1620e22f9"
       },
       {
         "bytes": 412,
@@ -617,6 +679,11 @@
         "bytes": 2903,
         "path": "tests/integration/test_mt5_model.py",
         "sha256": "26cfde3ad946233cce14ec7cee34890cd6e30c2985806a08109e4f42c4a4b84f"
+      },
+      {
+        "bytes": 3549,
+        "path": "tests/integration/test_omnihand_model.py",
+        "sha256": "83749a0c95c9b6f9679831d50fb38e0884330b703a5b02c3ad9e62b8f219251c"
       },
       {
         "bytes": 8744,
@@ -687,6 +754,16 @@
         "bytes": 2820,
         "path": "tests/unit/test_mt5_config.py",
         "sha256": "7e20cea0e02b85c5f83bf1fe00730f9d1b3c4f96f4d3023672aeacbe527687e6"
+      },
+      {
+        "bytes": 3633,
+        "path": "tests/unit/test_omnihand_config.py",
+        "sha256": "eeb1b81d16cec2a0170c5d71fb95b11efd4c379272967f7295787b1c95968070"
+      },
+      {
+        "bytes": 1503,
+        "path": "tests/unit/test_pose_metrics.py",
+        "sha256": "8be2a8c574d888b5058e9dc6ee138db2f8124a8016e9d08f73e213080d309fc6"
       },
       {
         "bytes": 4313,
@@ -874,9 +951,9 @@
       "src/utils/unzip_folders.py"
     ],
     "forbidden_tracked_but_excluded_count": 152,
-    "selected_bytes": 713491,
-    "selected_file_count": 76,
-    "tracked_file_count": 264
+    "selected_bytes": 781354,
+    "selected_file_count": 85,
+    "tracked_file_count": 274
   },
   "status": "failed"
 }

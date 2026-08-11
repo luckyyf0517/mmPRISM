@@ -10,12 +10,12 @@ Evidence ID: `EVID-CODE-RELEASE-V1`
 ```text
 schema: mmprism.release_audit_report.v1
 release profile: reviewer_release_v1
-builder commit: 7aaa1568ac1f83efbdc99693c146b4adcb292b85
+builder commit: 688d44d18d7441c0c79706546e97683db2713ce9
 builder Git state: clean
 config: configs/release/reviewer_release_v1.yaml
-config fingerprint: 1c39365a3109b2ca34a6597b3ee25bc22d674dd6d78e270a3baae8d60e468abf
+config fingerprint: 1ea72ce529c7570dd255f3ab8dd4efc3d63d066c87f6ad3207eee3ea068bd5e3
 artifact: paper/manager/evidence/artifacts/release_audit_v1.json
-artifact SHA-256: c940505d8ed6c1e556d58b28a944b45cfe7784c3bc651e9ba20d15d5639ee61e
+artifact SHA-256: d73be10726bdace96b45711fcc4ae71c9876357552e0f4ce527b92efe1fd817a
 status: failed (expected blockers retained)
 ```
 
@@ -33,13 +33,13 @@ execution failure would return `2`.
 
 | Gate | Result |
 |---|---:|
-| Git tracked files inspected | 264 |
-| release-selected files | 76 |
-| selected bytes | 713,491 |
-| selected files with size + SHA-256 | 76/76 |
+| Git tracked files inspected | 274 |
+| release-selected files | 85 |
+| selected bytes | 781,354 |
+| selected files with size + SHA-256 | 85/85 |
 | tracked internal/legacy paths explicitly excluded | 152 |
-| canonical Python modules | 39 |
-| internal dependency edges | 64 |
+| canonical Python modules | 43 |
+| internal dependency edges | 71 |
 | missing canonical import targets | 0 |
 | canonical imports of forbidden legacy namespaces | 0 |
 | relative canonical imports | 0 |
@@ -67,6 +67,10 @@ The former mT5 missing-path blocker is closed. The profile now selects and hashe
 `configs/examples/mt5_smoke.yaml`, `configs/models/mt5_base_v1.yaml`, `scripts/download_mt5.sh`,
 `scripts/run_mt5_smoke.sh`, canonical model/training modules and their tests. Fixed-revision asset and
 A100 execution evidence is recorded as `EVID-CODE-MT5-SMOKE-V1`.
+
+The profile also selects `configs/examples/omnihand_smoke.yaml`, `scripts/run_omnihand_smoke.sh`,
+canonical CubeNet/config/metric/smoke modules and their tests. Clean-commit A100 execution evidence is
+recorded as `EVID-CODE-OMNIHAND-SMOKE-V1`.
 
 `scripts/download_models.sh` and `configs/models/evaluation_models_v1.yaml` are now selected and hashed
 by the release profile. Their fixed-revision download, checksum and two-loader execution evidence is
