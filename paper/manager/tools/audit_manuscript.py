@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-AUDIT_SCHEMA = "mmprism.manuscript_audit.v1"
+AUDIT_SCHEMA = "mmprism.manuscript_audit.v2"
 GRAPHIC_EXTENSIONS = (".pdf", ".png", ".jpg", ".jpeg", ".eps", ".svg")
 SECTION_COMMANDS = ("part", "chapter", "section", "subsection", "subsubsection")
 REFERENCE_COMMANDS = ("ref", "eqref", "autoref", "cref", "Cref", "pageref")
@@ -115,6 +115,14 @@ SOBER_PATTERNS: tuple[tuple[str, str, str, str], ...] = (
     ),
 )
 
+PLACEHOLDER_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("PLACEHOLDER-TODO", r"\b(?:TODO|TBD|PLACEHOLDER)\b"),
+    (
+        "PLACEHOLDER-EXAMPLE-REAL-DATA-CN",
+        r"(?:示例[^\r\n%]{0,40})?替换为真实数据",
+    ),
+)
+
 
 @dataclass(frozen=True)
 class Command:
@@ -138,6 +146,10 @@ class TexSource:
 
     def context(self, offset: int) -> str:
         line = self.active_text.splitlines()[self.line_number(offset) - 1]
+        return collapse_whitespace(line)
+
+    def raw_context(self, offset: int) -> str:
+        line = self.raw_text.splitlines()[self.line_number(offset) - 1]
         return collapse_whitespace(line)
 
 
@@ -240,17 +252,24 @@ def iter_commands(text: str, names: Iterable[str]) -> Iterator[Command]:
         )
 
 
-def _source(path: Path, root: Path) -> TexSource:
-    raw = path.read_text(encoding="utf-8")
+def _source_from_text(relative_path: str, raw: str, *, path: Path | None = None) -> TexSource:
     active = strip_latex_comments(raw)
     line_starts = [0]
     line_starts.extend(match.end() for match in re.finditer("\n", active))
     return TexSource(
-        path=path,
-        relative_path=path.relative_to(root).as_posix(),
+        path=path if path is not None else Path(relative_path),
+        relative_path=relative_path,
         raw_text=raw,
         active_text=active,
         line_starts=tuple(line_starts),
+    )
+
+
+def _source(path: Path, root: Path) -> TexSource:
+    return _source_from_text(
+        path.relative_to(root).as_posix(),
+        path.read_text(encoding="utf-8"),
+        path=path,
     )
 
 
@@ -357,6 +376,7 @@ def _scan_document_graph(root: Path, entry: Path) -> dict[str, Any]:
 
 def _find_environments(source: TexSource, environment_type: str) -> list[dict[str, Any]]:
     begin_re = re.compile(rf"\\begin\s*\{{({environment_type}\*?)\}}")
+    sections = list(iter_commands(source.active_text, SECTION_COMMANDS))
     results: list[dict[str, Any]] = []
     for index, begin in enumerate(begin_re.finditer(source.active_text), start=1):
         environment = begin.group(1)
@@ -364,27 +384,87 @@ def _find_environments(source: TexSource, environment_type: str) -> list[dict[st
         end = end_re.search(source.active_text, begin.end())
         content_end = end.end() if end else len(source.active_text)
         content = source.active_text[begin.start() : content_end]
-        labels = [collapse_whitespace(item.argument) for item in iter_commands(content, ("label",))]
-        captions = [
-            collapse_whitespace(item.argument) for item in iter_commands(content, ("caption",))
-        ]
-        graphics = [
-            collapse_whitespace(item.argument)
-            for item in iter_commands(content, ("includegraphics",))
-        ]
+        label_commands = list(iter_commands(content, ("label",)))
+        caption_commands = list(iter_commands(content, ("caption",)))
+        graphic_commands = list(iter_commands(content, ("includegraphics",)))
+        labels = [collapse_whitespace(item.argument) for item in label_commands]
+        captions = [collapse_whitespace(item.argument) for item in caption_commands]
+        graphics = [collapse_whitespace(item.argument) for item in graphic_commands]
+        display_items: list[dict[str, Any]] = []
+        if caption_commands:
+            for item_index, caption in enumerate(caption_commands, start=1):
+                lower_bound = caption_commands[item_index - 2].end if item_index > 1 else 0
+                upper_bound = (
+                    caption_commands[item_index].start
+                    if item_index < len(caption_commands)
+                    else len(content)
+                )
+                item_graphics = [
+                    collapse_whitespace(item.argument)
+                    for item in graphic_commands
+                    if lower_bound <= item.start < caption.start
+                ]
+                item_labels = [
+                    collapse_whitespace(item.argument)
+                    for item in label_commands
+                    if caption.end <= item.start < upper_bound
+                ]
+                display_items.append(
+                    {
+                        "item_index_in_environment": item_index,
+                        "environment": environment,
+                        "environment_index_in_file": index,
+                        "file": source.relative_path,
+                        "line": source.line_number(begin.start() + caption.start),
+                        "labels": item_labels,
+                        "caption": collapse_whitespace(caption.argument),
+                        "graphics": item_graphics,
+                    }
+                )
+        else:
+            display_items.append(
+                {
+                    "item_index_in_environment": 1,
+                    "environment": environment,
+                    "environment_index_in_file": index,
+                    "file": source.relative_path,
+                    "line": source.line_number(begin.start()),
+                    "labels": labels,
+                    "caption": None,
+                    "graphics": graphics,
+                }
+            )
+        preceding_sections = [item for item in sections if item.start < begin.start()]
+        section = _plain_latex(preceding_sections[-1].argument) if preceding_sections else None
+        for display_item in display_items:
+            display_item["section"] = section
         results.append(
             {
                 "index_in_file": index,
                 "environment": environment,
                 "file": source.relative_path,
                 "line": source.line_number(begin.start()),
+                "section": section,
                 "labels": labels,
                 "captions": captions,
                 "graphics": graphics,
+                "display_items": display_items,
                 "closed": end is not None,
             }
         )
     return results
+
+
+def _assign_display_ids(
+    displays: list[dict[str, Any]], prefix: str
+) -> list[dict[str, Any]]:
+    for index, display in enumerate(displays, start=1):
+        display["display_id"] = f"{prefix}-{index:02d}"
+    return displays
+
+
+def _flatten_display_items(environments: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [item for environment in environments for item in environment["display_items"]]
 
 
 def _document_body(source: TexSource) -> str:
@@ -413,6 +493,24 @@ def _sober_hits(source: TexSource) -> list[dict[str, Any]]:
                     "file": source.relative_path,
                     "line": source.line_number(offset),
                     "context": source.context(offset),
+                }
+            )
+    return sorted(hits, key=lambda item: (item["file"], item["line"], item["rule_id"]))
+
+
+def _placeholder_hits(source: TexSource) -> list[dict[str, Any]]:
+    hits: list[dict[str, Any]] = []
+    for rule_id, pattern in PLACEHOLDER_PATTERNS:
+        for match in re.finditer(pattern, source.raw_text, flags=re.IGNORECASE):
+            matched_text = match.group(0)
+            hits.append(
+                {
+                    "rule_id": rule_id,
+                    "matched_text": matched_text,
+                    "active": source.active_text[match.start() : match.end()] == matched_text,
+                    "file": source.relative_path,
+                    "line": source.line_number(match.start()),
+                    "context": source.raw_context(match.start()),
                 }
             )
     return sorted(hits, key=lambda item: (item["file"], item["line"], item["rule_id"]))
@@ -448,13 +546,42 @@ def audit_manuscript(root: Path, entry_name: str) -> dict[str, Any]:
     graphics: list[dict[str, Any]] = []
     bibliography_commands: list[dict[str, Any]] = []
     sober_hits: list[dict[str, Any]] = []
+    placeholder_hits: list[dict[str, Any]] = []
     citation_command_count = 0
     reference_command_count = 0
 
     for source in sources.values():
-        figures.extend(_find_environments(source, "figure"))
+        source_figures = _find_environments(source, "figure")
+        for figure in source_figures:
+            figure["resolved_graphics"] = [
+                (
+                    resolved.relative_to(root).as_posix()
+                    if (
+                        resolved := _resolve_local_target(
+                            root, source.path, target, GRAPHIC_EXTENSIONS
+                        )
+                    )
+                    else None
+                )
+                for target in figure["graphics"]
+            ]
+            for display_item in figure["display_items"]:
+                display_item["resolved_graphics"] = [
+                    (
+                        resolved.relative_to(root).as_posix()
+                        if (
+                            resolved := _resolve_local_target(
+                                root, source.path, target, GRAPHIC_EXTENSIONS
+                            )
+                        )
+                        else None
+                    )
+                    for target in display_item["graphics"]
+                ]
+        figures.extend(source_figures)
         tables.extend(_find_environments(source, "table"))
         sober_hits.extend(_sober_hits(source))
+        placeholder_hits.extend(_placeholder_hits(source))
         for command in iter_commands(source.active_text, ("label",)):
             labels.append(
                 {"key": collapse_whitespace(command.argument), **_location(source, command)}
@@ -566,6 +693,14 @@ def audit_manuscript(root: Path, entry_name: str) -> dict[str, Any]:
         "methods_present": "methods" in section_titles,
     }
 
+    figure_display_items = _assign_display_ids(
+        _flatten_display_items(figures), "DISPLAY-MAIN-FIG"
+    )
+    table_display_items = _assign_display_ids(
+        _flatten_display_items(tables), "DISPLAY-MAIN-TABLE"
+    )
+    display_items = [*figure_display_items, *table_display_items]
+
     attention_reasons: list[str] = []
     if graph["missing_inputs"]:
         attention_reasons.append("missing_input")
@@ -587,6 +722,8 @@ def audit_manuscript(root: Path, entry_name: str) -> dict[str, Any]:
         attention_reasons.append("missing_code_availability")
     if sober_hits:
         attention_reasons.append("editorial_language_review")
+    if placeholder_hits:
+        attention_reasons.append("placeholder_marker")
 
     return {
         "entry": entry.relative_to(root).as_posix(),
@@ -595,6 +732,11 @@ def audit_manuscript(root: Path, entry_name: str) -> dict[str, Any]:
         "document_graph": graph,
         "figures": figures,
         "tables": tables,
+        "display_items": {
+            "figures": figure_display_items,
+            "tables": table_display_items,
+            "all": display_items,
+        },
         "graphics": {
             "references": graphics,
             "referenced_files": referenced_graphics,
@@ -630,6 +772,11 @@ def audit_manuscript(root: Path, entry_name: str) -> dict[str, Any]:
                 sorted(Counter(item["rule_id"] for item in sober_hits).items())
             ),
         },
+        "placeholders": {
+            "hits": placeholder_hits,
+            "active_count": sum(1 for item in placeholder_hits if item["active"]),
+            "comment_count": sum(1 for item in placeholder_hits if not item["active"]),
+        },
         "summary": {
             "status": "attention_required" if attention_reasons else "passed",
             "attention_reasons": attention_reasons,
@@ -637,12 +784,16 @@ def audit_manuscript(root: Path, entry_name: str) -> dict[str, Any]:
             "section_count": len(graph["section_order"]),
             "figure_count": len(figures),
             "table_count": len(tables),
+            "figure_display_item_count": len(figure_display_items),
+            "table_display_item_count": len(table_display_items),
+            "display_item_count": len(display_items),
             "label_count": len(labels),
             "reference_command_count": reference_command_count,
             "referenced_key_count": len(referenced_keys),
             "citation_command_count": citation_command_count,
             "cited_key_count": len(cited_keys),
             "sober_language_hit_count": len(sober_hits),
+            "placeholder_hit_count": len(placeholder_hits),
         },
     }
 
@@ -678,6 +829,9 @@ def audit_supplementary_zip(path: Path) -> dict[str, Any]:
     tex_files: list[dict[str, Any]] = []
     all_graphics: list[dict[str, Any]] = []
     all_inputs: list[dict[str, Any]] = []
+    all_figures: list[dict[str, Any]] = []
+    all_tables: list[dict[str, Any]] = []
+    placeholder_hits: list[dict[str, Any]] = []
     warnings: list[str] = []
 
     with zipfile.ZipFile(path) as archive:
@@ -703,7 +857,9 @@ def audit_supplementary_zip(path: Path) -> dict[str, Any]:
             if suffix != ".tex" or info.is_dir():
                 continue
             text = payload.decode("utf-8", errors="replace")
-            active = strip_latex_comments(text)
+            source = _source_from_text(info.filename, text)
+            active = source.active_text
+            placeholder_hits.extend(_placeholder_hits(source))
             sections = [
                 _plain_latex(command.argument)
                 for command in iter_commands(active, SECTION_COMMANDS)
@@ -730,6 +886,22 @@ def audit_supplementary_zip(path: Path) -> dict[str, Any]:
                 }
                 inputs.append(record)
                 all_inputs.append(record)
+            figures = _find_environments(source, "figure")
+            for figure in figures:
+                figure["resolved_graphics"] = [
+                    _resolve_zip_target(name_set, info.filename, target, GRAPHIC_EXTENSIONS)
+                    for target in figure["graphics"]
+                ]
+                for display_item in figure["display_items"]:
+                    display_item["resolved_graphics"] = [
+                        _resolve_zip_target(
+                            name_set, info.filename, target, GRAPHIC_EXTENSIONS
+                        )
+                        for target in display_item["graphics"]
+                    ]
+            tables = _find_environments(source, "table")
+            all_figures.extend(figures)
+            all_tables.extend(tables)
             tex_files.append(
                 {
                     "path": info.filename,
@@ -738,12 +910,24 @@ def audit_supplementary_zip(path: Path) -> dict[str, Any]:
                         re.search(r"\\begin\s*\{document\}", active)
                     ),
                     "section_titles": sections,
-                    "figure_count": len(re.findall(r"\\begin\s*\{figure\*?\}", active)),
-                    "table_count": len(re.findall(r"\\begin\s*\{table\*?\}", active)),
+                    "figure_count": len(figures),
+                    "table_count": len(tables),
+                    "figures": figures,
+                    "tables": tables,
                     "graphics": graphics,
                     "inputs": inputs,
                 }
             )
+
+    all_figures.sort(key=lambda item: (item["file"], item["line"], item["index_in_file"]))
+    all_tables.sort(key=lambda item: (item["file"], item["line"], item["index_in_file"]))
+    figure_display_items = _assign_display_ids(
+        _flatten_display_items(all_figures), "DISPLAY-SUPP-FIG"
+    )
+    table_display_items = _assign_display_ids(
+        _flatten_display_items(all_tables), "DISPLAY-SUPP-TABLE"
+    )
+    display_items = [*figure_display_items, *table_display_items]
 
     main_candidates = sorted(
         item["path"]
@@ -764,6 +948,8 @@ def audit_supplementary_zip(path: Path) -> dict[str, Any]:
         warnings.append("missing_graphic_in_archive")
     if any(item["resolved"] is None for item in all_inputs):
         warnings.append("missing_input_in_archive")
+    if placeholder_hits:
+        warnings.append("placeholder_marker_in_tex")
 
     extension_counts = Counter(
         PurePosixPath(item["path"]).suffix.lower() or "<none>" for item in entries
@@ -788,6 +974,19 @@ def audit_supplementary_zip(path: Path) -> dict[str, Any]:
         "encrypted_entries": sorted(item["path"] for item in entries if item["encrypted"]),
         "main_candidates": main_candidates,
         "tex_files": tex_files,
+        "figures": all_figures,
+        "tables": all_tables,
+        "display_items": {
+            "figures": figure_display_items,
+            "tables": table_display_items,
+            "all": display_items,
+        },
+        "display_item_count": len(display_items),
+        "placeholders": {
+            "hits": placeholder_hits,
+            "active_count": sum(1 for item in placeholder_hits if item["active"]),
+            "comment_count": sum(1 for item in placeholder_hits if not item["active"]),
+        },
         "referenced_graphics": referenced_graphics,
         "unreferenced_graphics": sorted(set(graphic_entries) - set(referenced_graphics)),
         "missing_graphics": [item for item in all_graphics if item["resolved"] is None],

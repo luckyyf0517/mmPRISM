@@ -22,7 +22,7 @@ Role: `availability_and_source_data_control`
 | 新增/历史真实 radar 数据 | participant consent、ethics approval/豁免、去标识化、可公开粒度、限制访问流程 | blocked，需作者和伦理边界确认 |
 | Synthetic radar/pose | simulator/version、输入来源许可、生成配置、manifest/hash、可重建范围 | simulator provenance blocked |
 | Processed pose/caption | source lineage、处理版本、checksum、许可继承、repository layout | CSL-News partial engineering snapshot 已有，final release 未冻结 |
-| Paper Source Data | 每个主文/补充图表底层样本级数据，或公开 raw+code 可完全复现的豁免证据 | display-item provenance 尚未登记 |
+| Paper Source Data | 每个主文/补充图表底层样本级数据，或公开 raw+code 可完全复现的豁免证据 | 20 个 display item 已登记；所有科学 provenance 待补，S2-S6 为 `placeholder_unverified` |
 
 ## Code Availability 输入矩阵
 
@@ -58,9 +58,10 @@ Role: `availability_and_source_data_control`
 Nature 要求为均值/表格、散点图和折线图提供底层数据；只有当所有 display item 已可由公开 raw data
 和公开代码复现时，才可以采用无需单独 Source Data 文件的路径。当前采用以下 gate：
 
-1. 从 `PAPER-AUDIT-001` 的 8 个主文 display environment 和 supplementary 的 11 个 display
-   environment 建立逐项清单。
-2. 每个面板登记 raw/processed input、sample-level values、生成脚本、run ID、metric protocol 和 hash。
+1. `PAPER-AUDIT-001` 已从 19 个 environment 识别并登记 20 个独立 display item：主文 9 个、
+   supplementary 11 个，见 `evidence/display_item_registry.md`。
+2. 按 registry 为每项补齐 raw/processed input、sample-level values、生成脚本、run ID、checkpoint、
+   metric protocol 和 hash。Supplementary Tables S2-S6 在真实实验替换前不得提供或引用当前数字。
 3. 决定单个 `Source Data.xlsx`（每图/表独立 sheet）或 labelled ZIP；不得只提供图片中的均值。
 4. 在最终选择完成后同步 Data Availability 精确 statement 和 cover letter 描述。
 

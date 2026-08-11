@@ -31,7 +31,7 @@ Role: `round0_control`
 - Major revision decision 已收到；编辑明确要求替代架构、DA、dataset characterization 和 real-world generalization。
 - 两位 reviewer 的意见已拆成 20 个科学/代码执行项，并建立 P0–P2 计划。
 - 当前返修稿已作为 `paper/manuscript` Overleaf Git 子模块接入，接入快照为 `master@3242a40`，主入口为 `sn-article.tex`。
-- `PAPER-AUDIT-001` 已登记当前 8 个主文和 11 个 supplementary display environment；主文引用完整，
+- `PAPER-AUDIT-001` 已登记当前 19 个 environment 中的 20 个 display item（主文 9、supplementary 11）；主文引用完整，
   supplementary ZIP CRC 通过，Availability 缺失和 30 个语言命中已进入独立清单。
 - 作者确认不保留旧训练链兼容；新实现以 `src/mmprism` 为唯一主线，legacy 代码只读取证。
 

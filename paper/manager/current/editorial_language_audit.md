@@ -8,7 +8,7 @@ Role: `sober_language_and_claim_strength_tracker`
 
 本清单绑定当前工作稿 `paper/manuscript@3242a40` 和 `PAPER-AUDIT-001`。扫描只覆盖
 `sn-article.tex` 递归展开后的有效正文，注释模板、`sn-article-bak.tex` 和未被 include 的文件不计入。
-机器可读逐行 context 见 `evidence/artifacts/manuscript_inventory_v1.json`。
+机器可读逐行 context 见 `evidence/artifacts/manuscript_inventory_v2.json`。
 
 编辑明确要求删除首创式、夸张和主观措辞。当前阶段只完成定位和处置分类；尚未修改正文，因为其中
 多项比较与泛化表述必须等待复现实验或新增证据后才能决定“保留并量化”还是“降级/删除”。

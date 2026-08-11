@@ -13,7 +13,7 @@ Role: `editorial_policy_tracker`
 | `ED-COMP-5` | Data Availability section | manuscript section after Methods | TBD | in_progress | `PAPER-AUDIT-001` 确认 active section 缺失；按 `current/availability_plan.md` 补 repository/restriction/source-data 事实后写入 |
 | `ED-COMP-6` | Code Availability section | manuscript section after Data Availability | TBD | in_progress | `PAPER-AUDIT-001` 确认 active section 缺失；待 release URL/tag/license/clean-room smoke 后写入 |
 | `ED-COMP-7` | Persistent data repository | repository/figshare decision, upload record, DOI when available | TBD | blocked | data inventory/license/consent |
-| `ED-COMP-8` | Source Data | labelled Excel/zip or public-reproducibility exemption | TBD | blocked | 当前 inventory 为主文 8、supplementary 11 个 display environment；逐面板 source-data/provenance 待建 |
+| `ED-COMP-8` | Source Data | labelled Excel/zip or public-reproducibility exemption | TBD | in_progress | 19 个 environment/20 个 display item 已登记；逐项 artifact 待建，Supplementary Tables S2-S6 当前为 `placeholder_unverified` |
 | `ED-COMP-9` | Source Data statement | exact statement when applicable | TBD | blocked | Data Availability review |
 | `ED-COMP-10` | ORCID | corresponding-author account linkage | corresponding authors | not_started | account confirmation |
 | `ED-COMP-11` | Author changes | signed form if author list changes | corresponding authors | conditional | final author-list comparison |

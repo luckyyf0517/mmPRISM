@@ -7,7 +7,7 @@ Role: `risk_register`
 | ID | Severity | Issue | Impact | Status | Next Action |
 |---|---|---|---|---|---|
 | `BLOCK-DATA-ROOT` | P0 | CSL-News 官方源已开始下载，但私人 collected、CSL-Daily 和历史运行资产仍未定位 | 真实数据与原投稿结果仍无法验证 | blocked | 完成 CSL-News intake；定位旧服务器、备份、对象存储或其他来源 |
-| `BLOCK-MANUSCRIPT` | P0 | 当前 Overleaf 稿件/supplement 静态 inventory 已完成，但原投稿定稿和 response 未导入，19 个 display environment 的 provenance 未登记 | 无法完成新旧稿差异、全部 claim 和 paper-facing 数值审计 | in_progress | 导入原投稿；从 `PAPER-AUDIT-001` 逐项建立 figure/table provenance |
+| `BLOCK-MANUSCRIPT` | P0 | 当前 19 个 display environment/20 个 display item 已登记，但原投稿定稿和 response 未导入，所有科学 provenance 未闭合；Supplementary Tables S2-S6 是未验证占位数据 | 无法完成新旧稿差异、全部 claim 和 paper-facing 数值审计 | in_progress | 导入原投稿；按 `display_item_registry.md` 补 dataset/split/run/checkpoint/metric/script/Source Data，重新生成 S2-S6 |
 | `BLOCK-PROVENANCE` | P0 | 论文数值与 checkpoint/split/metrics 未建立映射 | 结果不可审计 | not_started | 建立 data/experiment/paper evidence registry |
 | `BLOCK-RUNTIME` | P1 | canonical UV/Python/CUDA 环境缺失 | 曾阻断 wheel、ML 和 GPU smoke | done | UV research profile、lockfile、wheel 和 A100 smoke 已验证；后续只通过 pyproject/uv.lock 变更 |
 | `OPS-STORAGE-001` | P1 | `/mnt/gfs` 可用空间从约 141 GB 动态变化到约 3.6 TB | 共享容量可能在 935 GB 下载或解压期间再次变化 | in_progress | 下载保留 1 TiB floor；不并行解压，完成后重新预算 |

@@ -19,6 +19,8 @@ Role: `control_panel`
 - clean snapshot `paper/manuscript@3242a40` 已完成 `PAPER-AUDIT-001`：主文 5 个 active TeX、
   6 figure/2 table、15 label、19 citation command 均完成结构检查；supplement 44 entries 全部通过 CRC。
 - 审计定位 12 个 editor-prohibited 和 18 个 evidence-sensitive language hit；尚未在无证据时改写科学主张。
+- `PAPER-AUDIT-001` v2 已从 19 个 LaTeX environment 识别 20 个 display item（主文 9、补充 11）
+  并建立逐项 provenance/Source Data registry；Supplementary Tables S2-S6 明确为未验证占位数据。
 - 作者已确认数据与训练从头重建；`src/mmprism` greenfield package、strict config、manifest contract、CLI 和 CPU 基础测试已开始落地。
 - CSL-News 官方 RGB/labels 已锁定到 Hugging Face revision `3a060121`，935 GB compressed 下载已启动；
   其他 mmPRISM/CSL/OmniHand/WaveLLM 数据仍未到位。
@@ -41,7 +43,7 @@ Role: `control_panel`
 
 ## 当前最高优先级
 
-1. 补充导入原投稿定稿，并把当前 8 个主文/11 个 supplementary display environment 绑定 provenance。
+1. 补充导入原投稿定稿，并按 20 项 display registry 补齐 dataset/split/run/checkpoint/metric/script/Source Data。
 2. 按已建立的 sober-language 与 Availability 清单准备回写；不在新增实验完成前强化结果主张。
 3. 监控 CSL-News 官方下载和夜间姿态标注，同时收集私人历史 archive/目录的名称、大小和可重下标记。
 4. 确认可新增真实数据的人数、伦理边界、方向/遮挡采集条件和时间预算。
@@ -53,7 +55,8 @@ Role: `control_panel`
   incomplete final；promotion gate 已修复，原件保留并等待 versioned 重下验证。
 - `BLOCK-DATA-ROOT`：CSL-News source 已进入下载，但私人 collected、CSL-Daily 和历史 run 仍未知。
 - `BLOCK-SIM-PROVENANCE`：稿件 MANO mesh/ray-tracing 描述与当前可见 skeleton 仿真路径不一致。
-- `BLOCK-MANUSCRIPT`：当前稿/supplement 静态 inventory 已完成，但原投稿定稿与 response letter 缺失，19 个 display environment 尚未完成 provenance 登记。
+- `BLOCK-MANUSCRIPT`：当前稿/supplement 的 19 个 environment/20 个 item 已登记，但原投稿定稿与
+  response letter 缺失，科学 provenance 尚未闭合；Supplementary Tables S2-S6 必须由真实实验重建。
 - `BLOCK-PROVENANCE`：历史 checkpoint、split 和 paper-facing 数值尚未建立对应关系。
 - `BLOCK-REAL-COLLECTION`：新增参与者、方向/遮挡 protocol 和伦理/同意范围尚未确认。
 
