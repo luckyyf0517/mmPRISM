@@ -16,6 +16,7 @@ Role: `risk_register`
 | `ARCH-CONFIG-001` | P1 | legacy 配置、入口和代码中存在大量硬编码路径/GPU/dtype | 旧代码不可迁移；canonical release 必须彻底隔离 | in_progress | strict path/runtime/run-plan 已落地，继续完成所有新入口 |
 | `DATA-PATH-001` | P1 | dataset 通过路径字符串替换关联多模态文件 | 易错且不可验证 | not_started | 改为 manifest-driven sample record |
 | `DATA-CSLNEWS-META-001` | P1 | 官方 CSL-News CSV 比唯一 JSON 多 4 条冲突重复行 | CSV last-write-wins 会为 4 个视频静默选择错误译文 | mitigated | 固定 JSON 为 canonical source，CSV 只作审计；保留 profile 和四个 key，必要时反馈上游 |
+| `DATA-CSLNEWS-INTEGRITY-001` | P0 | 已完成 ZIP 的完整 CRC 审计确认 `archive_005`、`archive_008` 损坏 | 3,251 个视频不可作为 source，原 11-archive snapshot 不能作为 integrity-verified 数据输入 | active | 保留原件和 partial artifacts；仅调度 9 个通过 archive；人工复核后 versioned 重下 `005/008` 并重新审计 |
 | `EXP-TEST-001` | P1 | legacy 无自动化测试；canonical 仅有 foundation fixture/tests | radar/model/训练链仍缺保护 | in_progress | 扩展 shape、split、processor、model smoke tests |
 | `DOC-DRIFT-001` | P2 | README/CLAUDE 描述多个当前不存在的模块和脚本 | 误导执行 | evidence_ready | legacy baseline 后统一重写文档 |
 | `ARCH-LLM-001` | P2 | Phi-3 路径与当前 base API 不一致，现有配置主要只支持 MT5 | 模型支持边界不清 | not_started | 决定删除、修复或降级为 unsupported |

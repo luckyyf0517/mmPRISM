@@ -21,9 +21,9 @@ Role: `data_execution_tracker`
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
-| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | clean-commit partial snapshot 已验证：11 archives/18,095 records/hash `6984d0cc...`；待最终 436-archive CRC/coverage/decode report |
+| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | partial snapshot contract/linkage 已验证；其 frozen 11 archives 中 `005/008` CRC 失败，待 replacement 和最终 436-archive CRC/coverage/decode report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
-| `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | not_started | quarantine reason registry |
+| `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | `005/008` 已有 reason/hash/member machine report；待人工复核、versioned replacement 和正式 quarantine registry |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
 | `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | strict config、native/canonical artifact、resume/failure contract、单视频 GPU smoke 和 100-sample 数值 QC 已通过；夜间全量 worker 待完成 |
@@ -48,6 +48,11 @@ Role: `data_execution_tracker`
 `archive_003` 的只读 SHA-256/CRC/label/decode smoke 已通过；原定
 `mmprism-csl-news-source-trial.timer` 保留为 `2026-08-12 08:00 Asia/Shanghai` 独立复核。
 RTMW3D 单视频 smoke 也已通过，但不代表 436 个 archive 已完成。
+
+11-archive 完整 CRC audit 中 9 个通过，`005/008` 损坏。总表位于
+`manifests/csl_news/source_integrity_v1/audit_20260811T154138Z/summary.json`，SHA-256 为
+`ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`。损坏原件和所有 partial
+artifact 禁止清理或 promotion。
 
 ## 禁止事项
 

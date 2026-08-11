@@ -1,6 +1,6 @@
 # CSL-News Source Manifest Evidence
 
-Status: `partial_snapshot_verified`
+Status: `partial_snapshot_contract_verified_crc_failed`
 Last Updated: `2026-08-11`
 Role: `DATA-003-B_source_manifest_evidence`
 
@@ -41,6 +41,8 @@ MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM scripts/run_csl_news_source_manifest
 - scan start 可见 `.part`：13；这些文件未读取；
 - `verify_crc=false`，当前只记录 central-directory member CRC；最终 436-archive snapshot 必须执行
   完整 ZIP/CRC gate。
+- 后续完整逐 member 审计确认该 frozen scope 中 `archive_005`、`archive_008` 损坏。因此本 snapshot
+  不能再表述为 source-integrity verified，也不能作为训练或论文统计的直接输入。
 
 后台 aria2 在构建期间可能完成新 archive，但它们不属于本次 frozen input，会进入下一次 snapshot。
 
@@ -70,13 +72,17 @@ manifest 不包含 `/mnt/` 或 `/home/` 绝对路径。存储根只在 versioned
 | pose sidecar IDs checked | 676；missing 0 |
 | pose sidecar caption comparison | mismatch 0 |
 
+上述 gate 只验证 manifest contract/linkage。后续 source integrity audit 的结果为 9 个 archive 通过、
+2 个 archive 损坏；机器可读总表 SHA-256 为 `ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`，
+详见 `csl_news_source_integrity.md`。
+
 ## 5. Remaining Gate
 
 本 snapshot 证明 manifest schema、stable identity 和 source-to-pose linkage，但不能支撑全量数据声明。
 `DATA-003-B` 仍为 `in_progress`，最终验收还需要：
 
 1. 436 个 archive 全部 final 后生成 `complete` snapshot；
-2. 对所有 ZIP 执行 SHA-256、CRC、member safety、label coverage；
+2. 重新获取并验证损坏的 `005/008`，再对所有 436 个 ZIP 执行 SHA-256、CRC、member safety、label coverage；
 3. 对 deterministic video sample 做 decode/shape/FPS 验收；
 4. 以 complete manifest hash 生成 split，并做 group/duplicate leakage audit；
 5. 论文写回只引用 complete/frozen manifest 的统计，不引用本 partial snapshot 作为全量数字。

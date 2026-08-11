@@ -7,7 +7,8 @@ Role: `unattended_pose_annotation_operations`
 ## 1. 今晚目标与授权
 
 - 对已经完整下载并原子命名为 `archive_*.zip` 的 CSL-News 视频持续生成 RTMW3D-L 姿态。
-- 今晚只运行一个 GPU worker；后续可按 archive ID 取模扩展多个 worker。
+- 默认保留一个轮询 worker；只有 archive 通过完整 CRC gate 后，才可按 archive ID 扩展，GPU 7
+  总 worker 数上限为 4。
 - 操作者已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停、迁移或退出条件。
 - 授权边界：可以在已有计算任务的卡上同时运行本 worker；只要满足最低可用显存即可，已有任务的 GPU 利用率不构成冲突或迁移理由。不得为了本任务结束、暂停或修改其他用户进程。
 - 默认启动门槛为 2,048 MiB free memory；该值高于当前单 worker 约 838 MiB 的稳定占用并保留加载余量，可通过 `--min-free-mib` 按模型实测结果调整。30 GiB 不再作为固定门槛。
@@ -71,7 +72,7 @@ NPZ 同时保留 `[T,133,3]` 原生 3D keypoints、`[T,133]` confidence、
 ## 5. 执行顺序
 
 1. `uv sync --extra annotation` 安装锁定环境。
-2. 对一个已完成 archive 做 SHA-256/CRC/label/decode source audit。
+2. 对每个已完成 archive 做完整 SHA-256/逐 member CRC/label source audit；未通过者不进入 worker。
 3. 在满足配置启动门槛的卡上执行单视频 smoke；允许该卡同时有高利用率任务，默认门槛为 2,048 MiB free memory。
 4. 检查输出 shape、有限值、中文文本、sidecar checksum、峰值显存和每帧速度。
 5. smoke 通过后，以同一物理 GPU 启动一个 `systemd --user` worker。
@@ -87,6 +88,10 @@ NPZ 同时保留 `[T,133,3]` 原生 3D keypoints、`[T,133]` confidence、
 - 可用显存低于启动门槛时不加载模型，由 systemd 重试。
 
 GPU 利用率高不属于停止条件，这是本次夜间运行的显式授权。
+
+archive-specific worker 只允许使用 source integrity summary 中的 `passed_archive_ids`。发现损坏时
+停止对应 archive worker，但不停止已经通过 source gate 的其他 worker；不得用 partial manifest
+或 central-directory CRC 字段替代完整读取验证。
 
 ## 7. 启动与观察
 
@@ -162,4 +167,10 @@ scripts/run_csl_news_annotation_qc.sh
   `active/running`、`NRestarts=0`，timer 下一次触发为 `15:30 UTC`。
 - `2026-08-11T15:25Z` clean-commit source snapshot 冻结 11 个 archive/18,095 条 record；
   对当时 676 个 `archive_003` pose sidecar 逐一检查，stable sample ID 缺失 0、caption mismatch 0。
-  snapshot 为 partial，不暂停或改变 annotation worker。
+  snapshot 为 partial，且未执行完整 CRC，后续降级为 contract/linkage evidence。
+- `2026-08-11T15:35Z` 同 GPU 7 archive-specific canary 暂扩至总计 4 workers，单进程约 828 MiB；
+  `archive_005` 出现真实解压失败后，立即停止 `004/005/006` canary，不清理任何输出。
+- `2026-08-11T15:44Z` 对 frozen 11 archives 的 clean-commit 完整 CRC audit 完成：9 个通过、
+  `005/008` 损坏。总表 SHA-256 为 `ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`。
+  仅保留 `archive_003` 主 worker；恢复并行池前必须读取 `passed_archive_ids`，原件和 partial/failure
+  artifacts 保留到次晨人工检查。

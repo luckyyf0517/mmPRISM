@@ -150,8 +150,8 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 2. 优先上传体积小的匿名 metadata、雷达配置、阵列映射、标定和仿真 provenance。
 3. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
 4. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
-5. 监控 CSL-News 下载服务；完成后生成 file/member manifest、SHA-256、ZIP integrity 和 label coverage report。
-6. `archive_003` source-audit smoke 已提前通过；保留次晨 timer 作为独立复核。
+5. 监控 CSL-News 下载服务；每个 final ZIP 必须先通过完整 CRC gate，才可进入标注或 manifest promotion。
+6. 保留损坏 `archive_005/008`、partial output 和失败 sidecar；人工复核后 versioned 重下并比对。
 
 ## 9. CSL-News 官方下载状态
 
@@ -189,8 +189,16 @@ metadata unit 已于 `2026-08-11T14:57Z` 以 `Result=success`、exit code 0 完�
 `2026-08-11T15:25Z`，clean commit `96ccc6e` 生成首个 available-archive source snapshot：11 个
 archive、18,095 条 portable `caption/video` record，manifest SHA-256 为
 `6984d0cc30a0f5a9e6baa58fa8a764e0c0b70ed1b0bb9224e9fca8faa1b1a1f5`。通用 contract、绝对路径
-扫描和当前 676 个 pose sidecar 的 ID/text 交叉检查均通过。该 artifact 明确标为 `partial`，详见
-`../evidence/csl_news_source_manifest.md`；最终论文统计必须等待 436-archive complete snapshot。
+扫描和当前 676 个 pose sidecar 的 ID/text 交叉检查均通过，但该 snapshot 未执行完整 CRC。
+后续逐 member 审计确认其中 `archive_005/008` 损坏，因此它只保留为 schema/linkage evidence，
+不能作为 integrity-verified 输入或论文统计。详见 `../evidence/csl_news_source_manifest.md`。
+
+完整 CRC audit artifact 位于
+`/mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/audit_20260811T154138Z`；
+11 个 archive 中 9 个通过（14,844 videos）、2 个失败（3,251 videos），missing label/empty text 均为 0。
+总表 SHA-256 为 `ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`。
+`005/008` 保持原位并排除出标注池，等待人工复核和 versioned replacement；详见
+`../evidence/csl_news_source_integrity.md`。
 
 下载使用 `scripts/download_csl_news.sh`，当前引擎为 aria2：4 个 archive worker、每文件 8 个连接、
 断点续传、`.part` 原子完成、只下载不解压，并保留至少 1 TiB 可用空间。切换前短时基准中，

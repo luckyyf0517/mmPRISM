@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | partial source snapshot: 11 archives/18,095 records, hash `6984d0cc...`; metadata profile ready; final 436-archive manifest pending | JSON 722,711/722,711 valid unique records; CSV 4 conflicting duplicates isolated; partial manifest contract/portable path/source-to-pose checks passed; full CRC/video validation pending | visual pose/synthetic training and SLU | in_progress |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | partial source snapshot: 11 archives/18,095 records, hash `6984d0cc...`; metadata profile ready; final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；partial contract/linkage passed；full CRC audit found `005/008` corrupt，9 archives/14,844 videos eligible | visual pose/synthetic training and SLU | in_progress_integrity_failure |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -39,7 +39,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke passed; live status `healthy`; QC `20260811T145656Z` sampled 100/246 artifacts and 24,628 frames, 100 passed/0 warnings, checksum/shape/finite/frame/FPS contracts passed; reports under `reports/` and `qc/` | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；current worker healthy；only CRC-passed archives are promotable，`005/008` partial/failure artifacts retained but excluded | in_progress |
 
 ## Split Registry
 
@@ -94,7 +94,9 @@ interpretation and missing fields are recorded in `csl_news_metadata_profile.md`
 
 The first clean-commit source snapshot is recorded in `csl_news_source_manifest.md`. Its 18,095-record
 manifest has SHA-256 `6984d0cc30a0f5a9e6baa58fa8a764e0c0b70ed1b0bb9224e9fca8faa1b1a1f5`;
-it covers 11/436 archives and remains explicitly partial.
+it covers 11/436 archives and remains explicitly partial. A subsequent full CRC audit found `005/008`
+corrupt, so this snapshot is retained only as contract/linkage evidence. The integrity summary is recorded in
+`csl_news_source_integrity.md` with SHA-256 `ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 
