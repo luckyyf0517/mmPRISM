@@ -26,7 +26,7 @@ Role: `data_execution_tracker`
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | not_started | quarantine reason registry |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
-| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | strict config、native/canonical artifact、resume/failure contract 和单视频 GPU smoke 已通过；夜间全量 worker 待完成 |
+| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | strict config、native/canonical artifact、resume/failure contract、单视频 GPU smoke 和 100-sample 数值 QC 已通过；夜间全量 worker 待完成 |
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | not_started | versioned radar output + QC |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | not_started | validation report + manifest hash |

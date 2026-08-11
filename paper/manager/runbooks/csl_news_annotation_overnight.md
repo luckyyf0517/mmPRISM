@@ -9,6 +9,7 @@ Role: `unattended_pose_annotation_operations`
 - 对已经完整下载并原子命名为 `archive_*.zip` 的 CSL-News 视频持续生成 RTMW3D-L 姿态。
 - 今晚只运行一个 GPU worker；后续可按 archive ID 取模扩展多个 worker。
 - 操作者已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停或退出条件。
+- 授权边界：可以在已有计算任务的卡上同时运行本 worker；只要满足最低可用显存即可，已有任务的 GPU 利用率不构成冲突或迁移理由。
 - worker 将 OpenMP/BLAS/PyTorch 限制为 4 个 CPU 线程，并将 OpenCV 限制为 1 个线程。
 - 不结束、暂停或修改其他用户进程。若任何卡达不到最低空闲显存，worker 退出并交给 systemd 稍后重试。
 
@@ -113,6 +114,14 @@ systemctl --user status mmprism-csl-news-annotation-status.timer
 快照保存在 `.../rtmw3d_l_794dbc78_v1/reports/status_<UTC>.json`，包括 archive/video
 可用量、成功/失败/缺失配对、latest run 吞吐和 ETA，以及最近 3 个样本的 contract/checksum 校验。
 
+只读数值 QC 使用确定性的均匀抽样，不暂停 worker：
+
+```bash
+scripts/run_csl_news_annotation_qc.sh
+```
+
+报告保存在 `.../rtmw3d_l_794dbc78_v1/qc/qc_<UTC>.json`；失败返回非零，warning 保留报告但不自动停止 worker。
+
 ## 8. 次晨验收
 
 - 服务状态、实际 GPU、下载与标注并行状态；
@@ -139,3 +148,13 @@ systemctl --user status mmprism-csl-news-annotation-status.timer
 - `2026-08-11T14:50Z` 启用 `mmprism-csl-news-annotation-status.timer`，每 30 分钟触发，
   独立 service 设 `CPUQuota=100%`。手工触发验收以 `0/SUCCESS` 完成；快照仍为 `healthy`，
   147 个成功样本、当前 run 新增失败 0、抽样 3/3 通过。首次自动触发为 `15:00 UTC`。
+- `2026-08-11` 操作者再次明确批准 GPU 共享策略：可以与其他任务挤在同一张卡上，调度只看
+  可用显存，GPU 利用率不作为 gate。当前 worker 继续使用 GPU 7，不因此重启或迁移。
+- `2026-08-11T14:56Z` 首份正式数值 QC 为 `passed`：在 246 个候选产物中确定性抽检
+  100 个、共 24,628 帧，100/100 通过且无 warning；校验和、shape、finite、连续帧号、
+  reported frame count 和 FPS 契约均通过。canonical valid ratio 为 0.99245，transformed 2D
+  in-bounds ratio 为 0.98769；报告为 `qc/qc_20260811T145656Z.json`。
+- `2026-08-11T15:00:03Z` 首次 timer 自动触发并以 `0/SUCCESS` 完成；报告
+  `reports/status_20260811T150003Z.json` 为 `healthy`：11 个完整 archive、18,095 个可用视频、
+  291 个成功样本、当前 run 新增失败 0、缺失配对 0、抽样 3/3 通过。worker 保持
+  `active/running`、`NRestarts=0`，timer 下一次触发为 `15:30 UTC`。

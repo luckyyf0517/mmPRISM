@@ -203,3 +203,17 @@ scratch 在次晨人工检查前全部保留。
 ```text
 /mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1/reports/
 ```
+
+GPU worker 已获明确授权与其他任务共享 GPU；运行门槛只检查可用显存，不以 GPU 利用率判断
+是否启动、暂停或迁移。`2026-08-11T14:56Z` 的正式只读 QC 在 246 个候选产物中确定性抽检
+100 个、共 24,628 帧，状态为 `passed` 且无 warning：canonical valid ratio 为 0.99245，
+transformed 2D in-bounds ratio 为 0.98769，frame count/checksum/shape/finite/FPS 契约全部通过。
+QC 报告目录为：
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1/qc/
+```
+
+`15:00 UTC` 首次 timer 自动触发已以 `0/SUCCESS` 验收；对应状态为 `healthy`，11 个完整
+archive、18,095 个可用视频、291 个成功样本、当前 run 新增失败 0、缺失配对 0、抽样 3/3
+通过。worker 保持 `NRestarts=0`。

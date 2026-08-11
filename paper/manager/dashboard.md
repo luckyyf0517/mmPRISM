@@ -22,7 +22,7 @@ Role: `control_panel`
 - `archive_003` 的 SHA-256/CRC/722,711 条标签覆盖与视频解码审计通过；canonical RTMW3D
   worker 已在 GPU 7 持续运行，CPU/GPU/磁盘受限且当前健康。
 - `/mnt/gfs` 当前约余 3.6 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；20 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；24 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
 

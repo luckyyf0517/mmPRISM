@@ -10,9 +10,11 @@ from mmprism.data import (
     CslNewsAnnotationError,
     CslNewsAuditError,
     audit_csl_news_archive,
+    build_csl_news_annotation_qc,
     build_csl_news_annotation_status,
     load_csl_news_annotation_config,
     run_csl_news_annotation,
+    write_csl_news_annotation_qc,
     write_csl_news_annotation_status,
     write_csl_news_audit,
 )
@@ -68,6 +70,15 @@ def _build_parser() -> argparse.ArgumentParser:
     status_parser.add_argument("--sample-validate", type=int, default=3)
     status_parser.add_argument("--recent-window", type=int, default=200)
     status_parser.add_argument("--output", type=Path)
+
+    qc_parser = subparsers.add_parser(
+        "csl-news-annotation-qc",
+        help="Measure numerical quality on a deterministic annotation sample",
+    )
+    qc_parser.add_argument("config", type=Path)
+    qc_parser.add_argument("--project-root", type=Path)
+    qc_parser.add_argument("--sample-count", type=int, default=100)
+    qc_parser.add_argument("--output", type=Path)
 
     return parser
 
@@ -126,7 +137,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 archive_id=arguments.archive_id,
             )
             exit_code = 0 if payload["failed"] == 0 else 1
-        else:
+        elif arguments.command == "csl-news-annotation-status":
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
@@ -143,6 +154,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_csl_news_annotation_status(payload, arguments.output)
             exit_code = 0 if payload["status"] == "healthy" else 1
+        else:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            annotation_config = load_csl_news_annotation_config(
+                arguments.config, project_root
+            )
+            payload = build_csl_news_annotation_qc(
+                annotation_config, sample_count=arguments.sample_count
+            )
+            if arguments.output:
+                write_csl_news_annotation_qc(payload, arguments.output)
+            exit_code = 1 if payload["status"] == "failed" else 0
     except (
         ConfigError,
         ManifestError,
