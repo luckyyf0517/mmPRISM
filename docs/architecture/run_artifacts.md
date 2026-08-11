@@ -1,6 +1,6 @@
 # Formal Run Artifact Contract
 
-Status: `foundation_and_omnihand_single_rank_implemented`
+Status: `formal_preflight_and_single_rank_runs_implemented`
 Last Updated: `2026-08-11`
 Schema: `mmprism.run.v1`
 
@@ -10,8 +10,38 @@ Every canonical training, evaluation or data-preparation service must initialize
 `mmprism.artifacts.RunArtifactWriter`. A logger URL or checkpoint directory alone is not a formal run.
 The writer is dependency-light and does not import PyTorch, Lightning or Transformers.
 
-`run-init` only creates the provenance envelope. It does not execute a model or imply that canonical
-train/evaluate/prepare services already exist.
+`mmprism prepare` is the side-effect-free formal-run gate. `run-init` only creates the provenance envelope;
+it does not execute a model or apply the full data/split preflight.
+
+## Side-Effect-Free Preflight
+
+`mmprism prepare EXPERIMENT_CONFIG` validates a planned formal run before any artifact directory is
+created. A passing `mmprism.prepare_report.v1` report proves, for the exact invocation:
+
+- the project root has a valid clean Git commit and the source YAML resolves to the loaded config;
+- the data root exists, artifact/cache destinations have a writable existing ancestor, and the planned
+  run directory does not already exist;
+- all named inputs still match their captured SHA-256 and satisfy their manifest/split contracts;
+- there is at least one manifest, exactly one split assignment file, no cross-manifest sample overlap,
+  and every manifest sample belongs to its explicitly bound split.
+
+The command emits JSON only to stdout and does not create the artifact root, cache root, or run directory.
+Its input syntax is `KIND:NAME=PATH`; every manifest additionally requires
+`--split-binding MANIFEST_NAME=SPLIT`.
+
+```bash
+MMPRISM_DATA_ROOT=/path/to/data \
+MMPRISM_ARTIFACT_ROOT=/path/to/artifacts \
+MMPRISM_CACHE_ROOT=/path/to/cache \
+uv run --frozen mmprism prepare configs/examples/pose_smoke.yaml \
+  --input manifest:data_manifest=tests/fixtures/manifests/pose_smoke.jsonl \
+  --input split:split_assignments=tests/fixtures/splits/pose_smoke.jsonl \
+  --split-binding data_manifest=train
+```
+
+The report is a preflight result, not a formal run artifact. The subsequent train/evaluate service must
+repeat the relevant split validation and register the assignment file in its own `inputs.json`, because
+inputs or repository state may change after preflight.
 
 ## Initial Layout
 
@@ -40,8 +70,9 @@ use manifest URIs and the release/export contract; they must not copy these path
 ## Lifecycle
 
 1. Build a side-effect-free `RunPlan` with a timezone-aware UTC timestamp.
-2. Capture every data manifest, split, checkpoint and model asset as a named `RunInput`; initialization
-   requires at least one `manifest` input and a non-empty launch command.
+2. Capture every data manifest, split, checkpoint and model asset as a named `RunInput`; canonical formal
+   train/evaluate services require at least one `manifest`, exactly one split assignment file, explicit
+   manifest-to-split membership, and a non-empty launch command.
 3. Initialize the run atomically. The source YAML must resolve to the exact config hash in the plan.
 4. The task service writes typed artifacts. The OmniHand service atomically promotes Safetensors,
    streams strict JSONL predictions, and registers every completed top-level artifact.

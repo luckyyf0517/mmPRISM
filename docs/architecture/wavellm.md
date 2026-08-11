@@ -43,7 +43,9 @@ joint dimension drift, coordinate-frame drift, and sequences longer than the con
 ## Formal Train And Evaluate
 
 `mmprism wavellm-train` requires a clean Git commit, a sign-language-translation experiment config,
-strict task and model-asset configs, and separate train/validation manifests. It writes:
+strict task and model-asset configs, separate train/validation manifests, and one hashed canonical split
+assignment file. It verifies every sample's declared train/validation membership in addition to the
+sample/sequence leakage gates. It writes:
 
 - generic resolved experiment, environment, input hashes, and run lifecycle metadata;
 - `wavellm.resolved.json` and `wavellm.runtime.json`;
@@ -54,9 +56,10 @@ For a frozen mT5 backbone, the checkpoint contains only non-language-model tenso
 `scope=adapter_only`. Metadata binds the base-model repository/revision and asset/collection manifests,
 model and task fingerprints, coordinate frame, units, Git commit, runtime, and all input hashes.
 
-`mmprism wavellm-evaluate` registers the manifest, weights, metadata, configs, and model manifests as
-independent hashed inputs. Before state loading it validates weight checksum/format/scope, complete model
-and task fingerprints, model-asset identity, units, coordinate frame, and exact adapter tensor inventory.
+`mmprism wavellm-evaluate` registers the manifest, split assignments, weights, metadata, configs, and model
+manifests as independent hashed inputs. Before state loading it validates evaluation split membership,
+weight checksum/format/scope, complete model and task fingerprints, model-asset identity, units, coordinate
+frame, and exact adapter tensor inventory.
 
 ## Metric Protocol
 

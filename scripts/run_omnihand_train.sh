@@ -8,6 +8,7 @@ task_config="${MMPRISM_OMNIHAND_CONFIG:-$project_root/configs/examples/omnihand_
 
 : "${MMPRISM_TRAIN_MANIFEST:?Set MMPRISM_TRAIN_MANIFEST to a model-ready training manifest}"
 : "${MMPRISM_VALIDATION_MANIFEST:?Set MMPRISM_VALIDATION_MANIFEST to a model-ready validation manifest}"
+: "${MMPRISM_SPLIT_ASSIGNMENTS:?Set MMPRISM_SPLIT_ASSIGNMENTS to canonical split assignments}"
 
 cd "$project_root"
 exec uv run --frozen --extra train mmprism omnihand-train \
@@ -15,4 +16,5 @@ exec uv run --frozen --extra train mmprism omnihand-train \
   "$task_config" \
   --train-manifest "$MMPRISM_TRAIN_MANIFEST" \
   --validation-manifest "$MMPRISM_VALIDATION_MANIFEST" \
+  --split-assignments "$MMPRISM_SPLIT_ASSIGNMENTS" \
   --project-root "$project_root"

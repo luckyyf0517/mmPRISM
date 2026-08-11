@@ -42,7 +42,11 @@ insufficient disk space. Before atomic rename it proves:
 - assignment/config/summary checksums are recorded in `SHA256SUMS`.
 
 `SplitIndex` provides dependency-light lookup and split membership without importing PyTorch, Lightning or
-Transformers. Formal training must bind both the source manifest SHA-256 and assignment SHA-256.
+Transformers. `mmprism prepare` and each canonical formal train/evaluate service require one explicit
+manifest-to-split binding, reject samples missing from the assignment file or assigned to a different split,
+and reject overlap between simultaneously supplied manifests. The assignment file is a hashed `split` input
+in every resulting `inputs.json`; formal training therefore binds both manifest SHA-256 and assignment
+SHA-256 rather than relying on manifest filenames or CLI split labels.
 
 ## Partial Versus Final
 

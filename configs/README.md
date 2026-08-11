@@ -16,10 +16,17 @@ Validate the example without installing the package:
 uv run mmprism config configs/examples/pose_smoke.yaml
 uv run mmprism plan configs/examples/pose_smoke.yaml
 uv run mmprism manifest tests/fixtures/manifests/pose_smoke.jsonl
+uv run mmprism prepare configs/examples/pose_smoke.yaml \
+  --input manifest:data_manifest=tests/fixtures/manifests/pose_smoke.jsonl \
+  --input split:split_assignments=tests/fixtures/splits/pose_smoke.jsonl \
+  --split-binding data_manifest=train
 uv run mmprism run-init configs/examples/pose_smoke.yaml \
   --input manifest:data_manifest=tests/fixtures/manifests/pose_smoke.jsonl
 ```
 
+`prepare` is the side-effect-free gate for a formal run. It requires a clean Git worktree, exactly one
+split assignment input, and one explicit split binding for every manifest; its JSON report is written only
+to stdout. `run-init` is a lower-level artifact-writer smoke and does not enforce those data bindings.
 `run-init` creates only the atomic run provenance envelope. It does not execute training or evaluation.
 The full artifact contract is documented in `docs/architecture/run_artifacts.md`.
 
@@ -79,12 +86,14 @@ export MMPRISM_DATA_ROOT=/path/to/model-ready-data
 export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
 export MMPRISM_TRAIN_MANIFEST=/path/to/train.jsonl
 export MMPRISM_VALIDATION_MANIFEST=/path/to/validation.jsonl
+export MMPRISM_SPLIT_ASSIGNMENTS=/path/to/split_assignments.jsonl
 scripts/run_omnihand_train.sh
 ```
 
 `configs/examples/omnihand_train_smoke_experiment.yaml` owns roots, seed, device, bf16 precision, and determinism;
 `configs/examples/omnihand_train_smoke.yaml` owns CubeNet, loader, optimizer, and metric settings.
-Both source files and both manifests are hashed as formal inputs. The task config is deliberately
+Both source files, both manifests, and the canonical split assignment file are hashed as formal inputs.
+Every manifest sample must match its declared train or validation assignment. The task config is deliberately
 limited to two steps and must not be used as a paper-result protocol.
 
 Build the pinned CSL-News partial sequence split with:

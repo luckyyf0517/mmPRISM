@@ -70,6 +70,23 @@ def _manifest(path: Path, records: list[dict[str, object]]) -> Path:
     return path
 
 
+def _split_assignments(path: Path, assignments: dict[str, str]) -> Path:
+    records = (
+        {
+            "schema_version": "mmprism.split_assignment.v1",
+            "sample_id": sample_id,
+            "group_id": f"{index + 1:064x}",
+            "split": split,
+        }
+        for index, (sample_id, split) in enumerate(sorted(assignments.items()))
+    )
+    path.write_text(
+        "".join(json.dumps(record, sort_keys=True) + "\n" for record in records),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _experiment(path: Path, root: Path, *, name: str) -> Path:
     path.write_text(
         yaml.safe_dump(
@@ -175,6 +192,15 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
             _record(data_root, sample_id="validation-002", seed=4, frames=2),
         ],
     )
+    split_assignments = _split_assignments(
+        tmp_path / "assignments.jsonl",
+        {
+            "train-001": "train",
+            "train-002": "train",
+            "validation-001": "validation",
+            "validation-002": "validation",
+        },
+    )
     task_path = _task_config(tmp_path / "omnihand.yaml")
     task_config = load_omnihand_run_config(task_path)
     train_experiment_path = _experiment(
@@ -188,6 +214,7 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
         source_task_config=task_path,
         train_manifest_path=train_manifest,
         validation_manifest_path=validation_manifest,
+        split_assignments_path=split_assignments,
         project_root=project_root,
         command=("mmprism", "omnihand-train", "fixture"),
         runtime_report=_runtime(project_root),
@@ -210,6 +237,13 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
         "run.json",
     }
     assert {path.name for path in train_run.iterdir()} == expected_train_artifacts
+    train_inputs = json.loads((train_run / "inputs.json").read_text(encoding="utf-8"))
+    assert {item["name"] for item in train_inputs["inputs"]} == {
+        "omnihand_config",
+        "split_assignments",
+        "train_manifest",
+        "validation_manifest",
+    }
     run_payload = json.loads((train_run / "run.json").read_text(encoding="utf-8"))
     checkpoint_payload = json.loads((train_run / "checkpoint.json").read_text(encoding="utf-8"))
     predictions = [
@@ -242,7 +276,8 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
         manifest_path=validation_manifest,
         checkpoint_path=train_run / "checkpoint.safetensors",
         checkpoint_metadata_path=train_run / "checkpoint.json",
-        split="test",
+        split_assignments_path=split_assignments,
+        split="validation",
         project_root=project_root,
         command=("mmprism", "omnihand-evaluate", "fixture"),
         runtime_report=_runtime(project_root),
@@ -258,9 +293,10 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
         "checkpoint_weights",
         "evaluation_manifest",
         "omnihand_config",
+        "split_assignments",
     }
     assert evaluation_metrics["protocol_id"] == "mmprism.pose_metric.dual_hand_metric_v1"
-    assert evaluation_metrics["split"] == "test"
+    assert evaluation_metrics["split"] == "validation"
     assert evaluation_metrics["sample_count"] == 2
     assert evaluation_result["metrics"] == evaluation_metrics["values"]
     evaluation_performance = json.loads(
@@ -283,7 +319,8 @@ def test_formal_omnihand_train_checkpoint_prediction_and_evaluate(tmp_path: Path
             manifest_path=validation_manifest,
             checkpoint_path=tampered_checkpoint,
             checkpoint_metadata_path=train_run / "checkpoint.json",
-            split="test",
+            split_assignments_path=split_assignments,
+            split="validation",
             project_root=project_root,
             command=("mmprism", "omnihand-evaluate", "tampered"),
             runtime_report=_runtime(project_root),

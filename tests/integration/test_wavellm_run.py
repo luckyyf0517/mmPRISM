@@ -76,6 +76,23 @@ def _manifest(path: Path, records: list[dict[str, object]]) -> Path:
     return path
 
 
+def _split_assignments(path: Path, assignments: dict[str, str]) -> Path:
+    records = (
+        {
+            "schema_version": "mmprism.split_assignment.v1",
+            "sample_id": sample_id,
+            "group_id": f"{index + 1:064x}",
+            "split": split,
+        }
+        for index, (sample_id, split) in enumerate(sorted(assignments.items()))
+    )
+    path.write_text(
+        "".join(json.dumps(record, sort_keys=True) + "\n" for record in records),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _experiment(path: Path, root: Path, *, name: str) -> Path:
     path.write_text(
         yaml.safe_dump(
@@ -274,6 +291,15 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
             _record(data_root, sample_id="validation-002", seed=4, frames=2),
         ],
     )
+    split_assignments = _split_assignments(
+        tmp_path / "assignments.jsonl",
+        {
+            "train-001": "train",
+            "train-002": "train",
+            "validation-001": "validation",
+            "validation-002": "validation",
+        },
+    )
     task_path = _task_config(tmp_path / "wavellm.yaml")
     task_config = load_wavellm_run_config(task_path)
     asset_path = _asset_config(tmp_path / "assets.yaml")
@@ -307,6 +333,7 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
         source_asset_config=asset_path,
         train_manifest_path=train_manifest,
         validation_manifest_path=validation_manifest,
+        split_assignments_path=split_assignments,
         project_root=project_root,
         command=("mmprism", "wavellm-train", "fixture"),
         runtime_report=_runtime(project_root),
@@ -329,6 +356,16 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
         "wavellm.runtime.json",
     }
     assert {path.name for path in train_run.iterdir()} == expected_artifacts
+    train_inputs = json.loads((train_run / "inputs.json").read_text(encoding="utf-8"))
+    assert {item["name"] for item in train_inputs["inputs"]} == {
+        "model_asset_collection",
+        "model_asset_config",
+        "model_asset_manifest",
+        "split_assignments",
+        "train_manifest",
+        "validation_manifest",
+        "wavellm_config",
+    }
     run_payload = json.loads((train_run / "run.json").read_text(encoding="utf-8"))
     checkpoint_payload = json.loads(
         (train_run / "checkpoint.json").read_text(encoding="utf-8")
@@ -363,7 +400,8 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
         manifest_path=validation_manifest,
         checkpoint_path=train_run / "checkpoint.safetensors",
         checkpoint_metadata_path=train_run / "checkpoint.json",
-        split="test",
+        split_assignments_path=split_assignments,
+        split="validation",
         project_root=project_root,
         command=("mmprism", "wavellm-evaluate", "fixture"),
         runtime_report=_runtime(project_root),
@@ -384,10 +422,11 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
         "model_asset_collection",
         "model_asset_config",
         "model_asset_manifest",
+        "split_assignments",
         "wavellm_config",
     }
     assert evaluation_metrics["protocol_id"] == "mmprism.language_metric.character_v1"
-    assert evaluation_metrics["split"] == "test"
+    assert evaluation_metrics["split"] == "validation"
     assert evaluation_metrics["sample_count"] == 2
     assert (evaluation_run / "predictions.jsonl").read_bytes() == train_predictions
     assert evaluation_result["metrics"] == evaluation_metrics["values"]
@@ -411,7 +450,8 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
             manifest_path=validation_manifest,
             checkpoint_path=tampered_checkpoint,
             checkpoint_metadata_path=train_run / "checkpoint.json",
-            split="test",
+            split_assignments_path=split_assignments,
+            split="validation",
             project_root=project_root,
             command=("mmprism", "wavellm-evaluate", "tampered"),
             runtime_report=_runtime(project_root),
@@ -434,6 +474,10 @@ def test_wavellm_rejects_sequence_leakage_and_checkpoint_contract_drift(
     validation_record["sequence_id"] = train_record["sequence_id"]
     train_manifest = _manifest(tmp_path / "train.jsonl", [train_record])
     leaking_manifest = _manifest(tmp_path / "leaking.jsonl", [validation_record])
+    split_assignments = _split_assignments(
+        tmp_path / "assignments.jsonl",
+        {"train-001": "train", "validation-001": "validation"},
+    )
     task_path = _task_config(tmp_path / "wavellm.yaml")
     task_config = load_wavellm_run_config(task_path)
     asset_path = _asset_config(tmp_path / "assets.yaml")
@@ -468,6 +512,7 @@ def test_wavellm_rejects_sequence_leakage_and_checkpoint_contract_drift(
             source_asset_config=asset_path,
             train_manifest_path=train_manifest,
             validation_manifest_path=leaking_manifest,
+            split_assignments_path=split_assignments,
             project_root=project_root,
             command=("mmprism", "wavellm-train", "leakage"),
             runtime_report=_runtime(project_root),
@@ -489,6 +534,7 @@ def test_wavellm_rejects_sequence_leakage_and_checkpoint_contract_drift(
         source_asset_config=asset_path,
         train_manifest_path=train_manifest,
         validation_manifest_path=validation_manifest,
+        split_assignments_path=split_assignments,
         project_root=project_root,
         command=("mmprism", "wavellm-train", "contract"),
         runtime_report=_runtime(project_root),
@@ -518,7 +564,8 @@ def test_wavellm_rejects_sequence_leakage_and_checkpoint_contract_drift(
             manifest_path=validation_manifest,
             checkpoint_path=train_run / "checkpoint.safetensors",
             checkpoint_metadata_path=invalid_metadata,
-            split="test",
+            split_assignments_path=split_assignments,
+            split="validation",
             project_root=project_root,
             command=("mmprism", "wavellm-evaluate", "invalid-units"),
             runtime_report=_runtime(project_root),
@@ -547,7 +594,8 @@ def test_wavellm_rejects_sequence_leakage_and_checkpoint_contract_drift(
             manifest_path=validation_manifest,
             checkpoint_path=train_run / "checkpoint.safetensors",
             checkpoint_metadata_path=train_run / "checkpoint.json",
-            split="test",
+            split_assignments_path=split_assignments,
+            split="validation",
             project_root=project_root,
             command=("mmprism", "wavellm-evaluate", "task-drift"),
             runtime_report=_runtime(project_root),

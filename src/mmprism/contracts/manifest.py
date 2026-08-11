@@ -166,6 +166,7 @@ class ManifestSummary:
     record_count: int
     datasets: tuple[str, ...]
     modalities: tuple[str, ...]
+    sample_ids: frozenset[str]
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -215,4 +216,5 @@ def validate_manifest(path: str | Path) -> ManifestSummary:
         record_count=record_count,
         datasets=tuple(sorted(datasets)),
         modalities=tuple(sorted(modalities)),
+        sample_ids=frozenset(sample_ids),
     )

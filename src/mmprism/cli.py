@@ -5,7 +5,13 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from mmprism.artifacts import ArtifactError, RunArtifactWriter, RunInput
+from mmprism.artifacts import (
+    ArtifactError,
+    PrepareError,
+    RunArtifactWriter,
+    RunInput,
+    build_prepare_report,
+)
 from mmprism.assets import (
     ModelAssetError,
     download_model_assets,
@@ -78,6 +84,27 @@ def _build_parser() -> argparse.ArgumentParser:
     plan_parser = subparsers.add_parser("plan", help="Resolve a side-effect-free run plan")
     plan_parser.add_argument("path", type=Path)
     plan_parser.add_argument("--project-root", type=Path)
+
+    prepare_parser = subparsers.add_parser(
+        "prepare",
+        help="Validate a formal run and its manifest/split bindings without writes",
+    )
+    prepare_parser.add_argument("path", type=Path)
+    prepare_parser.add_argument("--project-root", type=Path)
+    prepare_parser.add_argument(
+        "--input",
+        action="append",
+        required=True,
+        metavar="KIND:NAME=PATH",
+        help="Hash and validate a formal input; may be repeated",
+    )
+    prepare_parser.add_argument(
+        "--split-binding",
+        action="append",
+        required=True,
+        metavar="MANIFEST_NAME=SPLIT",
+        help="Bind every manifest input to its declared split; may be repeated",
+    )
 
     run_init_parser = subparsers.add_parser(
         "run-init", help="Atomically initialize a formal run artifact directory"
@@ -252,6 +279,7 @@ def _build_parser() -> argparse.ArgumentParser:
     omnihand_train_parser.add_argument("task_config", type=Path)
     omnihand_train_parser.add_argument("--train-manifest", type=Path, required=True)
     omnihand_train_parser.add_argument("--validation-manifest", type=Path, required=True)
+    omnihand_train_parser.add_argument("--split-assignments", type=Path, required=True)
     omnihand_train_parser.add_argument("--project-root", type=Path)
 
     omnihand_evaluate_parser = subparsers.add_parser(
@@ -263,6 +291,7 @@ def _build_parser() -> argparse.ArgumentParser:
     omnihand_evaluate_parser.add_argument("--manifest", type=Path, required=True)
     omnihand_evaluate_parser.add_argument("--checkpoint", type=Path, required=True)
     omnihand_evaluate_parser.add_argument("--checkpoint-metadata", type=Path, required=True)
+    omnihand_evaluate_parser.add_argument("--split-assignments", type=Path, required=True)
     omnihand_evaluate_parser.add_argument(
         "--split", choices=("train", "validation", "test"), default="test"
     )
@@ -278,6 +307,7 @@ def _build_parser() -> argparse.ArgumentParser:
     wavellm_train_parser.add_argument("--model-root", type=Path)
     wavellm_train_parser.add_argument("--train-manifest", type=Path, required=True)
     wavellm_train_parser.add_argument("--validation-manifest", type=Path, required=True)
+    wavellm_train_parser.add_argument("--split-assignments", type=Path, required=True)
     wavellm_train_parser.add_argument("--project-root", type=Path)
 
     wavellm_evaluate_parser = subparsers.add_parser(
@@ -291,6 +321,7 @@ def _build_parser() -> argparse.ArgumentParser:
     wavellm_evaluate_parser.add_argument("--manifest", type=Path, required=True)
     wavellm_evaluate_parser.add_argument("--checkpoint", type=Path, required=True)
     wavellm_evaluate_parser.add_argument("--checkpoint-metadata", type=Path, required=True)
+    wavellm_evaluate_parser.add_argument("--split-assignments", type=Path, required=True)
     wavellm_evaluate_parser.add_argument(
         "--split", choices=("train", "validation", "test"), default="test"
     )
@@ -336,6 +367,20 @@ def _capture_run_inputs(specifications: Sequence[str], project_root: Path) -> tu
     return tuple(inputs)
 
 
+def _parse_split_bindings(specifications: Sequence[str]) -> dict[str, str]:
+    bindings: dict[str, str] = {}
+    for specification in specifications:
+        name, separator, split = specification.partition("=")
+        if not separator or not name or not split:
+            raise PrepareError(
+                f"invalid --split-binding {specification!r}; expected MANIFEST_NAME=SPLIT"
+            )
+        if name in bindings:
+            raise PrepareError(f"duplicate split binding for manifest input {name!r}")
+        bindings[name] = split
+    return bindings
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     effective_argv = list(argv) if argv is not None else sys.argv[1:]
@@ -350,7 +395,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 else discover_project_root()
             )
             payload = collect_runtime_report(project_root)
-        elif arguments.command in {"config", "plan", "run-init"}:
+        elif arguments.command in {"config", "plan", "prepare", "run-init"}:
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
@@ -359,6 +404,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             config = load_experiment_config(arguments.path)
             if arguments.command == "config":
                 payload = config.resolved(project_root).to_dict()
+            elif arguments.command == "prepare":
+                inputs = _capture_run_inputs(arguments.input, project_root)
+                payload = build_prepare_report(
+                    config,
+                    source_config=arguments.path,
+                    inputs=inputs,
+                    split_bindings=_parse_split_bindings(arguments.split_binding),
+                    project_root=project_root,
+                )
             else:
                 plan = build_run_plan(config, project_root)
                 if arguments.command == "plan":
@@ -550,6 +604,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     source_task_config=arguments.task_config,
                     train_manifest_path=arguments.train_manifest,
                     validation_manifest_path=arguments.validation_manifest,
+                    split_assignments_path=arguments.split_assignments,
                     project_root=project_root,
                     command=("mmprism", *effective_argv),
                 )
@@ -562,6 +617,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     manifest_path=arguments.manifest,
                     checkpoint_path=arguments.checkpoint,
                     checkpoint_metadata_path=arguments.checkpoint_metadata,
+                    split_assignments_path=arguments.split_assignments,
                     split=arguments.split,
                     project_root=project_root,
                     command=("mmprism", *effective_argv),
@@ -597,6 +653,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     source_asset_config=arguments.model_assets,
                     train_manifest_path=arguments.train_manifest,
                     validation_manifest_path=arguments.validation_manifest,
+                    split_assignments_path=arguments.split_assignments,
                     project_root=project_root,
                     command=("mmprism", *effective_argv),
                 )
@@ -612,6 +669,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     manifest_path=arguments.manifest,
                     checkpoint_path=arguments.checkpoint,
                     checkpoint_metadata_path=arguments.checkpoint_metadata,
+                    split_assignments_path=arguments.split_assignments,
                     split=arguments.split,
                     project_root=project_root,
                     command=("mmprism", *effective_argv),
@@ -698,6 +756,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 exit_code = 0
     except (
         ArtifactError,
+        PrepareError,
         ConfigError,
         ManifestError,
         ModelAssetError,

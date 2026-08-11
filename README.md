@@ -139,10 +139,15 @@ export MMPRISM_DATA_ROOT=/path/to/model-ready-data
 export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
 export MMPRISM_TRAIN_MANIFEST=/path/to/train.jsonl
 export MMPRISM_VALIDATION_MANIFEST=/path/to/validation.jsonl
+export MMPRISM_SPLIT_ASSIGNMENTS=/path/to/split_assignments.jsonl
 scripts/run_omnihand_train.sh
 ```
 
-`omnihand-train` requires a clean Git worktree and verifies every manifest-bound array checksum. It
+Run `mmprism prepare` with the same experiment config, manifests, split assignment file, and explicit
+manifest-to-split bindings before starting a formal job. The preflight requires a clean Git worktree,
+validates every input hash and contract, checks the planned destination without creating it, and emits
+one JSON report to stdout. `omnihand-train` independently enforces the same split membership and records
+the assignment file in `inputs.json`; it also verifies every manifest-bound array checksum. It
 writes a Safetensors checkpoint plus metadata, resolved task/runtime configuration, history,
 validation predictions, and `mmprism.pose_metric.dual_hand_metric_v1` metrics. `omnihand-evaluate`
 requires the checkpoint weights and metadata as separate hashed inputs and rejects any checksum,
@@ -173,11 +178,13 @@ export MMPRISM_DATA_ROOT=/path/to/model-ready-data
 export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
 export MMPRISM_TRAIN_MANIFEST=/path/to/train.jsonl
 export MMPRISM_VALIDATION_MANIFEST=/path/to/validation.jsonl
+export MMPRISM_SPLIT_ASSIGNMENTS=/path/to/split_assignments.jsonl
 scripts/run_wavellm_train.sh
 ```
 
 `wavellm-train` verifies every manifest-bound pose, confidence, radar-feature, and frame-mask array,
-rejects sample/sequence leakage, and writes an adapter-only checkpoint when mT5 is frozen. The separate
+rejects sample/sequence leakage, requires each manifest sample to match the registered split assignment,
+and writes an adapter-only checkpoint when mT5 is frozen. The separate
 `wavellm-evaluate` command re-registers weights and metadata as hashed inputs and rejects checksum,
 model/task-config, model-asset, unit, coordinate-frame, or tensor-inventory drift before generation.
 The included character metric is an orchestration protocol; full fine-tuning, real-data validation,

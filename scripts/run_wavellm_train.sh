@@ -10,6 +10,7 @@ model_root="${MMPRISM_MT5_MODEL_ROOT:-$project_root/pretrained_models/mt5_base_v
 
 : "${MMPRISM_TRAIN_MANIFEST:?Set MMPRISM_TRAIN_MANIFEST to a model-ready training manifest}"
 : "${MMPRISM_VALIDATION_MANIFEST:?Set MMPRISM_VALIDATION_MANIFEST to a model-ready validation manifest}"
+: "${MMPRISM_SPLIT_ASSIGNMENTS:?Set MMPRISM_SPLIT_ASSIGNMENTS to canonical split assignments}"
 
 cd "$project_root"
 exec uv run --frozen --extra train mmprism wavellm-train \
@@ -19,4 +20,5 @@ exec uv run --frozen --extra train mmprism wavellm-train \
   --model-root "$model_root" \
   --train-manifest "$MMPRISM_TRAIN_MANIFEST" \
   --validation-manifest "$MMPRISM_VALIDATION_MANIFEST" \
+  --split-assignments "$MMPRISM_SPLIT_ASSIGNMENTS" \
   --project-root "$project_root"

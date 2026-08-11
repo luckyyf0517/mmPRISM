@@ -61,9 +61,10 @@ checkpoint, or real-world generalization blockers.
 
 `mmprism omnihand-train` consumes separate train and validation manifests under
 `mmprism.pose_reconstruction.sample_v1`. It requires a clean Git commit, checks every referenced array,
-rejects sample overlap and train/validation shape or coordinate-frame drift, and obtains seed/device/
-precision only from `mmprism.experiment.v1`. The strict `mmprism.omnihand_run.v1` task config owns the
-model, loader, optimizer, gradient clipping, and evaluation threshold.
+requires a hashed split assignment input, proves every sample has the declared train or validation
+membership, rejects sample overlap and train/validation shape or coordinate-frame drift, and obtains
+seed/device/precision only from `mmprism.experiment.v1`. The strict `mmprism.omnihand_run.v1` task config
+owns the model, loader, optimizer, gradient clipping, and evaluation threshold.
 
 A completed training run contains:
 
@@ -72,9 +73,9 @@ A completed training run contains:
 - `history.json`, `performance.json`, streaming `predictions.jsonl`, and versioned `metrics.json`;
 - the generic resolved experiment, environment, input-hash, and run lifecycle artifacts.
 
-`mmprism omnihand-evaluate` registers the manifest, weights, metadata, and task config as independent
-inputs. It validates weight checksum, Safetensors format, model-config fingerprint, metric units, and
-coordinate frame before strict state loading. Prediction records retain sample ID, checkpoint hash,
+`mmprism omnihand-evaluate` registers the manifest, split assignments, weights, metadata, and task config
+as independent inputs. It validates evaluation split membership, weight checksum, Safetensors format,
+model-config fingerprint, metric units, and coordinate frame before strict state loading. Prediction records retain sample ID, checkpoint hash,
 coordinate frame, metres, valid-joint mask, prediction, optional target, and per-sample absolute MPJPE.
 
 The current orchestrator is deliberately single-device. Resume state and rank-safe distributed

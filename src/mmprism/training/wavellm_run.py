@@ -22,7 +22,12 @@ from torch import Tensor
 from torch.amp.grad_scaler import GradScaler
 from torch.utils.data import DataLoader, Dataset
 
-from mmprism.artifacts import RunArtifactWriter, RunInput, sha256_file
+from mmprism.artifacts import (
+    RunArtifactWriter,
+    RunInput,
+    sha256_file,
+    validate_split_bindings,
+)
 from mmprism.assets import (
     ModelAssetSetConfig,
     ResolvedModelAsset,
@@ -849,6 +854,7 @@ def train_wavellm(
     source_asset_config: str | Path,
     train_manifest_path: str | Path,
     validation_manifest_path: str | Path,
+    split_assignments_path: str | Path,
     project_root: Path,
     command: Sequence[str],
     runtime_report: Mapping[str, Any] | None = None,
@@ -866,6 +872,7 @@ def train_wavellm(
         input_specs=(
             ("train_manifest", "manifest", train_manifest_path),
             ("validation_manifest", "manifest", validation_manifest_path),
+            ("split_assignments", "split", split_assignments_path),
         ),
         project_root=project_root,
         command=command,
@@ -889,6 +896,16 @@ def train_wavellm(
         _validate_split_separation(train_manifest, validation_manifest)
         if train_manifest.coordinate_frame != validation_manifest.coordinate_frame:
             raise WaveLLMRunError("train and validation coordinate frames do not match")
+        validate_split_bindings(
+            {
+                "train_manifest": (record.sample_id for record in train_manifest.records),
+                "validation_manifest": (
+                    record.sample_id for record in validation_manifest.records
+                ),
+            },
+            paths["split_assignments"],
+            {"train_manifest": "train", "validation_manifest": "validation"},
+        )
 
         device = _resolve_device(resolved_experiment.runtime)
         dtype = _model_dtype(device, resolved_experiment.runtime.precision)
@@ -1038,6 +1055,7 @@ def evaluate_wavellm(
     manifest_path: str | Path,
     checkpoint_path: str | Path,
     checkpoint_metadata_path: str | Path,
+    split_assignments_path: str | Path,
     split: str,
     project_root: Path,
     command: Sequence[str],
@@ -1057,6 +1075,7 @@ def evaluate_wavellm(
         source_asset_config=source_asset_config,
         input_specs=(
             ("evaluation_manifest", "manifest", manifest_path),
+            ("split_assignments", "split", split_assignments_path),
             ("checkpoint_weights", "checkpoint", checkpoint_path),
             ("checkpoint_metadata", "checkpoint", checkpoint_metadata_path),
         ),
@@ -1073,6 +1092,11 @@ def evaluate_wavellm(
             verify_checksums=task_config.data.verify_checksums,
         )
         _validate_manifest_for_model(manifest, task_config, role="evaluation")
+        validate_split_bindings(
+            {"evaluation_manifest": (record.sample_id for record in manifest.records)},
+            paths["split_assignments"],
+            {"evaluation_manifest": split},
+        )
         device = _resolve_device(resolved_experiment.runtime)
         dtype = _model_dtype(device, resolved_experiment.runtime.precision)
         _seed_runtime(resolved_experiment.runtime.seed, resolved_experiment.runtime.deterministic)
