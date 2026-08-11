@@ -9,12 +9,12 @@ Role: `DATA-001-K_source_integrity_evidence`
 Current cumulative control artifact:
 
 ```text
-latest registry writer commit: 1fc0d55decd35e1900d734865344df5a21c5e382
+latest registry writer commit: 8c27fb95b221c19f00a8a4d89c7073d1f4b34f6d
 registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/registry.json
-registry SHA-256 at 2026-08-11T17:30Z: ed848abce94683d74aca8bbc985a365315fec5983ed74e44261a09165927d804
+registry SHA-256 at 2026-08-11T17:52Z: 6ad8310cdbe934ff291a3e68d6ea151231e2b84c13c650e3cc939f8bf23b1338
 labels SHA-256: 3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5
-present final archives: 20
-passed: 17 archives / 27,975 videos
+present final archives: 22
+passed: 19 archives / 31,423 videos
 failed: 001,005,008
 ```
 
@@ -92,7 +92,7 @@ status: passed
 
 该独立增量报告随后被 cumulative registry 纳入；不再维护手工 fixed lane 清单。
 
-### Latest passed archives: `archive_027/030`
+### Passed archives at `17:30Z`: `archive_027/030`
 
 `2026-08-11T17:14Z` timer 在 clean commit `8b64d0f` 下自动发现并完整审计新 final
 `archive_026`。逐 member CRC/full read、路径安全和 1,598/1,598 label coverage 均通过：
@@ -126,6 +126,26 @@ eligible pose/sidecar pair、missing artifact/sidecar 0、latest run 新失败 0
 约 1,436 samples/hour；报告 SHA-256 为
 `b0f7b94ed04a0b4e0cf1b5a33786809fb6adf9ad944811de7f8e0a7028ef536b`。状态保持
 `attention_required` 只因为 registry 保留三个 failed source，不是 annotation failure。
+
+### Latest passed archives: `archive_032/034`
+
+`archive_032` 在 clean commit `efb008a` 下完成 full-read audit，1,678 个视频全部通过 CRC、路径安全
+和 label coverage；`archive_034` 在提交 canonical radar contract 的 clean commit `8c27fb9` 后由手工
+触发的同一 oneshot 审计，1,770 个视频全部通过：
+
+```text
+archive_032 SHA-256: fd6a5b451e09e24e3c2bde316d5cdc0fdb224e7d4bcd9634e646ee2397729f28
+archive_032 audit SHA-256: a37d9d224729f5a2cffb1fb4bea20f1630c8068bb04bd021d9d1a3f9e0d44c2e
+archive_034 SHA-256: 316d5b6e8e0c4d902c6baaef730ca99438ee6c9adf3aa27d37bfae1a11aee33e
+archive_034 audit SHA-256: e2d79f81bb93d314333ae73fd83d5239203267fb64d1cd23820a2c36bb9f1449
+```
+
+`17:52Z` scan 以 `0/SUCCESS` 完成，registry 为 22 final、19 passed/31,423 videos，SHA-256 为
+`6ad8310cdbe934ff291a3e68d6ea151231e2b84c13c650e3cc939f8bf23b1338`。`17:53Z` 状态快照统计
+3,795 个 eligible pose/sidecar pair、missing artifact/sidecar 0、latest run 新失败 0、抽检 3/3，
+近期约 1,382 samples/hour；报告 SHA-256 为
+`cd7718e92c3a0aa50b76151416bb3fbd493743d052a676e676939ddf6bc8da66`。四个 worker、下载服务和
+integrity timer 均保持 active；`attention_required` 仍只表示三个历史 failed source 被保留。
 
 ## 3. Evidence Boundary
 

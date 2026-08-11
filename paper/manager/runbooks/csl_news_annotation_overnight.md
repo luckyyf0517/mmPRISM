@@ -233,3 +233,7 @@ scripts/run_csl_news_annotation_qc.sh
   `archive_027/030` 均通过完整 CRC/路径安全/label coverage。registry 更新为 20 final、17 passed/
   27,975 videos。`17:31Z` 状态报告为 3,287 eligible pair、missing artifact/sidecar 0、latest run
   新失败 0、抽检 3/3，近期约 1,436 samples/hour；四个 worker 均 `active/running`、`NRestarts=0`。
+- `17:52Z`，clean commit `8c27fb9` 后手工触发 integrity oneshot 并以 `0/SUCCESS` 完成；
+  `archive_032/034` 通过完整 CRC/路径安全/label coverage，registry 更新为 22 final、19 passed/
+  31,423 videos。`17:53Z` 状态报告为 3,795 eligible pair、missing artifact/sidecar 0、latest run
+  新失败 0、抽检 3/3，近期约 1,382 samples/hour；四个 worker、下载服务和 timer 均为 active。

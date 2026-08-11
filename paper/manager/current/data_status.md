@@ -320,3 +320,10 @@ CRC、路径安全和 label coverage。当前 registry 为 20 final、17 passed/
 `001/005/008`，SHA-256 为 `ed848abce94683d74aca8bbc985a365315fec5983ed74e44261a09165927d804`。
 `17:31 UTC` 状态快照统计 3,287 个 eligible pair、missing artifact/sidecar 0、latest run 新失败 0、
 抽检 3/3 通过，近期约 1,436 samples/hour；四个 worker 均 `active/running`、`NRestarts=0`。
+
+`17:52 UTC`，clean commit `8c27fb9` 后手工触发 integrity oneshot 并以 `0/SUCCESS` 完成；
+`archive_032/034` 分别新增 1,678/1,770 个通过完整 CRC、路径安全和 label coverage 的视频。当前
+registry 为 22 final、19 passed/31,423 videos，失败项仍仅 `001/005/008`，SHA-256 为
+`6ad8310cdbe934ff291a3e68d6ea151231e2b84c13c650e3cc939f8bf23b1338`。`17:53 UTC` 状态快照统计
+3,795 个 eligible pair、missing artifact/sidecar 0、latest run 新失败 0、抽检 3/3 通过，近期约
+1,382 samples/hour；四个 worker、下载服务和 integrity timer 均为 active。
