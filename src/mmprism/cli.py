@@ -436,7 +436,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 exit_code = 0
             else:
                 payload = run_model_asset_smoke(
-                    model_config, model_root, device=arguments.device
+                    model_config,
+                    model_root,
+                    device=arguments.device,
+                    runtime_report=collect_runtime_report(project_root),
                 )
                 if arguments.output:
                     write_model_asset_smoke(payload, arguments.output)

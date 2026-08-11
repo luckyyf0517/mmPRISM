@@ -13,6 +13,7 @@ from mmprism.assets import (
     download_model_assets,
     load_model_asset_config,
     plan_model_assets,
+    run_model_asset_smoke,
     verify_model_assets,
 )
 from mmprism.cli import main
@@ -227,6 +228,26 @@ def test_refuses_corrupt_existing_asset_without_overwrite(tmp_path: Path) -> Non
             hub_client=FakeHubClient(tmp_path / "unused", {}),
         )
     assert corrupt_path.read_bytes() == b"corrupt"
+
+
+def test_smoke_rejects_collection_manifest_drift_before_model_imports(
+    tmp_path: Path,
+) -> None:
+    config = ModelAssetSetConfig.from_mapping(_payload())
+    output_root = tmp_path / "models"
+    result = download_model_assets(
+        config,
+        output_root,
+        hub_client=_client(tmp_path / "snapshots"),
+        downloaded_at_utc="2026-08-11T18:00:00+00:00",
+    )
+    collection_path = Path(result["collection_manifest"])
+    collection = json.loads(collection_path.read_text(encoding="utf-8"))
+    collection["models"][0]["revision"] = "f" * 40
+    collection_path.write_text(json.dumps(collection), encoding="utf-8")
+
+    with pytest.raises(ModelAssetError, match="collection mismatch"):
+        run_model_asset_smoke(config, output_root)
 
 
 def test_rejects_remote_revision_mismatch_before_download(tmp_path: Path) -> None:

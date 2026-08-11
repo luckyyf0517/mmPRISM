@@ -478,6 +478,53 @@ def verify_model_assets(
     return plan
 
 
+def _verify_collection_manifest(
+    config: ModelAssetSetConfig,
+    root: Path,
+    verified_models: Sequence[Mapping[str, object]],
+) -> str:
+    path = root / MODEL_ASSET_COLLECTION_NAME
+    if not path.is_file() or path.is_symlink():
+        raise ModelAssetError(f"Model asset collection manifest is missing or unsafe: {path}")
+    collection = _read_asset_manifest(path)
+    expected_identity = {
+        "schema_version": MODEL_ASSET_COLLECTION_SCHEMA,
+        "asset_set_id": config.asset_set_id,
+        "config_fingerprint": config.fingerprint,
+    }
+    for key, value in expected_identity.items():
+        if collection.get(key) != value:
+            raise ModelAssetError(f"Model asset collection identity mismatch: {key}")
+    models_value = collection.get("models")
+    if not isinstance(models_value, list):
+        raise ModelAssetError("Model asset collection models must be a list")
+    actual: dict[str, Mapping[str, Any]] = {}
+    for index, item in enumerate(models_value):
+        row = _mapping(item, f"model asset collection.models[{index}]")
+        asset_id = row.get("asset_id")
+        if not isinstance(asset_id, str) or asset_id in actual:
+            raise ModelAssetError("Model asset collection has invalid asset IDs")
+        actual[asset_id] = row
+    expected = {str(model["asset_id"]): model for model in verified_models}
+    if set(actual) != set(expected):
+        raise ModelAssetError("Model asset collection inventory mismatch")
+    for asset_id, model in expected.items():
+        for key in (
+            "destination",
+            "repo_id",
+            "revision",
+            "loader",
+            "file_count",
+            "size_bytes",
+            "asset_manifest_sha256",
+        ):
+            if actual[asset_id].get(key) != model.get(key):
+                raise ModelAssetError(
+                    f"Model asset collection mismatch for {asset_id}: {key}"
+                )
+    return _sha256(path)
+
+
 def _builder_payload(runtime_report: Mapping[str, Any] | None) -> dict[str, object]:
     git_commit: object = None
     git_dirty: object = None
@@ -617,10 +664,13 @@ def download_model_assets(
             "models": portable_models,
         }
         _write_bytes_atomic(_json_bytes(collection), root / MODEL_ASSET_COLLECTION_NAME)
+        collection_sha256 = _verify_collection_manifest(
+            config, root, portable_models
+        )
         return {
             **verified,
             "collection_manifest": str(root / MODEL_ASSET_COLLECTION_NAME),
-            "collection_manifest_sha256": _sha256(root / MODEL_ASSET_COLLECTION_NAME),
+            "collection_manifest_sha256": collection_sha256,
             "actions": actions,
         }
 
@@ -659,10 +709,12 @@ def run_model_asset_smoke(
     *,
     device: str = "cpu",
     texts: Sequence[str] = ("今天天气很好。", "请打开会议室的门。"),
+    runtime_report: Mapping[str, Any] | None = None,
 ) -> dict[str, object]:
     root = _output_root(output_root)
     verified = verify_model_assets(config, root)
     verified_models = cast(list[dict[str, object]], verified["models"])
+    collection_sha256 = _verify_collection_manifest(config, root, verified_models)
     if len(texts) < 2 or any(not isinstance(text, str) or not text.strip() for text in texts):
         raise ModelAssetError("Model smoke requires at least two non-empty texts")
     results: list[dict[str, object]] = []
@@ -689,7 +741,11 @@ def run_model_asset_smoke(
                 model = AutoModel.from_pretrained(model_path).to(device)
                 model.eval()
                 batch = tokenizer(
-                    list(texts), padding=True, truncation=True, return_tensors="pt"
+                    list(texts),
+                    padding=True,
+                    truncation=True,
+                    max_length=512,
+                    return_tensors="pt",
                 )
                 batch = {name: tensor.to(device) for name, tensor in batch.items()}
                 with torch.inference_mode():
@@ -719,6 +775,8 @@ def run_model_asset_smoke(
         "status": "passed",
         "asset_set_id": config.asset_set_id,
         "config_fingerprint": config.fingerprint,
+        "collection_manifest_sha256": collection_sha256,
+        "runtime": _builder_payload(runtime_report),
         "device": device,
         "input_count": len(texts),
         "models": results,
