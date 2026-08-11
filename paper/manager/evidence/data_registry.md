@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 partial source snapshot 63 archives/104,658 records, SHA-256 `a431d14c...`；live registry 66 archives/109,797 videos at 22:47Z；final 436-archive snapshot pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 partial source snapshot 63 archives/104,658 records, SHA-256 `a431d14c...`；live registry 71 archives/118,075 videos at 23:30Z；final 436-archive snapshot pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -39,7 +39,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 v2 registry workers active；clean audit 11,814/11,815 passed with one known conflict；v2 snapshot 10,011 records/12 archives, SHA-256 `3412aeb2...`；1,875 old/unbound pairs checksum-quarantined | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 v2 registry workers active；known conflict recovered to immutable source variant with canonical bytes preserved；clean `6e9cc5e` snapshot 12,057 records/12 archives, SHA-256 `cdd450e4...`；1,875 old/unbound pairs checksum-quarantined | in_progress |
 
 ## Model-ready Contracts
 
@@ -152,6 +152,15 @@ summary's `crc_checked=false` means CRC was not redundantly rerun while freezing
 registry had already gated every selected archive with full CRC/coverage/decode. The older 18,095-record v1
 snapshot remains historical linkage evidence only, and the v2 snapshot remains partial until all 436 archives
 and 722,711 labels are represented.
+
+Clean commit `6e9cc5e` recovered the registered `archive_006/3af7...` canonical identity conflict without
+overwriting it. The valid current-source result uses the deterministic full-source-SHA suffix and is selected by
+`pose_manifest_v1/snapshot_20260811T232708.554551Z`; the original bad pair remains bound to copied audit
+evidence as the one explicit exclusion. The snapshot contains 12,057 records from 12 archives, has manifest
+SHA-256 `cdd450e4d7e17d4f34266f199ed4ff61f1ead9584715f1d4b9d3286a97d086e5`, and passed five checksum
+entries, the general contract, portable-path scan, and first/middle/last/recovery checksum-validating reads.
+The `23:30Z` live registry has since advanced to 71 archives/118,075 videos; it does not mutate this frozen
+70-archive snapshot.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 

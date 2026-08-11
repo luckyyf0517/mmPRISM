@@ -195,3 +195,53 @@ adapter 在 `verify_checksum=True` 下 3/3 通过。quarantine ledger 的 1,875 
 manifest。manifest 中 `005/008` 的抽样记录分别绑定 replacement SHA-256 `3450d136...`/
 `b258e4be...` 和 v2 精确相对路径。`001` 在冻结时尚无 current-source 完成产物，因此未出现在该
 partial snapshot；后续 worker 产物进入新的 snapshot，不修改本 snapshot。
+
+## 10. Immutable Conflict Recovery Snapshot
+
+clean commit `6e9cc5e8aeacf3420b4172a1805b730964e66751` 增加了同一 current-source sample 的
+deterministic recovery variant。`2026-08-11T23:24:39Z` 只滚动重启 registry lane 2 后，目标样本
+`archive_006/3af7db9841fb2ac483721620` 依次产生 `sample_routed_to_source_variant` 和
+`sample_completed`，写入：
+
+```text
+samples/archive_006/3af7db9841fb2ac483721620--source_f42d3d76c5c37b415512dba2dcbd21cf6aa7959beec3c1f0c4cca59f91cd8fff.npz
+samples/archive_006/3af7db9841fb2ac483721620--source_f42d3d76c5c37b415512dba2dcbd21cf6aa7959beec3c1f0c4cca59f91cd8fff.json
+```
+
+恢复 NPZ 为 813,674 bytes，SHA-256 为
+`6914b6bb0f26304d87b14d7cd7e8b00ac13e6d65202a97c0d4a89e3b0d38bca3`；sidecar SHA-256 为
+`72bd68a2d96b28a590b1f0783fbdbb09c8ed9932d16ebc8988ebca985069f881`，并显式记录
+`artifact.variant=source_f42d...`、source/archive/member identity 和 clean run commit。原 canonical
+NPZ/JSON 的 SHA-256、size 和 mtime 均未变化；历史 failure records 仍为 4 条。
+
+随后冻结的 current-source snapshot 为：
+
+```text
+snapshot: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/pose_manifest_v1/snapshot_20260811T232708.554551Z
+builder commit: 6e9cc5e8aeacf3420b4172a1805b730964e66751
+builder Git state: clean
+frozen integrity registry: 70 passed archives / 116,202 videos
+integrity registry SHA-256: 308027d5aea051839c4bb8b0fd62bc69f4e5ae70d259cf0c053e34ec5ae57e21
+manifest records: 12,057
+represented archives: 12
+manifest SHA-256: cdd450e4d7e17d4f34266f199ed4ff61f1ead9584715f1d4b9d3286a97d086e5
+summary SHA-256: 187721c5dc66fcd9438d3700da77036bc80eee7533de8f691fd27f21ba49454a
+quarantine entries: 1,875
+quarantine SHA-256: 1b03721b4fc64601d8dff0fc247e6d7a1a319ac93d2dc25c6cc463f0cd659586
+SHA256SUMS SHA-256: 9df1c195d078995b3424b53e0d9e19bb773cc32deed4881a8f52f242d27ad5c3
+explicit canonical exclusions: 1
+status: partial
+```
+
+五项 `SHA256SUMS` 全部通过；通用 contract 读取 12,057 records/9 modalities，manifest 中无
+`/mnt/`、`/home/` 或 `file://`；首/中/末和恢复样本均在 `verify_checksum=True` 下完成 8 个数组读取。
+恢复样本位于 manifest index 4,520，所有数组 URI 均指向 source variant；原 canonical pair 只出现在
+checksum-bound exclusion evidence 中。因此同一 sample ID 没有形成 current-source duplicate。
+
+snapshot 扫描开始后，`archive_005/6177...` 的 NPZ 于 `23:27:08.742Z` 发布，sidecar 于
+`23:27:08.762Z` 发布；它被精确记录为本次扫描的 1 个 `unpaired_npz_at_scan`，没有进入 manifest。
+这不是缺失产物，后续 snapshot 会在完整 pair 可见时重新评估。`23:30Z` status 已为 `healthy`：
+12,165 current-source completed、recovered/shadowed-invalid 1/1、duplicate/missing 0、latest-run failure
+0、抽检 3/3；报告 SHA-256 为
+`6d9dbb4b99503b563d8f290243a1a8c39386dfa19433a84609447cd309726aa8`。本 snapshot 仍是 partial
+工程证据，不是最终数据规模或论文结果。

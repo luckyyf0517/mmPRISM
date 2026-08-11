@@ -16,17 +16,17 @@ Role: `data_execution_tracker`
 | `DATA-001-H` | P0 | 分批上传私人真实采集 raw package | blocked | incoming batch checksum 完整且原始包只读 |
 | `DATA-001-I` | P0 | 固定 CSL-Daily/CSL-News 重新下载或上传路径 | in_progress | CSL-News 已确认可重下；待补齐各数据集 version/URL/license/checksum 或 incoming batch |
 | `DATA-001-J` | P0 | 恢复原投稿 MANO/mesh/skeleton simulation provenance | blocked | 实际 simulator、输入、配置和历史证据一致 |
-| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | versioned replacement `001/005/008` 已通过完整 gate；v2 registry 当前 66 archives/109,797 videos passed，待其余 370 archives + labels 全量验证 |
+| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | versioned replacement `001/005/008` 已通过完整 gate；v2 registry 当前 71 archives/118,075 videos passed，待其余 365 archives + labels 全量验证 |
 | `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | in_progress | schema v1 reviewed against real source |
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | in_progress | metric `[left/right,24,x/y/z]` contract 已冻结；待各数据族单位/坐标 mapping，RTMW3D 当前仅 shape/order 已证 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | in_progress | complex `[chirp,antenna,sample]` contract 与 range-Doppler v1 已通过；待真实 reader/config fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
 | `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | source-manifest v2 已冻结 63 archives/104,658 records，exact registry/checksum/contract/首中末读取通过；待最终 436-archive report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
-| `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | primary `001/005/008` 和 1,875 个 unbound/旧来源 pair 保持隔离；replacement 已通过；唯一 sidecar/NPZ identity conflict 由 clean audit + checksum-bound exclusion 隔离且原件保留；待最终全量 audit |
+| `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | primary `001/005/008` 和 1,875 个 unbound/旧来源 pair 保持隔离；唯一 sidecar/NPZ conflict 已恢复为 immutable source variant，原 pair 仍由 clean audit + checksum exclusion 保留；待最终全量 audit |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | in_progress | 2,157-record CSL-News partial sequence split 已通过 deterministic coverage/leakage audit；待 full manifest、signer/subject metadata 和最终 split |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
-| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | durable publication、source-bound resume、source-versioned coexistence、4-worker v2 shard 已通过；11,815-pair audit 和 10,011-record v2 snapshot 已验收，夜间全量 build 待完成 |
+| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | durable publication、source-bound resume、immutable conflict recovery 和 4-worker v2 shard 已通过；12,057-record clean snapshot 已纳入恢复样本且保留原冲突证据，夜间全量 build 待完成 |
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | in_progress | NumPy range-Doppler v1/analytic tests 已通过；beamforming/simulation 等 acquisition、array、calibration evidence |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | in_progress | strict dependency-light radar-cube/metric-pose manifest adapter、checksum 和 variable-time collator 已通过；待真实 collected cube/pose build、validation report 与 frozen manifest hash |
@@ -81,6 +81,13 @@ manifest SHA-256 为 `8e3db8712bc61848e9d6dea9f5b3a3821365ffd102d6643977ad43107b
 该 manifest 的 sequence-disjoint partial split 为 train/validation/test 1,701/219/237；assignment
 SHA-256 `133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`，coverage 和
 cross-group leakage audit 通过。缺少 signer/subject 且 source 未完成，因此 `DATA-004-A` 保持进行中。
+
+`23:24 UTC`，lane 2 在 clean commit `6e9cc5e` 上完成 `archive_006/3af7...` immutable recovery：
+恢复 variant 有完整 current-source identity，原 canonical pair 字节和 4 条 failure record 保持不变。
+新 pose snapshot `snapshot_20260811T232708.554551Z` 包含 12,057 records，manifest SHA-256 为
+`cdd450e4d7e17d4f34266f199ed4ff61f1ead9584715f1d4b9d3286a97d086e5`；五项 checksum、contract、
+portable path 和四个 checksum-validating adapter 读取通过。`23:30Z` live registry 为 71 archives/
+118,075 videos，下载与四个 worker 继续运行。
 
 ## 禁止事项
 

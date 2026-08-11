@@ -46,7 +46,7 @@ metric protocol 写入有限数值；domain writer 还可原子写入 strict JSO
 checkpoint 等顶层 artifact。Model-ready pose adapter 现严格读取 manifest 绑定的 radar-cube/metric-pose
 `.npy`、校验 shape/dtype/checksum/单位/坐标系，并对变长时间序列执行零填充和 mask。CSL-News RTMW3D 标注已具有独立 strict
 config、durable atomic artifact、source-bound resume/conflict/failure contract、CPU-only 全量 identity audit、
-不可变 replacement overlay、source-versioned artifact、checksum-bound explicit quarantine、GPU smoke、
+不可变 replacement overlay、source-versioned artifact、deterministic immutable-conflict recovery、checksum-bound explicit quarantine、GPU smoke、
 portable pose+caption manifest builder、无训练依赖的随机
 访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
 pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation
@@ -74,7 +74,7 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-187 tests passed（含 formal preflight/split binding、annotation identity/quarantine、OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
+190 tests passed（含 formal preflight/split binding、annotation identity/quarantine/recovery、OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
 doctor/config/plan/prepare/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -104,6 +104,8 @@ Checksum-bound quarantine preserved that pair and produced a 9,551-record/9-arch
 Clean v2 identity audit hashed 11,815 pairs / 6.373 GB and found only the same registered conflict
 v2 source-bound snapshot contains 10,011 records/12 archives and a checksum-covered 1,875-entry quarantine ledger
 All five v2 snapshot checksums, general manifest contract, and first/middle/last adapter reads passed
+Real immutable-conflict recovery preserved the canonical pair, added one full-source-SHA variant, and produced a
+12,057-record clean snapshot whose first/middle/last/recovery checksum-validating reads passed
 Partial sequence split passed 2,157/2,157 coverage and zero cross-split group leakage
 All 2,157 group IDs and assignment buckets independently recomputed and matched
 Formal run initialization atomically writes config/environment/input hashes and refuses collisions

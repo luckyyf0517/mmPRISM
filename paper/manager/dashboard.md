@@ -30,7 +30,7 @@ Role: `control_panel`
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；source-integrity v2 registry
-  在 `22:47Z` 覆盖 66 个 archive/109,797 videos，全部通过完整 CRC、label coverage 和 decode probe。
+  在 `23:30Z` 覆盖 71 个 archive/118,075 videos，全部通过完整 CRC、label coverage 和 decode probe。
   `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；4 个 source-aware registry
   worker 在 GPU 7 持续运行。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
@@ -46,10 +46,14 @@ Role: `control_panel`
 - clean commit `7f86516` 已冻结首个 source-manifest v2 partial snapshot：63 archives/104,658 records，
   exact registry/manifest/summary checksum、通用 contract、portable path 和首/中/末精确 ZIP member
   读取全部通过；replacement `001/005/008` 被正确选择。该证据不替代最终 436-archive snapshot。
+- clean commit `6e9cc5e` 已在真实 lane 2 上恢复 `archive_006/3af7...`：新 current-source variant
+  成功生成，原 canonical pair 的 hash/size/mtime 和 4 条 failure 均未变化。新 pose snapshot 冻结
+  12,057 records/12 archives，同时保留原 checksum-bound exclusion 并选择恢复 record；五项 checksum、
+  contract、portable path 和首/中/末/恢复样本读取全部通过。`23:30Z` status 为 `healthy`。
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.1 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；187 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；190 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run writer 与 OmniHand/WaveLLM single-device train/evaluate 已实现：原子冻结
   config/Git/environment/输入哈希，写入 Safetensors、history、runtime/performance、逐样本 prediction

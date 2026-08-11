@@ -311,3 +311,17 @@ scripts/run_csl_news_annotation_audit.sh
 - `22:47Z` live v2 registry 已继续推进到 66/66 passed、109,797 videos、failed 0；四个 v3 worker
   与下载服务均为 `active/running`、`NRestarts=0`。GPU 7 利用率约 99%、可用显存约 77.8 GiB；按
   项目负责人批准的规则继续共卡运行，不因利用率重启、暂停或迁移，也不干预其他 GPU 任务。
+- `23:24Z` 仅滚动重启 lane 2，使其加载 clean commit `6e9cc5e` 的 immutable-conflict recovery；
+  lane 0/1/3、下载、integrity timer 和其他 GPU 进程未触碰。目标样本 `archive_006/3af7...` 于
+  `23:24:56Z` 路由到 `--source_f42d3d76...`，并于 `23:25:14Z` 完成。原 canonical NPZ/JSON 的
+  size、SHA-256 和 mtime 与冻结值逐项一致，历史 failure 仍为 4 条，没有第五次失败。
+- `23:30Z` 自动 status 为 `healthy`：70 个 archive/116,202 videos、12,165 个 current-source
+  completed sample、recovered/shadowed-invalid 为 1/1、duplicate/missing pair 为 0、latest-run failure
+  为 0、抽检 3/3 通过；报告 SHA-256 为
+  `6d9dbb4b99503b563d8f290243a1a8c39386dfa19433a84609447cd309726aa8`。
+- clean commit `6e9cc5e` 的 pose snapshot `snapshot_20260811T232708.554551Z` 冻结 12,057 条记录；
+  checksum-bound exclusion 仍保留坏 canonical pair，同时 manifest 选择同一 sample 的有效 source
+  variant。五项 `SHA256SUMS`、12,057-record contract、portable path 和首/中/末/恢复样本 adapter
+  checksum 读取全部通过。扫描边界出现 1 个 NPZ-only 文件；其 sidecar 在 NPZ 后约 20 ms 原子发布，
+  未进入本 snapshot，后续 snapshot 会重新纳入。两条误发起的重复只读构建已终止，未发布正式目录；
+  相应临时目录按本 runbook 的 no-cleanup 规则保留。

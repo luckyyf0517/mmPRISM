@@ -38,6 +38,7 @@ Role: `cross_workstream_decisions`
 | `DEC-030` | 2026-08-11 | CSL-News source 恢复采用不可变 replacement overlay、registry 精确路径绑定和 source-versioned annotation artifact | 直接覆盖 primary ZIP 或按 archive ID 复用旧 pose 会销毁事故证据，并可能把不同 source bytes 静默混入同一训练集 | accepted | primary/旧产物永久保留；v2 entry 显式记录 `archive_path_relative/source_kind/SHA`；resume 绑定 archive+labels+member identity；不匹配产物用完整 source SHA 后缀共存；manifest 唯一选择 current-source sidecar 并输出 checksum-covered quarantine ledger |
 | `DEC-031` | 2026-08-11 | CSL-News source manifest v2 只从一个冻结的 source-integrity v2 registry 构建 | glob primary root 无法表达 replacement，并会重新选中已知坏原件；live registry 更新也不能改变已发布 manifest | accepted | 配置必须注入 registry；逐 entry 校验 exact path/source kind/stat/SHA/video count/audit；snapshot 复制 registry 原始字节并以 `SHA256SUMS` 覆盖 registry/manifest/summary；v1 snapshot 仅保留为历史 linkage evidence |
 | `DEC-032` | 2026-08-11 | formal train/evaluate 必须注册一个 canonical split assignment，并在写入前支持统一无副作用 preflight | 仅记录 manifest 或接受 CLI `--split` 标签无法证明样本真实属于声明 split，且失败到运行中才发现会浪费算力并留下无效目录 | accepted | `mmprism prepare` 在 clean Git 上验证配置、输入哈希、目标、manifest/split contract、全覆盖和无重叠且不写目录；OmniHand/WaveLLM 运行时重复 membership gate，并把 split 文件写入 `inputs.json` |
+| `DEC-033` | 2026-08-11 | 已发布 canonical pose 冲突通过确定性的 full-source-SHA variant 恢复，原文件永久只读 | 覆盖或删除 canonical pair 会销毁 incident evidence，仅排除又会永久丢失可恢复样本 | accepted | recovery 只在 canonical 当前来源不完整/不一致时路由到 `--source_<archive-sha256>`；resume 和 status 只接受唯一有效 variant；manifest 必须继续验证并复制 canonical exclusion evidence，同时纳入恢复 record；多有效 variant 硬失败 |
 
 ## 决策记录模板
 

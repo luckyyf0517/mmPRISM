@@ -429,6 +429,11 @@ unbound sidecar 进入 `source_identity_quarantine.jsonl`，ledger SHA-256 为
 为 0。五项 `SHA256SUMS`、通用 manifest contract 和首/中/末 adapter checksum 读取全部通过。
 该 snapshot 是 partial pipeline evidence，不是最终数据集规模或论文结果。
 
+`22:30 UTC` 自动 status 报告返回 `attention_required`，唯一新增 failure 是已登记的
+`archive_006/3af7...` 在当前 worker run 中再次触发 preserve-on-conflict；没有新增 sample identity，
+current-source duplicate 0、missing pair 0、抽检 3/3 通过。status service 以 exit 1 保留该告警，
+四个 annotation worker 和下载/integrity 服务不受影响。
+
 `22:32 UTC` integrity timer 在 clean commit `11014a8` 下继续通过 `091/094/096`，live v2 registry
 更新为 62/62 passed、102,949 videos、failed 0，SHA-256
 `b461c9efd619ca2a049f4f64c9758bf7d6c64fb603a06ea64123148d13542e1a`。已发布的 10,011-record
@@ -448,7 +453,21 @@ summary 的 `crc_checked=false` 只表示 manifest 冻结时未重复执行全�
 上述 frozen snapshot。下载、integrity timer 和四个 GPU 7 v3 worker 继续运行，worker 均为
 `NRestarts=0`；项目负责人已批准共卡运行，GPU 利用率不作为启动、暂停或迁移条件。
 
-`22:30 UTC` 自动 status 报告返回 `attention_required`，唯一新增 failure 是已登记的
-`archive_006/3af7...` 在当前 worker run 中再次触发 preserve-on-conflict；没有新增 sample identity，
-current-source duplicate 0、missing pair 0、抽检 3/3 通过。status service 以 exit 1 保留该告警，
-四个 annotation worker 和下载/integrity 服务不受影响。
+`23:24 UTC` 仅滚动重启 registry lane 2，使其加载 clean commit `6e9cc5e` 的 immutable-conflict
+recovery。`archive_006/3af7db9841fb2ac483721620` 被确定性路由到完整 source SHA 后缀并成功生成；
+原 canonical NPZ/JSON 的 size、SHA-256 和 mtime 未变化，历史 failure records 仍为 4 条。恢复 sidecar
+记录 `artifact.variant`、current source identity 和 clean run commit。lane 0/1/3、下载、timer 和其他
+GPU 进程未触碰。
+
+clean commit `6e9cc5e` 随后冻结 `snapshot_20260811T232708.554551Z`：70 个 passed source archive、
+12,057 records/12 represented archives，manifest SHA-256 为
+`cdd450e4d7e17d4f34266f199ed4ff61f1ead9584715f1d4b9d3286a97d086e5`。原坏 canonical pair 仍由
+checksum-bound audit exclusion 精确隔离，恢复 variant 则作为同一 sample ID 的唯一 current-source
+record 入选。五项 `SHA256SUMS`、通用 contract、portable path 和首/中/末/恢复样本 checksum adapter
+读取全部通过。扫描中 1 个 NPZ 在冻结边界后约 20 ms 完成 sidecar 发布，因此只作为
+`unpaired_npz_at_scan` 记录且未入选；源文件没有删除或覆盖。
+
+`23:30 UTC` status 为 `healthy`：70 个 archive/116,202 videos、12,165 completed current-source
+sample、recovered/shadowed-invalid 为 1/1、duplicate/missing pair 为 0、latest-run failure 为 0、抽检
+3/3 通过。随后 integrity scan 于 `23:30:58Z` 将 live registry 推进到 71/71 passed、118,075 videos、
+failed 0；该 live 更新不追写已冻结 snapshot。下载、四个 worker 和两个 timer 继续 active。
