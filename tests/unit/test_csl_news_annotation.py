@@ -9,6 +9,7 @@ import numpy as np
 from mmprism.data import (
     CslNewsAnnotationError,
     canonicalize_hands,
+    is_completed_annotation_archive,
     is_completed_annotation_sample,
     load_csl_news_annotation_config,
     stable_sample_id,
@@ -135,6 +136,42 @@ runtime:
             invalid["frame_indices"] = np.asarray([1, 2], dtype=np.int64)
             np.savez_compressed(artifact, **invalid)
             self.assertFalse(validate_annotation_output(artifact))
+
+    def test_retries_archive_markers_with_unresolved_failures(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory) / "archive_005.json"
+            marker.write_text(
+                json.dumps(
+                    {
+                        "status": "completed_with_failures",
+                        "config_fingerprint": "fingerprint",
+                        "archive_size_bytes": 1024,
+                        "failed": 2,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertFalse(
+                is_completed_annotation_archive(marker, "fingerprint", 1024)
+            )
+
+            marker.write_text(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "config_fingerprint": "fingerprint",
+                        "archive_size_bytes": 1024,
+                        "failed": 0,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertTrue(
+                is_completed_annotation_archive(marker, "fingerprint", 1024)
+            )
+            self.assertFalse(
+                is_completed_annotation_archive(marker, "fingerprint", 2048)
+            )
 
 
 if __name__ == "__main__":

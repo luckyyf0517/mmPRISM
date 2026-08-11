@@ -761,6 +761,29 @@ def is_completed_annotation_sample(
     )
 
 
+def is_completed_annotation_archive(
+    marker_path: Path,
+    config_fingerprint: str,
+    archive_size_bytes: int | None = None,
+) -> bool:
+    """Return whether an archive marker represents a fully successful pass."""
+
+    if not marker_path.is_file():
+        return False
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return bool(
+        marker.get("status") == "completed"
+        and marker.get("config_fingerprint") == config_fingerprint
+        and (
+            archive_size_bytes is None
+            or marker.get("archive_size_bytes") == archive_size_bytes
+        )
+    )
+
+
 def _failure_sidecar(
     config: CslNewsAnnotationConfig,
     archive_name: str,
@@ -891,17 +914,12 @@ def run_csl_news_annotation(
             marker_path = (
                 config.runtime.output_root / "archives" / f"{archive_path.stem}.json"
             )
-            if marker_path.is_file() and max_videos is None:
-                try:
-                    marker = json.loads(marker_path.read_text(encoding="utf-8"))
-                except (OSError, json.JSONDecodeError):
-                    marker = {}
-                if (
-                    marker.get("status") in {"completed", "completed_with_failures"}
-                    and marker.get("config_fingerprint") == config.fingerprint
-                    and marker.get("archive_size_bytes") == archive_path.stat().st_size
-                ):
-                    continue
+            if max_videos is None and is_completed_annotation_archive(
+                marker_path,
+                config.fingerprint,
+                archive_path.stat().st_size,
+            ):
+                continue
 
             _ensure_disk_floor(config)
             archive_processed = 0
@@ -1147,14 +1165,7 @@ def run_csl_news_annotation(
             marker_number = int(marker_match.group(1))
             if marker_number % config.runtime.worker_count != config.runtime.worker_index:
                 continue
-            try:
-                marker_payload = json.loads(marker_path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
-                continue
-            if (
-                marker_payload.get("status") in {"completed", "completed_with_failures"}
-                and marker_payload.get("config_fingerprint") == config.fingerprint
-            ):
+            if is_completed_annotation_archive(marker_path, config.fingerprint):
                 completed_marker_count += 1
         if completed_marker_count >= expected_for_worker:
             break
