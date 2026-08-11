@@ -136,3 +136,6 @@ systemctl --user status mmprism-csl-news-annotation-status.timer
 - `2026-08-11T14:47Z` 首份修正后 status report 为 `healthy`：10 个完整 archive、
   16,476 个可用视频、101 个成功样本、当前 run 新增失败 0、缺失配对 0、抽样 3/3 通过；
   近期约 786 samples/hour、59.1 frames/s，当前已下载 archive ETA 约 20.8 小时。
+- `2026-08-11T14:50Z` 启用 `mmprism-csl-news-annotation-status.timer`，每 30 分钟触发，
+  独立 service 设 `CPUQuota=100%`。手工触发验收以 `0/SUCCESS` 完成；快照仍为 `healthy`，
+  147 个成功样本、当前 run 新增失败 0、抽样 3/3 通过。首次自动触发为 `15:00 UTC`。
