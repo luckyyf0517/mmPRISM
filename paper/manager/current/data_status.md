@@ -209,8 +209,14 @@ archive、18,095 条 portable `caption/video` record，manifest SHA-256 为
 `archive_002` 是修复版 downloader 首个完成 promotion 的 ZIP，随后通过 canonical full-read audit：
 1,624 个视频、label coverage 1,624/1,624、missing/empty 0，archive SHA-256 为
 `a10864019a02d5abefe1045b1ce7fc3f3350562889e4b6c95cfe766981334fde`，report SHA-256 为
-`3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`。当前累计 10 个 archive/
-16,468 videos 通过 source audit；`002` 等待下一轮标注调度。
+`3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`。
+
+`2026-08-11T16:16Z` 起，`configs/data/csl_news_source_integrity.yaml` 和
+`csl-news-integrity-scan` 维护 cumulative atomic registry。首次 clean-commit 扫描覆盖 14 个 final ZIP，
+后续增量扫描复用全部 14 个结果并自动审计新晋升的 `archive_017`。当前 registry 覆盖 15 个 final：
+12 个通过、3 个失败（`001/005/008`），白名单共 19,760 videos；registry SHA-256 为
+`070bcc4446894577cab6e05f632049a2a53143b508e50523dd27c20daea52b66`。每个 archive 有独立
+SHA-256、source stat、audit report/hash 和 clean builder commit；标签 hash 变化会强制全部重审。
 
 下载使用 `scripts/download_csl_news.sh`，当前引擎为 aria2：4 个 archive worker、每文件 8 个连接、
 断点续传、ZIP 完整性通过后原子 promotion、只下载不展开，并保留至少 1 TiB 可用空间。切换前短时基准中，
@@ -236,7 +242,9 @@ canonical pose annotation 使用 `configs/data/csl_news_rtmw3d_overnight.yaml` �
 `[T,133,3]` 与 canonical `[T,2,24,3]`，全部数值有限，峰值显存约 262 MiB；正式输出和
 scratch 在次晨人工检查前全部保留。
 
-夜间 4-lane worker pool 固定 GPU 7，运行后由 `csl-news-annotation-status` 做只读健康快照。
+夜间 4-worker pool 固定 GPU 7，现由 cumulative registry 动态分片；只有 `passed` archive 可见，
+新 final 由 5 分钟 integrity timer 审计后自动进入对应 worker。运行后由
+`csl-news-annotation-status` 做只读健康快照。
 `2026-08-11T14:47Z` 报告为 `healthy`：10 个完整 archive、16,476 个当前可用视频、
 101 个成功样本、latest run 新增失败 0、缺失 artifact/sidecar 0、抽样校验 3/3 通过。
 报告目录为：
@@ -262,3 +270,8 @@ archive、18,095 个可用视频、291 个成功样本、当前 run 新增失败
 `16:00 UTC` 自动报告为 `attention_required`，原因仅为已隔离的 `archive_001` central-directory
 错误；annotation artifact 配对完整、最新 3/3 校验通过、latest run 新失败 0。4-lane aggregate
 近期吞吐约 1,394 samples/hour；该 ETA 包含未调度/异常 archive，仅作运维参考。
+
+`16:20 UTC` registry-aware 报告只统计 12 个 eligible archive/19,760 videos：1,687 个 eligible NPZ，
+15 个来自损坏 archive 的历史 NPZ/sidecar 单列为 ineligible 且不抵扣进度；最新 3/3 校验通过、
+dynamic run 新失败 0，近期约 1,353 samples/hour。报告保持 `attention_required`，原因是 registry
+显式保留 3 个失败 source，而不是 annotation 失败。

@@ -7,8 +7,8 @@ Role: `unattended_pose_annotation_operations`
 ## 1. 今晚目标与授权
 
 - 对已经完整下载并原子命名为 `archive_*.zip` 的 CSL-News 视频持续生成 RTMW3D-L 姿态。
-- 默认保留一个轮询 worker；只有 archive 通过完整 CRC gate 后，才可按 archive ID 扩展，GPU 7
-  总 worker 数上限为 4。
+- 使用 4 个 registry-driven 轮询 worker；每个 worker 只读取 cumulative integrity registry 中
+  `status=passed` 的 archive，并按 `archive_id % 4` 分片。GPU 7 总 worker 数上限为 4。
 - 操作者已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停、迁移或退出条件。
 - 授权边界：可以在已有计算任务的卡上同时运行本 worker；只要满足最低可用显存即可，已有任务的 GPU 利用率不构成冲突或迁移理由。不得为了本任务结束、暂停或修改其他用户进程。
 - 默认启动门槛为 2,048 MiB free memory；该值高于当前单 worker 约 838 MiB 的稳定占用并保留加载余量，可通过 `--min-free-mib` 按模型实测结果调整。30 GiB 不再作为固定门槛。
@@ -35,6 +35,8 @@ labels: /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/metadat
 mmpose: 759b39c13fea6ba094afc1fa932f51dc1b11cbf9
 checkpoint SHA-256: 794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed
 config: configs/data/csl_news_rtmw3d_overnight.yaml
+integrity config: configs/data/csl_news_source_integrity.yaml
+integrity registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/registry.json
 ```
 
 环境使用 `mmcv-lite 2.1.0`。MMPose 会 eager import 与本任务无关的 EDPose head，而该 head 需要
@@ -75,8 +77,10 @@ NPZ 同时保留 `[T,133,3]` 原生 3D keypoints、`[T,133]` confidence、
 2. 对每个已完成 archive 做完整 SHA-256/逐 member CRC/label source audit；未通过者不进入 worker。
 3. 在满足配置启动门槛的卡上执行单视频 smoke；允许该卡同时有高利用率任务，默认门槛为 2,048 MiB free memory。
 4. 检查输出 shape、有限值、中文文本、sidecar checksum、峰值显存和每帧速度。
-5. smoke 通过后，以同一物理 GPU 启动一个 `systemd --user` worker。
-6. worker 持续轮询新下载完成的 archive，已验证输出自动跳过；逐视频普通失败写 sidecar 后继续。
+5. smoke 通过后，启动 4 个 `systemd --user` registry worker；CLI override 只改变 orchestration
+   shard，不改变 artifact config fingerprint。
+6. integrity timer 每 5 分钟扫描新 final ZIP；审计通过后由 worker 最迟在下一次 60 秒轮询消费。
+7. 已验证输出自动跳过；逐视频普通失败写 sidecar 后继续。registry/source stat 变化时停止而非继续消费。
 
 ## 6. 停止条件
 
@@ -89,7 +93,7 @@ NPZ 同时保留 `[T,133,3]` 原生 3D keypoints、`[T,133]` confidence、
 
 GPU 利用率高不属于停止条件，这是本次夜间运行的显式授权。
 
-archive-specific worker 只允许使用 source integrity summary 中的 `passed_archive_ids`。发现损坏时
+所有 worker 只允许使用 cumulative source integrity registry 中的 `passed_archive_ids`。发现损坏时
 停止对应 archive worker，但不停止已经通过 source gate 的其他 worker；不得用 partial manifest
 或 central-directory CRC 字段替代完整读取验证。
 
@@ -103,15 +107,17 @@ scripts/run_csl_news_annotation_worker.sh --gpu auto -- \
 ```
 
 正式任务由管理员用 `systemd-run --user` 托管，设置 `Restart=on-failure` 和 300 秒重试；
-启动后记录实际物理 GPU 到本页运行记录。观察命令：
+4 个 worker 分别传入 `--worker-index 0..3 --worker-count 4 --integrity-registry <path>`。
+启动后记录实际物理 GPU、registry SHA-256 和 shard 到 run metadata。观察命令：
 
 ```bash
-systemctl --user status 'mmprism-csl-news-annotation-lane*-v2.service'
+systemctl --user status 'mmprism-csl-news-annotation-registry*.service'
 journalctl --user -f \
-  -u mmprism-csl-news-annotation-lane0-v2.service \
-  -u mmprism-csl-news-annotation-lane1-v2.service \
-  -u mmprism-csl-news-annotation-lane2-v2.service \
-  -u mmprism-csl-news-annotation-lane3-v2.service
+  -u mmprism-csl-news-annotation-registry0.service \
+  -u mmprism-csl-news-annotation-registry1.service \
+  -u mmprism-csl-news-annotation-registry2.service \
+  -u mmprism-csl-news-annotation-registry3.service
+systemctl --user status mmprism-csl-news-integrity-scan.timer
 ```
 
 机器可读状态快照由独立 CPU-only 命令生成，不导入 MMPose/PyTorch，也不读取隐藏临时文件：
@@ -195,3 +201,13 @@ scripts/run_csl_news_annotation_qc.sh
 - 修复版 downloader 首个晋升的 `archive_002` 随后通过 1,624-video canonical audit，report
   SHA-256 为 `3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`；为保持 frozen lane
   边界，`002` 不动态插入当前进程，进入下一轮调度。
+- `2026-08-11T16:16Z`，clean commit `b182512` 首次生成 cumulative integrity registry：首轮
+  审计 14 个 final ZIP，`001/005/008` 失败，其余 11 个通过。紧接着的增量扫描复用 14 个结果并
+  自动审计新晋升的 `017`，当前白名单 12 个 archive/19,760 videos，registry SHA-256 为
+  `070bcc4446894577cab6e05f632049a2a53143b508e50523dd27c20daea52b66`。
+- `2026-08-11T16:19Z`，4 个 fixed lane 完全停止后才启动
+  `mmprism-csl-news-annotation-registry{0..3}.service`；4/4 `active/running`、`NRestarts=0`，
+  GPU 7 尚余约 52 GiB。run metadata 记录 registry hash 和 shard；无新 annotation failure。
+- `mmprism-csl-news-integrity-scan.timer` 每 5 分钟运行一次，使用 `flock` 防止重叠并原子更新 registry。
+  `16:20Z` 白名单状态报告统计 1,687 个 eligible NPZ，另有 15 个来自损坏 archive 的历史 NPZ/
+  sidecar 被标为 ineligible、未计入进度；抽检 3/3 通过，当前 run 新失败 0。

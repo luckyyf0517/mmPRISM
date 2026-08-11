@@ -1,10 +1,27 @@
 # CSL-News Source Integrity Evidence
 
-Status: `partial_audit_failures_isolated_promotion_gate_fixed`
+Status: `cumulative_registry_active_failures_isolated`
 Last Updated: `2026-08-11`
 Role: `DATA-001-K_source_integrity_evidence`
 
 ## 1. Audit Identity
+
+Current cumulative control artifact:
+
+```text
+builder commit: b18251204ece87b67702d1f6735c9eb9cb416a9b
+registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/registry.json
+registry SHA-256 at 2026-08-11T16:17Z: 070bcc4446894577cab6e05f632049a2a53143b508e50523dd27c20daea52b66
+labels SHA-256: 3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5
+present final archives: 15
+passed: 12 archives / 19,760 videos
+failed: 001,005,008
+```
+
+Registry 更新使用非阻塞 `flock`、per-archive audit 和原子替换。archive source stat 或标签 hash
+变化时旧结果不可复用；标注 worker 同时核对 source ID/revision/stat，只消费 typed `passed` entry。
+
+Initial frozen manual audit retained for historical provenance:
 
 ```text
 source: huggingface:ZechengLi19/CSL-News@3a0601210333fe760efd09b5d9e2ae5f341ce339
@@ -71,8 +88,7 @@ archive SHA-256: a10864019a02d5abefe1045b1ce7fc3f3350562889e4b6c95cfe766981334fd
 status: passed
 ```
 
-当前累计 10 个 source-audit-passed archive、16,468 个视频；今晚 fixed lane 仍只处理先前冻结的
-9 个 archive，`002` 进入下一轮可调度清单。
+该独立增量报告随后被 cumulative registry 纳入；不再维护手工 fixed lane 清单。
 
 ## 3. Evidence Boundary
 
@@ -80,9 +96,9 @@ status: passed
   portable URI、stable identity 和 source-to-pose text linkage；它不再被称为 source-integrity verified。
 - `001`、`005`、`008` 及其已生成的 partial pose/failure artifact 全部保留，但不得进入 processed dataset、
   split、训练或论文统计。
-- 只有 frozen summary 的 `passed_archive_ids` 或后续独立 `passed` audit 中的 archive 可以进入标注池。
+- 只有当前 cumulative registry 的 typed `passed` entry 可以进入标注池；历史 summary 只作证据。
 - `archive_003` 另有 CRC + deterministic video decode smoke；本批其余通过 archive 尚未做 decode probe。
-- 该报告仅覆盖扫描时的 11/436 archives，不是完整数据集验证。
+- frozen manual report 仅覆盖当时的 11/436 archives；cumulative registry 仍是 partial，不是完整数据集验证。
 
 ## 4. Recovery Gate
 

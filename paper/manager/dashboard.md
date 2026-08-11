@@ -24,11 +24,11 @@ Role: `control_panel`
 - CSL-News metadata profile 已扫描全部 722,711 条 canonical JSON 记录；数据集类型、译文单元和
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
-- 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证，但完整 CRC 审计确认
-  `archive_005/008` 损坏；新 gate 晋升的 `002` 也已通过独立审计，当前累计 10 个 archive/
-  16,468 个视频具备 source-audit 资格，今晚 fixed lane 使用其中 9 个。
+- 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；cumulative integrity registry
+  当前覆盖 15 个 final ZIP，其中 `001/005/008` 失败并隔离，12 个 archive/19,760 videos 通过。
+  5 分钟增量扫描和 4 个 registry-only dynamic annotation worker 已运行。
 - `/mnt/gfs` 当前约余 3.6 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；24 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；45 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
 

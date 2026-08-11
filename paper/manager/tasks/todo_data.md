@@ -21,12 +21,12 @@ Role: `data_execution_tracker`
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
-| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | partial snapshot contract/linkage 已验证；其 frozen 11 archives 中 `005/008` CRC 失败，待 replacement 和最终 436-archive CRC/coverage/decode report |
+| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | cumulative registry/atomic audit/worker whitelist 已验证；当前 12 archive/19,760 videos passed，待 replacement 和最终 436-archive CRC/coverage/decode report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
-| `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | `001/005/008` 已有 reason/hash machine report；待人工复核、versioned replacement 和正式 quarantine registry |
+| `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | `001/005/008` 已进入 cumulative registry failed 项，15 个历史 pose pair 单列 ineligible；待人工复核和 versioned replacement |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
-| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | strict config、native/canonical artifact、resume/failure contract、单视频 GPU smoke 和 100-sample 数值 QC 已通过；夜间全量 worker 待完成 |
+| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | strict artifact/resume/QC 和 registry-only 4-worker dynamic shard 已通过；夜间全量 build 待完成 |
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | not_started | versioned radar output + QC |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | not_started | validation report + manifest hash |
@@ -58,7 +58,9 @@ artifact 禁止清理或 promotion。
 SHA-256 为 `379b72f34a1f749a246891901e746defae3331dcb65fab64662686a7f260a723`；下载器已改为 transfer
 exit、残留 `.aria2` 和完整 `unzip -t` 三重 gate，并恢复断点下载。
 新 gate 首个晋升的 `archive_002` 已通过 1,624-video canonical audit，report SHA-256 为
-`3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`，等待下一轮标注调度。
+`3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`。cumulative registry
+现由 5 分钟 timer 增量维护，当前 12 个 archive/19,760 videos passed；4 个 dynamic worker 仅消费
+typed passed entry，并保存 registry hash/shard provenance。
 
 ## 禁止事项
 
