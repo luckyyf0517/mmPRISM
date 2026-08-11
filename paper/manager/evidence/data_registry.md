@@ -32,8 +32,8 @@ Role: `dataset_and_split_provenance`
 |---|---|---|---|---|---|---|
 | `MODEL-MT5-BASE` | mT5 base | `google/mt5-base` | unknown | unknown | pin and download; upload historical fine-tuned weights separately | not_started |
 | `MODEL-RTMW3D` | RTMPose3D | official OpenMMLab RTMW3D-L; MMPose `759b39c` | `794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed` | upstream research code/model terms; release audit pending | checkpoint/config/commit hash gate before every run | evidence_ready |
-| `MODEL-SIMCSE` | SimCSE evaluator | `cyclone/simcse-chinese-roberta-wwm-ext` | unknown | unknown | pin HF revision and download | not_started |
-| `MODEL-SBERT` | SBERT evaluator | `shibing624/text2vec-base-chinese` | unknown | unknown | pin HF revision, download and run evaluator smoke | not_started |
+| `MODEL-SIMCSE` | SimCSE evaluator | `cyclone/simcse-chinese-roberta-wwm-ext` | HF `871d7039a3fccd4869d545a25b63c545341ca7f4`; 6 files/409,532,074 B；asset manifest `e57f2eeb...` | HF card does not declare license；do not redistribute until clarified | pinned downloader + `AutoModel` CPU smoke `[2,768]` finite；`EVID-CODE-MODELS-V1` | evidence_ready |
+| `MODEL-SBERT` | SBERT evaluator | `shibing624/text2vec-base-chinese` | HF `183bb99aa7af74355fb58d16edf8c13ae7c5433e`; 8 files/409,209,289 B；asset manifest `81395c0b...` | Apache-2.0 in HF card | pinned downloader + `SentenceTransformer` CPU smoke `[2,768]` finite；`EVID-CODE-MODELS-V1` | evidence_ready |
 
 ## Derived Dataset Builds
 

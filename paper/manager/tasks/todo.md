@@ -26,7 +26,7 @@ Role: `master_task_index`
 | `EXP-REV-006` | training/inference cost profile | runnable models | blocked | params/FLOPs/time/memory/latency/throughput |
 | `EXP-REV-007` | cross-modal benchmark feasibility and execution | manuscript/data audit | not_started | fair comparison or justified scope response |
 | `ARCH-REV-001` | eliminate hard-coded release paths | architecture foundation | in_progress | clean-machine config/CLI path smoke |
-| `ARCH-REV-002` | complete SBERT/SimCSE evaluator setup | environment | not_started | download + evaluation smoke |
+| `ARCH-REV-002` | complete SBERT/SimCSE evaluator setup | environment | evidence_ready | pinned download + checksum + real SimCSE/SBERT loader smoke passed；`EVID-CODE-MODELS-V1` |
 | `ARCH-REV-003` | align release docs/files and exclude internal docs | architecture audit | in_progress | release manifest contains only existing paths |
 | `ARCH-REV-004` | decide and validate Phi-3 support boundary | author decision | blocked | runnable Phi-3 or removed unsupported claim |
 | `OPS-REV-001` | editorial compliance package | manuscript/data/code | in_progress | checklists/availability/source data/colour/ORCID tracked |

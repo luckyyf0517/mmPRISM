@@ -27,7 +27,7 @@ Role: `risk_register`
 | `REV-SYNREAL-001` | P0 | 合成数据与真实数据 closeness 未直接衡量 | synthetic-trained 真实性依据不足 | blocked | `DATA-REV-003`, `EXP-REV-004` |
 | `REV-ATTN-001` | P0 | spatial/channel/SE 缺少 leave-one-out | 模块堆叠可能被认为任意 | blocked | `EXP-REV-005` |
 | `REV-XMODAL-001` | P1 | WiFi/声学 baseline 请求存在协议不可比风险 | 错误比较会产生新公平性问题 | not_started | 先做 `EXP-REV-007` feasibility audit |
-| `REV-CODE-001` | P0 | Reviewer 已明确列出硬编码、SBERT、文档、LICENSE、Phi-3 问题 | code availability 可能直接阻断返修 | in_progress | `ARCH-REV-001`–`004`, `OPS-REV-002` |
+| `REV-CODE-001` | P0 | Reviewer 已明确列出硬编码、SBERT、文档、LICENSE、Phi-3 问题 | code availability 可能直接阻断返修 | in_progress | `ARCH-REV-002` 已有下载/checksum/双 loader smoke 证据；继续 `ARCH-REV-001/003/004`, `OPS-REV-002` |
 | `BLOCK-REAL-COLLECTION` | P0 | 新增参与者、方向/遮挡采集与伦理条件未知 | P0 real-world evidence 无法排期 | blocked | 作者确认资源、伦理和可采集范围 |
 
 ## 风险关闭规则

@@ -46,12 +46,15 @@ pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamformin
 因 provenance 冲突保持 blocked。OmniHand、WaveLLM 与通用训练/评估服务、checkpoint/prediction
 writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
 canonical dependency graph，并自动拒绝 legacy/internal path、硬编码本地路径、缺失 entrypoint 和 import cycle。
+外部 evaluator 资产现由 `mmprism.assets` 管理：strict config 固定 Hugging Face commit 和相对目标，
+下载使用可恢复 cache、逐文件 SHA-256 与同文件系统原子晋升，现有目录只有在完整复验后才复用；
+`models-smoke` 延迟导入 ML 依赖并已真实加载 SimCSE/SBERT。
 
 Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-99 tests passed（含 9 项 tensor contract、17 项 range-Doppler 和 9 项 release audit tests）
+109 tests passed（含 10 项 model asset、9 项 tensor contract、17 项 range-Doppler 和 9 项 release audit tests）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -77,6 +80,7 @@ Partial sequence split passed 2,157/2,157 coverage and zero cross-split group le
 All 2,157 group IDs and assignment buckets independently recomputed and matched
 Formal run initialization atomically writes config/environment/input hashes and refuses collisions
 Metrics require a versioned protocol, sample count and finite values; completed runs require metrics
+Pinned SimCSE/SBERT acquisition passed 14-file checksum validation and real CPU `[2,768]` loader smoke
 Clean release audit at `c49f725`: 61 hashed files selected; 145 internal/legacy paths excluded
 Canonical dependency audit: 33 modules / 51 edges / 0 missing targets / 0 legacy imports / 0 cycles
 Reviewer release remains blocked only on LICENSE, model download, radar example and mT5 example

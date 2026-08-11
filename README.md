@@ -96,6 +96,8 @@ uv run --frozen --extra evaluation mmprism models-smoke \
 asset, but refuses a corrupt or unexpected existing directory instead of overwriting it. Download
 resume state remains under `${MMPRISM_MODEL_ROOT}/.cache/huggingface`; consumers use only the
 materialized `simcse/` and `sbert/` directories plus their manifests.
+The wrapper defaults `HF_HUB_DISABLE_XET=1` after an observed stalled Xet transfer; explicitly set it
+to `0` before invocation if a deployment has a validated Xet path.
 
 ## Canonical Layout
 

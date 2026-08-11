@@ -49,7 +49,7 @@ Role: `reviewer_response_index`
 | ID | Type | Priority | Planned Action | Task IDs | Evidence IDs | Status | Risk |
 |---|---|---|---|---|---|---|---|
 | `R2-CODE-1` | REPRODUCIBILITY | P0 | 移除本地绝对路径，统一 config/CLI | `ARCH-REV-001` | clean-room run | in_progress | High |
-| `R2-CODE-2` | REPRODUCIBILITY | P0 | 修复 SBERT 下载和评测模型准备 | `ARCH-REV-002` | `EVID-CODE-RELEASE-V1` blocker；evaluation smoke pending | not_started | High |
+| `R2-CODE-2` | REPRODUCIBILITY | P0 | 修复 SBERT 下载和评测模型准备 | `ARCH-REV-002` | `EVID-CODE-MODELS-V1`：pinned download/checksum + two-loader CPU smoke passed；response/final archive pending | evidence_ready | Low |
 | `R2-CODE-3` | REPRODUCIBILITY | P0 | 重写 release README；清除不存在文件；release 排除 CLAUDE/internal docs | `ARCH-REV-003` | `EVID-CODE-RELEASE-V1`；final archive pending | in_progress | High |
 | `R2-CODE-4` | REVIEW_PROCESS | P0 | 作者确认许可证，添加 LICENSE 或修正文档 | `OPS-REV-002` | `EVID-CODE-RELEASE-V1` missing LICENSE；author decision pending | blocked | High |
 | `R2-CODE-5` | REPRODUCIBILITY | P0 | Phi-3 二选一：完整可运行支持，或删除 unsupported claim | `ARCH-REV-004` | supported-model smoke | blocked | Medium-High |

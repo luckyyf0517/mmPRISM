@@ -33,5 +33,7 @@ must register that collection manifest as an input artifact.
 - Moving revisions such as `main` are rejected by schema validation.
 - Missing remote files fail before promotion.
 - Interrupted transfers remain recoverable through the Hugging Face cache.
+- The shell wrapper defaults to direct HTTP (`HF_HUB_DISABLE_XET=1`) after a reproducible stalled Xet
+  transfer on the reference host; callers may explicitly opt back into Xet.
 - A corrupt final directory is reported as `invalid`; operator review is required before quarantine or removal.
 - Optional Hugging Face, Transformers, Sentence Transformers and PyTorch imports occur only for download or smoke commands.

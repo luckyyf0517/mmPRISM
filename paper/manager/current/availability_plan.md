@@ -30,7 +30,7 @@ Role: `availability_and_source_data_control`
 |---|---|---|
 | Reviewer-accessible code | private review URL/archive、访问测试、固定 commit/tag | canonical rebuild in progress |
 | Install/run instructions | clean-room UV bootstrap、example input、expected output | foundation 可安装；端到端路径未完成 |
-| Model/evaluation assets | SBERT/SimCSE 下载、supported model matrix、checkpoint provenance | `ARCH-REV-002/004` pending |
+| Model/evaluation assets | SBERT/SimCSE 下载、supported model matrix、checkpoint provenance | SBERT/SimCSE fixed revisions、checksums 与 loader smoke ready；Phi-3/mT5/checkpoints 仍为 `ARCH-REV-004`/vertical-slice pending |
 | License | author-approved license 与第三方依赖/数据边界 | `OPS-REV-002` blocked on author decision |
 | Persistent release | public repository + archived DOI/version after acceptance policy confirmation | not_started |
 | Exclusions | token、private reviews、`paper/manager`、internal agent docs、未授权数据/weights | policy defined；release manifest pending |

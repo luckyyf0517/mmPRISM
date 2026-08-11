@@ -32,7 +32,7 @@ CSL-News 官方源；其他数据族仍未到位。
 | Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | missing_location |
 | Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | missing_location |
 | Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | missing_location |
-| Model Weights | RTMPose3D、CubeNet、MT5、semantic evaluators | checkpoints/tokenizers | missing_or_partial |
+| Model Weights | RTMPose3D、CubeNet、MT5、semantic evaluators | checkpoints/tokenizers | RTMW3D + SimCSE + SBERT verified；training checkpoints/mT5 missing |
 | Historical Runs | paper metrics and checkpoints | config, ckpt, predictions, metrics | missing_location |
 
 ## 3. 完整复现所需来源分类
@@ -80,6 +80,17 @@ CSL-News 官方源；其他数据族仍未到位。
 
 上传批次使用 `incoming/<YYYYMMDD_source_batch>/`，附带 `UPLOAD_MANIFEST.csv` 和 `SHA256SUMS`。
 容量审计完成前不批量创建目录、解压或 materialize 数据。
+
+### 4.1 已验证模型资产
+
+`evaluation_models_v1` 已通过 canonical pinned downloader 写入
+`external/models/evaluation_models_v1/`。SimCSE/SBERT 共 14 个 loader 文件、818,741,363 bytes，
+collection manifest SHA-256 为
+`5cb656d038459ec60c1ce8f2fe958358c809e0d1628ba86b605427fd61b81b22`。clean commit `3ae69c3`
+上的 CPU smoke 使用两条中文文本，两个 loader 均输出 finite `[2,768]` float32 embedding；报告见
+`../evidence/artifacts/evaluation_models_smoke_v1.json`，SHA-256 为
+`e957ac79f620f0a982019befa4938c393357764f5d912b4b6a7c27996f789b39`。模型版权边界仍按各上游
+条款处理；SimCSE HF card 未声明 license，因此当前只提供固定 revision 下载器，不把权重纳入 release。
 
 ## 5. Canonical Sample Record
 

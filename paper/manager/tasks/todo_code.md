@@ -12,7 +12,7 @@ Role: `architecture_execution_tracker`
 | `ARCH-002-A` | P1 | 建立 `pyproject.toml` 和版本锁定方案 | done | Python 3.12、UV lock、research extras、wheel 与 A100 smoke 通过 |
 | `ARCH-002-B` | P1 | 建立 strict typed config 与 validation | evidence_ready | unknown key、类型、环境路径和 protocol version 启动前校验 |
 | `ARCH-002-C` | P1 | 建立统一 path/runtime/run config | evidence_ready | path/runtime/run-plan 与原子 formal-run writer 已落地；resolved config、Git/environment、命令、输入 hash、metric protocol/status contract 通过 |
-| `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | in_progress | doctor/config/manifest/plan/run-init/split/release-audit、CSL-News audit/integrity/annotate/status/QC/metadata/source/pose manifest 已落地；train/eval/prepare 待实现 |
+| `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | in_progress | doctor/config/manifest/plan/run-init/split/release-audit/models-plan/download/smoke、CSL-News audit/integrity/annotate/status/QC/metadata/source/pose manifest 已落地；train/eval/prepare 待实现 |
 | `ARCH-003-A` | P1 | 实现 manifest-driven dataset adapters | in_progress | CSL-News pose+caption adapter 与 dependency-light SplitIndex 已通过真实 snapshot；其他数据族/radar adapter 待实现 |
 | `ARCH-003-B` | P1 | 从明确契约实现 Processor/Simulation | in_progress | NumPy range-Doppler 与 17 项 analytic/error tests 通过；beamforming/physical axes/simulation 等 provenance 后实现 |
 | `ARCH-004-A` | P1 | 实现 canonical OmniHand model/training/evaluation | not_started | 2-batch smoke + metric artifact |
@@ -24,8 +24,8 @@ Role: `architecture_execution_tracker`
 | `ARCH-007-A` | P2 | 添加 CI/static/test profiles | not_started | lint/unit/contracts on CPU |
 | `ARCH-008-A` | P2 | 重写 README 与复现指南 | not_started | 文档命令通过验证 |
 | `ARCH-REV-001` | P0 | 将审稿人点名脚本的本地路径改为 config/CLI | in_progress | clean-machine path smoke |
-| `ARCH-REV-002` | P0 | 修复 `download_models.sh` 的 SBERT/SimCSE 完整准备 | not_started | `run_evaluation.py` smoke 通过 |
-| `ARCH-REV-003` | P0 | 公共 release 文件清单、README 对齐、排除 `CLAUDE.md` 和 manager/private docs | in_progress | README 与 allowlist audit 已落地；待 LICENSE、download_models、radar/mT5 examples 后 reviewer profile 全绿 |
+| `ARCH-REV-002` | P0 | 修复 `download_models.sh` 的 SBERT/SimCSE 完整准备 | evidence_ready | fixed HF commits、14-file checksum manifest、atomic/reuse gates 和两个真实 loader CPU smoke 通过；artifact `evaluation_models_smoke_v1.json` |
+| `ARCH-REV-003` | P0 | 公共 release 文件清单、README 对齐、排除 `CLAUDE.md` 和 manager/private docs | in_progress | README 与 allowlist audit 已落地；model downloader/config 已补，待 LICENSE、radar/mT5 examples 后 reviewer profile 全绿 |
 | `ARCH-REV-004` | P0 | Phi-3 支持范围决策与实现 | blocked | runnable config/script 或移除支持声明 |
 | `OPS-REV-002` | P0 | 经作者确认后添加许可证 | blocked | LICENSE 与 README/checklist 一致 |
 
