@@ -52,9 +52,13 @@ service 已在 CPU fixture 上闭合 strict task config、clean-Git/input hash�
 mixed-precision orchestration、Safetensors checkpoint、history、streaming sample prediction、checkpoint
 reload/evaluate、tamper rejection 和独立耗时/吞吐/CUDA peak-memory artifact。clean commit `81e9b89`
 已在 A100/BF16 上完成 synthetic model-ready manifest 的 formal train/checkpoint/reload/evaluate，
-独立 13-gate 审计验证输入/产物哈希、prediction/summary replay 和性能记录；真实数据仍待执行。Canonical mT5 工程切片
-包含双手 ST-GCN、radar projector、confidence-aware fusion 和真实 mT5 forward/backward/generate；
-production data training、WaveLLM train/eval、checkpoint/prediction writer 尚未实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
+独立 13-gate 审计验证输入/产物哈希、prediction/summary replay 和性能记录；真实数据仍待执行。Canonical WaveLLM
+现包含 strict pose/confidence/radar-feature/caption adapter、变长序列 mask、双手 ST-GCN、radar projector、
+confidence-aware fusion、真实 mT5、单卡 mixed-precision train/evaluate、adapter/full Safetensors、sample-level
+prediction 和 Unicode character metric。clean commit `e31000b` 已在 A100/BF16 上完成 4/2-record synthetic
+manifest 的 train/checkpoint/reload/evaluate，独立 250-gate 审计验证全部输入/数组/产物哈希、sequence split、
+adapter inventory、prediction/metric replay 和性能记录；真实 pose/radar feature 数据、production metrics、
+resume 和 distributed aggregation 仍待实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
 canonical dependency graph，并自动拒绝 legacy/internal path、硬编码本地路径、缺失 entrypoint 和 import cycle。
 外部 evaluator 资产现由 `mmprism.assets` 管理：strict config 固定 Hugging Face commit 和相对目标，
 下载使用可恢复 cache、逐文件 SHA-256 与同文件系统原子晋升，现有目录只有在完整复验后才复用；
@@ -65,7 +69,7 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-150 tests passed（含 OmniHand formal train/reload/evaluate、CubeNet 和 mT5 integration）
+163 tests passed（含 OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -96,8 +100,9 @@ Pinned mT5-base acquisition passed 6-file checksum validation at immutable revis
 Clean mT5 A100 smoke at `79b45b5`: two finite adapter updates, confidence counterfactual and beam generation passed
 Clean OmniHand A100 smoke at `688d44d`: two finite updates, single/temporal path, mask counterfactual and deterministic replicate passed
 Clean OmniHand formal A100 run at `81e9b89`: train/checkpoint/reload/evaluate and 13-gate replay/hash audit passed
-Clean release audit at `81e9b89`: 94 hashed files selected; 154 internal/legacy paths excluded
-Canonical dependency audit: 46 modules / 86 edges / 0 missing targets / 0 legacy imports / 0 cycles
+Clean WaveLLM formal A100 run at `e31000b`: adapter checkpoint/reload/evaluate and 250-gate replay/hash audit passed
+Clean release audit after WaveLLM formal implementation: 105 hashed files selected; 156 internal/legacy paths excluded
+Canonical dependency audit: 50 modules / 102 edges / 0 missing targets / 0 legacy imports / 0 cycles
 Reviewer release remains blocked only on LICENSE and the provenance-gated radar example
 Caption-generation support is mT5-only by policy; the unsupported legacy backend is excluded and guarded by a release content test
 ```
@@ -128,6 +133,11 @@ predicted pose [B,T,2,24,3] and/or feature [B,T,D]
   -> concatenate with MT5 encoder embeddings
   -> caption generation
 ```
+
+该链已在 synthetic model-ready manifest 上完成 clean-commit A100/BF16 正式 train/evaluate 闭环；
+`mmprism.sign_language_translation.sample_v1`、adapter-only checkpoint、checkpoint/task/model-asset
+绑定和 `mmprism.language_metric.character_v1` 已通过独立审计。真实 pose/radar feature 仍由上游
+`BLOCK-RADAR-PROVENANCE` 和真实数据到达情况阻塞，不能用本工程 smoke 代替论文结果。
 
 ## 3. 已确认的架构问题
 

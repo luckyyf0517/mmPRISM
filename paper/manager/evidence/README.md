@@ -20,6 +20,7 @@ Last Updated: `2026-08-11`
 - `mt5_vertical_smoke.md`：pinned mT5、geometry-fusion 两步 GPU smoke 和非论文证据边界。
 - `omnihand_vertical_smoke.md`：canonical CubeNet/OmniHand 两步 GPU smoke、pose metric 和非论文证据边界。
 - `omnihand_formal_run.md`：clean-commit A100 上 train/checkpoint/reload/prediction/evaluate 正式闭环证据。
+- `wavellm_formal_run.md`：clean-commit A100 上 mT5 adapter train/checkpoint/reload/prediction/evaluate 正式闭环证据。
 - `artifacts/manuscript_inventory_v2.json`：由审计工具生成的逐文件、逐行、逐 display item 机器可读 inventory。
 - `artifacts/manuscript_inventory_v1.json`：首次环境级审计的历史快照，不再作为当前 canonical inventory。
 - `artifacts/release_audit_v1.json`：clean commit 上生成的 reviewer release 机器可读预审报告。
@@ -27,6 +28,7 @@ Last Updated: `2026-08-11`
 - `artifacts/mt5_smoke_v1.json`：脱敏的 clean-commit mT5 forward/backward/update/generate smoke。
 - `artifacts/omnihand_smoke_v1.json`：脱敏的 clean-commit CubeNet forward/backward/update/metric smoke。
 - `artifacts/omnihand_formal_run_v1.json`：OmniHand 正式 GPU 闭环的哈希、复现一致性与性能摘要。
+- `artifacts/wavellm_formal_run_v1.json`：WaveLLM 正式 GPU 闭环的哈希、复现一致性与性能摘要。
 - `experiment_registry.md`：每次正式 run 的配置、commit、数据、checkpoint、prediction 和 metrics。
 - `paper_evidence_map.md`：paper claim/table/figure 到 data/experiment/reviewer/manuscript 的映射。
 

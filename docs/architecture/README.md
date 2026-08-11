@@ -54,6 +54,8 @@ Dataset-specific audits:
 - `model_support.md`: mT5-only generation boundary, verified engineering smoke, and excluded legacy backend.
 - `omnihand.md`: canonical CubeNet input/output, attention, temporal, metric, formal train/evaluate,
   checkpoint, and prediction contracts.
+- `wavellm.md`: model-ready pose/feature contract, mT5 fusion, formal train/evaluate, adapter checkpoint,
+  language metric, and real-data boundary.
 
 ## Environment Contract
 

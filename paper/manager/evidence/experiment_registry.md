@@ -75,6 +75,37 @@ Role: `run_and_artifact_provenance`
 - Paper destination: none; engineering/release evidence only.
 - Status: `passed_engineering_formal_run`.
 
+### RUN-20260811-wavellm-formal-gpu-smoke
+
+- Task / Reviewer IDs: `ARCH-005-B`, `ARCH-006-A`, `ARCH-006-B`, `EXP-001`, `EXP-REV-006`
+  engineering prerequisite.
+- Purpose: verify the full single-device WaveLLM train/adapter-checkpoint/reload/predict/evaluate
+  lifecycle, not a scientific hypothesis or manuscript result.
+- Git commit / dirty state: `e31000b3f55718d36df15e2013d80e18f7b690e1` / clean.
+- Environment lock: `uv.lock`; Python 3.12.13; Torch 2.11.0+cu128; Transformers 4.57.6; CUDA 12.8.
+- Model asset: `google/mt5-base@2eb15465...`; collection manifest `2350101b...`; mT5 frozen.
+- Dataset manifest / split: deterministic synthetic model-ready fixture; train 4 records
+  (`3b1e68bf...`), validation/test 2 records (`193ae2dd...`); sample/sequence overlap 0. No scientific split.
+- Seed / device / precision: `20260811` / A100 physical GPU 5 exposed as `cuda:0` / `bf16-mixed`.
+- Train run: `wavellm-train-smoke__20260811T205116Z__90a769db`; 2 optimizer steps; completed.
+- Evaluate run: `wavellm-train-smoke__20260811T205146Z__90a769db`; adapter checkpoint reload; completed.
+- Checkpoint: adapter-only Safetensors SHA-256
+  `e4aab4edcc00f0ed51e290a3bb841e8549732b4c542daeb4d6b77d32229f5f44`; 62 tensors and zero
+  `language_model.*` keys.
+- Predictions: 2/2 records; train and standalone evaluate payloads are byte-identical, SHA-256
+  `5f95172f06efdce35b318ad91ccc2e7aa29098978b46b736140c7679ac90ca03`.
+- Metrics: `mmprism.language_metric.character_v1`; Unicode code-point edit counts and count-weighted
+  summary independently replayed. Synthetic values are intentionally excluded and are not paper evidence.
+- Performance: train 1.5687 s core / 17.3319 s end-to-end / 1,291,147,776 B peak allocated; evaluate
+  1.0769 s prediction / 16.2700 s end-to-end / 1,210,208,256 B peak allocated.
+- Validation: independent 250-gate audit passed; all artifact/input/array hashes, clean Git, A100 BF16,
+  split separation, adapter inventory, coverage, prediction and metric replay, finite values, performance,
+  and temp-file gates passed.
+- Evidence: `wavellm_formal_run.md`; `artifacts/wavellm_formal_run_v1.json`; mounted audit SHA-256
+  `ea2d074092c865615077242b156d96d45c01b933577a25d4d62757ef4ead6458`.
+- Paper destination: none; engineering/release evidence only.
+- Status: `passed_engineering_formal_run`.
+
 ## New Run Record Template
 
 ```markdown

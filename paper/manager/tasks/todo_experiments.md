@@ -13,7 +13,7 @@ Role: `experiment_execution_tracker`
 | `EXP-001-C` | OmniHand temporal smoke | passed_engineering | 10-frame shape、mask invariance、gradient/update、time/memory 与 deterministic replicate report |
 | `EXP-001-D` | WaveLLM pose-only smoke | blocked | loss/generation/sample output |
 | `EXP-001-E` | WaveLLM feature-only smoke | blocked | loss/generation/sample output |
-| `EXP-001-F` | WaveLLM multimodal smoke | blocked | fusion/generation/sample output |
+| `EXP-001-F` | WaveLLM multimodal smoke | passed_engineering | clean `e31000b` formal train/adapter-checkpoint/reload/generation/character metric；`EVID-CODE-WAVELLM-FORMAL-V1` |
 
 ## B. Original Submission Reproduction
 

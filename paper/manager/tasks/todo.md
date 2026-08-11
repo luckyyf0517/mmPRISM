@@ -13,7 +13,7 @@ Role: `master_task_index`
 | `DATA-001` | 定位并分批接收所有 mmPRISM source、权重、日志和论文结果资产 | source location/capacity | in_progress | CSL-News 下载 active；其余 upload gate 通过且 registry 覆盖所有 data family 和历史 run |
 | `OPS-001` | 建立可复现 Python/CUDA 环境 | CUDA/package selection | done | UV/Python 3.12/cu128 lock、wheel、import 与 A100 smoke 通过 |
 | `ARCH-001` | 建立 greenfield package、配置、CLI 与基础 contract | author rebuild decision | in_progress | foundation tests 通过，legacy 隔离规则生效 |
-| `EXP-001` | 建立 canonical OmniHand/WaveLLM 最小 vertical smoke | `DATA-001`, `OPS-001`, `ARCH-001` | in_progress | OmniHand/mT5 GPU module smoke 与 OmniHand clean-commit A100 formal train/checkpoint/reload/prediction/eval 已通过；待 WaveLLM formal path 和真实 manifest |
+| `EXP-001` | 建立 canonical OmniHand/WaveLLM 最小 vertical smoke | `DATA-001`, `OPS-001`, `ARCH-001` | evidence_ready | OmniHand 与 WaveLLM clean-commit A100 formal train/checkpoint/reload/prediction/eval 均通过；真实数据训练转入 `EXP-003` |
 | `REV-001` | 建立 reviewer diagnosis、tracker 和 closure matrix | `PAPER-001A` | done | 所有评论分类并映射到 task/evidence |
 | `DATA-REV-001` | 完整数据集统计与 split audit | `DATA-001`, manuscript | in_progress | CSL-News metadata profile 已完成；待各数据族 frozen manifest、subject/scene/non-manual 和 leakage report |
 | `DATA-REV-002` | 设计并采集方向/遮挡/新用户真实测试集 | ethics/capacity/protocol | blocked | condition-stratified held-out real manifest |
@@ -44,7 +44,7 @@ Role: `master_task_index`
 | `ARCH-002` | 完成 package/config/CLI/runtime foundation | environment lock | in_progress | pyproject、strict config、doctor/plan CLI 与 run metadata 完整 |
 | `ARCH-003` | 实现 canonical data/radar vertical slice | `DATA-002`, `ARCH-002` | in_progress | tensor/range-Doppler contract 已通过；待真实 radar manifest fixture、beamforming provenance 和 cube gate |
 | `ARCH-004` | 实现 canonical OmniHand vertical slice | `ARCH-003` | evidence_ready | `688d44d` 模型 smoke 与 `81e9b89` A100 formal train/checkpoint/reload/evaluate 审计通过；真实数据训练仍由 `ARCH-003` 阻塞 |
-| `ARCH-005` | 实现 canonical WaveLLM vertical slice | `ARCH-003`, `ARCH-004` | in_progress | synthetic tensor 上 pose/radar/fused adapter 两步 train-generate smoke 已通过；待真实 manifest、checkpoint、prediction 和 metric 路径 |
+| `ARCH-005` | 实现 canonical WaveLLM vertical slice | `ARCH-003`, `ARCH-004` | evidence_ready | `e31000b` 上 strict manifest、adapter checkpoint、prediction、character metric 与 A100 train/evaluate 250-gate 审计通过；真实数据训练仍由 `ARCH-003` 阻塞 |
 | `EXP-002` | 重建原投稿 experiment registry | `DATA-001`, `PAPER-001B` | not_started | 每个原始表图有 experiment/provenance 状态 |
 
 ## P2 — 返修证据与提交

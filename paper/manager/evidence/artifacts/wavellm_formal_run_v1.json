@@ -1,0 +1,82 @@
+{
+  "audit": {
+    "check_count": 250,
+    "failed_check_count": 0,
+    "path": "/mnt/gfs/yanyifan/mmPRISM/engineering/wavellm_formal_smoke_e31000b/audit.json",
+    "schema_version": "mmprism.wavellm_formal_smoke_audit.v1",
+    "sha256": "ea2d074092c865615077242b156d96d45c01b933577a25d4d62757ef4ead6458",
+    "status": "passed"
+  },
+  "code_commit": "e31000b3f55718d36df15e2013d80e18f7b690e1",
+  "evaluate": {
+    "end_to_end_seconds": 16.269995607901365,
+    "peak_allocated_bytes": 1210208256,
+    "peak_reserved_bytes": 1220542464,
+    "prediction_samples": 2,
+    "prediction_samples_per_second": 1.8571285592133906,
+    "prediction_seconds": 1.0769313680939376,
+    "predictions_sha256": "5f95172f06efdce35b318ad91ccc2e7aa29098978b46b736140c7679ac90ca03",
+    "run_id": "wavellm-train-smoke__20260811T205146Z__90a769db",
+    "status": "completed"
+  },
+  "fixture": {
+    "coordinate_frame": "synthetic_radar_cartesian_v1",
+    "generator": "numpy.default_rng",
+    "generator_sha256": "7e7bd524edb49ebea9b9c1b4340547dd52becd16438f81dd349527034c296859",
+    "pose_units": "m",
+    "radar_feature_dim": 1024,
+    "seed": 20260811,
+    "summary_sha256": "75bb13debca22ee91e690c6907304fba95b9fef34f0800da86e2aace50f87fc3",
+    "train_manifest": {
+      "records": 4,
+      "sha256": "3b1e68bf597eb3f30fa209f4f5b859d6e595d4ee9b1fd01a5b1ee1895286c288"
+    },
+    "validation_manifest": {
+      "records": 2,
+      "sha256": "193ae2dde940e7a1b1e4586237c5ff40b785dfa6a8483e497d3bad6ee96019b7"
+    }
+  },
+  "metric_protocol": "mmprism.language_metric.character_v1",
+  "model_asset": {
+    "asset_id": "mt5_base",
+    "asset_manifest_sha256": "4edec505643e4b05ea606346599942901ab55a6b505ac6c0946f94f2a15585b9",
+    "collection_manifest_sha256": "2350101b38c5ee9c860ae5d8c28918e360eb57b47d39fc1b24a3d36773418bc6",
+    "repo_id": "google/mt5-base",
+    "revision": "2eb15465c5dd7f72a8f7984306ad05ebc3dd1e1f"
+  },
+  "paper_use": {
+    "allowed": false,
+    "reason": "Synthetic engineering fixture without a paper dataset, calibrated radar features, or scientific split.",
+    "scientific_metric_values_included": false
+  },
+  "runtime": {
+    "cuda_runtime": "12.8",
+    "deterministic": true,
+    "device": "cuda:0",
+    "device_name": "NVIDIA A100-SXM4-80GB",
+    "physical_gpu": 5,
+    "precision": "bf16-mixed",
+    "seed": 20260811,
+    "torch_version": "2.11.0+cu128"
+  },
+  "schema_version": "mmprism.wavellm_formal_run_evidence.v1",
+  "scope": "engineering_formal_run_not_paper_evidence",
+  "status": "passed",
+  "train": {
+    "adapter_tensor_count": 62,
+    "checkpoint_scope": "adapter_only",
+    "checkpoint_sha256": "e4aab4edcc00f0ed51e290a3bb841e8549732b4c542daeb4d6b77d32229f5f44",
+    "end_to_end_seconds": 17.331931843888015,
+    "frozen_parameter_count": 582401280,
+    "optimizer_steps": 2,
+    "peak_allocated_bytes": 1291147776,
+    "peak_reserved_bytes": 1312817152,
+    "prediction_samples": 2,
+    "predictions_sha256": "5f95172f06efdce35b318ad91ccc2e7aa29098978b46b736140c7679ac90ca03",
+    "run_id": "wavellm-train-smoke__20260811T205116Z__90a769db",
+    "status": "completed",
+    "total_parameter_count": 584571712,
+    "trainable_parameter_count": 2170432,
+    "training_seconds": 1.5687319971621037
+  }
+}

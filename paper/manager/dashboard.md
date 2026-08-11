@@ -37,20 +37,20 @@ Role: `control_panel`
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.4 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；150 项测试、Ruff、Mypy、wheel、
+- canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；163 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
-- formal-run writer 与 OmniHand single-device train/evaluate 已实现：原子冻结 config/Git/environment/
-  输入哈希，写入 Safetensors、history、实际 runtime、流式逐样本 prediction 和 count-weighted pose
-  metrics；CPU train->reload->evaluate/tamper gate 已通过；clean commit `81e9b89` 的 A100/BF16 formal
-  train/checkpoint/reload/evaluate 及独立 13-gate 审计也已通过。真实数据、分布式和 WaveLLM formal service 仍待完成。
+- formal-run writer 与 OmniHand/WaveLLM single-device train/evaluate 已实现：原子冻结
+  config/Git/environment/输入哈希，写入 Safetensors、history、runtime/performance、逐样本 prediction
+  和版本化 count-weighted metrics；OmniHand `81e9b89` 的 13-gate 与 WaveLLM `e31000b` 的 250-gate
+  A100/BF16 独立审计均通过。真实数据、resume、分布式和 production language metrics 仍待完成。
 - fixed-revision SimCSE/SBERT downloader 已完成 14-file checksum manifest；clean commit `3ae69c3`
   上两个真实 CPU loader 均输出 finite `[2,768]` embedding，`ARCH-REV-002` 已达到 evidence ready。
 - clean commit `79b45b5` 上已完成 pinned mT5-base 资产和 A100 两步 geometry-fusion smoke：三路
   adapter 梯度/参数更新、置信度反事实和 beam generation 均通过；该 artifact 明确不是论文结果。
 - clean commit `688d44d` 上 canonical CubeNet/OmniHand 两步 A100 smoke 已两次确定性通过：depthwise
   spatial、8-layer/16-head temporal 和 pose head 均有非零梯度/更新，single-frame 与 mask 反事实通过。
-- clean commit `81e9b89` 的 release audit 已验证 94 个逐文件 hash、154 个 internal/legacy 排除项和 46-module
-  dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。mT5 缺失项已关闭，
+- WaveLLM formal implementation 后的 clean release audit 已验证 105 个逐文件 hash 和 50-module/
+  102-edge dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。mT5/WaveLLM 缺失项已关闭，
   reviewer profile 现只被 LICENSE 和 provenance-gated radar example 两项真实缺失阻塞。
 - `DEC-027` 已固定 mT5-only generation rebuild；legacy Phi-3 不进入 public support，clean commit
   `812c117` 的 66-file release content gate 零命中并有回归测试，`ARCH-REV-004` 达到 evidence ready。
@@ -62,7 +62,7 @@ Role: `control_panel`
 2. 按已建立的 sober-language 与 Availability 清单准备回写；不在新增实验完成前强化结果主张。
 3. 监控 CSL-News 官方下载和夜间姿态标注，同时收集私人历史 archive/目录的名称、大小和可重下标记。
 4. 确认可新增真实数据的人数、伦理边界、方向/遮挡采集条件和时间预算。
-5. 在 OmniHand 与 mT5 synthetic 工程切片已通过的基础上，待真实 source 到位后完成 data/radar、
+5. 在 OmniHand 与 WaveLLM formal synthetic 工程闭环已通过的基础上，待真实 source 到位后完成 data/radar、
    production training/checkpoint/prediction/evaluation 闭环。
 
 ## 当前 Blocker
@@ -84,8 +84,8 @@ Role: `control_panel`
 2. 执行 `DATA-001-K/DATA-005-A`，下载 promotion 和标注前都做完整 ZIP gate；只对通过清单生成 pose。
 3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
-4. 继续 `ARCH-001/002`：在 OmniHand GPU formal 闭环基础上实现 prepare、WaveLLM formal
-   train/evaluate 与 distributed prediction/checkpoint aggregation。
+4. 继续 `ARCH-001/002`：实现 prepare，并为 OmniHand/WaveLLM 补 resume、distributed
+   prediction/checkpoint aggregation 和 real-data integration。
 5. 为 `ARCH-003` 收集 radar acquisition/channel/calibration 证据；绑定真实 manifest fixture 后实现
    beamforming 与完整 cube gate，禁止用 legacy 默认值填补未知项。
 

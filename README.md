@@ -25,6 +25,8 @@ Implemented foundation:
   sample predictions, history, runtime/performance identity, and count-weighted metrics;
 - pinned, checksummed SBERT and SimCSE evaluator-model acquisition;
 - pinned mT5-base acquisition plus a two-step pose/radar/fusion train-generate GPU smoke;
+- strict model-ready translation manifests plus single-device formal WaveLLM train/evaluate services
+  with adapter-only Safetensors, sample predictions, runtime/performance identity, and character metrics;
 - a single `mmprism` CLI surface;
 - dependency-light unit and contract tests.
 
@@ -32,7 +34,8 @@ Not yet implemented in the canonical package:
 
 - antenna calibration, beamforming, physical radar axes, and radar simulation;
 - real-data OmniHand training validation, resumable/distributed training, and distributed prediction;
-- production WaveLLM/mT5 training, checkpointing, prediction, and evaluation;
+- real-data WaveLLM validation, resumable/distributed training, rank-safe prediction aggregation, and
+  production paper metrics;
 - remaining production data adapters, distributed prediction/checkpoint writers, and GPU integration tests.
 
 Do not interpret the current package as a reproducible release of the paper results yet. Range-Doppler
@@ -65,8 +68,8 @@ uv run mmprism run-init configs/examples/pose_smoke.yaml \
 ```
 
 This command writes resolved config, environment/Git state and input hashes atomically. Canonical
-OmniHand train/evaluate services use that envelope directly; data preparation and WaveLLM formal
-services remain under construction.
+OmniHand and WaveLLM train/evaluate services use that envelope directly; data preparation, resume, and
+distributed orchestration remain under construction.
 
 Profiles:
 
@@ -160,9 +163,27 @@ MMPRISM_DEVICE=cuda:0 scripts/run_mt5_smoke.sh
 ```
 
 The smoke freezes the mT5 backbone and updates only the canonical adapters. It proves runnable module
-integration, not paper-result reproduction or the final training protocol. Production dataset adapters,
-checkpoint/prediction writers, full fine-tuning and paper metrics remain under construction. Historical
-alternative backend definitions are excluded from the release rather than exposed as unsupported claims.
+integration, not paper-result reproduction or the final training protocol.
+
+Run the formal single-device path after producing sequence-disjoint model-ready manifests:
+
+```bash
+export MMPRISM_MT5_MODEL_ROOT=/path/to/mt5-assets
+export MMPRISM_DATA_ROOT=/path/to/model-ready-data
+export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
+export MMPRISM_TRAIN_MANIFEST=/path/to/train.jsonl
+export MMPRISM_VALIDATION_MANIFEST=/path/to/validation.jsonl
+scripts/run_wavellm_train.sh
+```
+
+`wavellm-train` verifies every manifest-bound pose, confidence, radar-feature, and frame-mask array,
+rejects sample/sequence leakage, and writes an adapter-only checkpoint when mT5 is frozen. The separate
+`wavellm-evaluate` command re-registers weights and metadata as hashed inputs and rejects checksum,
+model/task-config, model-asset, unit, coordinate-frame, or tensor-inventory drift before generation.
+The included character metric is an orchestration protocol; full fine-tuning, real-data validation,
+distributed aggregation, and production BLEU/ROUGE/semantic metrics remain under construction.
+Historical alternative backend definitions are excluded from the release rather than exposed as
+unsupported claims.
 
 ## Canonical Layout
 

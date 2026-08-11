@@ -17,7 +17,7 @@ Role: `round0_control`
 | Asset discovery | `DATA-001` | in_progress | CSL-News source download active; private data/checkpoint/result inventory pending |
 | Runtime bootstrap | `OPS-001` | done | UV/Python 3.12/cu128 lock + wheel + A100 smoke |
 | Greenfield foundation | `ARCH-001`, `ARCH-002` | in_progress | pyproject + strict config + contracts + CLI + CPU tests |
-| Canonical smoke | `EXP-001` | in_progress | OmniHand + mT5 synthetic engineering artifacts passed；real-manifest train/eval pending |
+| Canonical smoke | `EXP-001` | evidence_ready | OmniHand + WaveLLM clean-commit synthetic formal train/eval passed；real-data reproduction moves to `EXP-003` |
 | Management control plane | documentation bootstrap | done | `paper/manager/` |
 
 ## Known Findings
