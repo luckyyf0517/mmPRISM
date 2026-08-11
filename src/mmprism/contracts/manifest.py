@@ -40,7 +40,8 @@ def _optional_text(payload: Mapping[str, Any], key: str, location: str) -> str |
 
 @dataclass(frozen=True)
 class ModalityRef:
-    uri: str
+    uri: str | None = None
+    text: str | None = None
     shape: tuple[int, ...] | None = None
     dtype: str | None = None
     sha256: str | None = None
@@ -48,11 +49,14 @@ class ModalityRef:
     @classmethod
     def from_mapping(cls, value: Any, location: str) -> "ModalityRef":
         payload = _mapping(value, location)
-        _reject_unknown(payload, {"uri", "shape", "dtype", "sha256"}, location)
-        uri = _required_text(payload, "uri", location)
-        if "://" not in uri and Path(uri).is_absolute():
+        _reject_unknown(payload, {"uri", "text", "shape", "dtype", "sha256"}, location)
+        uri = _optional_text(payload, "uri", location)
+        text = _optional_text(payload, "text", location)
+        if (uri is None) == (text is None):
+            raise ManifestError(f"{location} must provide exactly one of uri or text")
+        if uri is not None and "://" not in uri and Path(uri).is_absolute():
             raise ManifestError(f"{location}.uri must be relative to a configured root: {uri}")
-        if "://" not in uri and ".." in Path(uri).parts:
+        if uri is not None and "://" not in uri and ".." in Path(uri).parts:
             raise ManifestError(f"{location}.uri must not escape its configured root: {uri}")
 
         shape_value = payload.get("shape")
@@ -72,7 +76,7 @@ class ModalityRef:
         if sha256 is not None and not re.fullmatch(r"[0-9a-f]{64}", sha256):
             raise ManifestError(f"{location}.sha256 must be a lowercase SHA-256 digest")
 
-        return cls(uri=uri, shape=shape, dtype=dtype, sha256=sha256)
+        return cls(uri=uri, text=text, shape=shape, dtype=dtype, sha256=sha256)
 
 
 @dataclass(frozen=True)

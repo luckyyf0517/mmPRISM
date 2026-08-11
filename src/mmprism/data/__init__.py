@@ -3,6 +3,7 @@
 from mmprism.data.csl_news import (
     CslNewsAuditError,
     audit_csl_news_archive,
+    csl_news_source_program,
     write_csl_news_audit,
 )
 from mmprism.data.csl_news_annotation import (
@@ -23,6 +24,12 @@ from mmprism.data.csl_news_annotation_status import (
     build_csl_news_annotation_status,
     write_csl_news_annotation_status,
 )
+from mmprism.data.csl_news_manifest import (
+    CslNewsSourceManifestConfig,
+    CslNewsSourceManifestError,
+    build_csl_news_source_manifest_snapshot,
+    load_csl_news_source_manifest_config,
+)
 from mmprism.data.csl_news_metadata import (
     CslNewsMetadataError,
     build_csl_news_metadata_profile,
@@ -34,13 +41,18 @@ __all__ = [
     "CslNewsAnnotationError",
     "CslNewsAuditError",
     "CslNewsMetadataError",
+    "CslNewsSourceManifestConfig",
+    "CslNewsSourceManifestError",
     "audit_csl_news_archive",
     "build_csl_news_metadata_profile",
+    "build_csl_news_source_manifest_snapshot",
     "build_csl_news_annotation_status",
     "build_csl_news_annotation_qc",
     "canonicalize_hands",
+    "csl_news_source_program",
     "is_completed_annotation_sample",
     "load_csl_news_annotation_config",
+    "load_csl_news_source_manifest_config",
     "run_csl_news_annotation",
     "stable_sample_id",
     "validate_annotation_output",

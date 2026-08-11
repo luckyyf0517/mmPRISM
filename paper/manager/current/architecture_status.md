@@ -45,7 +45,7 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-29 unit tests passed
+35 unit tests passed
 doctor/config/plan/manifest CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -58,6 +58,7 @@ RTMW3D-L real-video smoke passed: 125 frames, native [T,133,3], canonical [T,2,2
 CPU-only annotation status report passed against a live writer and ignores atomic temp files
 Deterministic annotation QC passed on 100 live samples / 24,628 frames with no warnings
 Full 722,711-record CSL-News JSON/CSV metadata profiler completed with explicit limitations
+Portable CSL-News source-manifest builder passed atomic/clean-Git/coverage contract tests
 ```
 
 Research profile 已安装 Lightning 2.6.5、Transformers 4.57.6、PEFT 0.20.0、SciPy/HDF5、sentence-transformers、OpenCV、W&B 等核心依赖。DeepSpeed 作为 `distributed` profile 按需安装，不进入默认研究环境。

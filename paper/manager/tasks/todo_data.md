@@ -21,7 +21,7 @@ Role: `data_execution_tracker`
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
-| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | metadata profile 与 `archive_003` SHA/CRC/label/decode audit 已通过；CSV 4 条冲突重复已登记；待 full video coverage/shape/annotation report |
+| `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | portable/atomic source snapshot builder、metadata profile 与 archive smoke 已通过；待 clean-commit 真实 snapshot 和最终 436-archive coverage report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | not_started | quarantine reason registry |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |

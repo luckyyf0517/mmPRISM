@@ -10,11 +10,14 @@ from mmprism.data import (
     CslNewsAnnotationError,
     CslNewsAuditError,
     CslNewsMetadataError,
+    CslNewsSourceManifestError,
     audit_csl_news_archive,
     build_csl_news_annotation_qc,
     build_csl_news_annotation_status,
     build_csl_news_metadata_profile,
+    build_csl_news_source_manifest_snapshot,
     load_csl_news_annotation_config,
+    load_csl_news_source_manifest_config,
     run_csl_news_annotation,
     write_csl_news_annotation_qc,
     write_csl_news_annotation_status,
@@ -93,6 +96,13 @@ def _build_parser() -> argparse.ArgumentParser:
     metadata_parser.add_argument("--source-id", required=True)
     metadata_parser.add_argument("--source-revision", required=True)
     metadata_parser.add_argument("--output", type=Path)
+
+    source_manifest_parser = subparsers.add_parser(
+        "csl-news-source-manifest",
+        help="Build an atomic source manifest for currently complete CSL-News archives",
+    )
+    source_manifest_parser.add_argument("config", type=Path)
+    source_manifest_parser.add_argument("--project-root", type=Path)
 
     return parser
 
@@ -183,7 +193,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_csl_news_annotation_qc(payload, arguments.output)
             exit_code = 1 if payload["status"] == "failed" else 0
-        else:
+        elif arguments.command == "csl-news-metadata-profile":
             payload = build_csl_news_metadata_profile(
                 arguments.labels_json,
                 arguments.labels_csv,
@@ -194,12 +204,27 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_csl_news_metadata_profile(payload, arguments.output)
             exit_code = 1 if payload["status"] == "failed" else 0
+        else:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            source_manifest_config = load_csl_news_source_manifest_config(
+                arguments.config
+            )
+            payload = build_csl_news_source_manifest_snapshot(
+                source_manifest_config,
+                runtime_report=collect_runtime_report(project_root),
+            )
+            exit_code = 0
     except (
         ConfigError,
         ManifestError,
         CslNewsAnnotationError,
         CslNewsAuditError,
         CslNewsMetadataError,
+        CslNewsSourceManifestError,
         FileNotFoundError,
     ) as error:
         print(f"error: {error}", file=sys.stderr)

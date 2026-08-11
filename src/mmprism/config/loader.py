@@ -10,11 +10,11 @@ from mmprism.config.schema import ConfigError, ExperimentConfig
 _ENV_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
 
 
-def _expand_environment(value: Any) -> Any:
+def expand_environment(value: Any) -> Any:
     if isinstance(value, dict):
-        return {key: _expand_environment(item) for key, item in value.items()}
+        return {key: expand_environment(item) for key, item in value.items()}
     if isinstance(value, list):
-        return [_expand_environment(item) for item in value]
+        return [expand_environment(item) for item in value]
     if not isinstance(value, str):
         return value
 
@@ -43,4 +43,4 @@ def load_experiment_config(path: str | Path) -> ExperimentConfig:
     if not isinstance(payload, dict):
         raise ConfigError(f"Configuration root must be a mapping: {config_path}")
 
-    return ExperimentConfig.from_mapping(_expand_environment(payload))
+    return ExperimentConfig.from_mapping(expand_environment(payload))

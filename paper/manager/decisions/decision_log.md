@@ -22,6 +22,7 @@ Role: `cross_workstream_decisions`
 | `DEC-014` | 2026-08-11 | CSL-News 下载从 16 路单连接 curl 切换为 4 worker x 8 连接 aria2 | HF 端点支持 Range；稳定后 60 秒有效写入 9.95 MB/s，高于切换前约 3.9–4.7 MB/s | accepted | 原 `.part` 原位续传，完成后仍原子重命名；curl 保留为脚本 fallback |
 | `DEC-015` | 2026-08-11 | CSL-News pose 以 RTMW3D 原生输出加显式历史 2x24 transform 重建 | 保留可重解释的 133-joint 证据，避免将旧映射不可逆写入唯一数据 | accepted | 每个样本保存 native/transformed/canonical 数组、文本、checksum 和失败 sidecar |
 | `DEC-016` | 2026-08-11 | 夜间 pose worker 可与其他任务共享 GPU，只以可用显存为门槛 | 操作者明确批准高利用率共卡；真实 smoke 峰值显存约 262 MiB | accepted | 单 worker 固定一张显存充足的卡，不干预其他进程；连续 OOM 和磁盘 floor 仍触发停止 |
+| `DEC-017` | 2026-08-11 | CSL-News source snapshot 使用唯一 JSON、portable ZIP URI、inline caption 和 clean-Git atomic finalize | JSON 722,711 个 key 唯一，CSV 有 4 条冲突重复；绝对路径和未绑定代码版本的 manifest 不可复现 | accepted | 每条 sample 绑定 archive/labels/config/commit；`zip://archive!/member` 由配置 root 解析；dirty worktree 不得生成正式 snapshot |
 
 ## 决策记录模板
 

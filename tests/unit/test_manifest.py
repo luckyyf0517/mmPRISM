@@ -50,6 +50,28 @@ class ManifestContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ManifestError, "must be relative"):
             SampleRecord.from_mapping(record)
 
+    def test_accepts_exactly_one_inline_text_payload(self) -> None:
+        record = sample("sample-1")
+        record["modalities"] = {
+            "caption": {
+                "text": "测试文本",
+                "dtype": "utf-8",
+                "sha256": "a" * 64,
+            }
+        }
+        parsed = SampleRecord.from_mapping(record)
+
+        self.assertEqual(parsed.modalities["caption"].text, "测试文本")
+        self.assertIsNone(parsed.modalities["caption"].uri)
+
+    def test_rejects_modality_with_uri_and_inline_text(self) -> None:
+        record = sample("sample-1")
+        record["modalities"] = {
+            "caption": {"uri": "labels/sample.txt", "text": "ambiguous"}
+        }
+        with self.assertRaisesRegex(ManifestError, "exactly one"):
+            SampleRecord.from_mapping(record)
+
 
 if __name__ == "__main__":
     unittest.main()

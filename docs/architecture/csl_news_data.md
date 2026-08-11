@@ -158,3 +158,26 @@ The first real-source trial is scheduled for `2026-08-12 08:00 Asia/Shanghai` an
 ```text
 /mnt/gfs/yanyifan/mmPRISM/interim/csl_news/source_trial_v1/
 ```
+
+## Canonical Source Manifest Snapshot
+
+`mmprism csl-news-source-manifest` freezes the set of atomically completed ZIP files visible at scan start.
+It never reads `.part` files and does not extract videos. The versioned configuration keeps all archive,
+label, and output relationships relative to `MMPRISM_DATA_ROOT`.
+
+Each `mmprism.sample.v1` record contains:
+
+- a stable sample ID derived from source ID, archive name, and member name;
+- video as `zip://archive_NNN.zip!/member.mp4`, resolved only with the configured archive root;
+- the canonical JSON caption as an explicit inline-text modality with a UTF-8 SHA-256;
+- archive SHA-256, ZIP member CRC/size, labels SHA-256, config fingerprint, and clean Git commit;
+- archive and source-program group keys, while unavailable subject/scene fields remain explicit unknowns.
+
+The builder rejects unsafe/encrypted/duplicate members, cross-archive basename collisions, missing labels,
+stable-ID collisions, source files that change during the scan, insufficient disk space, and dirty Git state.
+It validates the generated JSONL through the general manifest contract before atomically renaming the whole
+snapshot directory. Available-archive snapshots are intentionally `partial`; a final snapshot is complete
+only when all 436 archives and every canonical label are represented.
+
+The canonical label source is JSON. CSV is retained as immutable cross-check evidence because it contains
+the same 722,711 unique keys but four additional conflicting duplicate rows; it may not override JSON.

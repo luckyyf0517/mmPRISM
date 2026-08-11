@@ -1,0 +1,13 @@
+schema_version: mmprism.csl_news_source_manifest.v1
+source:
+  data_root: ${MMPRISM_DATA_ROOT}
+  archive_root: incoming/20260811_csl_news_hf_3a060121/rgb_archives
+  labels_path: incoming/20260811_csl_news_hf_3a060121/metadata/CSL_News_Labels.json
+  source_id: huggingface:ZechengLi19/CSL-News
+  source_revision: 3a0601210333fe760efd09b5d9e2ae5f341ce339
+  expected_archive_count: 436
+validation:
+  verify_crc: false
+  minimum_free_bytes: 1099511627776
+output:
+  snapshot_root: manifests/csl_news/source_manifest_v1

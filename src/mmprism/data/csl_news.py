@@ -91,7 +91,7 @@ def _is_unsafe_member(name: str) -> bool:
     return path.is_absolute() or ".." in path.parts
 
 
-def _source_program(video_name: str) -> str:
+def csl_news_source_program(video_name: str) -> str:
     if "Common-Concerns" in video_name:
         return "Common-Concerns"
     if "Dragon-TV" in video_name:
@@ -231,7 +231,7 @@ def audit_csl_news_archive(
     archive_video_names = set(video_names)
     missing_labels = sorted(archive_video_names - label_index.video_names)
     empty_text_labels = sorted(archive_video_names & label_index.empty_text_video_names)
-    program_counts = Counter(_source_program(video_name) for video_name in video_names)
+    program_counts = Counter(csl_news_source_program(video_name) for video_name in video_names)
     duplicate_members = sorted(name for name, count in member_counts.items() if count > 1)
     duplicate_video_names = sorted(name for name, count in video_name_counts.items() if count > 1)
     failed_probes = [probe["member"] for probe in probes if not probe["passed"]]

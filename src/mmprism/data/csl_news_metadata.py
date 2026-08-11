@@ -14,6 +14,8 @@ from typing import Any
 
 import yaml
 
+from mmprism.data.csl_news import csl_news_source_program
+
 METADATA_PROFILE_SCHEMA_VERSION = "mmprism.csl_news_metadata_profile.v1"
 REQUIRED_FIELDS = ("video", "pose", "text")
 TOP_CHARACTER_COUNT = 50
@@ -79,14 +81,6 @@ def _load_dataset_card(path: Path) -> tuple[str, Mapping[str, Any]]:
     if not isinstance(raw_front_matter, Mapping):
         raise CslNewsMetadataError("CSL-News dataset card front matter must be a mapping")
     return text, raw_front_matter
-
-
-def _source_program(video_name: str) -> str:
-    if "Common-Concerns" in video_name:
-        return "Common-Concerns"
-    if "Dragon-TV" in video_name:
-        return "Dragon-TV"
-    return "unknown"
 
 
 def _normalize_translation(text: str) -> str:
@@ -403,7 +397,7 @@ def build_csl_news_metadata_profile(
         pose_counts[pose_name] += 1
         video_extensions[video_path.suffix.lower()] += 1
         pose_extensions[pose_path.suffix.lower()] += 1
-        program_counts[_source_program(video_name)] += 1
+        program_counts[csl_news_source_program(video_name)] += 1
         if video_path.stem != pose_path.stem:
             video_pose_stem_mismatch_count += 1
 
