@@ -6,6 +6,7 @@ import json
 import shutil
 import tempfile
 import zipfile
+import zlib
 from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -97,6 +98,21 @@ def csl_news_source_program(video_name: str) -> str:
     if "Dragon-TV" in video_name:
         return "Dragon-TV"
     return "unknown"
+
+
+def verify_zip_crc(archive: zipfile.ZipFile) -> tuple[str | None, str | None]:
+    """Read every member and return the first member-level integrity failure."""
+
+    for member in archive.infolist():
+        if member.is_dir():
+            continue
+        try:
+            with archive.open(member, "r") as stream:
+                while stream.read(8 * 1024 * 1024):
+                    pass
+        except (EOFError, OSError, RuntimeError, zipfile.BadZipFile, zlib.error) as error:
+            return member.filename, f"{type(error).__name__}: {error}"
+    return None, None
 
 
 def _select_probe_members(
@@ -210,7 +226,9 @@ def audit_csl_news_archive(
             encrypted_members = sorted(
                 member.filename for member in members if member.flag_bits & 0x1
             )
-            crc_failure = archive.testzip() if verify_crc else None
+            crc_failure, crc_error = (
+                verify_zip_crc(archive) if verify_crc else (None, None)
+            )
 
             selected_members = _select_probe_members(video_members, decode_sample_count)
             probes: list[dict[str, Any]] = []
@@ -224,7 +242,7 @@ def audit_csl_news_archive(
                         _probe_video_member(archive, member, temporary_root, index)
                         for index, member in enumerate(selected_members, start=1)
                     ]
-    except (OSError, zipfile.BadZipFile, RuntimeError) as error:
+    except (OSError, zipfile.BadZipFile, RuntimeError, zlib.error) as error:
         message = f"Unable to audit CSL-News archive {archive_file}: {error}"
         raise CslNewsAuditError(message) from error
 
@@ -240,7 +258,7 @@ def audit_csl_news_archive(
     if not video_members:
         failures.append("archive contains no MP4 videos")
     if crc_failure is not None:
-        failures.append(f"ZIP CRC failure: {crc_failure}")
+        failures.append(f"ZIP integrity failure: {crc_failure}: {crc_error}")
     if unsafe_members:
         failures.append(f"archive contains {len(unsafe_members)} unsafe member paths")
     if encrypted_members:
@@ -283,6 +301,7 @@ def audit_csl_news_archive(
             "duplicate_video_names": duplicate_video_names,
             "crc_checked": verify_crc,
             "crc_failure": crc_failure,
+            "crc_error": crc_error,
         },
         "labels": {
             "path": str(labels_file),

@@ -4,6 +4,7 @@ from mmprism.data.csl_news import (
     CslNewsAuditError,
     audit_csl_news_archive,
     csl_news_source_program,
+    verify_zip_crc,
     write_csl_news_audit,
 )
 from mmprism.data.csl_news_annotation import (
@@ -56,6 +57,7 @@ __all__ = [
     "run_csl_news_annotation",
     "stable_sample_id",
     "validate_annotation_output",
+    "verify_zip_crc",
     "write_csl_news_annotation_status",
     "write_csl_news_annotation_qc",
     "write_csl_news_audit",

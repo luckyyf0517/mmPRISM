@@ -18,7 +18,7 @@ import yaml
 
 from mmprism.config import expand_environment
 from mmprism.contracts import validate_manifest
-from mmprism.data.csl_news import csl_news_source_program
+from mmprism.data.csl_news import csl_news_source_program, verify_zip_crc
 from mmprism.data.csl_news_annotation import (
     load_csl_news_labels,
     sha256_file,
@@ -389,7 +389,11 @@ def build_csl_news_source_manifest_snapshot(
                     cross_archive_duplicates = [
                         name for name in video_names if name in seen_video_names
                     ]
-                    crc_failure = archive.testzip() if config.verify_crc else None
+                    crc_failure, crc_error = (
+                        verify_zip_crc(archive)
+                        if config.verify_crc
+                        else (None, None)
+                    )
                     failures: list[str] = []
                     if not video_members:
                         failures.append("archive contains no MP4 videos")
@@ -406,7 +410,9 @@ def build_csl_news_source_manifest_snapshot(
                             f"{len(cross_archive_duplicates)} video names repeat across archives"
                         )
                     if crc_failure is not None:
-                        failures.append(f"ZIP CRC failure: {crc_failure}")
+                        failures.append(
+                            f"ZIP integrity failure: {crc_failure}: {crc_error}"
+                        )
                     if failures:
                         raise CslNewsSourceManifestError(
                             f"{archive_path.name} failed source-manifest validation: "
@@ -467,6 +473,7 @@ def build_csl_news_source_manifest_snapshot(
                             "program_counts": dict(sorted(archive_program_counts.items())),
                             "crc_checked": config.verify_crc,
                             "crc_failure": crc_failure,
+                            "crc_error": crc_error,
                         }
                     )
                     archive_stat_after = archive_path.stat()

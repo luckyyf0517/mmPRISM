@@ -1,4 +1,5 @@
 import json
+import struct
 import tempfile
 import unittest
 import zipfile
@@ -83,6 +84,47 @@ class CslNewsAuditTest(unittest.TestCase):
                     labels_path,
                     source_id="fixture@revision",
                 )
+
+    def test_reports_deflate_corruption_as_structured_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_path = root / "archive_001.zip"
+            video_name = "Common-Concerns_20200101_0-100_1.mp4"
+            with zipfile.ZipFile(
+                archive_path, "w", compression=zipfile.ZIP_DEFLATED
+            ) as archive:
+                archive.writestr(video_name, b"encoded-video" * 4096)
+            with zipfile.ZipFile(archive_path) as archive:
+                member = archive.getinfo(video_name)
+                header_offset = member.header_offset
+                compressed_size = member.compress_size
+            payload = bytearray(archive_path.read_bytes())
+            local_header = struct.unpack(
+                "<IHHHHHIIIHH", payload[header_offset : header_offset + 30]
+            )
+            data_offset = header_offset + 30 + local_header[9] + local_header[10]
+            payload[data_offset + compressed_size // 2] ^= 0xFF
+            archive_path.write_bytes(payload)
+            labels_path = root / "labels.json"
+            labels_path.write_text(
+                json.dumps(
+                    [{"video": video_name, "pose": "pose.pkl", "text": "测试"}],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            report = audit_csl_news_archive(
+                archive_path,
+                labels_path,
+                source_id="fixture",
+                verify_crc=True,
+            )
+
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["archive"]["crc_failure"], video_name)
+        self.assertIsInstance(report["archive"]["crc_error"], str)
+        self.assertIn("ZIP integrity failure", report["failures"][0])
 
     def test_writes_report_atomically(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
