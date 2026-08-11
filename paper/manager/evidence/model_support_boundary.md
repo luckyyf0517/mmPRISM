@@ -20,10 +20,10 @@ adding an unverified example around a legacy class.
 decision: DEC-027
 architecture: docs/architecture/model_support.md
 release profile: configs/release/reviewer_release_v1.yaml
-release builder commit: 79b45b58d803b3b07a8b7476f87c208e6f17399d (clean)
+release builder commit: 7aaa1568ac1f83efbdc99693c146b4adcb292b85 (clean)
 release config fingerprint: 1c39365a3109b2ca34a6597b3ee25bc22d674dd6d78e270a3baae8d60e468abf
 release artifact: paper/manager/evidence/artifacts/release_audit_v1.json
-release artifact SHA-256: 5bea122691306153bbadc9ba2cd5f3bdefca0353c9dba0394372e331acee89ba
+release artifact SHA-256: c940505d8ed6c1e556d58b28a944b45cfe7784c3bc651e9ba20d15d5639ee61e
 selected files: 76
 FORBIDDEN_CONTENT findings: 0
 other unexpected findings: 0

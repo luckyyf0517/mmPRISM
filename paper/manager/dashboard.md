@@ -45,7 +45,7 @@ Role: `control_panel`
   上两个真实 CPU loader 均输出 finite `[2,768]` embedding，`ARCH-REV-002` 已达到 evidence ready。
 - clean commit `79b45b5` 上已完成 pinned mT5-base 资产和 A100 两步 geometry-fusion smoke：三路
   adapter 梯度/参数更新、置信度反事实和 beam generation 均通过；该 artifact 明确不是论文结果。
-- 同 commit 的 release audit 已验证 76 个逐文件 hash、150 个 internal/legacy 排除项和 39-module
+- clean commit `7aaa156` 的 release audit 已验证 76 个逐文件 hash、152 个 internal/legacy 排除项和 39-module
   dependency graph；无 missing/legacy import、cycle、本地绝对路径或 token hit。mT5 缺失项已关闭，
   reviewer profile 现只被 LICENSE 和 provenance-gated radar example 两项真实缺失阻塞。
 - `DEC-027` 已固定 mT5-only generation rebuild；legacy Phi-3 不进入 public support，clean commit

@@ -10,12 +10,12 @@ Evidence ID: `EVID-CODE-RELEASE-V1`
 ```text
 schema: mmprism.release_audit_report.v1
 release profile: reviewer_release_v1
-builder commit: 79b45b58d803b3b07a8b7476f87c208e6f17399d
+builder commit: 7aaa1568ac1f83efbdc99693c146b4adcb292b85
 builder Git state: clean
 config: configs/release/reviewer_release_v1.yaml
 config fingerprint: 1c39365a3109b2ca34a6597b3ee25bc22d674dd6d78e270a3baae8d60e468abf
 artifact: paper/manager/evidence/artifacts/release_audit_v1.json
-artifact SHA-256: 5bea122691306153bbadc9ba2cd5f3bdefca0353c9dba0394372e331acee89ba
+artifact SHA-256: c940505d8ed6c1e556d58b28a944b45cfe7784c3bc651e9ba20d15d5639ee61e
 status: failed (expected blockers retained)
 ```
 
@@ -33,11 +33,11 @@ execution failure would return `2`.
 
 | Gate | Result |
 |---|---:|
-| Git tracked files inspected | 262 |
+| Git tracked files inspected | 264 |
 | release-selected files | 76 |
-| selected bytes | 712,783 |
+| selected bytes | 713,491 |
 | selected files with size + SHA-256 | 76/76 |
-| tracked internal/legacy paths explicitly excluded | 150 |
+| tracked internal/legacy paths explicitly excluded | 152 |
 | canonical Python modules | 39 |
 | internal dependency edges | 64 |
 | missing canonical import targets | 0 |
@@ -49,7 +49,7 @@ execution failure would return `2`.
 | unsupported backend content hits | 0 |
 | expected `mmprism = mmprism.cli:main` entrypoint | matched |
 
-The 150 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
+The 152 excluded tracked paths include `CLAUDE.md`, `AGENTS.md`, the manuscript/revision area, root
 legacy entrypoints/configuration, legacy `src/*` namespaces, and internal operational scripts. They remain
 in the development repository for evidence recovery and are absent from the release selection.
 

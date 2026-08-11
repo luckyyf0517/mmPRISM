@@ -328,9 +328,9 @@
       "path": "configs/examples/radar_smoke.yaml"
     }
   ],
-  "generated_at": "2026-08-11T19:12:00.732005+00:00",
+  "generated_at": "2026-08-11T19:16:35.935289+00:00",
   "git": {
-    "commit": "79b45b58d803b3b07a8b7476f87c208e6f17399d",
+    "commit": "7aaa1568ac1f83efbdc99693c146b4adcb292b85",
     "dirty_entry_count": 0,
     "state": "clean"
   },
@@ -344,9 +344,9 @@
         "sha256": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d"
       },
       {
-        "bytes": 7446,
+        "bytes": 8033,
         "path": "README.md",
-        "sha256": "c86f2f99c4a99855658111e8538628a42027e68e71832426a35801cdd06f4da7"
+        "sha256": "a723392b6075e72ebe11c40e05c7ee24ad8b36bace7a7e574421273872ffbf4a"
       },
       {
         "bytes": 710,
@@ -389,9 +389,9 @@
         "sha256": "f21861cf489cf8f28b67b0ea71559036ca33ad4cdb123e25eb886974ec0826f6"
       },
       {
-        "bytes": 391,
+        "bytes": 512,
         "path": "scripts/download_mt5.sh",
-        "sha256": "4201f97a47af680e9b2fc8787123c5c2a0af1e8411dd357ebd6e6f32c0027f50"
+        "sha256": "f64ea7370e246b46f27c14b0bdbe8d9ccf5030addf34600b86dee976a42ef169"
       },
       {
         "bytes": 566,
@@ -759,6 +759,7 @@
       "paper/manager/evidence/artifacts/evaluation_models_smoke_v1.json",
       "paper/manager/evidence/artifacts/manuscript_inventory_v1.json",
       "paper/manager/evidence/artifacts/manuscript_inventory_v2.json",
+      "paper/manager/evidence/artifacts/mt5_smoke_v1.json",
       "paper/manager/evidence/artifacts/release_audit_v1.json",
       "paper/manager/evidence/csl_news_metadata_profile.md",
       "paper/manager/evidence/csl_news_pose_manifest.md",
@@ -771,6 +772,7 @@
       "paper/manager/evidence/manuscript_inventory.md",
       "paper/manager/evidence/model_assets.md",
       "paper/manager/evidence/model_support_boundary.md",
+      "paper/manager/evidence/mt5_vertical_smoke.md",
       "paper/manager/evidence/paper_evidence_map.md",
       "paper/manager/evidence/radar_contract_audit.md",
       "paper/manager/evidence/release_audit.md",
@@ -871,10 +873,10 @@
       "src/utils/tools.py",
       "src/utils/unzip_folders.py"
     ],
-    "forbidden_tracked_but_excluded_count": 150,
-    "selected_bytes": 712783,
+    "forbidden_tracked_but_excluded_count": 152,
+    "selected_bytes": 713491,
     "selected_file_count": 76,
-    "tracked_file_count": 262
+    "tracked_file_count": 264
   },
   "status": "failed"
 }

@@ -85,7 +85,7 @@ Metrics require a versioned protocol, sample count and finite values; completed 
 Pinned SimCSE/SBERT acquisition passed 14-file checksum validation and real CPU `[2,768]` loader smoke
 Pinned mT5-base acquisition passed 6-file checksum validation at immutable revision `2eb15465...`
 Clean mT5 A100 smoke at `79b45b5`: two finite adapter updates, confidence counterfactual and beam generation passed
-Clean release audit at `79b45b5`: 76 hashed files selected; 150 internal/legacy paths excluded
+Clean release audit at `7aaa156`: 76 hashed files selected; 152 internal/legacy paths excluded
 Canonical dependency audit: 39 modules / 64 edges / 0 missing targets / 0 legacy imports / 0 cycles
 Reviewer release remains blocked only on LICENSE and the provenance-gated radar example
 Caption-generation support is mT5-only by policy; the unsupported legacy backend is excluded and guarded by a release content test
