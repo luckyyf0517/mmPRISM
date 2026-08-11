@@ -151,7 +151,7 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 3. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
 4. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
 5. 监控 CSL-News 下载服务；每个 final ZIP 必须先通过完整 CRC gate，才可进入标注或 manifest promotion。
-6. 保留损坏 `archive_005/008`、partial output 和失败 sidecar；人工复核后 versioned 重下并比对。
+6. 保留异常 `archive_001/005/008`、partial output 和失败 sidecar；人工复核后 versioned 重下并比对。
 
 ## 9. CSL-News 官方下载状态
 
@@ -200,8 +200,20 @@ archive、18,095 条 portable `caption/video` record，manifest SHA-256 为
 `005/008` 保持原位并排除出标注池，等待人工复核和 versioned replacement；详见
 `../evidence/csl_news_source_integrity.md`。
 
+`2026-08-11T15:51Z`，新出现的 `archive_001.zip` 无法打开 central directory。下载日志确认 aria2
+在 93% 时因 HF 临时签名 URL 返回 HTTP 403，但旧 `xargs` 子 shell 未传播非零状态，错误执行了
+`.part -> .zip`。clean-commit incident report SHA-256 为
+`379b72f34a1f749a246891901e746defae3331dcb65fab64662686a7f260a723`。下载器现要求 transfer exit 0、
+无残留 `.aria2`、完整 `unzip -t`/CRC 通过后才 promotion；修复版 service 已恢复，原 `001` 未移动或覆盖。
+
+`archive_002` 是修复版 downloader 首个完成 promotion 的 ZIP，随后通过 canonical full-read audit：
+1,624 个视频、label coverage 1,624/1,624、missing/empty 0，archive SHA-256 为
+`a10864019a02d5abefe1045b1ce7fc3f3350562889e4b6c95cfe766981334fde`，report SHA-256 为
+`3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`。当前累计 10 个 archive/
+16,468 videos 通过 source audit；`002` 等待下一轮标注调度。
+
 下载使用 `scripts/download_csl_news.sh`，当前引擎为 aria2：4 个 archive worker、每文件 8 个连接、
-断点续传、`.part` 原子完成、只下载不解压，并保留至少 1 TiB 可用空间。切换前短时基准中，
+断点续传、ZIP 完整性通过后原子 promotion、只下载不展开，并保留至少 1 TiB 可用空间。切换前短时基准中，
 单个 aria2 传输稳定约 3.4 MiB/s，原 16 路 curl 同窗口合计约 4.7 MB/s。Legacy 预处理链与接口冲突见
 `../../../docs/architecture/csl_news_data.md`。
 
@@ -224,7 +236,7 @@ canonical pose annotation 使用 `configs/data/csl_news_rtmw3d_overnight.yaml` �
 `[T,133,3]` 与 canonical `[T,2,24,3]`，全部数值有限，峰值显存约 262 MiB；正式输出和
 scratch 在次晨人工检查前全部保留。
 
-夜间 worker 固定 GPU 7，运行后由 `csl-news-annotation-status` 做只读健康快照。
+夜间 4-lane worker pool 固定 GPU 7，运行后由 `csl-news-annotation-status` 做只读健康快照。
 `2026-08-11T14:47Z` 报告为 `healthy`：10 个完整 archive、16,476 个当前可用视频、
 101 个成功样本、latest run 新增失败 0、缺失 artifact/sidecar 0、抽样校验 3/3 通过。
 报告目录为：
@@ -246,3 +258,7 @@ QC 报告目录为：
 `15:00 UTC` 首次 timer 自动触发已以 `0/SUCCESS` 验收；对应状态为 `healthy`，11 个完整
 archive、18,095 个可用视频、291 个成功样本、当前 run 新增失败 0、缺失配对 0、抽样 3/3
 通过。worker 保持 `NRestarts=0`。
+
+`16:00 UTC` 自动报告为 `attention_required`，原因仅为已隔离的 `archive_001` central-directory
+错误；annotation artifact 配对完整、最新 3/3 校验通过、latest run 新失败 0。4-lane aggregate
+近期吞吐约 1,394 samples/hour；该 ETA 包含未调度/异常 archive，仅作运维参考。

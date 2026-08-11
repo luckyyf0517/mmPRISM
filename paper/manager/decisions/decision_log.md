@@ -24,6 +24,7 @@ Role: `cross_workstream_decisions`
 | `DEC-016` | 2026-08-11 | 夜间 pose worker 可与其他任务共享 GPU，只以可用显存为门槛 | 操作者明确批准高利用率共卡；单 worker 稳定占用约 838 MiB | accepted | 默认门槛 2,048 MiB；允许繁忙卡和同卡多 worker，不干预其他进程；OOM/磁盘/source gate 仍触发停止 |
 | `DEC-017` | 2026-08-11 | CSL-News source snapshot 使用唯一 JSON、portable ZIP URI、inline caption 和 clean-Git atomic finalize | JSON 722,711 个 key 唯一，CSV 有 4 条冲突重复；绝对路径和未绑定代码版本的 manifest 不可复现 | accepted | 每条 sample 绑定 archive/labels/config/commit；`zip://archive!/member` 由配置 root 解析；dirty worktree 不得生成正式 snapshot |
 | `DEC-018` | 2026-08-11 | 只有完整逐 member CRC 通过的 CSL-News archive 才能进入标注、processed data 或训练 | central-directory 可读不代表压缩数据完整；首批 `005/008` 已复现 zlib failure | accepted | 原损坏 ZIP/partial artifact 保留；replacement 使用 versioned intake 并重新通过 checksum/CRC/coverage/decode gate |
+| `DEC-019` | 2026-08-11 | CSL-News final ZIP promotion 必须通过 transfer、aria2 control 和完整解压/CRC 三重 gate | `archive_001` 在 aria2 HTTP 403 后被未传播退出码的旧子 shell 误晋升 | accepted | 下载器显式传播错误并在 `unzip -t` 后原子改名；已有坏 final 保留且不得自动覆盖 |
 
 ## 决策记录模板
 

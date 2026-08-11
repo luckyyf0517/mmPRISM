@@ -28,9 +28,15 @@ checksum, ZIP integrity, label coverage and license metadata are validated.
 The downloader supports `curl` and `aria2` engines. The active intake uses four archive workers with eight
 aria2 connections per archive after a controlled benchmark showed about 3.4 MiB/s for one aria2 transfer
 while the previous sixteen single-connection curl transfers delivered about 4.7 MB/s in aggregate. Existing
-curl `.part` files are contiguous prefixes and are resumed by aria2; the final atomic rename contract is
-unchanged. After disabling aria2's per-fragment low-speed cutoff, a 60-second five-process measurement
+curl `.part` files are contiguous prefixes and are resumed by aria2. Final promotion now requires an explicit
+successful transfer status, no remaining aria2 control file, and a complete `unzip -t`/CRC pass before atomic
+rename. After disabling aria2's per-fragment low-speed cutoff, a 60-second five-process measurement
 reported 9.95 MB/s of effective writes with all processes healthy.
+
+This promotion gate was added after `archive_001` received HTTP 403 at 93% and the former `xargs` child shell
+failed to propagate aria2's non-zero exit, causing an incomplete `.part` to be renamed. `archive_001`, plus
+member-corrupt `archive_005` and `archive_008`, remain immutable quarantine candidates. Only archives in a
+full-read integrity report's passed list may enter annotation or manifest promotion.
 
 ## Legacy Preprocessing Flow
 

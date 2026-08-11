@@ -1,6 +1,6 @@
 # CSL-News Source Integrity Evidence
 
-Status: `partial_audit_failed_corrupt_archives_isolated`
+Status: `partial_audit_failures_isolated_promotion_gate_fixed`
 Last Updated: `2026-08-11`
 Role: `DATA-001-K_source_integrity_evidence`
 
@@ -39,21 +39,55 @@ status: failed_with_corrupt_archives
 | `005` | `fbc00d7148c2cc23717c21026775b3ce09a702b32201cd6a2fedce3f3ee18b6a` | `20230927_Dragon-TV__11187-11462_560428.mp4` | `zlib.error: invalid stored block lengths` |
 | `008` | `ec596092c412e5a8530911c3be4855ecc715af208a7e4419c0b94f76756ecbe7` | `Dragon-TV_20230215_937-1162_701211.mp4` | `zlib.error: invalid stored block lengths` |
 
+### Post-scope download incident: `archive_001`
+
+`archive_001` was not part of the frozen 11-archive audit. It appeared as a final `.zip` afterward, but a
+status scan could not open its central directory. A clean-commit structured audit recorded:
+
+```text
+builder commit: 1bfc33be407b6192a803c2eec45848ccbe4280b8
+artifact: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/incident_20260811T155614Z/archive_001.json
+report SHA-256: 379b72f34a1f749a246891901e746defae3331dcb65fab64662686a7f260a723
+archive bytes: 2100991351
+archive SHA-256: 07c9b956e9c42f9623b5bce57cc6e49de4fa2e0554c4963d99770e4b92beabdc
+error: BadZipFile: File is not a zip file
+```
+
+下载日志证明 aria2 在 93% 时因 HF 临时签名 URL 返回 HTTP 403，并保留了 `.aria2` 控制文件；
+旧脚本的 `xargs` 子 shell 未继承 `set -e`，随后错误地将 incomplete `.part` 改名为 final。
+修复后的下载器显式传播 transfer exit code、拒绝残留 `.aria2`，并在完整 `unzip -t`/CRC 通过后
+才执行原子 promotion。修复版 service 已恢复运行并主动拒绝现有 `archive_001.zip`。
+
+### Post-scope passed archive: `archive_002`
+
+修复版 downloader 首个 promotion 的 `archive_002` 随后通过 canonical full-read CRC、SHA-256、
+member safety 和 1,624/1,624 label coverage gate：
+
+```text
+builder commit: 1bfc33be407b6192a803c2eec45848ccbe4280b8
+artifact: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v1/incremental_20260811T160003Z/archive_002.json
+report SHA-256: 3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9
+archive SHA-256: a10864019a02d5abefe1045b1ce7fc3f3350562889e4b6c95cfe766981334fde
+status: passed
+```
+
+当前累计 10 个 source-audit-passed archive、16,468 个视频；今晚 fixed lane 仍只处理先前冻结的
+9 个 archive，`002` 进入下一轮可调度清单。
+
 ## 3. Evidence Boundary
 
 - 先前 18,095-record source snapshot 使用 `verify_crc=false`，因此只证明 manifest contract、
   portable URI、stable identity 和 source-to-pose text linkage；它不再被称为 source-integrity verified。
-- `005`、`008` 及其已生成的 partial pose/failure artifact 全部保留，但不得进入 processed dataset、
+- `001`、`005`、`008` 及其已生成的 partial pose/failure artifact 全部保留，但不得进入 processed dataset、
   split、训练或论文统计。
-- 只有本报告 `passed_archive_ids` 中的 archive 可以进入临时并行标注池。
+- 只有 frozen summary 的 `passed_archive_ids` 或后续独立 `passed` audit 中的 archive 可以进入标注池。
 - `archive_003` 另有 CRC + deterministic video decode smoke；本批其余通过 archive 尚未做 decode probe。
 - 该报告仅覆盖扫描时的 11/436 archives，不是完整数据集验证。
 
 ## 4. Recovery Gate
 
 1. 不删除、移动或覆盖当前 ZIP、`.part`、pose、scratch 或 failure sidecar。
-2. 人工复核后，把 `005`、`008` 重新下载到新的 versioned incoming/recovery 位置。
+2. 人工复核后，把 `001`、`005`、`008` 重新下载到新的 versioned incoming/recovery 位置。
 3. 对 replacement 执行完整 SHA-256、逐 member CRC、label coverage 和 decode probe。
 4. replacement 通过前保持原文件为 quarantine candidate；通过后登记新 source identity，再决定 promotion。
 5. 后续每个新完成 archive 必须先通过同等完整 CRC gate，才能调度标注。
-

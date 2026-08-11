@@ -16,14 +16,14 @@ Role: `data_execution_tracker`
 | `DATA-001-H` | P0 | 分批上传私人真实采集 raw package | blocked | incoming batch checksum 完整且原始包只读 |
 | `DATA-001-I` | P0 | 固定 CSL-Daily/CSL-News 重新下载或上传路径 | in_progress | CSL-News 已确认可重下；待补齐各数据集 version/URL/license/checksum 或 incoming batch |
 | `DATA-001-J` | P0 | 恢复原投稿 MANO/mesh/skeleton simulation provenance | blocked | 实际 simulator、输入、配置和历史证据一致 |
-| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | 436 archives + labels 完整，SHA-256/ZIP/coverage report 通过 |
+| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | promotion gate 已修复；待 versioned replacement `001/005/008` 与 436 archives + labels 全量验证 |
 | `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | in_progress | schema v1 reviewed against real source |
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
 | `DATA-003-B` | P1 | CSL-News source adapter 和 manifest | in_progress | partial snapshot contract/linkage 已验证；其 frozen 11 archives 中 `005/008` CRC 失败，待 replacement 和最终 436-archive CRC/coverage/decode report |
 | `DATA-003-C` | P1 | collected source adapter 和 manifest | not_started | subject/scene/action metadata report |
-| `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | `005/008` 已有 reason/hash/member machine report；待人工复核、versioned replacement 和正式 quarantine registry |
+| `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | `001/005/008` 已有 reason/hash machine report；待人工复核、versioned replacement 和正式 quarantine registry |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | not_started | deterministic split + leakage audit |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
 | `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | strict config、native/canonical artifact、resume/failure contract、单视频 GPU smoke 和 100-sample 数值 QC 已通过；夜间全量 worker 待完成 |
@@ -53,6 +53,12 @@ RTMW3D 单视频 smoke 也已通过，但不代表 436 个 archive 已完成。
 `manifests/csl_news/source_integrity_v1/audit_20260811T154138Z/summary.json`，SHA-256 为
 `ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`。损坏原件和所有 partial
 artifact 禁止清理或 promotion。
+
+后续完成的 `archive_001` 是 aria2 HTTP 403 后由旧脚本误晋升的 incomplete final。结构化报告
+SHA-256 为 `379b72f34a1f749a246891901e746defae3331dcb65fab64662686a7f260a723`；下载器已改为 transfer
+exit、残留 `.aria2` 和完整 `unzip -t` 三重 gate，并恢复断点下载。
+新 gate 首个晋升的 `archive_002` 已通过 1,624-video canonical audit，report SHA-256 为
+`3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`，等待下一轮标注调度。
 
 ## 禁止事项
 

@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | partial source snapshot: 11 archives/18,095 records, hash `6984d0cc...`; metadata profile ready; final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；partial contract/linkage passed；full CRC audit found `005/008` corrupt，9 archives/14,844 videos eligible | visual pose/synthetic training and SLU | in_progress_integrity_failure |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; incoming batch active | CC BY-NC 4.0 | 935001573087 B compressed | partial source snapshot: 11 archives/18,095 records, hash `6984d0cc...`; metadata profile ready; final 436-archive manifest pending | JSON 722,711/722,711 valid unique records；`005/008` corrupt；`001` incomplete final；including post-scope `002`, 10 archives/16,468 videos audited-pass；promotion gate fixed | visual pose/synthetic training and SLU | in_progress_integrity_failure |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -97,6 +97,10 @@ manifest has SHA-256 `6984d0cc30a0f5a9e6baa58fa8a764e0c0b70ed1b0bb9224e9fca8faa1
 it covers 11/436 archives and remains explicitly partial. A subsequent full CRC audit found `005/008`
 corrupt, so this snapshot is retained only as contract/linkage evidence. The integrity summary is recorded in
 `csl_news_source_integrity.md` with SHA-256 `ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`.
+The same evidence document records the later `archive_001` incomplete-final incident and report SHA-256
+`379b72f34a1f749a246891901e746defae3331dcb65fab64662686a7f260a723`, plus the first fixed-gate
+promotion `archive_002` with passed report SHA-256
+`3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`.
 
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 

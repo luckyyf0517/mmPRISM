@@ -25,7 +25,8 @@ Role: `control_panel`
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证，但完整 CRC 审计确认
-  `archive_005/008` 损坏；当前仅 9 个 archive/14,844 个视频可进入临时标注池。
+  `archive_005/008` 损坏；新 gate 晋升的 `002` 也已通过独立审计，当前累计 10 个 archive/
+  16,468 个视频具备 source-audit 资格，今晚 fixed lane 使用其中 9 个。
 - `/mnt/gfs` 当前约余 3.6 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
 - canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；24 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
@@ -41,7 +42,8 @@ Role: `control_panel`
 
 ## 当前 Blocker
 
-- `DATA-CSLNEWS-INTEGRITY-001`：`archive_005/008` CRC/解压失败；保留原件，等待 versioned 重下验证。
+- `DATA-CSLNEWS-INTEGRITY-001`：`005/008` member 解压失败，`001` 为 HTTP 403 后误晋升的
+  incomplete final；promotion gate 已修复，原件保留并等待 versioned 重下验证。
 - `BLOCK-DATA-ROOT`：CSL-News source 已进入下载，但私人 collected、CSL-Daily 和历史 run 仍未知。
 - `BLOCK-SIM-PROVENANCE`：稿件 MANO mesh/ray-tracing 描述与当前可见 skeleton 仿真路径不一致。
 - `BLOCK-MANUSCRIPT`：当前工作稿已接入，但原投稿定稿与 response letter 缺失，且稿件表图尚未完成 provenance 登记。
@@ -51,7 +53,7 @@ Role: `control_panel`
 ## 下一步动作
 
 1. 继续执行 `PAPER-001B`，登记当前 manuscript/supplement，并导入原投稿定稿。
-2. 执行 `DATA-001-K/DATA-005-A`，新 archive 先做完整 CRC gate；只对通过清单生成 pose。
+2. 执行 `DATA-001-K/DATA-005-A`，下载 promotion 和标注前都做完整 ZIP gate；只对通过清单生成 pose。
 3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
 4. 继续 `ARCH-001/002`，完成正式 artifact writer 和 canonical train/eval/prepare CLI。

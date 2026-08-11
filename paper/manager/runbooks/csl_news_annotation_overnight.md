@@ -106,8 +106,12 @@ scripts/run_csl_news_annotation_worker.sh --gpu auto -- \
 启动后记录实际物理 GPU 到本页运行记录。观察命令：
 
 ```bash
-systemctl --user status mmprism-csl-news-annotation.service
-journalctl --user -u mmprism-csl-news-annotation.service -f
+systemctl --user status 'mmprism-csl-news-annotation-lane*-v2.service'
+journalctl --user -f \
+  -u mmprism-csl-news-annotation-lane0-v2.service \
+  -u mmprism-csl-news-annotation-lane1-v2.service \
+  -u mmprism-csl-news-annotation-lane2-v2.service \
+  -u mmprism-csl-news-annotation-lane3-v2.service
 ```
 
 机器可读状态快照由独立 CPU-only 命令生成，不导入 MMPose/PyTorch，也不读取隐藏临时文件：
@@ -174,3 +178,20 @@ scripts/run_csl_news_annotation_qc.sh
   `005/008` 损坏。总表 SHA-256 为 `ea8062f546cdf10abdde5b5b27e0e78e5e39e3df538e0d68b983e6ac4b7c9a00`。
   仅保留 `archive_003` 主 worker；恢复并行池前必须读取 `passed_archive_ids`，原件和 partial/failure
   artifacts 保留到次晨人工检查。
+- `2026-08-11T15:49Z` 将 unrestricted main worker 替换为 4 条 CRC-valid fixed lane：
+  `003,010,011`；`004,014`；`006,015`；`009,020`。最终 unit 名为
+  `mmprism-csl-news-annotation-lane{0..3}-v2.service`，均在 GPU 7、`CPUQuota=400%`、
+  `Restart=on-failure`；模型加载后 4/4 `active/running`、`NRestarts=0` 并持续产出。
+- lane 启动时 GPU 7 已有约 8.9 GiB 其他任务；4 个标注 worker 共卡后总显存约 12.3 GiB，
+  高利用率不触发迁移，符合本次显式授权。
+- 首次无 `-v2` lane unit 因 systemd shell quoting 将 archive ID 展开为空，在模型加载和样本处理前
+  以参数错误退出；这些 unit 已停止，未生成或修改 artifact。
+- `2026-08-11T15:51Z` 状态扫描发现新 final `archive_001` central directory 不可读。日志确认旧下载
+  脚本在 aria2 93%/HTTP 403 后误晋升 incomplete `.part`。下载已短暂停止并以修复版恢复：transfer
+  非零、残留 `.aria2` 或完整 `unzip -t` 失败均禁止 promotion；`001` 原件保持不变且未进入 lane。
+- `2026-08-11T16:00Z` timer report `status_20260811T160003Z.json` 为 `attention_required`，唯一
+  source error 是已隔离 `001`；artifact/sidecar 缺失均为 0、latest run 新失败 0、最近 3/3 样本
+  校验通过。4-lane aggregate 近期约 1,394 samples/hour。
+- 修复版 downloader 首个晋升的 `archive_002` 随后通过 1,624-video canonical audit，report
+  SHA-256 为 `3f2eaffd97c1f48481d92f7f88f5bd8ce68d78cce3bc74f0acbb9d8e0c43c4e9`；为保持 frozen lane
+  边界，`002` 不动态插入当前进程，进入下一轮调度。

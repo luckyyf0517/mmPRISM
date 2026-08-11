@@ -69,7 +69,8 @@ du -sh /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121
 scripts/download_csl_news.sh --engine curl --workers 16
 ```
 
-切换引擎不得删除 `.part`；两个引擎都只在命令成功后执行最终原子重命名。
+切换引擎不得删除 `.part`。两个引擎都必须满足 transfer exit 0、无残留 `.aria2`（aria2）和
+完整 `unzip -t`/CRC 通过，才能执行最终原子重命名。已有坏 final 只报告失败，不自动移动或覆盖。
 aria2 多段 Range 会让 `.part` 表观大小提前接近完整长度，不能用 `stat` 或 `du` 将其当作已下载
 字节数。活动文件查看对应 `logs/archive_NNN.log` 的百分比和 `DL`，全局进度以最终 `.zip` 数为准。
 
