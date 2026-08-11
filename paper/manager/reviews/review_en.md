@@ -1,0 +1,108 @@
+# Reviewer Comments — Organized Original Text
+
+Status: `original_text_indexed`
+Last Updated: `2026-08-11`
+Role: `verbatim_reviewer_source`
+
+本文件对原始 reviewer text 进行编号和分组，但不改写原文。完整邮件见 `raw/decision_email_20260811_redacted.md`。
+
+## Reviewer 1
+
+### `R1-POS` Overall positive assessment
+
+> The authors push the paradigm shift in mmWave sensing from conventional classification to linguistic semantic interpretation, which is of profound implications for assistive applications for human benefit. With the reported 84.3% optical-level fidelity, the proposed method shows that mmWave radar is no longer a coarse backup to vision but a viable, high-resolution primary sensor capable of capturing complex two-hand interactions without the privacy risks of vision modality. By addressing these two fundamental issues, the research is expected to further push the limit of current wireless sensing technology to applications.
+
+### `R1-1` Related work
+
+> The reviewer would suggest the following references which target at the interpretation of mmWave sensing and LLM assisted mmWave data augmentation.
+> Zengyuan Lai, et. al. RadarLLM: Empowering Large Language Models to Understand Human Motion from Millimeter-wave Point Cloud Sequence. AAAI 2026.
+> Yifan Yan, et. al. mmExpert: Integrating Large Language Models for Comprehensive mmWave Data Synthesis and Understanding. MobiHoc 2025.
+
+### `R1-2` Training and inference cost
+
+> The significant contribution lies in mapping sparse and specular radar echoes to complex linguistic structures. A 4D volumetric encoder combined with an LLM backbone is computationally expensive. The authors should demonstrate the training and inference cost of mmPRISM.
+
+### `R1-3` Cross-orientation generalization
+
+> Millimeter-wave signals are highly sensitive to the propagation path. As an important domain generalization perspective, cross orientation analysis is neglected. The placement of the mmWave radar with respect to the person may impact mmPRISM signicantly as the person may not be always still and well alligned with the radar as requested.
+
+### `R1-4` Synthetic data, dataset detail, real-world validation, and new-user generalization
+
+> The reported performance is based on the synthesized data. How to measure the closeness of the synthetic data to the ground truth? Moreover, the details of the synthetic data such as diversity, signs, size and domains like environment should be further explained. Moreover, more details about the training and test data sets are helpful to understand the generalization of the proposed system. It is significant to ensure that the model trained on the synthetic data works well on the real-world data as well. It is highly recommended to use available sign language and writing data set, and collect more data with the radar for more convincing experiment in the paper. Although a real-world calibration is adopted for fine-tuning on the limited real sensor data, current data set is collected with 12 volunteers aging 20-30, which is very limited in size and diversity. The complexity of hand gestures varies wildly across individuals, environment and orientations. It is expected to show that the system generalizes to new users with different hand sizes and gesturing styles without too much retraining.
+
+Atomic execution IDs derived from this source paragraph:
+
+- `R1-4a`: synthetic-to-real closeness/fidelity measurement
+- `R1-4b`: synthetic/train/test dataset characterization
+- `R1-4c`: real radar data scale and demographic/environment diversity
+- `R1-4d`: held-out new-user generalization and retraining requirement
+
+### `R1-5` Hand-to-hand occlusion
+
+> In some orientations or hand signs, two hands overlap from the radar's view. The sparse point cloud often collapses into a single cluster. The authors should clarify how the proposed method distinguishes between hand-to-hand occlusions.
+
+### `R1-6` 4D cube notation
+
+> Please introduce the notation with respect to the 4D cube in the paper, though they are explained in the supplementary materials.
+
+## Reviewer 2 — Manuscript
+
+### `R2-POS` Paper summary
+
+> The authors propose mmPRISM, a geometry-guided mmWave sensing framework for privacy-preserving continuous sign language understanding (SLU). By decoupling physical reconstruction from semantic interpretation, mmPRISM uses a 4D volumetric encoder (CubeNet) to reconstruct dual-skeleton hand poses from sparse radar echoes, and an mT5-based LLM to translate them into natural language. My comments are as follows.
+
+### `R2-1` Two-stage architecture necessity
+
+> 1.Two-Stage Architecture Necessity: The superiority of the two-stage pipeline may stem from increased model capacity or feature enhancement rather than explicit pose reconstruction. To justify this design, the authors should add a direct end-to-end baseline (feeding 4D voxel features straight to the LLM) with aligned parameters and training strategies.
+
+### `R2-2` Domain adaptation optimality
+
+> 2.Domain Adaptation Optimality: The current shallow fine-tuning strategy lacks lateral comparisons to prove it is the optimal choice under equal conditions. It is recommended to compare against mainstream domain adaptation methods (e.g., full fine-tuning, adversarial DA, and MMD) using the same amount of real-world data to demonstrate its efficiency advantage.
+
+### `R2-3` Real-world boundary testing
+
+> 3.Real-World Boundary Testing: Current noise evaluations rely on controllable lab environments, lacking stress testing under realistic usage conditions. The authors should evaluate reconstruction and translation under extreme boundary scenarios, such as off-axis orientation angles (30^∘, 60^∘) and partial hand or object occlusions.
+
+### `R2-4` Dataset transparency
+
+> 4.Dataset Transparency: Reporting only 12 subjects and 200k frames provides insufficient statistical detail for reproducibility. Section 3.3 should be expanded to include complete dataset metrics, such as sign language type, vocabulary size, sentence counts, average sentence length, and non-manual grammatical features.
+
+### `R2-5` Attention component redundancy
+
+> 5.Attention Component Redundancy: Introducing spatial, channel, and SE attention simultaneously without single-component ablation raises concerns of arbitrary module stacking. A leave-one-out ablation study on each attention module is needed to verify their individual contributions and necessity.
+
+### `R2-6` Cross-modal benchmarking
+
+> 6.Cross-Modal Benchmarking: Existing baselines are limited to mmWave end-to-end models, leaving the system's performance unanchored within the broader wireless sensing domain. The authors should include 1–2 continuous SLU baselines from other non-contact modalities (e.g., WiFi or acoustics) for comprehensive cross-modal comparison.
+
+## Reviewer 2 — Code Availability
+
+### `R2-CODE-0` Overall assessment
+
+> 作者已提交了手稿中描述的核心模型、数据、评估和雷达仿真代码。然而，README 和 CLAUDE.md 与实际代码存在多处不一致，多个密钥路径仍硬编码到作者的本地目录，且未提供 LICENSE 文件。我的评论如下。
+
+### `R2-CODE-1` Hard-coded local paths
+
+> 1. 对该规范的审查显示：
+> src/scripts/{stat，check，extract，split，split_cross_individual}.py， src/fmcw/beamformer.py， src/utils/{compress_folders，info，unzip_folders}.py，
+> run_simulation.py、run_csl_daily_annotation.py 和 run_csl_news_annotation.py 都包含硬编码的本地路径。
+> 这些应转换为可配置参数（例如通过命令行参数或配置文件）;否则，代码无法被第三方执行。
+
+### `R2-CODE-2` Incomplete model download/evaluation path
+
+> 2. download_models.sh目前的形式不支持评估流程。脚本只下载SimCSE模型，而SBERT模型的下载命令（text2vec-base-chinese）则完全注释删除。然而，run_evaluation.py中的求值类在初始化时直接加载self.sbert_dir = pretrained_models/sbert。因此，按原样运行download_models.sh然后执行求值脚本，由于缺少SBERT权重，将失败。建议作者修正这一点。
+
+### `R2-CODE-3` Documentation drift and internal CLAUDE.md
+
+> 3. 除了上述 README 不一致之外，仓库根中还发现了一个 CLAUDE.md 文件，其内容——与 README 一样——描述了许多提交代码库中不存在的文件，包括：
+> • config/omnihand_tvan.yaml， config/omnihand_rtm_collected_temporal.yaml
+> • src/model/encoder/cubenet_rtm_temporal.py（受TVAN启发的时序架构）
+> 经过个别核实，上述文件在提交的仓库中均不存在。CLAUDE.md 似乎是一份面向AI辅助编码工具的内部开发指南，对最终读者或审稿人无关。该文件不应被纳入用于学术出版的代码档案中，建议将其移除。
+
+### `R2-CODE-4` Missing LICENSE
+
+> 4. README 说明“本项目采用 MIT 许可证授权——详情请参见 LICENSE 文件”，但仓库中找不到任何 LICENSE 文件。这是学术规范发布的明显合规问题，应予以解决。
+
+### `R2-CODE-5` Phi-3 is not runnable
+
+> 5. Phi-3 没有可运行的配置或示例脚本，也没有该模型的可用训练/评估示例。换句话说，对于 README 中强调的默认模型，当前代码库没有提供完整且可直接执行的验证路径——只有底层的类定义存在。鼓励作者通过一个可运行的Phi-3配置和运行脚本来补充这些内容。

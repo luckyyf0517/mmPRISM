@@ -1,132 +1,103 @@
-# OmniHand: Millimeter Wave to Text Generation
+# mmPRISM
 
-This repository contains a PyTorch Lightning implementation for fine-tuning large language models (LLMs) with Parameter-Efficient Fine-Tuning (PEFT) techniques, specifically LoRA, for millimeter wave signal to text generation.
+Geometry-guided millimeter-wave perception for continuous sign language understanding.
 
-## Overview
+Status: `major_revision_greenfield_rebuild`
 
-The implementation allows you to:
+This repository is being rebuilt for the Nature Communications major revision. Data preparation and model training will be rerun from scratch using the canonical package under `src/mmprism/`. Historical scripts remain temporarily available for forensic review, but they are not supported as the new execution path.
 
-1. Fine-tune pre-trained language models (supporting Phi-3 and MT5) using LoRA
-2. Process millimeter wave time series data using a pre-trained encoder
-3. Generate text descriptions from millimeter wave signals
-4. Extract and process pose features from millimeter wave data
+## Current Scope
 
-## Requirements
+Implemented foundation:
 
-- Python 3.8+
-- PyTorch 2.0+
-- PyTorch Lightning 2.0+
-- Transformers 4.30+
-- PEFT 0.5+
-- Wandb (for logging)
-- DeepSpeed (for distributed training)
+- standard Python packaging through `pyproject.toml`;
+- strict experiment configuration with early validation;
+- environment-based path injection without machine-specific paths;
+- versioned JSONL sample-manifest contract;
+- side-effect-free run planning and runtime provenance reporting;
+- a single `mmprism` CLI surface;
+- dependency-light unit tests;
+- revision and reviewer-evidence management under `paper/manager/`.
 
-## Installation
+Not yet implemented in the canonical package:
+
+- radar simulation and FMCW processing;
+- CubeNet/OmniHand training and evaluation;
+- WaveLLM/mT5 training, generation, and evaluation;
+- production data adapters, artifact writers, and GPU integration tests.
+
+Do not interpret the foundation scaffold as a reproducible release of the paper results yet. Read `paper/manager/dashboard.md` for the current blockers and work order.
+
+## Quick Start
+
+The canonical environment uses UV, Python 3.12, and the committed `uv.lock`. On this project host, the research profile targets PyTorch CUDA 12.8 for the installed A100 GPUs.
 
 ```bash
-pip install -r requirements.txt
+scripts/bootstrap_env.sh research
+uv run mmprism doctor
+uv run mmprism config configs/examples/pose_smoke.yaml
+uv run mmprism plan configs/examples/pose_smoke.yaml
+uv run mmprism manifest tests/fixtures/manifests/pose_smoke.jsonl
+uv run pytest
 ```
 
-## Project Structure
+Profiles:
 
-```
-.
-├── config/               # Configuration files for different models and training settings
-├── dataset/             # Dataset files and annotations
-├── scripts/             # Training and utility scripts
-│   ├── train.sh        # Main training script for Phi-3 model
-│   ├── train_mt5.sh    # Training script for MT5 model
-│   ├── debug.sh        # Debug script for development
-│   └── pretrain.sh     # Pretraining script
-├── src/
-│   ├── data/           # Dataset processing code
-│   ├── model/          # Model implementations
-│   │   ├── encoder/    # Millimeter wave signal encoder
-│   │   └── llm/        # Language model wrappers
-│   └── trainer/        # Training implementations
-├── run_peft.py         # Main PEFT fine-tuning script
-├── run_model.py        # Model inference script
-├── run_extract_feature.py  # Feature extraction script
-└── run_simulation.py   # Simulation and testing script
+- `foundation`: package and development checks without ML extras.
+- `research`: training, radar, evaluation, tracking, and visualization dependencies.
+- `distributed`: research profile plus optional DeepSpeed support.
+
+Do not use the legacy `requirements.txt` for the canonical package. Update `pyproject.toml`, run `uv lock`, and commit the resulting `uv.lock` whenever dependencies change.
+
+Machine-specific roots are injected through environment variables:
+
+```bash
+export MMPRISM_DATA_ROOT=/path/to/mmprism-data
+export MMPRISM_ARTIFACT_ROOT=/path/to/mmprism-runs
+export MMPRISM_CACHE_ROOT=/path/to/mmprism-cache
 ```
 
-## Main Scripts
+## Canonical Layout
 
-### Training Scripts
+```text
+configs/                 validated experiment configuration
+docs/architecture/       package boundaries and rebuild design
+src/mmprism/
+  contracts/             data and artifact schemas
+  config/                strict configuration loading
+  data/                  manifest-backed datasets and splits
+  radar/                 simulation and signal processing
+  models/                pure reconstruction and language models
+  training/              training and distributed orchestration
+  evaluation/            versioned pose and language metrics
+  artifacts/             run metadata, predictions, and paper exports
+  runtime/               paths, environment, seeds, devices, run plans
+  cli.py                  user-facing command composition
+tests/                    unit, contract, integration, and fixtures
+paper/manager/            revision control plane and evidence tracking
+paper/manuscript/         private Overleaf Git submodule
+```
 
-- `scripts/train.sh`: Main training script for Phi-3 model
-  ```bash
-  # Example usage with DeepSpeed on 2 GPUs
-  deepspeed --include localhost:0,1 run_peft.py \
-      --config config/wavellm_phi3.yaml \
-      --batch-size 8 \
-      --max-epochs 5
-  ```
+Architecture rules are defined in `AGENTS.md` and `docs/architecture/README.md`.
 
-- `scripts/train_mt5.sh`: Training script for MT5 model
-  ```bash
-  # Example usage with DeepSpeed on 2 GPUs
-  deepspeed --include localhost:0,1 run_peft.py \
-      --config config/wavellm/wavellm_mt5.yaml \
-      --batch-size 24 \
-      --max-epochs 10
-  ```
+## Legacy Code
 
-### Data Processing
+The root `run_*.py` files, `config/`, and the original modules under `src/data`, `src/fmcw`, `src/model`, `src/eval`, `src/scripts`, and `src/utils` are retained only to audit the original submission.
 
-- `run_extract_feature.py`: Extract features from millimeter wave signals
-- `run_csl_news_annotation.py`: Process and annotate CSL News dataset
-- `info.py`: Dataset statistics and information
+- New code must not import them.
+- They will not receive feature work or compatibility shims.
+- The reviewer release will contain only validated canonical entry points.
+- They will be archived or removed after historical evidence is extracted.
 
-### Inference and Visualization
+## Paper Revision
 
-- `run_inference.py`: Model inference script
-- `attention_visualize.py`: Visualize attention patterns
-- `make_video.py`: Generate visualization videos
-- `view_evaluation.ipynb`: Jupyter notebook for evaluation analysis
-
-## Dataset
-
-The implementation includes two main dataset classes:
-
-1. `SingleFrameDataset`: For single frame processing
-   - Supports pose and feature extraction modes
-   - Processes arm and hand joints
-   - Handles 3D point data and velocities
-
-2. `CslNewsDataset`: For sequence data processing
-   - Supports pose, feature, and pose prediction modes
-   - Handles time series data with captions
-   - Includes data augmentation and preprocessing
-
-## Training Configuration
-
-The configuration files in `config/` directory contain all the parameters for training:
-
-- Model configuration (model type, path, etc.)
-- Signal encoder configuration
-- Data configuration
-- Training configuration
-- PEFT configuration (LoRA parameters)
-- DeepSpeed configuration
-
-## Advanced Features
-
-### Distributed Training
-
-The project supports distributed training using DeepSpeed with the following features:
-- ZeRO optimization (configurable stages)
-- Mixed precision training (bf16/fp16)
-- Gradient accumulation
-- Multi-GPU support
-
-### Model Support
-
-Currently supported models:
-- Phi-3 (default)
-- MT5
-- Extensible to other HuggingFace models
+- Management entry: `paper/manager/README.md`
+- Current dashboard: `paper/manager/dashboard.md`
+- Reviewer comments: `paper/manager/reviews/`
+- Architecture status: `paper/manager/current/architecture_status.md`
+- Data rebuild status: `paper/manager/current/data_status.md`
+- Overleaf workflow: `paper/manager/current/operator_guide.md`
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+The publication license has not yet been approved by the authors. No license should be inferred from earlier repository documentation. License selection is tracked as `OPS-REV-002` in the revision workspace.

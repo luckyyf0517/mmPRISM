@@ -1,0 +1,116 @@
+[build-system]
+requires = ["setuptools>=80,<82", "wheel>=0.45,<1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mmprism"
+version = "0.1.0"
+description = "Geometry-guided mmWave perception research framework"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "numpy>=2.0,<3",
+  "PyYAML>=6.0.2,<7",
+]
+
+[project.optional-dependencies]
+radar = [
+  "h5py>=3.12,<4",
+  "scipy>=1.14,<2",
+]
+train = [
+  "accelerate>=1.5,<2",
+  "einops>=0.8,<1",
+  "lightning>=2.5,<3",
+  "peft>=0.15,<1",
+  "safetensors>=0.5,<1",
+  "sentencepiece>=0.2,<1",
+  "torch>=2.7,<3",
+  "transformers>=4.50,<5",
+]
+evaluation = [
+  "rouge-score>=0.1.2,<1",
+  "sacrebleu>=2.5,<3",
+  "scikit-learn>=1.6,<2",
+  "sentence-transformers>=4,<6",
+]
+tracking = [
+  "tensorboard>=2.18,<3",
+  "wandb>=0.19,<1",
+]
+visualization = [
+  "matplotlib>=3.9,<4",
+  "opencv-python-headless>=4.10,<5",
+  "pillow>=11,<13",
+  "seaborn>=0.13,<1",
+]
+distributed = [
+  "deepspeed>=0.16,<1",
+]
+
+[dependency-groups]
+dev = [
+  "build>=1.2,<2",
+  "mypy>=1.15,<2",
+  "pytest>=8.3,<10",
+  "pytest-cov>=6,<8",
+  "ruff>=0.11,<1",
+  "types-PyYAML>=6.0.12,<7",
+]
+
+[project.scripts]
+mmprism = "mmprism.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mmprism*"]
+
+[tool.setuptools.package-data]
+mmprism = ["py.typed"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [
+  "config",
+  "paper/manuscript",
+  "src/data",
+  "src/eval",
+  "src/fmcw",
+  "src/model",
+  "src/scripts",
+  "src/utils",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["mmprism"]
+strict = true
+
+[tool.coverage.run]
+branch = true
+source = ["mmprism"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.uv]
+default-groups = ["dev"]
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+required-version = ">=0.11,<0.12"
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
