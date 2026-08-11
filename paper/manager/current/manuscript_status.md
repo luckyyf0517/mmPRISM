@@ -1,6 +1,6 @@
 # Manuscript and Response Status
 
-Status: `decision_reviews_and_current_manuscript_linked`
+Status: `current_snapshot_inventoried_original_submission_pending`
 Last Updated: `2026-08-11`
 Role: `manuscript_status_source_of_truth`
 
@@ -12,9 +12,9 @@ Role: `manuscript_status_source_of_truth`
 | Decision letter | `paper/manager/reviews/decision_letter.md` | done | 已提取决定和 mandatory requirements |
 | Reviewer comments EN | `paper/manager/reviews/review_en.md` | done | 已按 R1/R2/R2-CODE 编号并保留原文 |
 | Reviewer comments CN | `paper/manager/reviews/review_cn.md` | done | 已完成中文工作版 |
-| Current revised manuscript | `paper/manuscript/` | in_progress | Overleaf 子模块已接入；继续做章节、表图和 claim inventory |
+| Current revised manuscript | `paper/manuscript/` | evidence_ready_snapshot | Overleaf 子模块已接入并完成可重复静态 inventory；等待原投稿对照和正文回写 |
 | Response letter | `paper/manuscript/response_letter.*` | not_started | evidence ready 后按 Direct Answer → Evidence → Revision 撰写 |
-| Figures and tables | `paper/manuscript/pics/` | in_progress | 资产已接入，待建立 figure/table inventory 和 provenance |
+| Figures and tables | `paper/manuscript/pics/` | in_progress | 当前有效 6 figure/2 table 已登记；逐面板 provenance 仍待建立 |
 
 ## 当前 Overleaf 快照
 
@@ -23,7 +23,8 @@ Role: `manuscript_status_source_of_truth`
 | Submodule | `paper/manuscript` | `master@3242a40`（接入时快照） |
 | Main document | `sn-article.tex` | 包含 `chapter/1_introduction.tex` 至 `chapter/4_discussion.tex` |
 | Bibliography | `sn-bibliography.bib` | 由主稿引用 |
-| Supplementary asset | `supplementary/Supplementary_Information.zip` | 已存在，内容尚未登记 |
+| Supplementary asset | `supplementary/Supplementary_Information.zip` | 44 个 entry 与内部依赖已登记；display provenance 待补 |
+| Static audit | `PAPER-AUDIT-001` | 机器可读 inventory 已生成并通过重复性/结构检查 |
 | Local compile | unavailable | 当前机器没有 `latexmk`, `pdflatex`, `bibtex` |
 | Remote compile | Overleaf | 需在 Overleaf Menu 再确认 Main document 为 `sn-article.tex` |
 
@@ -33,13 +34,17 @@ Role: `manuscript_status_source_of_truth`
 
 接入后只做了只读扫描，尚未修改 Overleaf 正文：
 
-1. `Data Availability` 和 `Code Availability` 目前只出现在注释模板中，正式章节缺失；这是编辑明确的提交阻断项。
-2. 摘要、Results 和 Discussion 仍含 `paving the way`、`remarkable`、`superior`、`paradigm` 等需按编辑要求收敛的表达。
+1. `Data Availability` 和 `Code Availability` 目前只出现在注释模板中，正式章节缺失；处置和 closure gate 见 `availability_plan.md`。
+2. 有效正文有 30 个语言审计命中：12 个编辑明确列举词、18 个证据敏感强表述；逐项位置和处理规则见 `editorial_language_audit.md`。
 3. 两阶段必要性、真实鲁棒性和 synthetic-real 接近程度已有强结论性表述，但需要绑定本轮新增对照实验后再决定保留或降级。
 4. 主文 Methods 已出现 4D cube 维度与符号；需对照 `R1-6` 检查单位、tensor layout 和首次出现位置，并在 response 中明确本轮修订。
-5. 主稿当前引用约 14 个图形、21 个 label 和 19 个 citation command；这些数字仅用于 intake，仍需建立逐项 inventory。
+5. 有效主稿包含 5 个 TeX source、12 个 section 层级、6 个 figure environment、2 个 table environment、15 个 label 和 19 个 citation command；7 个图形、23 个唯一 citation key 均解析成功。
 6. `sn-article-bak.tex` 是 Springer Nature 模板备份，不是当前主稿；最终 submission/code archive 前应确认是否移除。
-7. `supplementary/Supplementary_Information.zip` 仍是未展开资产，尚未完成内容、版本和 provenance 审计。
+7. supplementary ZIP 的 44 个 entry/CRC/内部图形引用已通过静态审计；入口 `mian.tex` 疑似拼写错误，11 个 display environment 的科学 provenance 尚未验证。
+
+完整 evidence：`evidence/manuscript_inventory.md`；机器可读 artifact：
+`evidence/artifacts/manuscript_inventory_v1.json`。主文静态审计没有发现 missing input/graphic、duplicate
+label、unresolved ref 或 unresolved citation。
 
 对应任务：`PAPER-001B`、`PAPER-REV-001`、`OPS-REV-001` 和 `PAPER-003`。
 
@@ -48,7 +53,7 @@ Role: `manuscript_status_source_of_truth`
 1. 从原始审稿意见建立稳定 ID，例如 `AE-1`、`R1-1`。
 2. 对每条意见标注 `text_logic / evidence_gap / asset_only / reproducibility / closed`。
 3. 建立 original ask、planned action、experiment ID、evidence、manuscript location 和 response status。
-4. 把每张原投稿表/图登记到 `evidence/paper_evidence_map.md`。
+4. 把当前 8 个主文和 supplementary 11 个 display environment 逐项登记到 `evidence/paper_evidence_map.md`，原投稿导入后再做差异审计。
 5. 对正文中的强 claim、数据规模、split、指标和模型命名做第一次 provenance scan。
 
 ## Manuscript Ready Gate

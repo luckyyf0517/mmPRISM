@@ -1,6 +1,6 @@
 # Paper Evidence Map
 
-Status: `review_evidence_blocks_registered_locations_preliminarily_bound`
+Status: `review_evidence_blocks_and_current_manuscript_inventory_registered`
 Last Updated: `2026-08-11`
 Role: `paper_claim_to_artifact_map`
 
@@ -16,6 +16,7 @@ Role: `paper_claim_to_artifact_map`
 | `EVID-REV-EFF` | Methods: model/training; new efficiency table TBD | training/inference efficiency | `R1-2` | pending | `EXP-REV-006` | standard compute profile | pending | blocked | not_started |
 | `EVID-REV-XMODAL` | Introduction comparison table; Results: SLU | positioning against WiFi/acoustic continuous SLU | `R2-6` | pending | `EXP-REV-007` | comparability audit pending | pending | not_started | not_started |
 | `EVID-REV-DATASET` | Methods: Datasets and synthetic data generation | dataset characterization and split transparency | `ED-SCI-4`,`R1-4b`,`R2-4` | pinned CSL-News metadata + partial pose manifest + partial sequence split; remaining datasets/signers/final splits pending | `DATA-REV-001-CSLNEWS-META-20260811` | metadata profile + `mmprism.sample.v1` + `mmprism.split_assignment.v1`; complete subject/split audit pending | `evidence/csl_news_metadata_profile.md`; `evidence/csl_news_pose_manifest.md`; `evidence/csl_news_pose_split.md`; partial hashes `4161593f...` / `133f32d5...` | in_progress | not_started |
+| `EVID-PAPER-INVENTORY` | Current main entry + supplementary | exact active sections/display assets/references, Availability gaps and sober-language locations | `ED-WRITE-1/2`,`ED-COMP-4/5/6/8` | n/a | `PAPER-AUDIT-001` | `mmprism.manuscript_audit.v1` | `evidence/manuscript_inventory.md`; JSON SHA-256 `823e93a3...` | evidence_ready_current_snapshot | inventory_only |
 
 ## 推荐粒度
 

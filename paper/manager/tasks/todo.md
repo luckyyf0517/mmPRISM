@@ -9,7 +9,7 @@ Role: `master_task_index`
 | ID | Task | Dependency | Status | Exit Criterion |
 |---|---|---|---|---|
 | `PAPER-001A` | 导入 decision letter 和 reviewer comments | supplied email | done | 原文、英文索引、中文工作版和稳定 ID 已建立 |
-| `PAPER-001B` | 导入原投稿、supplement 和当前返修稿 | user materials | in_progress | 当前稿已接入；补齐原投稿并完成表图/claim inventory |
+| `PAPER-001B` | 导入原投稿、supplement 和当前返修稿 | user materials | in_progress | 当前稿与 supplement 静态 inventory 已完成；补齐原投稿并完成逐图表 provenance/差异审计 |
 | `DATA-001` | 定位并分批接收所有 mmPRISM source、权重、日志和论文结果资产 | source location/capacity | in_progress | CSL-News 下载 active；其余 upload gate 通过且 registry 覆盖所有 data family 和历史 run |
 | `OPS-001` | 建立可复现 Python/CUDA 环境 | CUDA/package selection | done | UV/Python 3.12/cu128 lock、wheel、import 与 A100 smoke 通过 |
 | `ARCH-001` | 建立 greenfield package、配置、CLI 与基础 contract | author rebuild decision | in_progress | foundation tests 通过，legacy 隔离规则生效 |
@@ -31,7 +31,7 @@ Role: `master_task_index`
 | `ARCH-REV-004` | decide and validate Phi-3 support boundary | author decision | blocked | runnable Phi-3 or removed unsupported claim |
 | `OPS-REV-001` | editorial compliance package | manuscript/data/code | in_progress | checklists/availability/source data/colour/ORCID tracked |
 | `OPS-REV-002` | confirm and add code license | author approval | blocked | LICENSE and README agree |
-| `PAPER-REV-001` | related work, 4D notation and sober-language revision | manuscript import | in_progress | intake scan complete；待核实文献、修订正文并生成 scan report |
+| `PAPER-REV-001` | related work, 4D notation and sober-language revision | manuscript import | in_progress | 可重复 scan 和 30 项语言清单已完成；待核实文献、证据 gate 后修订正文并重扫 |
 | `PAPER-REV-002` | point-by-point response and tracked-change manuscript | evidence ready | blocked | all comments verbatim and evidence-grounded |
 
 ## P1 — 基础设施与重建

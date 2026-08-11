@@ -16,6 +16,9 @@ Role: `control_panel`
 - Reviewer Stage 1 诊断、P0–P2 实验计划、response tracker 和 evidence ID 已建立。
 - 当前返修稿已通过私有 Overleaf Git 子模块接入 `paper/manuscript`；主入口为 `sn-article.tex`。
 - 稿件首轮静态扫描确认 Availability 正式章节缺失，且仍含编辑明确要求删除的夸张/首创式表达。
+- clean snapshot `paper/manuscript@3242a40` 已完成 `PAPER-AUDIT-001`：主文 5 个 active TeX、
+  6 figure/2 table、15 label、19 citation command 均完成结构检查；supplement 44 entries 全部通过 CRC。
+- 审计定位 12 个 editor-prohibited 和 18 个 evidence-sensitive language hit；尚未在无证据时改写科学主张。
 - 作者已确认数据与训练从头重建；`src/mmprism` greenfield package、strict config、manifest contract、CLI 和 CPU 基础测试已开始落地。
 - CSL-News 官方 RGB/labels 已锁定到 Hugging Face revision `3a060121`，935 GB compressed 下载已启动；
   其他 mmPRISM/CSL/OmniHand/WaveLLM 数据仍未到位。
@@ -38,8 +41,8 @@ Role: `control_panel`
 
 ## 当前最高优先级
 
-1. 登记当前 Overleaf 稿件中的章节、表图与 supplementary，并补充导入原投稿定稿。
-2. 先建立 sober-language 与 Availability 修改清单，不在新增实验完成前强化或改写结果主张。
+1. 补充导入原投稿定稿，并把当前 8 个主文/11 个 supplementary display environment 绑定 provenance。
+2. 按已建立的 sober-language 与 Availability 清单准备回写；不在新增实验完成前强化结果主张。
 3. 监控 CSL-News 官方下载和夜间姿态标注，同时收集私人历史 archive/目录的名称、大小和可重下标记。
 4. 确认可新增真实数据的人数、伦理边界、方向/遮挡采集条件和时间预算。
 5. 在已锁定的 canonical 环境下，待真实 source 到位后完成 data/radar vertical slice 和端到端 GPU smoke。
@@ -50,7 +53,7 @@ Role: `control_panel`
   incomplete final；promotion gate 已修复，原件保留并等待 versioned 重下验证。
 - `BLOCK-DATA-ROOT`：CSL-News source 已进入下载，但私人 collected、CSL-Daily 和历史 run 仍未知。
 - `BLOCK-SIM-PROVENANCE`：稿件 MANO mesh/ray-tracing 描述与当前可见 skeleton 仿真路径不一致。
-- `BLOCK-MANUSCRIPT`：当前工作稿已接入，但原投稿定稿与 response letter 缺失，且稿件表图尚未完成 provenance 登记。
+- `BLOCK-MANUSCRIPT`：当前稿/supplement 静态 inventory 已完成，但原投稿定稿与 response letter 缺失，19 个 display environment 尚未完成 provenance 登记。
 - `BLOCK-PROVENANCE`：历史 checkpoint、split 和 paper-facing 数值尚未建立对应关系。
 - `BLOCK-REAL-COLLECTION`：新增参与者、方向/遮挡 protocol 和伦理/同意范围尚未确认。
 

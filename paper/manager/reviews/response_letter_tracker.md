@@ -15,9 +15,9 @@ Role: `reviewer_response_index`
 | `ED-SCI-3` | FAIR_COMPARISON | P0 | shallow/full/adversarial/MMD 相同预算比较 | `EXP-REV-002` | `EVID-REV-DA` | blocked | High |
 | `ED-SCI-4` | REPRODUCIBILITY | P0 | 完整数据统计、split 与 provenance | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |
 | `ED-SCI-5` | GENERALIZATION | P0 | 方向、遮挡、场景、新用户真实测试 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
-| `ED-WRITE-1/2` | SCOPE_OR_OVERCLAIM | P0 | 全文 sober-language scan 与 claim narrowing | `PAPER-REV-001` | manuscript diff | in_progress | Medium |
+| `ED-WRITE-1/2` | SCOPE_OR_OVERCLAIM | P0 | 全文 sober-language scan 与 claim narrowing | `PAPER-REV-001` | `EVID-PAPER-INVENTORY`; manuscript diff pending | in_progress | Medium |
 | `ED-WRITE-3/4/5` | REVIEW_PROCESS | P0 | 原文逐条回复、修改标记、未完成项解释 | `PAPER-REV-002` | response/manuscript | blocked | High |
-| `ED-COMP-1`–`12` | REVIEW_PROCESS | P0 | checklists、availability、source data、颜色、ORCID、提交包 | `OPS-REV-001` | compliance package | in_progress | High |
+| `ED-COMP-1`–`12` | REVIEW_PROCESS | P0 | checklists、availability、source data、颜色、ORCID、提交包 | `OPS-REV-001` | `EVID-PAPER-INVENTORY`; compliance package pending | in_progress | High |
 
 ## Reviewer 1
 

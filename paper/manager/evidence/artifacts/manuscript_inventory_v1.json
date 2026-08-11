@@ -1,0 +1,1572 @@
+{
+  "manuscript": {
+    "availability": {
+      "code_availability": [],
+      "data_availability": [],
+      "methods_present": true
+    },
+    "bibliography": {
+      "citations": [
+        {
+          "command": "cite",
+          "context": "Communication is a fundamental human right, yet for millions of Deaf and hard-of-hearing individuals worldwide, a profound barrier remains in interacting with the hearing majority and the increasingly voice-driven digital world \\cite{ladd2003understanding, padden2006inside}. For this community, sign languages serve not merely as a collection of gestures, but as a vital pillar of cultural identity and social autonomy \\cite{sandler2006sign}. However, despite the vibrancy of this visual language, the lack of widespread signing proficiency creates a persistent communication gap, often leaving Deaf individuals marginalized in education, healthcare, and daily social interactions. Bridging this gap through automated translation is therefore not just a technical objective in human-computer interaction, but a critical imperative for fostering societal inclusion and accessibility \\cite{rempel2014design, efthimiou2007gslc, wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "ladd2003understanding",
+          "line": 1
+        },
+        {
+          "command": "cite",
+          "context": "Communication is a fundamental human right, yet for millions of Deaf and hard-of-hearing individuals worldwide, a profound barrier remains in interacting with the hearing majority and the increasingly voice-driven digital world \\cite{ladd2003understanding, padden2006inside}. For this community, sign languages serve not merely as a collection of gestures, but as a vital pillar of cultural identity and social autonomy \\cite{sandler2006sign}. However, despite the vibrancy of this visual language, the lack of widespread signing proficiency creates a persistent communication gap, often leaving Deaf individuals marginalized in education, healthcare, and daily social interactions. Bridging this gap through automated translation is therefore not just a technical objective in human-computer interaction, but a critical imperative for fostering societal inclusion and accessibility \\cite{rempel2014design, efthimiou2007gslc, wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "padden2006inside",
+          "line": 1
+        },
+        {
+          "command": "cite",
+          "context": "Communication is a fundamental human right, yet for millions of Deaf and hard-of-hearing individuals worldwide, a profound barrier remains in interacting with the hearing majority and the increasingly voice-driven digital world \\cite{ladd2003understanding, padden2006inside}. For this community, sign languages serve not merely as a collection of gestures, but as a vital pillar of cultural identity and social autonomy \\cite{sandler2006sign}. However, despite the vibrancy of this visual language, the lack of widespread signing proficiency creates a persistent communication gap, often leaving Deaf individuals marginalized in education, healthcare, and daily social interactions. Bridging this gap through automated translation is therefore not just a technical objective in human-computer interaction, but a critical imperative for fostering societal inclusion and accessibility \\cite{rempel2014design, efthimiou2007gslc, wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "sandler2006sign",
+          "line": 1
+        },
+        {
+          "command": "cite",
+          "context": "Communication is a fundamental human right, yet for millions of Deaf and hard-of-hearing individuals worldwide, a profound barrier remains in interacting with the hearing majority and the increasingly voice-driven digital world \\cite{ladd2003understanding, padden2006inside}. For this community, sign languages serve not merely as a collection of gestures, but as a vital pillar of cultural identity and social autonomy \\cite{sandler2006sign}. However, despite the vibrancy of this visual language, the lack of widespread signing proficiency creates a persistent communication gap, often leaving Deaf individuals marginalized in education, healthcare, and daily social interactions. Bridging this gap through automated translation is therefore not just a technical objective in human-computer interaction, but a critical imperative for fostering societal inclusion and accessibility \\cite{rempel2014design, efthimiou2007gslc, wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "rempel2014design",
+          "line": 1
+        },
+        {
+          "command": "cite",
+          "context": "Communication is a fundamental human right, yet for millions of Deaf and hard-of-hearing individuals worldwide, a profound barrier remains in interacting with the hearing majority and the increasingly voice-driven digital world \\cite{ladd2003understanding, padden2006inside}. For this community, sign languages serve not merely as a collection of gestures, but as a vital pillar of cultural identity and social autonomy \\cite{sandler2006sign}. However, despite the vibrancy of this visual language, the lack of widespread signing proficiency creates a persistent communication gap, often leaving Deaf individuals marginalized in education, healthcare, and daily social interactions. Bridging this gap through automated translation is therefore not just a technical objective in human-computer interaction, but a critical imperative for fostering societal inclusion and accessibility \\cite{rempel2014design, efthimiou2007gslc, wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "efthimiou2007gslc",
+          "line": 1
+        },
+        {
+          "command": "cite",
+          "context": "Communication is a fundamental human right, yet for millions of Deaf and hard-of-hearing individuals worldwide, a profound barrier remains in interacting with the hearing majority and the increasingly voice-driven digital world \\cite{ladd2003understanding, padden2006inside}. For this community, sign languages serve not merely as a collection of gestures, but as a vital pillar of cultural identity and social autonomy \\cite{sandler2006sign}. However, despite the vibrancy of this visual language, the lack of widespread signing proficiency creates a persistent communication gap, often leaving Deaf individuals marginalized in education, healthcare, and daily social interactions. Bridging this gap through automated translation is therefore not just a technical objective in human-computer interaction, but a critical imperative for fostering societal inclusion and accessibility \\cite{rempel2014design, efthimiou2007gslc, wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "wen2021ai",
+          "line": 1
+        },
+        {
+          "command": "cite",
+          "context": "Communication is a fundamental human right, yet for millions of Deaf and hard-of-hearing individuals worldwide, a profound barrier remains in interacting with the hearing majority and the increasingly voice-driven digital world \\cite{ladd2003understanding, padden2006inside}. For this community, sign languages serve not merely as a collection of gestures, but as a vital pillar of cultural identity and social autonomy \\cite{sandler2006sign}. However, despite the vibrancy of this visual language, the lack of widespread signing proficiency creates a persistent communication gap, often leaving Deaf individuals marginalized in education, healthcare, and daily social interactions. Bridging this gap through automated translation is therefore not just a technical objective in human-computer interaction, but a critical imperative for fostering societal inclusion and accessibility \\cite{rempel2014design, efthimiou2007gslc, wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "zhou2020sign",
+          "line": 1
+        },
+        {
+          "command": "cite",
+          "context": "Unlike spoken languages that are linear and auditory, sign languages are visual and spatial, conveying meaning through a rich articulation of manual components—handshape, orientation, location, and movement—synchronized with non-manual signals like facial expressions and body posture \\cite{valli2000linguistics}. Capturing this intricate grammar and semantic nuance requires sensing technologies capable of exceptional fidelity and temporal resolution. Consequently, developing a system that is both linguistically accurate and universally accessible represents a grand challenge in the field \\cite{wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "valli2000linguistics",
+          "line": 4
+        },
+        {
+          "command": "cite",
+          "context": "Unlike spoken languages that are linear and auditory, sign languages are visual and spatial, conveying meaning through a rich articulation of manual components—handshape, orientation, location, and movement—synchronized with non-manual signals like facial expressions and body posture \\cite{valli2000linguistics}. Capturing this intricate grammar and semantic nuance requires sensing technologies capable of exceptional fidelity and temporal resolution. Consequently, developing a system that is both linguistically accurate and universally accessible represents a grand challenge in the field \\cite{wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "wen2021ai",
+          "line": 4
+        },
+        {
+          "command": "cite",
+          "context": "Unlike spoken languages that are linear and auditory, sign languages are visual and spatial, conveying meaning through a rich articulation of manual components—handshape, orientation, location, and movement—synchronized with non-manual signals like facial expressions and body posture \\cite{valli2000linguistics}. Capturing this intricate grammar and semantic nuance requires sensing technologies capable of exceptional fidelity and temporal resolution. Consequently, developing a system that is both linguistically accurate and universally accessible represents a grand challenge in the field \\cite{wen2021ai, zhou2020sign}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "zhou2020sign",
+          "line": 4
+        },
+        {
+          "command": "cite",
+          "context": "Concurrently, computer vision has been the dominant paradigm addressing this challenge \\cite{rastgoo2021sign}. Leveraging the ubiquity of RGB cameras and deep neural networks, state-of-the-art models can now reconstruct intricate 3D hand poses with high fidelity \\cite{pavlakos2024reconstructing, lugaresi2019mediapipe}. However, the reliance on optical sensors creates a fundamental conflict between technological capability and user privacy. The deployment of cameras in personal spaces, such as bedrooms, bathrooms, or medical settings, inherently raises significant concerns, a topic of growing scrutiny in the age of ubiquitous AI \\cite{ryoo2017privacy}. Furthermore, optical systems are susceptible to environmental constraints like poor lighting or visual clutter, rendering them unreliable for the very real-world scenarios where assistance is most needed. This necessitates a shift toward alternative modalities that can ensure both privacy and robustness without compromising linguistic understanding \\cite{zhang2024monitoring, zhuang2025advancing}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "rastgoo2021sign",
+          "line": 6
+        },
+        {
+          "command": "cite",
+          "context": "Concurrently, computer vision has been the dominant paradigm addressing this challenge \\cite{rastgoo2021sign}. Leveraging the ubiquity of RGB cameras and deep neural networks, state-of-the-art models can now reconstruct intricate 3D hand poses with high fidelity \\cite{pavlakos2024reconstructing, lugaresi2019mediapipe}. However, the reliance on optical sensors creates a fundamental conflict between technological capability and user privacy. The deployment of cameras in personal spaces, such as bedrooms, bathrooms, or medical settings, inherently raises significant concerns, a topic of growing scrutiny in the age of ubiquitous AI \\cite{ryoo2017privacy}. Furthermore, optical systems are susceptible to environmental constraints like poor lighting or visual clutter, rendering them unreliable for the very real-world scenarios where assistance is most needed. This necessitates a shift toward alternative modalities that can ensure both privacy and robustness without compromising linguistic understanding \\cite{zhang2024monitoring, zhuang2025advancing}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "pavlakos2024reconstructing",
+          "line": 6
+        },
+        {
+          "command": "cite",
+          "context": "Concurrently, computer vision has been the dominant paradigm addressing this challenge \\cite{rastgoo2021sign}. Leveraging the ubiquity of RGB cameras and deep neural networks, state-of-the-art models can now reconstruct intricate 3D hand poses with high fidelity \\cite{pavlakos2024reconstructing, lugaresi2019mediapipe}. However, the reliance on optical sensors creates a fundamental conflict between technological capability and user privacy. The deployment of cameras in personal spaces, such as bedrooms, bathrooms, or medical settings, inherently raises significant concerns, a topic of growing scrutiny in the age of ubiquitous AI \\cite{ryoo2017privacy}. Furthermore, optical systems are susceptible to environmental constraints like poor lighting or visual clutter, rendering them unreliable for the very real-world scenarios where assistance is most needed. This necessitates a shift toward alternative modalities that can ensure both privacy and robustness without compromising linguistic understanding \\cite{zhang2024monitoring, zhuang2025advancing}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "lugaresi2019mediapipe",
+          "line": 6
+        },
+        {
+          "command": "cite",
+          "context": "Concurrently, computer vision has been the dominant paradigm addressing this challenge \\cite{rastgoo2021sign}. Leveraging the ubiquity of RGB cameras and deep neural networks, state-of-the-art models can now reconstruct intricate 3D hand poses with high fidelity \\cite{pavlakos2024reconstructing, lugaresi2019mediapipe}. However, the reliance on optical sensors creates a fundamental conflict between technological capability and user privacy. The deployment of cameras in personal spaces, such as bedrooms, bathrooms, or medical settings, inherently raises significant concerns, a topic of growing scrutiny in the age of ubiquitous AI \\cite{ryoo2017privacy}. Furthermore, optical systems are susceptible to environmental constraints like poor lighting or visual clutter, rendering them unreliable for the very real-world scenarios where assistance is most needed. This necessitates a shift toward alternative modalities that can ensure both privacy and robustness without compromising linguistic understanding \\cite{zhang2024monitoring, zhuang2025advancing}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "ryoo2017privacy",
+          "line": 6
+        },
+        {
+          "command": "cite",
+          "context": "Concurrently, computer vision has been the dominant paradigm addressing this challenge \\cite{rastgoo2021sign}. Leveraging the ubiquity of RGB cameras and deep neural networks, state-of-the-art models can now reconstruct intricate 3D hand poses with high fidelity \\cite{pavlakos2024reconstructing, lugaresi2019mediapipe}. However, the reliance on optical sensors creates a fundamental conflict between technological capability and user privacy. The deployment of cameras in personal spaces, such as bedrooms, bathrooms, or medical settings, inherently raises significant concerns, a topic of growing scrutiny in the age of ubiquitous AI \\cite{ryoo2017privacy}. Furthermore, optical systems are susceptible to environmental constraints like poor lighting or visual clutter, rendering them unreliable for the very real-world scenarios where assistance is most needed. This necessitates a shift toward alternative modalities that can ensure both privacy and robustness without compromising linguistic understanding \\cite{zhang2024monitoring, zhuang2025advancing}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "zhang2024monitoring",
+          "line": 6
+        },
+        {
+          "command": "cite",
+          "context": "Concurrently, computer vision has been the dominant paradigm addressing this challenge \\cite{rastgoo2021sign}. Leveraging the ubiquity of RGB cameras and deep neural networks, state-of-the-art models can now reconstruct intricate 3D hand poses with high fidelity \\cite{pavlakos2024reconstructing, lugaresi2019mediapipe}. However, the reliance on optical sensors creates a fundamental conflict between technological capability and user privacy. The deployment of cameras in personal spaces, such as bedrooms, bathrooms, or medical settings, inherently raises significant concerns, a topic of growing scrutiny in the age of ubiquitous AI \\cite{ryoo2017privacy}. Furthermore, optical systems are susceptible to environmental constraints like poor lighting or visual clutter, rendering them unreliable for the very real-world scenarios where assistance is most needed. This necessitates a shift toward alternative modalities that can ensure both privacy and robustness without compromising linguistic understanding \\cite{zhang2024monitoring, zhuang2025advancing}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "zhuang2025advancing",
+          "line": 6
+        },
+        {
+          "command": "cite",
+          "context": "To overcome the limitations of vision-based systems, researchers have explored alternative modalities. Wearable devices capture precise flexion but impose an intrusive physical burden that precludes ubiquitous adoption. In contrast, radio-frequency (RF) sensing, particularly millimeter-wave (mmWave) radar, has emerged as a compelling privacy-preserving alternative. However, the current landscape of RF-based sign language analysis remains fundamentally bifurcated. One stream focuses exclusively on closed-set classification, recognizing only predefined vocabularies of isolated gestures. These approaches inherently fail to scale to the combinatorial complexity of open-vocabulary communication. The other stream targets kinematic reconstruction, recovering hand geometry without extracting linguistic meaning. Consequently, a critical disconnect persists: while existing methods can either classify a limited lexicon or reconstruct geometric shapes, no framework has yet established a unified pathway that bridges the gap from raw physical signals to high-level semantic interpretation. This disconnection stems from the ill-posed nature of mapping sparse and specular radar echoes directly to complex linguistic structures \\cite{wagih2024wide, pistore2021millimeter, zhang2024monitoring}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "wagih2024wide",
+          "line": 23
+        },
+        {
+          "command": "cite",
+          "context": "To overcome the limitations of vision-based systems, researchers have explored alternative modalities. Wearable devices capture precise flexion but impose an intrusive physical burden that precludes ubiquitous adoption. In contrast, radio-frequency (RF) sensing, particularly millimeter-wave (mmWave) radar, has emerged as a compelling privacy-preserving alternative. However, the current landscape of RF-based sign language analysis remains fundamentally bifurcated. One stream focuses exclusively on closed-set classification, recognizing only predefined vocabularies of isolated gestures. These approaches inherently fail to scale to the combinatorial complexity of open-vocabulary communication. The other stream targets kinematic reconstruction, recovering hand geometry without extracting linguistic meaning. Consequently, a critical disconnect persists: while existing methods can either classify a limited lexicon or reconstruct geometric shapes, no framework has yet established a unified pathway that bridges the gap from raw physical signals to high-level semantic interpretation. This disconnection stems from the ill-posed nature of mapping sparse and specular radar echoes directly to complex linguistic structures \\cite{wagih2024wide, pistore2021millimeter, zhang2024monitoring}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "pistore2021millimeter",
+          "line": 23
+        },
+        {
+          "command": "cite",
+          "context": "To overcome the limitations of vision-based systems, researchers have explored alternative modalities. Wearable devices capture precise flexion but impose an intrusive physical burden that precludes ubiquitous adoption. In contrast, radio-frequency (RF) sensing, particularly millimeter-wave (mmWave) radar, has emerged as a compelling privacy-preserving alternative. However, the current landscape of RF-based sign language analysis remains fundamentally bifurcated. One stream focuses exclusively on closed-set classification, recognizing only predefined vocabularies of isolated gestures. These approaches inherently fail to scale to the combinatorial complexity of open-vocabulary communication. The other stream targets kinematic reconstruction, recovering hand geometry without extracting linguistic meaning. Consequently, a critical disconnect persists: while existing methods can either classify a limited lexicon or reconstruct geometric shapes, no framework has yet established a unified pathway that bridges the gap from raw physical signals to high-level semantic interpretation. This disconnection stems from the ill-posed nature of mapping sparse and specular radar echoes directly to complex linguistic structures \\cite{wagih2024wide, pistore2021millimeter, zhang2024monitoring}.",
+          "file": "chapter/1_introduction.tex",
+          "key": "zhang2024monitoring",
+          "line": 23
+        },
+        {
+          "command": "cite",
+          "context": "HandFi~\\cite{ji2023construct} & Wi-Fi & CSI & 20.70 & $\\times$ & $\\times$ & - & - \\\\",
+          "file": "chapter/1_introduction.tex",
+          "key": "ji2023construct",
+          "line": 72
+        },
+        {
+          "command": "cite",
+          "context": "RAM-Hand~\\cite{wang2025ram} & Acoustic & Signal & 17.25 & $\\checkmark$ & $\\checkmark$ & - & - \\\\",
+          "file": "chapter/1_introduction.tex",
+          "key": "wang2025ram",
+          "line": 73
+        },
+        {
+          "command": "cite",
+          "context": "mmHand~\\cite{kong2024mmhand} & mmWave & mmWave Cube & 18.30 & $\\times$ & $\\checkmark$ & - & - \\\\",
+          "file": "chapter/1_introduction.tex",
+          "key": "kong2024mmhand",
+          "line": 74
+        },
+        {
+          "command": "cite",
+          "context": "SignFi~\\cite{ma2018signfi} & Wi-Fi & CSI & - & - & - & 94.0\\% & $\\times$ \\\\",
+          "file": "chapter/1_introduction.tex",
+          "key": "ma2018signfi",
+          "line": 76
+        },
+        {
+          "command": "cite",
+          "context": "Pantomime~\\cite{palipana2021pantomime} & mmWave & Point Cloud & - & - & - & 95.0\\% & $\\times$ \\\\",
+          "file": "chapter/1_introduction.tex",
+          "key": "palipana2021pantomime",
+          "line": 77
+        },
+        {
+          "command": "cite",
+          "context": "DI-Gesutre~\\cite{li2022towards} & mmWave & Heatmap & - & - & - & 97.2\\% & $\\times$ \\\\",
+          "file": "chapter/1_introduction.tex",
+          "key": "li2022towards",
+          "line": 78
+        },
+        {
+          "command": "cite",
+          "context": "mmASL~\\cite{santhalingam2020mmasl} & mmWave & Doppler Signal & - & - & - & 93.6\\% & $\\times$ \\\\",
+          "file": "chapter/1_introduction.tex",
+          "key": "santhalingam2020mmasl",
+          "line": 79
+        },
+        {
+          "command": "cite",
+          "context": "Benchmarking against state-of-the-art RF-based pose estimation methods \\cite{kong2024mmhand}, our framework demonstrates a significant performance advantage, particularly in challenging scenarios (Fig.~\\ref{fig:overall_comparison}).",
+          "file": "chapter/2_results.tex",
+          "key": "kong2024mmhand",
+          "line": 39
+        },
+        {
+          "command": "cite",
+          "context": "Let the ground-truth 3D pose for a given frame be denoted by the set of joint coordinates $\\mathbf{P} = \\{\\mathbf{p}_1, \\mathbf{p}_2, ..., \\mathbf{p}_J\\}$, and the corresponding predicted pose be $\\mathbf{\\hat{P}} = \\{\\mathbf{\\hat{p}}_1, \\mathbf{\\hat{p}}_2, ..., \\mathbf{\\hat{p}}_J\\}$, where $\\mathbf{p}_j, \\mathbf{\\hat{p}}_j \\in \\mathbb{R}^3$ and $J$ is the total number of joints. We employed two standard metrics following the protocol in~\\cite{kong2024mmhand}.",
+          "file": "chapter/3_methods.tex",
+          "key": "kong2024mmhand",
+          "line": 83
+        }
+      ],
+      "cited_key_count": 23,
+      "commands": [
+        {
+          "context": "\\bibliography{sn-bibliography.bib}",
+          "file": "sn-article.tex",
+          "line": 297,
+          "resolved": "sn-bibliography.bib",
+          "target": "sn-bibliography.bib"
+        }
+      ],
+      "files": [
+        {
+          "duplicate_keys": [],
+          "entry_count": 32,
+          "path": "sn-bibliography.bib",
+          "sha256": "b11e3398ec5751a5d6a742c9833b2e89e51e8fc2a102d36c2be841848e9f05d9"
+        }
+      ],
+      "missing_citation_keys": [],
+      "uncited_entry_keys": [
+        "achiam2023gpt",
+        "camgoz2020sign",
+        "hu2023signbert+",
+        "jiang2021emerging",
+        "li2023signring",
+        "lu2014hand",
+        "raffel2020exploring",
+        "scale88uni",
+        "zimmermann2017learning"
+      ]
+    },
+    "document_graph": {
+      "include_cycles": [],
+      "include_edges": [
+        {
+          "line": 226,
+          "resolved": "chapter/1_introduction.tex",
+          "source": "sn-article.tex",
+          "target": "chapter/1_introduction.tex"
+        },
+        {
+          "line": 229,
+          "resolved": "chapter/2_results.tex",
+          "source": "sn-article.tex",
+          "target": "chapter/2_results.tex"
+        },
+        {
+          "line": 232,
+          "resolved": "chapter/3_methods.tex",
+          "source": "sn-article.tex",
+          "target": "chapter/3_methods.tex"
+        },
+        {
+          "line": 235,
+          "resolved": "chapter/4_discussion.tex",
+          "source": "sn-article.tex",
+          "target": "chapter/4_discussion.tex"
+        }
+      ],
+      "missing_inputs": [],
+      "section_order": [
+        {
+          "context": "\\section{Introduction}\\label{sec1}",
+          "file": "sn-article.tex",
+          "level": "section",
+          "line": 225,
+          "starred": false,
+          "title": "Introduction"
+        },
+        {
+          "context": "\\section{Results}\\label{sec2}",
+          "file": "sn-article.tex",
+          "level": "section",
+          "line": 228,
+          "starred": false,
+          "title": "Results"
+        },
+        {
+          "context": "\\subsection{High-fidelity articulation recovery from sparse echoes}",
+          "file": "chapter/2_results.tex",
+          "level": "subsection",
+          "line": 1,
+          "starred": false,
+          "title": "High-fidelity articulation recovery from sparse echoes"
+        },
+        {
+          "context": "\\subsection{Bridging the reality gap via physics-informed domain adaptation}",
+          "file": "chapter/2_results.tex",
+          "level": "subsection",
+          "line": 124,
+          "starred": false,
+          "title": "Bridging the reality gap via physics-informed domain adaptation"
+        },
+        {
+          "context": "\\subsection{Semantically-aware sign language translation}",
+          "file": "chapter/2_results.tex",
+          "level": "subsection",
+          "line": 144,
+          "starred": false,
+          "title": "Semantically-aware sign language translation"
+        },
+        {
+          "context": "\\section{Methods}\\label{sec3}",
+          "file": "sn-article.tex",
+          "level": "section",
+          "line": 231,
+          "starred": false,
+          "title": "Methods"
+        },
+        {
+          "context": "\\subsection{Radar configuration}",
+          "file": "chapter/3_methods.tex",
+          "level": "subsection",
+          "line": 3,
+          "starred": false,
+          "title": "Radar configuration"
+        },
+        {
+          "context": "\\subsection{4D mmWave cube construction}",
+          "file": "chapter/3_methods.tex",
+          "level": "subsection",
+          "line": 6,
+          "starred": false,
+          "title": "4D mmWave cube construction"
+        },
+        {
+          "context": "\\subsection{Datasets and synthetic data generation}",
+          "file": "chapter/3_methods.tex",
+          "level": "subsection",
+          "line": 47,
+          "starred": false,
+          "title": "Datasets and synthetic data generation"
+        },
+        {
+          "context": "\\subsection{Training details and loss functions}",
+          "file": "chapter/3_methods.tex",
+          "level": "subsection",
+          "line": 68,
+          "starred": false,
+          "title": "Training details and loss functions"
+        },
+        {
+          "context": "\\subsection{Evaluation metrics}",
+          "file": "chapter/3_methods.tex",
+          "level": "subsection",
+          "line": 79,
+          "starred": false,
+          "title": "Evaluation metrics"
+        },
+        {
+          "context": "\\section{Discussion}\\label{sec12}",
+          "file": "sn-article.tex",
+          "level": "section",
+          "line": 234,
+          "starred": false,
+          "title": "Discussion"
+        }
+      ]
+    },
+    "entry": "sn-article.tex",
+    "figures": [
+      {
+        "captions": [
+          "\\textbf{Schematic of the mmPRISM framework for privacy-preserving continuous sign language understanding.} \\textbf{a} MmWave radar serves as the core sensing module capturing hand gesture dynamics, anchoring the pipeline, bridging raw mmWave signals and linguistic interpretation to enable robust communication for Deaf and hard-of-hearing communities without visually identifiable data. \\textbf{b} Hand reconstruction network: Raw radar data is processed into a range-Doppler-azimuth-elevation tensor preserving spatial and velocity information, as the foundational input for generating high-fidelity two-hand skeletal poses (mmw-pose). \\textbf{c} Sign language understanding LLM: An mT5-based encoder-decoder model integrated with confidence-aware multi-modal fusion—fusing STGCN-extracted pose and raw mmWave features to mitigate self-occlusion—for structured semantic processing. \\textbf{d} Hand reconstruction evaluation: Quantitative comparison with the mmHand baseline in the near-field (<0.5 m), where mmPRISM achieves 15 mm MPJPE and 98\\% 3D-PCK, significantly outperforming the baseline. \\textbf{e} Semantic interpretation: The LLM generates coherent natural language outputs supporting both isolated gestures (e.g., “morning”) and complex sentences (e.g., “Good morning, please help me draft a reply to this email”)."
+        ],
+        "closed": true,
+        "environment": "figure",
+        "file": "chapter/1_introduction.tex",
+        "graphics": [
+          "pics/ZZQ-25112636041-3780.jpg"
+        ],
+        "index_in_file": 1,
+        "labels": [
+          "fig:teaser"
+        ],
+        "line": 9
+      },
+      {
+        "captions": [
+          "\\textbf{Architecture of the volumetric feature extraction module.} The system processes the 4D RF tensor through a hierarchical backbone to extract discriminative spatial features. \\textbf{(a)} A multi-attention mechanism synergistically combines spatial, channel, and Squeeze-and-Excitation (SE) modules to highlight salient geometric structures while adaptively suppressing multipath noise. \\textbf{(b)} The fundamental processing unit, utilizing efficient convolutional operations to preserve local spatial context. \\textbf{(c)} The overall encoder backbone, incorporating a path aggregation feature pyramid to fuse features across different scales. This design preserves both the fine-grained details essential for finger tracking and the high-level contextual information required for global pose inference."
+        ],
+        "closed": true,
+        "environment": "figure",
+        "file": "chapter/2_results.tex",
+        "graphics": [
+          "pics/network.png"
+        ],
+        "index_in_file": 1,
+        "labels": [
+          "fig:network"
+        ],
+        "line": 9
+      },
+      {
+        "captions": [
+          "\\textbf{Temporal aggregation for dynamic consistency.} Following frame-wise spatial feature extraction by CubeNet, the sequential features are processed by a hybrid temporal transformer to model gesture dynamics. Equipped with Rotary Positional Embeddings (RoPE), the transformer captures short-range and long-range temporal dependencies, while multi-strategy aggregation (CLS token, mean pooling, attention pooling) fuses sequence features via learnable weighted fusion. Operating in a sliding-window manner, this module resolves kinematic ambiguities from self-occlusion or sparse mmWave signals, yielding temporally coherent and anatomically plausible two-hand pose estimates (mmw-pose)."
+        ],
+        "closed": true,
+        "environment": "figure*",
+        "file": "chapter/2_results.tex",
+        "graphics": [
+          "pics/temporal.png"
+        ],
+        "index_in_file": 2,
+        "labels": [
+          "fig:temporal"
+        ],
+        "line": 17
+      },
+      {
+        "captions": [
+          "\\textbf{Robustness of kinematic reconstruction across operational regimes.} Quantitative benchmarks compare mmPRISM with the mmHand baseline across three distance ranges: near-field (<0.5\\,m), mid-range ($\\approx 1$\\,m), and far-field (>2\\,m). Our geometry-guided approach maintains superior performance consistently, achieving 15\\,mm MPJPE and 98\\% 3D-PCK in the near-field, while retaining <35\\,mm error in the far-field. In contrast, the baseline suffers sharp accuracy degradation under far-field signal sparsity, highlighting mmPRISM's robustness for practical deployment.",
+          "\\textbf{Visual validation of structural integrity for hand pose reconstruction.} Qualitative comparison includes RGB reference images, ground-truth skeletal poses, mmPRISM outputs, and mmHand baseline results. Our framework maintains anatomical integrity and distinct fine-grained finger separation even during complex sign language articulations (e.g., dexterous finger flexion and inter-hand interaction), whereas the mmHand baseline frequently suffers from digit merging, joint misalignment, or structural collapse. This superior structural preservation ensures the capture of fine-grained motion cues that are critical for accurate downstream sign language understanding."
+        ],
+        "closed": true,
+        "environment": "figure",
+        "file": "chapter/2_results.tex",
+        "graphics": [
+          "pics/overall_comparison.png",
+          "pics/rec_result.png"
+        ],
+        "index_in_file": 3,
+        "labels": [
+          "fig:overall_comparison",
+          "fig:qualitative_demo"
+        ],
+        "line": 50
+      },
+      {
+        "captions": [
+          "\\textbf{Domain adaptation via shallow-layer alignment.} To mitigate the statistical discrepancy between physics-based synthetic mmWave data (generated via MANO model and ray-tracing) and real-world sensor signals, we freeze the semantic-rich deep layers of CubeNet (stage layers and MLP decoder) while fine-tuning only the initial stem layers. This strategy adapts to low-level signal statistics of real data, mapping diverse inputs into a shared domain-invariant feature space, validated by t-SNE visualization—facilitating robust generalization of mmw-pose reconstruction."
+        ],
+        "closed": true,
+        "environment": "figure",
+        "file": "chapter/2_results.tex",
+        "graphics": [
+          "pics/training.pdf"
+        ],
+        "index_in_file": 4,
+        "labels": [
+          "fig:training"
+        ],
+        "line": 135
+      },
+      {
+        "captions": [
+          "\\textbf{Context-aware translation framework.} \\textbf{a} The feature encoder processes left/right hand poses via STGCNs to extract dynamic features, integrated with raw mmWave features through a confidence-gated fusion mechanism—dynamically weighting based on joint reliability to mitigate self-occlusion impacts. \\textbf{b} Built on the mT5 encoder-decoder, the translation model adopts a three-stage curriculum learning strategy: pre-training with clean cam-pose, cross-modal adaptation with synthetic mmw-pose, and real-world calibration—supporting both isolated gestures and complex sentences for high-fidelity translation."
+        ],
+        "closed": true,
+        "environment": "figure",
+        "file": "chapter/2_results.tex",
+        "graphics": [
+          "pics/llm.pdf"
+        ],
+        "index_in_file": 5,
+        "labels": [
+          "fig:llm"
+        ],
+        "line": 154
+      }
+    ],
+    "graphics": {
+      "missing_targets": [],
+      "referenced_files": [
+        "pics/ZZQ-25112636041-3780.jpg",
+        "pics/llm.pdf",
+        "pics/network.png",
+        "pics/overall_comparison.png",
+        "pics/rec_result.png",
+        "pics/temporal.png",
+        "pics/training.pdf"
+      ],
+      "references": [
+        {
+          "context": "\\includegraphics[width=\\textwidth, keepaspectratio]{pics/ZZQ-25112636041-3780.jpg}",
+          "file": "chapter/1_introduction.tex",
+          "line": 12,
+          "resolved": "pics/ZZQ-25112636041-3780.jpg",
+          "target": "pics/ZZQ-25112636041-3780.jpg"
+        },
+        {
+          "context": "\\includegraphics[width=0.65\\linewidth]{pics/network.png}",
+          "file": "chapter/2_results.tex",
+          "line": 11,
+          "resolved": "pics/network.png",
+          "target": "pics/network.png"
+        },
+        {
+          "context": "\\includegraphics[width=\\linewidth]{pics/temporal.png}",
+          "file": "chapter/2_results.tex",
+          "line": 19,
+          "resolved": "pics/temporal.png",
+          "target": "pics/temporal.png"
+        },
+        {
+          "context": "\\includegraphics[width=\\textwidth]{pics/overall_comparison.png}",
+          "file": "chapter/2_results.tex",
+          "line": 55,
+          "resolved": "pics/overall_comparison.png",
+          "target": "pics/overall_comparison.png"
+        },
+        {
+          "context": "\\includegraphics[width=\\textwidth]{pics/rec_result.png}",
+          "file": "chapter/2_results.tex",
+          "line": 64,
+          "resolved": "pics/rec_result.png",
+          "target": "pics/rec_result.png"
+        },
+        {
+          "context": "\\includegraphics[width=0.75\\linewidth]{pics/training.pdf}",
+          "file": "chapter/2_results.tex",
+          "line": 137,
+          "resolved": "pics/training.pdf",
+          "target": "pics/training.pdf"
+        },
+        {
+          "context": "\\includegraphics[width=0.8\\linewidth]{pics/llm.pdf}",
+          "file": "chapter/2_results.tex",
+          "line": 156,
+          "resolved": "pics/llm.pdf",
+          "target": "pics/llm.pdf"
+        }
+      ],
+      "unreferenced_files": [
+        "pics/antenna_array_scale_impact.pdf",
+        "pics/antenna_layout.pdf",
+        "pics/beamforming.pdf",
+        "pics/confusion_matrix.pdf",
+        "pics/mmwave_cube.pdf",
+        "pics/mpjpe_comparison.pdf",
+        "pics/mpjpe_comparison_far.pdf",
+        "pics/mpjpe_comparison_mid.pdf",
+        "pics/mpjpe_comparison_near.pdf",
+        "pics/network.pdf",
+        "pics/overall_comparison.pdf",
+        "pics/overview.pdf",
+        "pics/overview_mini.pdf",
+        "pics/pck_comparison.pdf",
+        "pics/pck_comparison_far.pdf",
+        "pics/pck_comparison_mid.pdf",
+        "pics/pck_comparison_near.pdf",
+        "pics/point_quality_vs_llm_performance.pdf",
+        "pics/point_quality_vs_llm_performance.png",
+        "pics/radar.pdf",
+        "pics/rec_result.pdf",
+        "pics/scene.png",
+        "pics/scene_a.pdf",
+        "pics/scene_b.pdf",
+        "pics/scene_b.png",
+        "pics/scene_c.png",
+        "pics/scene_complex.png",
+        "pics/scene_d.png",
+        "pics/scene_e.png",
+        "pics/teaser.pdf",
+        "pics/teaser.png",
+        "pics/teaser_compressed.pdf",
+        "pics/temporal.pdf",
+        "pics/training_epochs_llm_metrics.pdf",
+        "pics/tsne.pdf",
+        "pics/tsne_visualization.pdf"
+      ]
+    },
+    "labels": {
+      "definitions": [
+        {
+          "context": "\\section{Introduction}\\label{sec1}",
+          "file": "sn-article.tex",
+          "key": "sec1",
+          "line": 225
+        },
+        {
+          "context": "\\section{Results}\\label{sec2}",
+          "file": "sn-article.tex",
+          "key": "sec2",
+          "line": 228
+        },
+        {
+          "context": "\\section{Methods}\\label{sec3}",
+          "file": "sn-article.tex",
+          "key": "sec3",
+          "line": 231
+        },
+        {
+          "context": "\\section{Discussion}\\label{sec12}",
+          "file": "sn-article.tex",
+          "key": "sec12",
+          "line": 234
+        },
+        {
+          "context": "\\label{fig:teaser}",
+          "file": "chapter/1_introduction.tex",
+          "key": "fig:teaser",
+          "line": 20
+        },
+        {
+          "context": "\\label{tab:related_work}",
+          "file": "chapter/1_introduction.tex",
+          "key": "tab:related_work",
+          "line": 50
+        },
+        {
+          "context": "\\label{fig:network}",
+          "file": "chapter/2_results.tex",
+          "key": "fig:network",
+          "line": 14
+        },
+        {
+          "context": "\\label{fig:temporal}",
+          "file": "chapter/2_results.tex",
+          "key": "fig:temporal",
+          "line": 23
+        },
+        {
+          "context": "\\label{fig:overall_comparison}",
+          "file": "chapter/2_results.tex",
+          "key": "fig:overall_comparison",
+          "line": 58
+        },
+        {
+          "context": "\\label{fig:qualitative_demo}",
+          "file": "chapter/2_results.tex",
+          "key": "fig:qualitative_demo",
+          "line": 67
+        },
+        {
+          "context": "\\label{fig:training}",
+          "file": "chapter/2_results.tex",
+          "key": "fig:training",
+          "line": 141
+        },
+        {
+          "context": "\\label{fig:llm}",
+          "file": "chapter/2_results.tex",
+          "key": "fig:llm",
+          "line": 160
+        },
+        {
+          "context": "\\label{tab:llm_results}",
+          "file": "chapter/2_results.tex",
+          "key": "tab:llm_results",
+          "line": 167
+        },
+        {
+          "context": "\\label{eq:IF_signal_multi_path}",
+          "file": "chapter/3_methods.tex",
+          "key": "eq:IF_signal_multi_path",
+          "line": 53
+        },
+        {
+          "context": "\\label{eq:amplitude}",
+          "file": "chapter/3_methods.tex",
+          "key": "eq:amplitude",
+          "line": 59
+        }
+      ],
+      "duplicate_keys": [],
+      "missing_reference_targets": [],
+      "references": [
+        {
+          "command": "ref",
+          "context": "As illustrated in Figure~\\ref{fig:teaser}, our approach departs from black-box end-to-end paradigms.",
+          "file": "chapter/1_introduction.tex",
+          "key": "fig:teaser",
+          "line": 26
+        },
+        {
+          "command": "ref",
+          "context": "Benchmarking against state-of-the-art RF-based pose estimation methods \\cite{kong2024mmhand}, our framework demonstrates a significant performance advantage, particularly in challenging scenarios (Fig.~\\ref{fig:overall_comparison}).",
+          "file": "chapter/2_results.tex",
+          "key": "fig:overall_comparison",
+          "line": 39
+        },
+        {
+          "command": "ref",
+          "context": "Qualitative analysis further elucidates the practical implications of this precision (Fig.~\\ref{fig:qualitative_demo}).",
+          "file": "chapter/2_results.tex",
+          "key": "fig:qualitative_demo",
+          "line": 45
+        },
+        {
+          "command": "ref",
+          "context": "To resolve this, we introduce a targeted feature alignment strategy (Fig.~\\ref{fig:training}). Hypothesizing that the domain discrepancy is primarily encoded in low-level signal statistics rather than high-level semantic structures, we freeze the deeper task-oriented layers of the feature extractor and fine-tune only the initial stem layers on a small set of real-world data. This strategy effectively repurposes the stem layers to function as a learnable sensor calibrator that harmonizes signal statistics, while the frozen deep layers preserve the universal kinematic priors acquired from large-scale simulation. Visualization of the feature clusters before and after alignment confirms that this decoupling strategy successfully bridges the reality gap, enabling the model to generalize robustly to unseen real-world environments.",
+          "file": "chapter/2_results.tex",
+          "key": "fig:training",
+          "line": 132
+        },
+        {
+          "command": "ref",
+          "context": "To ensure robust translation, the system employs a confidence-aware fusion mechanism (Fig.~\\ref{fig:llm}) that treats the reconstructed skeleton and raw radar features as synergistic rather than redundant. While the skeletal stream provides explicit topological structure, the raw radar stream preserves subtle micro-dynamics and environmental context often filtered out during reconstruction. Consequently, the adaptive gating does not merely act as a fallback for tracking errors; instead, it dynamically synthesizes these modalities, leveraging the raw signal's rich density to compensate for geometric uncertainty during severe occlusions, thereby maintaining a continuous and holistic semantic flow.",
+          "file": "chapter/2_results.tex",
+          "key": "fig:llm",
+          "line": 148
+        },
+        {
+          "command": "ref",
+          "context": "This resilient feature stream is then processed by an encoder-decoder LLM trained via a progressive curriculum (Fig.~\\ref{fig:llm}b). Recognizing the modality gap between visual training data and RF inference data, we structured the learning process into three stages: \\textit{Foundational Semantic Learning} where the model learns linguistic structures from clean camera-based poses; Cross-modal Adaptation where it adapts to the noise patterns of our synthetic RF poses; and Real-world Calibration which is a final fine-tuning phase on limited real sensor data.",
+          "file": "chapter/2_results.tex",
+          "key": "fig:llm",
+          "line": 150
+        },
+        {
+          "command": "ref",
+          "context": "We benchmarked this system against three representative baselines: an end-to-end model processing raw radar cubes, a heatmap-based 2D encoder, and a point-cloud-based architecture (Table~\\ref{tab:llm_results}). Our approach achieves a BLEU-4 score of 15.82 and more than doubles the performance of the nearest competitor. Crucially, it recovers over 84\\% of the translation quality of a vision-based oracle system. This demonstrates that our physics-informed reconstruction and domain adaptation strategies have effectively closed the gap between RF sensing and optical perception.",
+          "file": "chapter/2_results.tex",
+          "key": "tab:llm_results",
+          "line": 152
+        }
+      ],
+      "unreferenced_keys": [
+        "eq:IF_signal_multi_path",
+        "eq:amplitude",
+        "fig:network",
+        "fig:temporal",
+        "sec1",
+        "sec12",
+        "sec2",
+        "sec3",
+        "tab:related_work"
+      ]
+    },
+    "sober_language": {
+      "counts_by_category": {
+        "editor_prohibited": 12,
+        "evidence_sensitive": 18
+      },
+      "counts_by_rule": {
+        "CLAIM-GENERALIZABLE-PARADIGM": 2,
+        "CLAIM-HIGH-FIDELITY": 10,
+        "CLAIM-OPTICAL-LEVEL": 2,
+        "CLAIM-SIGNIFICANTLY-OUTPERFORM": 1,
+        "CLAIM-STATE-OF-ART": 3,
+        "ED-SOBER-FIRST": 7,
+        "ED-SOBER-PAVE-WAY": 1,
+        "ED-SOBER-REMARKABLE": 1,
+        "ED-SOBER-SUPERIOR": 2,
+        "ED-SOBER-UNIQUE": 1
+      },
+      "hits": [
+        {
+          "category": "evidence_sensitive",
+          "context": "Concurrently, computer vision has been the dominant paradigm addressing this challenge \\cite{rastgoo2021sign}. Leveraging the ubiquity of RGB cameras and deep neural networks, state-of-the-art models can now reconstruct intricate 3D hand poses with high fidelity \\cite{pavlakos2024reconstructing, lugaresi2019mediapipe}. However, the reliance on optical sensors creates a fundamental conflict between technological capability and user privacy. The deployment of cameras in personal spaces, such as bedrooms, bathrooms, or medical settings, inherently raises significant concerns, a topic of growing scrutiny in the age of ubiquitous AI \\cite{ryoo2017privacy}. Furthermore, optical systems are susceptible to environmental constraints like poor lighting or visual clutter, rendering them unreliable for the very real-world scenarios where assistance is most needed. This necessitates a shift toward alternative modalities that can ensure both privacy and robustness without compromising linguistic understanding \\cite{zhang2024monitoring, zhuang2025advancing}.",
+          "file": "chapter/1_introduction.tex",
+          "line": 6,
+          "matched_text": "high fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "Concurrently, computer vision has been the dominant paradigm addressing this challenge \\cite{rastgoo2021sign}. Leveraging the ubiquity of RGB cameras and deep neural networks, state-of-the-art models can now reconstruct intricate 3D hand poses with high fidelity \\cite{pavlakos2024reconstructing, lugaresi2019mediapipe}. However, the reliance on optical sensors creates a fundamental conflict between technological capability and user privacy. The deployment of cameras in personal spaces, such as bedrooms, bathrooms, or medical settings, inherently raises significant concerns, a topic of growing scrutiny in the age of ubiquitous AI \\cite{ryoo2017privacy}. Furthermore, optical systems are susceptible to environmental constraints like poor lighting or visual clutter, rendering them unreliable for the very real-world scenarios where assistance is most needed. This necessitates a shift toward alternative modalities that can ensure both privacy and robustness without compromising linguistic understanding \\cite{zhang2024monitoring, zhuang2025advancing}.",
+          "file": "chapter/1_introduction.tex",
+          "line": 6,
+          "matched_text": "state-of-the-art",
+          "rule_id": "CLAIM-STATE-OF-ART",
+          "term": "state-of-the-art"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "\\caption{\\textbf{Schematic of the mmPRISM framework for privacy-preserving continuous sign language understanding.} \\textbf{a} MmWave radar serves as the core sensing module capturing hand gesture dynamics, anchoring the pipeline, bridging raw mmWave signals and linguistic interpretation to enable robust communication for Deaf and hard-of-hearing communities without visually identifiable data. \\textbf{b} Hand reconstruction network: Raw radar data is processed into a range-Doppler-azimuth-elevation tensor preserving spatial and velocity information, as the foundational input for generating high-fidelity two-hand skeletal poses (mmw-pose). \\textbf{c} Sign language understanding LLM: An mT5-based encoder-decoder model integrated with confidence-aware multi-modal fusion—fusing STGCN-extracted pose and raw mmWave features to mitigate self-occlusion—for structured semantic processing. \\textbf{d} Hand reconstruction evaluation: Quantitative comparison with the mmHand baseline in the near-field (<0.5 m), where mmPRISM achieves 15 mm MPJPE and 98\\% 3D-PCK, significantly outperforming the baseline. \\textbf{e} Semantic interpretation: The LLM generates coherent natural language outputs supporting both isolated gestures (e.g., “morning”) and complex sentences (e.g., “Good morning, please help me draft a reply to this email”).}",
+          "file": "chapter/1_introduction.tex",
+          "line": 16,
+          "matched_text": "high-fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "\\caption{\\textbf{Schematic of the mmPRISM framework for privacy-preserving continuous sign language understanding.} \\textbf{a} MmWave radar serves as the core sensing module capturing hand gesture dynamics, anchoring the pipeline, bridging raw mmWave signals and linguistic interpretation to enable robust communication for Deaf and hard-of-hearing communities without visually identifiable data. \\textbf{b} Hand reconstruction network: Raw radar data is processed into a range-Doppler-azimuth-elevation tensor preserving spatial and velocity information, as the foundational input for generating high-fidelity two-hand skeletal poses (mmw-pose). \\textbf{c} Sign language understanding LLM: An mT5-based encoder-decoder model integrated with confidence-aware multi-modal fusion—fusing STGCN-extracted pose and raw mmWave features to mitigate self-occlusion—for structured semantic processing. \\textbf{d} Hand reconstruction evaluation: Quantitative comparison with the mmHand baseline in the near-field (<0.5 m), where mmPRISM achieves 15 mm MPJPE and 98\\% 3D-PCK, significantly outperforming the baseline. \\textbf{e} Semantic interpretation: The LLM generates coherent natural language outputs supporting both isolated gestures (e.g., “morning”) and complex sentences (e.g., “Good morning, please help me draft a reply to this email”).}",
+          "file": "chapter/1_introduction.tex",
+          "line": 16,
+          "matched_text": "significantly outperforming",
+          "rule_id": "CLAIM-SIGNIFICANTLY-OUTPERFORM",
+          "term": "significantly outperform"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "Instead, we first bridge the sensing gap by recovering a high-fidelity \\textbf{skeletal intermediate representation} from sparse radar echoes via physics-informed domain adaptation.",
+          "file": "chapter/1_introduction.tex",
+          "line": 27,
+          "matched_text": "high-fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "Instead, we first bridge the sensing gap by recovering a high-fidelity \\textbf{skeletal intermediate representation} from sparse radar echoes via physics-informed domain adaptation.",
+          "file": "chapter/1_introduction.tex",
+          "line": 27,
+          "matched_text": "first",
+          "rule_id": "ED-SOBER-FIRST",
+          "term": "first"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "The first involves extracting anatomically plausible kinematics from sparse mmWave signals.",
+          "file": "chapter/1_introduction.tex",
+          "line": 33,
+          "matched_text": "first",
+          "rule_id": "ED-SOBER-FIRST",
+          "term": "first"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "Furthermore, the system demonstrates high fidelity in practical scenarios, attaining 98\\% accuracy in discrete gesture classification and 96.8\\% semantic equivalence in daily sentence translation.",
+          "file": "chapter/1_introduction.tex",
+          "line": 42,
+          "matched_text": "high fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "\\subsection{High-fidelity articulation recovery from sparse echoes}",
+          "file": "chapter/2_results.tex",
+          "line": 1,
+          "matched_text": "High-fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "The primary challenge in the first stage is transforming inherently sparse and specular millimeter-wave (mmWave) echoes into a coherent anatomical structure.",
+          "file": "chapter/2_results.tex",
+          "line": 4,
+          "matched_text": "first",
+          "rule_id": "ED-SOBER-FIRST",
+          "term": "first"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "A channel-wise attention mechanism analyzes the spectral characteristics of the signal, learning to amplify discriminative features—such as the unique micro-Doppler velocity profiles generated by finger flexion—while attenuating non-informative sensor noise.",
+          "file": "chapter/2_results.tex",
+          "line": 33,
+          "matched_text": "unique",
+          "rule_id": "ED-SOBER-UNIQUE",
+          "term": "unique"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "The final output is a high-fidelity skeletal intermediate representation, which acts as a robust, privacy-preserving bridge to the subsequent linguistic analysis.",
+          "file": "chapter/2_results.tex",
+          "line": 36,
+          "matched_text": "high-fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "Benchmarking against state-of-the-art RF-based pose estimation methods \\cite{kong2024mmhand}, our framework demonstrates a significant performance advantage, particularly in challenging scenarios (Fig.~\\ref{fig:overall_comparison}).",
+          "file": "chapter/2_results.tex",
+          "line": 39,
+          "matched_text": "state-of-the-art",
+          "rule_id": "CLAIM-STATE-OF-ART",
+          "term": "state-of-the-art"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "In the near-field, the system achieves remarkable precision with a Mean Per Joint Position Error (MPJPE) of only 15 mm and a 3D Percentage of Correct Keypoints (3D-PCK) score of 98\\%.",
+          "file": "chapter/2_results.tex",
+          "line": 40,
+          "matched_text": "remarkable",
+          "rule_id": "ED-SOBER-REMARKABLE",
+          "term": "remarkable"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "\\caption{\\textbf{Robustness of kinematic reconstruction across operational regimes.} Quantitative benchmarks compare mmPRISM with the mmHand baseline across three distance ranges: near-field (<0.5\\,m), mid-range ($\\approx 1$\\,m), and far-field (>2\\,m). Our geometry-guided approach maintains superior performance consistently, achieving 15\\,mm MPJPE and 98\\% 3D-PCK in the near-field, while retaining <35\\,mm error in the far-field. In contrast, the baseline suffers sharp accuracy degradation under far-field signal sparsity, highlighting mmPRISM's robustness for practical deployment.}",
+          "file": "chapter/2_results.tex",
+          "line": 56,
+          "matched_text": "superior",
+          "rule_id": "ED-SOBER-SUPERIOR",
+          "term": "superior"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "\\caption{\\textbf{Visual validation of structural integrity for hand pose reconstruction.} Qualitative comparison includes RGB reference images, ground-truth skeletal poses, mmPRISM outputs, and mmHand baseline results. Our framework maintains anatomical integrity and distinct fine-grained finger separation even during complex sign language articulations (e.g., dexterous finger flexion and inter-hand interaction), whereas the mmHand baseline frequently suffers from digit merging, joint misalignment, or structural collapse. This superior structural preservation ensures the capture of fine-grained motion cues that are critical for accurate downstream sign language understanding.}",
+          "file": "chapter/2_results.tex",
+          "line": 65,
+          "matched_text": "superior",
+          "rule_id": "ED-SOBER-SUPERIOR",
+          "term": "superior"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "The pipeline operates by first extracting high-precision 3D hand meshes from standard video corpora using the MANO model. We then employ a high-fidelity ray-tracing algorithm grounded in electromagnetic wave theory to simulate the scattering of RF signals off these dynamic meshes. Beyond simple geometric reflection, the simulation rigorously accounts for signal attenuation governed by the radar equation and captures the intricate micro-Doppler signatures induced by fine-grained finger articulation. By synthesizing these complex multipath effects, we generate radar echoes that are not only geometrically accurate but also physically consistent with the stochastic nature of real-world sensor data. This process effectively transfers the rich semantic annotations of the visual domain into the RF domain without manual labeling.",
+          "file": "chapter/2_results.tex",
+          "line": 128,
+          "matched_text": "high-fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "The pipeline operates by first extracting high-precision 3D hand meshes from standard video corpora using the MANO model. We then employ a high-fidelity ray-tracing algorithm grounded in electromagnetic wave theory to simulate the scattering of RF signals off these dynamic meshes. Beyond simple geometric reflection, the simulation rigorously accounts for signal attenuation governed by the radar equation and captures the intricate micro-Doppler signatures induced by fine-grained finger articulation. By synthesizing these complex multipath effects, we generate radar echoes that are not only geometrically accurate but also physically consistent with the stochastic nature of real-world sensor data. This process effectively transfers the rich semantic annotations of the visual domain into the RF domain without manual labeling.",
+          "file": "chapter/2_results.tex",
+          "line": 128,
+          "matched_text": "first",
+          "rule_id": "ED-SOBER-FIRST",
+          "term": "first"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "\\caption{\\textbf{Context-aware translation framework.} \\textbf{a} The feature encoder processes left/right hand poses via STGCNs to extract dynamic features, integrated with raw mmWave features through a confidence-gated fusion mechanism—dynamically weighting based on joint reliability to mitigate self-occlusion impacts. \\textbf{b} Built on the mT5 encoder-decoder, the translation model adopts a three-stage curriculum learning strategy: pre-training with clean cam-pose, cross-modal adaptation with synthetic mmw-pose, and real-world calibration—supporting both isolated gestures and complex sentences for high-fidelity translation.}",
+          "file": "chapter/2_results.tex",
+          "line": 158,
+          "matched_text": "high-fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "\\caption{\\textbf{Benchmarking translation performance.} Comparison against state-of-the-art RF-based methods reveals a significant advantage for our approach. Rel. Perf. indicates performance relative to a vision-based oracle (Vision Oracle), highlighting our system's ability to approach optical-level accuracy.}",
+          "file": "chapter/2_results.tex",
+          "line": 166,
+          "matched_text": "optical-level",
+          "rule_id": "CLAIM-OPTICAL-LEVEL",
+          "term": "optical-level"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "\\caption{\\textbf{Benchmarking translation performance.} Comparison against state-of-the-art RF-based methods reveals a significant advantage for our approach. Rel. Perf. indicates performance relative to a vision-based oracle (Vision Oracle), highlighting our system's ability to approach optical-level accuracy.}",
+          "file": "chapter/2_results.tex",
+          "line": 166,
+          "matched_text": "state-of-the-art",
+          "rule_id": "CLAIM-STATE-OF-ART",
+          "term": "state-of-the-art"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "This section details the experimental and computational procedures used in this study. We first describe the radar configuration and the process for transforming raw signals into a 4D data representation. We then detail the architectures for the two core components of our framework: the pose reconstruction network and the sign language translation model. Finally, we outline the procedures for synthetic data generation and define the loss functions for model training.",
+          "file": "chapter/3_methods.tex",
+          "line": 1,
+          "matched_text": "first",
+          "rule_id": "ED-SOBER-FIRST",
+          "term": "first"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "The first metric is the Mean Per-Joint Position Error (MPJPE), which is the mean Euclidean distance between the predicted and ground-truth joints, calculated as:",
+          "file": "chapter/3_methods.tex",
+          "line": 85,
+          "matched_text": "first",
+          "rule_id": "ED-SOBER-FIRST",
+          "term": "first"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "In this work, we have demonstrated mmPRISM, a complete framework for continuous sign language translation using mmWave radar, which achieves performance approaching that of vision-based systems while ensuring user privacy and robustness to environmental factors. The success of our system stems from a core design philosophy of decoupling perception from interpretation. By first reconstructing a high-fidelity, two-hand skeletal pose (mmw-pose), we provide a structured and semantically rich intermediate representation for a large language model. This two-stage approach proved more effective than end-to-end methods that process raw or minimally-processed sensor data. Furthermore, we addressed the critical challenge of data scarcity through a progressive, three-stage training framework that leverages synthetic data to transfer knowledge from large-scale, out-of-domain visual datasets, a strategy crucial for enabling high-performance RF sensing.",
+          "file": "chapter/4_discussion.tex",
+          "line": 1,
+          "matched_text": "high-fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "In this work, we have demonstrated mmPRISM, a complete framework for continuous sign language translation using mmWave radar, which achieves performance approaching that of vision-based systems while ensuring user privacy and robustness to environmental factors. The success of our system stems from a core design philosophy of decoupling perception from interpretation. By first reconstructing a high-fidelity, two-hand skeletal pose (mmw-pose), we provide a structured and semantically rich intermediate representation for a large language model. This two-stage approach proved more effective than end-to-end methods that process raw or minimally-processed sensor data. Furthermore, we addressed the critical challenge of data scarcity through a progressive, three-stage training framework that leverages synthetic data to transfer knowledge from large-scale, out-of-domain visual datasets, a strategy crucial for enabling high-performance RF sensing.",
+          "file": "chapter/4_discussion.tex",
+          "line": 1,
+          "matched_text": "first",
+          "rule_id": "ED-SOBER-FIRST",
+          "term": "first"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "The principles established here have implications beyond sign language, suggesting a generalizable paradigm for other RF-based HCI tasks where non-invasive, detailed human motion analysis is required. While our method validates the potential of this approach, we acknowledge its current reliance on a cascaded radar system for high spatial resolution. Future work could focus on extending the linguistic scope of the translation model and exploring the feasibility of this framework on more accessible, lower-cost hardware. In conclusion, mmPRISM establishes a robust and practical pathway toward developing communication technologies that are not only powerful and accurate but also fundamentally accessible and trustworthy.",
+          "file": "chapter/4_discussion.tex",
+          "line": 3,
+          "matched_text": "generalizable paradigm",
+          "rule_id": "CLAIM-GENERALIZABLE-PARADIGM",
+          "term": "generalizable paradigm"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "mmPRISM reconstructs high-fidelity two-hand skeletal poses (mmw-pose) from sparse radar echoes via a physics-informed, attention-augmented 4D volumetric encoder (CubeNet), then translates continuous gestures into natural language using a large language model. Through multi-stage domain adaptation and confidence-aware adaptive multimodal fusion, the system achieves 84.3\\% of optical-level translation fidelity (BLEU-4: 15.82; ROUGE: 42.17) while ensuring inherent privacy and robust performance under low light, multipath interference, and dynamic environments.",
+          "file": "sn-article.tex",
+          "line": 201,
+          "matched_text": "high-fidelity",
+          "rule_id": "CLAIM-HIGH-FIDELITY",
+          "term": "high-fidelity"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "mmPRISM reconstructs high-fidelity two-hand skeletal poses (mmw-pose) from sparse radar echoes via a physics-informed, attention-augmented 4D volumetric encoder (CubeNet), then translates continuous gestures into natural language using a large language model. Through multi-stage domain adaptation and confidence-aware adaptive multimodal fusion, the system achieves 84.3\\% of optical-level translation fidelity (BLEU-4: 15.82; ROUGE: 42.17) while ensuring inherent privacy and robust performance under low light, multipath interference, and dynamic environments.",
+          "file": "sn-article.tex",
+          "line": 201,
+          "matched_text": "optical-level",
+          "rule_id": "CLAIM-OPTICAL-LEVEL",
+          "term": "optical-level"
+        },
+        {
+          "category": "evidence_sensitive",
+          "context": "This work establishes a generalizable paradigm bridging wireless physics and symbolic intelligence, paving the way for privacy-preserving, inclusive communication technologies that transcend optical limitations.}",
+          "file": "sn-article.tex",
+          "line": 202,
+          "matched_text": "generalizable paradigm",
+          "rule_id": "CLAIM-GENERALIZABLE-PARADIGM",
+          "term": "generalizable paradigm"
+        },
+        {
+          "category": "editor_prohibited",
+          "context": "This work establishes a generalizable paradigm bridging wireless physics and symbolic intelligence, paving the way for privacy-preserving, inclusive communication technologies that transcend optical limitations.}",
+          "file": "sn-article.tex",
+          "line": 202,
+          "matched_text": "paving the way",
+          "rule_id": "ED-SOBER-PAVE-WAY",
+          "term": "pave the way"
+        }
+      ]
+    },
+    "source_files": [
+      {
+        "line_count": 84,
+        "path": "chapter/1_introduction.tex",
+        "sha256": "ec47f5a4a67951c364e88c587dc0df0d2ca513464bec22d65e092c236b014493"
+      },
+      {
+        "line_count": 180,
+        "path": "chapter/2_results.tex",
+        "sha256": "aeeef304cb8a65edb17ba9a18ce0124a656e4215df4e22e9d2b64a469e5917cd"
+      },
+      {
+        "line_count": 114,
+        "path": "chapter/3_methods.tex",
+        "sha256": "e84f332c5ab62d58dbb70012f0f62c2369921f0e3f1c6cef0083b2037e769bf0"
+      },
+      {
+        "line_count": 3,
+        "path": "chapter/4_discussion.tex",
+        "sha256": "4f8374faecec2b25279c1fe9b1df24a4d908b25d705388daf7a7b6f7b9d0f9fb"
+      },
+      {
+        "line_count": 301,
+        "path": "sn-article.tex",
+        "sha256": "75ca93da51c24b47839635b3ff50f87c10966d8d145bab0d016384f7e8d7ff7a"
+      }
+    ],
+    "source_fingerprint_sha256": "1f194d54b9981439a419f0716fa289e4e5b253856847cf958928d6f251a4c6a9",
+    "summary": {
+      "attention_reasons": [
+        "missing_data_availability",
+        "missing_code_availability",
+        "editorial_language_review"
+      ],
+      "citation_command_count": 19,
+      "cited_key_count": 23,
+      "figure_count": 6,
+      "label_count": 15,
+      "reference_command_count": 7,
+      "referenced_key_count": 6,
+      "section_count": 12,
+      "sober_language_hit_count": 30,
+      "source_file_count": 5,
+      "status": "attention_required",
+      "table_count": 2
+    },
+    "tables": [
+      {
+        "captions": [
+          "Comparison with previous wireless hand sensing works. Prior works either focus only on hand pose reconstruction or directly perform end-to-end SLR from the corresponding modality. Legend: Pos. - Position, SLR - Sign Language Recognition, SLU - Sign Language Understanding."
+        ],
+        "closed": true,
+        "environment": "table",
+        "file": "chapter/1_introduction.tex",
+        "graphics": [],
+        "index_in_file": 1,
+        "labels": [
+          "tab:related_work"
+        ],
+        "line": 45
+      },
+      {
+        "captions": [
+          "\\textbf{Benchmarking translation performance.} Comparison against state-of-the-art RF-based methods reveals a significant advantage for our approach. Rel. Perf. indicates performance relative to a vision-based oracle (Vision Oracle), highlighting our system's ability to approach optical-level accuracy."
+        ],
+        "closed": true,
+        "environment": "table",
+        "file": "chapter/2_results.tex",
+        "graphics": [],
+        "index_in_file": 1,
+        "labels": [
+          "tab:llm_results"
+        ],
+        "line": 163
+      }
+    ]
+  },
+  "schema": "mmprism.manuscript_audit.v1",
+  "supplementary": {
+    "bad_crc_entry": null,
+    "duplicate_names": [],
+    "encrypted_entries": [],
+    "entries": [
+      {
+        "compressed_size_bytes": 13930,
+        "crc32": "ac2e0b5f",
+        "encrypted": false,
+        "path": "pics/antenna_array_scale_impact.pdf",
+        "sha256": "b6d293ad49d0ddd5e1d198e52046d410873d17fcd7f93a28b0dc0a1e3fa218fe",
+        "size_bytes": 18582
+      },
+      {
+        "compressed_size_bytes": 9047,
+        "crc32": "829e05ef",
+        "encrypted": false,
+        "path": "mian.tex",
+        "sha256": "0a4ed0a51835adeeeee8e4f7e1855f93119d09e26dd4965389c90f30dd2582cb",
+        "size_bytes": 24928
+      },
+      {
+        "compressed_size_bytes": 2323991,
+        "crc32": "542dab58",
+        "encrypted": false,
+        "path": "pics/ZZQ-25112636041-3780.jpg",
+        "sha256": "e1002a3a92768cc2400b4542eaf8b8b0892e35a83be46e0aeed1a130355328dc",
+        "size_bytes": 2727161
+      },
+      {
+        "compressed_size_bytes": 17958,
+        "crc32": "1f39c0d9",
+        "encrypted": false,
+        "path": "pics/tsne_visualization.pdf",
+        "sha256": "5f67802ff6a76f1dcec1427f604f57e42abb67d95bdc63dffbad264d446eac42",
+        "size_bytes": 23056
+      },
+      {
+        "compressed_size_bytes": 108594,
+        "crc32": "bcef86f4",
+        "encrypted": false,
+        "path": "pics/tsne.pdf",
+        "sha256": "20cef0b19e6c68dc168b8547a247b91bc6ca3db3407fcdec93aa5221f4001d0e",
+        "size_bytes": 112337
+      },
+      {
+        "compressed_size_bytes": 9383,
+        "crc32": "6ffb2799",
+        "encrypted": false,
+        "path": "pics/training_epochs_llm_metrics.pdf",
+        "sha256": "2632f51703cf591a956cbb48c050e1a137fca984b714e2f6df82dd99a6629d81",
+        "size_bytes": 12850
+      },
+      {
+        "compressed_size_bytes": 48526,
+        "crc32": "8d9101e0",
+        "encrypted": false,
+        "path": "pics/training.pdf",
+        "sha256": "573d68c60fa78f46150f0bb15d3d5fae46c382a0f4f135bb8c82fc55038e3fb5",
+        "size_bytes": 52016
+      },
+      {
+        "compressed_size_bytes": 755707,
+        "crc32": "fd2827a9",
+        "encrypted": false,
+        "path": "pics/temporal.png",
+        "sha256": "712ffdfbf8b683248cb6df9f6a6e3537ed5d84155d44de6b4f81ed26fffca9f9",
+        "size_bytes": 755958
+      },
+      {
+        "compressed_size_bytes": 314577,
+        "crc32": "365d9bd3",
+        "encrypted": false,
+        "path": "pics/temporal.pdf",
+        "sha256": "e6bcfe6a5e0af7e65e406176aa3d4d60993c1b2070e081f99374a0aedf3002f1",
+        "size_bytes": 480084
+      },
+      {
+        "compressed_size_bytes": 413749,
+        "crc32": "5d84030e",
+        "encrypted": false,
+        "path": "pics/teaser_compressed.pdf",
+        "sha256": "825bd698f1072658065daf292a91a185dd0c45bd069577211a7e05c8dcb16963",
+        "size_bytes": 419848
+      },
+      {
+        "compressed_size_bytes": 7237206,
+        "crc32": "f57e01c8",
+        "encrypted": false,
+        "path": "pics/teaser.png",
+        "sha256": "280741d437c477eb83011acc8184d44df0ab92d4844e8e11a7a4f1bac261cccf",
+        "size_bytes": 7796976
+      },
+      {
+        "compressed_size_bytes": 413749,
+        "crc32": "5d84030e",
+        "encrypted": false,
+        "path": "pics/teaser.pdf",
+        "sha256": "825bd698f1072658065daf292a91a185dd0c45bd069577211a7e05c8dcb16963",
+        "size_bytes": 419848
+      },
+      {
+        "compressed_size_bytes": 245489,
+        "crc32": "446ba54e",
+        "encrypted": false,
+        "path": "pics/scene_e.png",
+        "sha256": "81468f1660e354c054c337d42ef4e7ba846367e2f99c94100ac7894b638dfa57",
+        "size_bytes": 245639
+      },
+      {
+        "compressed_size_bytes": 181152,
+        "crc32": "98b03f27",
+        "encrypted": false,
+        "path": "pics/scene_d.png",
+        "sha256": "341b13d97b360083078f4bb7b6189c13b47cba3a73aa704fc5e968a9404a55a4",
+        "size_bytes": 181313
+      },
+      {
+        "compressed_size_bytes": 647153,
+        "crc32": "dece5914",
+        "encrypted": false,
+        "path": "pics/scene_complex.png",
+        "sha256": "669f4c2c3b40d088044746cdcee1317d0619d86edf1b08e9c20d72f0575d7ef7",
+        "size_bytes": 647176
+      },
+      {
+        "compressed_size_bytes": 285199,
+        "crc32": "5468b962",
+        "encrypted": false,
+        "path": "pics/scene_c.png",
+        "sha256": "ae8c6e3782aae74b7a6b808e1cc019d56a75a358dec97ba6ff78e5763fec9715",
+        "size_bytes": 285327
+      },
+      {
+        "compressed_size_bytes": 225523,
+        "crc32": "4cb98eec",
+        "encrypted": false,
+        "path": "pics/scene_b.png",
+        "sha256": "be9a008993d4f7251762013f0c086838ffb3150ae5ec19fe9d16c02e545d0331",
+        "size_bytes": 225677
+      },
+      {
+        "compressed_size_bytes": 4186334,
+        "crc32": "f311d1aa",
+        "encrypted": false,
+        "path": "pics/scene_b.pdf",
+        "sha256": "e83043af5a1464a426270640e0250df929e182ecaccaacce8c7fc05eedb10cee",
+        "size_bytes": 4190175
+      },
+      {
+        "compressed_size_bytes": 165690,
+        "crc32": "3884b238",
+        "encrypted": false,
+        "path": "pics/scene_a.pdf",
+        "sha256": "bbc13658ae76cf9781849b1cccd42a067b82070abeda8784e4e33d660786273d",
+        "size_bytes": 174934
+      },
+      {
+        "compressed_size_bytes": 2379841,
+        "crc32": "466e8427",
+        "encrypted": false,
+        "path": "pics/scene.png",
+        "sha256": "46a3127c55bccdb248127a32effb98a3d83603e4cf7876c5cd81233c08912325",
+        "size_bytes": 2382392
+      },
+      {
+        "compressed_size_bytes": 2168304,
+        "crc32": "4089805c",
+        "encrypted": false,
+        "path": "pics/rec_result.png",
+        "sha256": "3a8d9ba8c2b9a902ffeaa1608925a4cd2f8df97b1b6c52c3f3b6b63c5a0fb8f9",
+        "size_bytes": 2167869
+      },
+      {
+        "compressed_size_bytes": 103672,
+        "crc32": "2df65a6c",
+        "encrypted": false,
+        "path": "pics/rec_result.pdf",
+        "sha256": "ddcd95b495b3326c979f8c9696a9c8bf22dddfc9653e72c7de13ef9316fbc879",
+        "size_bytes": 108547
+      },
+      {
+        "compressed_size_bytes": 192731,
+        "crc32": "62124974",
+        "encrypted": false,
+        "path": "pics/radar.pdf",
+        "sha256": "20095fd53e92907711f9c2e9ba4ac76e8cd4c7f0a75fd19668626b5984b0002d",
+        "size_bytes": 194993
+      },
+      {
+        "compressed_size_bytes": 69083,
+        "crc32": "2b3dc594",
+        "encrypted": false,
+        "path": "pics/point_quality_vs_llm_performance.png",
+        "sha256": "260d4104949d01ad535d237a81f7dc92c388568dbd6a15987a85340915f91aa0",
+        "size_bytes": 74217
+      },
+      {
+        "compressed_size_bytes": 36949,
+        "crc32": "2d336378",
+        "encrypted": false,
+        "path": "pics/point_quality_vs_llm_performance.pdf",
+        "sha256": "63430089660b95a06d632e69efcc16fe1249fc9638eacbe48400696d858801dc",
+        "size_bytes": 37963
+      },
+      {
+        "compressed_size_bytes": 12385,
+        "crc32": "011f30be",
+        "encrypted": false,
+        "path": "pics/pck_comparison_near.pdf",
+        "sha256": "11f8f42a40da971f540ab28daefcccc77764195cdce8b2be94760ac5ba45e15b",
+        "size_bytes": 17951
+      },
+      {
+        "compressed_size_bytes": 12428,
+        "crc32": "4782c00c",
+        "encrypted": false,
+        "path": "pics/pck_comparison_mid.pdf",
+        "sha256": "d975237edb5c6f9d7d88bd53dd901621ef66572c19a11d56d76d65c464946b8f",
+        "size_bytes": 17991
+      },
+      {
+        "compressed_size_bytes": 12391,
+        "crc32": "c8fe06f6",
+        "encrypted": false,
+        "path": "pics/pck_comparison_far.pdf",
+        "sha256": "a09aa6a7cf072178a9c10e23c7f90147e35544447840a853982fd92bc3e6cc25",
+        "size_bytes": 17939
+      },
+      {
+        "compressed_size_bytes": 12394,
+        "crc32": "71e25ec3",
+        "encrypted": false,
+        "path": "pics/pck_comparison.pdf",
+        "sha256": "f3c02aa5881d0ee786c91321817632408df65dd40c426f64ef589cf9331be2f7",
+        "size_bytes": 17952
+      },
+      {
+        "compressed_size_bytes": 92364,
+        "crc32": "554fd79d",
+        "encrypted": false,
+        "path": "pics/overview_mini.pdf",
+        "sha256": "8aab829e3f06ad4b46ce387d74564da3ad9a4dd7b77ab39bd1fd462361df1bce",
+        "size_bytes": 95862
+      },
+      {
+        "compressed_size_bytes": 1136806,
+        "crc32": "264943a7",
+        "encrypted": false,
+        "path": "pics/overview.pdf",
+        "sha256": "6d03d2dbf4622eaa410d7b23bd7361e5d471986c48e3b872fb3b7eca5a90a213",
+        "size_bytes": 1276044
+      },
+      {
+        "compressed_size_bytes": 67585,
+        "crc32": "19bd2458",
+        "encrypted": false,
+        "path": "pics/overall_comparison.png",
+        "sha256": "6aad6e61541a225605150fad00e710902557734b9efd1947be4150bef5b15f06",
+        "size_bytes": 71999
+      },
+      {
+        "compressed_size_bytes": 16689,
+        "crc32": "720475f2",
+        "encrypted": false,
+        "path": "pics/overall_comparison.pdf",
+        "sha256": "295fb9baac6e5122cd0b91977e6d600349984f51efb309018bc3cd5d7202c519",
+        "size_bytes": 21675
+      },
+      {
+        "compressed_size_bytes": 1834746,
+        "crc32": "9bbe40b1",
+        "encrypted": false,
+        "path": "pics/network.png",
+        "sha256": "f655bd5f6fb405dbfdfe7776a4ae9963d4ba47e87978188f60d57d713e0f444c",
+        "size_bytes": 1834417
+      },
+      {
+        "compressed_size_bytes": 54539,
+        "crc32": "2880340f",
+        "encrypted": false,
+        "path": "pics/network.pdf",
+        "sha256": "6137a8dad04fefb2aa6107871792b03c487ae8919101a983b1269955c86212fb",
+        "size_bytes": 65651
+      },
+      {
+        "compressed_size_bytes": 12515,
+        "crc32": "5f6129c1",
+        "encrypted": false,
+        "path": "pics/mpjpe_comparison_near.pdf",
+        "sha256": "8a152d2fba0622d56ce5a50ca02cf7bdbfbecbd5a1ef5a13be6790f3adb06160",
+        "size_bytes": 18324
+      },
+      {
+        "compressed_size_bytes": 12487,
+        "crc32": "d27c419e",
+        "encrypted": false,
+        "path": "pics/mpjpe_comparison_mid.pdf",
+        "sha256": "396d73dcc8f7db6dda765589ad8ec0157925d5d8e9f7c109e5aa3fc31b637e9b",
+        "size_bytes": 18312
+      },
+      {
+        "compressed_size_bytes": 12518,
+        "crc32": "8412d363",
+        "encrypted": false,
+        "path": "pics/mpjpe_comparison_far.pdf",
+        "sha256": "9a1c89eb06649e56442514489165602193e996c263db26eef2bb22748028fc28",
+        "size_bytes": 18328
+      },
+      {
+        "compressed_size_bytes": 11583,
+        "crc32": "7ff4b205",
+        "encrypted": false,
+        "path": "pics/mpjpe_comparison.pdf",
+        "sha256": "f4f93d68dd3dac64248d55095a8943ae3ba015d63366415bb7d622287572619e",
+        "size_bytes": 17065
+      },
+      {
+        "compressed_size_bytes": 89286,
+        "crc32": "15a7ca10",
+        "encrypted": false,
+        "path": "pics/mmwave_cube.pdf",
+        "sha256": "533b7009001ae68b13e985fcebae5814b3532e6b60968129e6404602162fcbb8",
+        "size_bytes": 95639
+      },
+      {
+        "compressed_size_bytes": 200086,
+        "crc32": "66eb56b5",
+        "encrypted": false,
+        "path": "pics/llm.pdf",
+        "sha256": "8c5e6434491ad4cb5ca8a9ec20f544d6c4d35993fe06df24d7375bc53a32a628",
+        "size_bytes": 524321
+      },
+      {
+        "compressed_size_bytes": 14491,
+        "crc32": "67d9602a",
+        "encrypted": false,
+        "path": "pics/confusion_matrix.pdf",
+        "sha256": "ce3555b986a033ce939ba4f80c1d71266951d95eadb7358f1e30098e05677134",
+        "size_bytes": 18739
+      },
+      {
+        "compressed_size_bytes": 924369,
+        "crc32": "6eca91ed",
+        "encrypted": false,
+        "path": "pics/beamforming.pdf",
+        "sha256": "cecb5d269394dc938a912cc36dc9960a4cfbd0e8ca2d4e0f43ca6737e10650ee",
+        "size_bytes": 933226
+      },
+      {
+        "compressed_size_bytes": 42505,
+        "crc32": "31a1624a",
+        "encrypted": false,
+        "path": "pics/antenna_layout.pdf",
+        "sha256": "a0e214e39432ad72b6b21e0dbbed8a4e2f86d423e4bd0b294eee59384d40bee7",
+        "size_bytes": 44389
+      }
+    ],
+    "entry_count": 44,
+    "extension_counts": {
+      ".jpg": 1,
+      ".pdf": 30,
+      ".png": 12,
+      ".tex": 1
+    },
+    "main_candidates": [
+      "mian.tex"
+    ],
+    "missing_graphics": [],
+    "missing_inputs": [],
+    "path": "Supplementary_Information.zip",
+    "referenced_graphics": [
+      "pics/antenna_array_scale_impact.pdf",
+      "pics/mmwave_cube.pdf",
+      "pics/point_quality_vs_llm_performance.pdf",
+      "pics/scene.png",
+      "pics/tsne.pdf"
+    ],
+    "sha256": "f74f4eb0ac8c9e870a964e0cb5c72075cface6aa375d06ad81ba44d74d44abcd",
+    "size_bytes": 27131702,
+    "status": "attention_required",
+    "tex_files": [
+      {
+        "document_environment_present": true,
+        "documentclass_present": true,
+        "figure_count": 5,
+        "graphics": [
+          {
+            "resolved": "pics/mmwave_cube.pdf",
+            "source": "mian.tex",
+            "target": "pics/mmwave_cube.pdf"
+          },
+          {
+            "resolved": "pics/tsne.pdf",
+            "source": "mian.tex",
+            "target": "pics/tsne.pdf"
+          },
+          {
+            "resolved": "pics/scene.png",
+            "source": "mian.tex",
+            "target": "pics/scene.png"
+          },
+          {
+            "resolved": "pics/antenna_array_scale_impact.pdf",
+            "source": "mian.tex",
+            "target": "pics/antenna_array_scale_impact.pdf"
+          },
+          {
+            "resolved": "pics/point_quality_vs_llm_performance.pdf",
+            "source": "mian.tex",
+            "target": "pics/point_quality_vs_llm_performance.pdf"
+          }
+        ],
+        "inputs": [],
+        "path": "mian.tex",
+        "section_titles": [
+          "Supplementary Note 1: mmWave cube illustration",
+          "Supplementary Note 2: T-SNE visualization of feature alignment",
+          "Supplementary Note 3: Experimental setups",
+          "Supplementary Note 4: Impact of antenna array size",
+          "Supplementary Note 5: Impact of mmw-pose reconstruction quality",
+          "Supplementary Note 6: mmWave radar antenna array configurations",
+          "Supplementary Note 7: mmWave radar antenna array configurations",
+          "Supplementary Note 8: Ablation study on multi-modal fusion strategies",
+          "Supplementary Note 9: Ablation study on the impact of multi-stage training",
+          "Supplementary Note 10: Performance on generalization",
+          "Supplementary Note 11: Performance under noisy scenarios",
+          "Supplementary Note 12: Experiment video"
+        ],
+        "table_count": 6
+      }
+    ],
+    "unreferenced_graphics": [
+      "pics/ZZQ-25112636041-3780.jpg",
+      "pics/antenna_layout.pdf",
+      "pics/beamforming.pdf",
+      "pics/confusion_matrix.pdf",
+      "pics/llm.pdf",
+      "pics/mpjpe_comparison.pdf",
+      "pics/mpjpe_comparison_far.pdf",
+      "pics/mpjpe_comparison_mid.pdf",
+      "pics/mpjpe_comparison_near.pdf",
+      "pics/network.pdf",
+      "pics/network.png",
+      "pics/overall_comparison.pdf",
+      "pics/overall_comparison.png",
+      "pics/overview.pdf",
+      "pics/overview_mini.pdf",
+      "pics/pck_comparison.pdf",
+      "pics/pck_comparison_far.pdf",
+      "pics/pck_comparison_mid.pdf",
+      "pics/pck_comparison_near.pdf",
+      "pics/point_quality_vs_llm_performance.png",
+      "pics/radar.pdf",
+      "pics/rec_result.pdf",
+      "pics/rec_result.png",
+      "pics/scene_a.pdf",
+      "pics/scene_b.pdf",
+      "pics/scene_b.png",
+      "pics/scene_c.png",
+      "pics/scene_complex.png",
+      "pics/scene_d.png",
+      "pics/scene_e.png",
+      "pics/teaser.pdf",
+      "pics/teaser.png",
+      "pics/teaser_compressed.pdf",
+      "pics/temporal.pdf",
+      "pics/temporal.png",
+      "pics/training.pdf",
+      "pics/training_epochs_llm_metrics.pdf",
+      "pics/tsne_visualization.pdf"
+    ],
+    "unsafe_names": [],
+    "warnings": [
+      "probable_main_filename_typo:mian.tex"
+    ]
+  }
+}

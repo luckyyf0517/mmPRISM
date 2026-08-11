@@ -13,7 +13,7 @@ Role: `round0_control`
 | Workstream | IDs | Status | Output |
 |---|---|---|---|
 | Reviewer package intake | `PAPER-001A`, `REV-001` | done | original review + stable tracker + diagnosis |
-| Manuscript intake | `PAPER-001B` | in_progress | current Overleaf manuscript linked; original submission and asset index pending |
+| Manuscript intake | `PAPER-001B` | in_progress | current manuscript/supplement static inventory complete; original submission and display provenance pending |
 | Asset discovery | `DATA-001` | in_progress | CSL-News source download active; private data/checkpoint/result inventory pending |
 | Runtime bootstrap | `OPS-001` | done | UV/Python 3.12/cu128 lock + wheel + A100 smoke |
 | Greenfield foundation | `ARCH-001`, `ARCH-002` | in_progress | pyproject + strict config + contracts + CLI + CPU tests |
@@ -31,12 +31,14 @@ Role: `round0_control`
 - Major revision decision 已收到；编辑明确要求替代架构、DA、dataset characterization 和 real-world generalization。
 - 两位 reviewer 的意见已拆成 20 个科学/代码执行项，并建立 P0–P2 计划。
 - 当前返修稿已作为 `paper/manuscript` Overleaf Git 子模块接入，接入快照为 `master@3242a40`，主入口为 `sn-article.tex`。
+- `PAPER-AUDIT-001` 已登记当前 8 个主文和 11 个 supplementary display environment；主文引用完整，
+  supplementary ZIP CRC 通过，Availability 缺失和 30 个语言命中已进入独立清单。
 - 作者确认不保留旧训练链兼容；新实现以 `src/mmprism` 为唯一主线，legacy 代码只读取证。
 
 ## Exit Criteria
 
 - [x] decision letter 和所有 reviewer comments 已导入并编号。
-- [ ] 当前稿件与 supplementary 已接入；仍需导入原投稿定稿并完成资产登记。
+- [ ] 当前稿件与 supplementary 已接入并完成静态资产登记；仍需导入原投稿定稿和逐 display provenance。
 - [ ] 数据、checkpoint、log、metrics 位置已确认。
 - [x] UV 环境可重建且 CPU/GPU import smoke 通过。
 - [ ] 至少一个 canonical OmniHand 与 WaveLLM 路径有 smoke artifact，或 blocker 有完整解释。
