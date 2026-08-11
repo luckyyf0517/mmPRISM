@@ -346,3 +346,12 @@ registry 为 22 final、19 passed/31,423 videos，失败项仍仅 `001/005/008`�
 `6ad8310cdbe934ff291a3e68d6ea151231e2b84c13c650e3cc939f8bf23b1338`。`17:53 UTC` 状态快照统计
 3,795 个 eligible pair、missing artifact/sidecar 0、latest run 新失败 0、抽检 3/3 通过，近期约
 1,382 samples/hour；四个 worker、下载服务和 integrity timer 均为 active。
+
+`19:18 UTC`，clean commit `84f2c52` 后手工恢复一次先前被 dirty-Git gate 拒绝的 integrity scan，
+并以 `0/SUCCESS` 完成；新增 `archive_046/051` 后 registry 为 31 final、28 passed/46,521 videos，
+失败项仍仅 `001/005/008`，SHA-256 为
+`0c96b5ed3f2acda9f5484731b44eb1f3f658cbee2aea3575d357ee311b4c30a4`。`19:17 UTC` 状态快照统计
+5,710 个 eligible pair、missing artifact/sidecar 0、latest run 新失败 0、抽检 3/3 通过，近期约
+1,484 samples/hour；报告 SHA-256 为
+`01f489f238891cf6fd3ff392bfcbb57efc2ce708a40cb793f2bfa3e67196df0a`。四个 registry worker 均
+`active/running`、`NRestarts=0`；status 的 `attention_required` 只来自三个已隔离 source failure。

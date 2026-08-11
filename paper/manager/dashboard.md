@@ -30,8 +30,8 @@ Role: `control_panel`
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；cumulative integrity registry
-  在 `17:53Z` 覆盖 22 个 final ZIP，其中 `001/005/008` 失败并隔离，19 个 archive/31,423 videos
-  通过；3,795 个 eligible pose/sidecar pair 完整，latest run 新失败 0，抽检 3/3 通过。
+  在 `19:18Z` 覆盖 31 个 final ZIP，其中 `001/005/008` 失败并隔离，28 个 archive/46,521 videos
+  通过；`19:17Z` 已有 5,710 个 eligible pose/sidecar pair，latest run 新失败 0，抽检 3/3 通过。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
   5 个 represented archive、15 个 failed-archive 历史 pair 明确排除；checksum/contract/adapter 验收通过。
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，

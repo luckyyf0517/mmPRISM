@@ -237,3 +237,7 @@ scripts/run_csl_news_annotation_qc.sh
   `archive_032/034` 通过完整 CRC/路径安全/label coverage，registry 更新为 22 final、19 passed/
   31,423 videos。`17:53Z` 状态报告为 3,795 eligible pair、missing artifact/sidecar 0、latest run
   新失败 0、抽检 3/3，近期约 1,382 samples/hour；四个 worker、下载服务和 timer 均为 active。
+- `19:18Z`，clean commit `84f2c52` 后 integrity scan 从一次预期的 dirty-Git 拒绝中恢复，并以
+  `0/SUCCESS` 完成；registry 更新为 31 final、28 passed/46,521 videos，失败仍仅 `001/005/008`。
+  `19:17Z` 状态报告已有 5,710 eligible pair、missing artifact/sidecar 0、latest run 新失败 0、
+  抽检 3/3，近期约 1,484 samples/hour；四个 registry worker 均 active 且 `NRestarts=0`。
