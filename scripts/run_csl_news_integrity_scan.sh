@@ -7,7 +7,7 @@ config="${MMPRISM_CSL_NEWS_INTEGRITY_CONFIG:-$project_root/configs/data/csl_news
 export MMPRISM_DATA_ROOT="${MMPRISM_DATA_ROOT:-/mnt/gfs/yanyifan/mmPRISM}"
 
 cd "$project_root"
-exec uv run --frozen mmprism csl-news-integrity-scan \
+exec uv run --frozen --extra visualization mmprism csl-news-integrity-scan \
   "$config" \
   --project-root "$project_root" \
   "$@"

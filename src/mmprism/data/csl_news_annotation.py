@@ -547,7 +547,15 @@ def discover_complete_archives(
         for archive_number, entry in passed.items():
             if archive_number % effective_count != effective_index:
                 continue
-            path = (config.source.archive_root / entry.archive_name).resolve()
+            path = (
+                config.source.archive_root / entry.archive_path_relative
+            ).resolve()
+            try:
+                path.relative_to(config.source.archive_root)
+            except ValueError as error:
+                raise CslNewsAnnotationError(
+                    f"Integrity-passed archive escapes archive root: {entry.archive_name}"
+                ) from error
             if not path.is_file():
                 raise CslNewsAnnotationError(
                     f"Integrity-passed archive is missing: {entry.archive_name}"
@@ -590,6 +598,13 @@ def _archive_integrity_provenance(
     if entry is None:
         raise CslNewsAnnotationError(
             f"Archive is no longer integrity-passed: {archive_path.name}"
+        )
+    expected_archive_path = (
+        config.source.archive_root / entry.archive_path_relative
+    ).resolve()
+    if archive_path.resolve() != expected_archive_path:
+        raise CslNewsAnnotationError(
+            f"Integrity registry selected a different source: {archive_path.name}"
         )
     archive_stat = archive_path.stat()
     if (
@@ -634,6 +649,8 @@ def _archive_integrity_provenance(
         "registry_path": str(registry_path),
         "registry_sha256": registry_sha256,
         "archive_sha256": entry.sha256,
+        "archive_path_relative": entry.archive_path_relative.as_posix(),
+        "archive_source_kind": entry.source_kind,
         "audit_path": audit["path"],
         "audit_sha256": audit["sha256"],
         "audited_at": audited_at,

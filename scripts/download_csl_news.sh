@@ -15,11 +15,14 @@ Options:
   --output-dir PATH   Incoming batch directory.
   --start N           First archive ID, inclusive (default: 1).
   --end N             Last archive ID, inclusive (default: 436).
+  --archive-id N      Download one archive ID; repeat for a sparse selection.
   --engine NAME       Download engine: curl or aria2 (default: curl).
   --workers N         Concurrent archives (default: curl=16, aria2=4).
   --connections N     Connections per file for aria2 (default: 8).
   --reserve-bytes N   Free-space reserve after compressed downloads (default: 1 TiB).
   --metadata-only     Download README and label files only.
+  --archives-only     Do not duplicate metadata after archive downloads.
+  --dry-run           Validate and print the immutable download plan only.
   -h, --help          Show this help.
 
 The downloader pins the official Hugging Face dataset revision, resumes partial
@@ -31,11 +34,15 @@ EOF
 output_dir="${MMPRISM_CSL_NEWS_ROOT:-/mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121}"
 start=1
 end=$ARCHIVE_COUNT
+range_explicit=0
+archive_ids=()
 engine="${MMPRISM_DOWNLOAD_ENGINE:-curl}"
 workers=""
 connections_per_file=8
 reserve_bytes=$DEFAULT_RESERVE_BYTES
 metadata_only=0
+archives_only=0
+dry_run=0
 
 while (($#)); do
   case "$1" in
@@ -45,10 +52,16 @@ while (($#)); do
       ;;
     --start)
       start="$2"
+      range_explicit=1
       shift 2
       ;;
     --end)
       end="$2"
+      range_explicit=1
+      shift 2
+      ;;
+    --archive-id)
+      archive_ids+=("$2")
       shift 2
       ;;
     --engine)
@@ -69,6 +82,14 @@ while (($#)); do
       ;;
     --metadata-only)
       metadata_only=1
+      shift
+      ;;
+    --archives-only)
+      archives_only=1
+      shift
+      ;;
+    --dry-run)
+      dry_run=1
       shift
       ;;
     -h|--help)
@@ -103,6 +124,14 @@ if ((start < 1 || end > ARCHIVE_COUNT || start > end)); then
   echo "Archive range must satisfy 1 <= start <= end <= $ARCHIVE_COUNT" >&2
   exit 2
 fi
+if ((${#archive_ids[@]} > 0 && range_explicit)); then
+  echo "--archive-id cannot be combined with --start or --end" >&2
+  exit 2
+fi
+if ((metadata_only && archives_only)); then
+  echo "--metadata-only and --archives-only are mutually exclusive" >&2
+  exit 2
+fi
 if ! [[ "$workers" =~ ^[1-9][0-9]*$ ]]; then
   echo "Worker count must be positive" >&2
   exit 2
@@ -127,9 +156,32 @@ fi
 metadata_dir="$output_dir/metadata"
 archive_dir="$output_dir/rgb_archives"
 log_dir="$output_dir/logs"
-mkdir -p "$metadata_dir" "$archive_dir" "$log_dir"
 
 base_url="https://huggingface.co/datasets/$REPO_ID/resolve/$REVISION"
+
+selected_ids=()
+if ((${#archive_ids[@]} > 0)); then
+  declare -A seen_archive_ids=()
+  for raw_archive_id in "${archive_ids[@]}"; do
+    if ! [[ "$raw_archive_id" =~ ^[0-9]+$ ]]; then
+      echo "Archive ID must be an integer: $raw_archive_id" >&2
+      exit 2
+    fi
+    archive_id=$((10#$raw_archive_id))
+    if ((archive_id < 1 || archive_id > ARCHIVE_COUNT)); then
+      echo "Archive ID is outside 1..$ARCHIVE_COUNT: $raw_archive_id" >&2
+      exit 2
+    fi
+    if [[ -n "${seen_archive_ids[$archive_id]:-}" ]]; then
+      echo "Duplicate archive ID: $raw_archive_id" >&2
+      exit 2
+    fi
+    seen_archive_ids[$archive_id]=1
+    selected_ids+=("$archive_id")
+  done
+else
+  mapfile -t selected_ids < <(seq "$start" "$end")
+fi
 
 run_aria2() {
   local url="$1"
@@ -249,14 +301,30 @@ download_metadata() {
     >"$log_dir/metadata_readme.log" 2>&1
 }
 
+if ((dry_run && metadata_only)); then
+  printf 'repo=%s\nrevision=%s\noutput_dir=%s\nselection=metadata-only\n' \
+    "$REPO_ID" "$REVISION" "$output_dir"
+  exit 0
+fi
+
 if ((metadata_only)); then
+  mkdir -p "$metadata_dir" "$archive_dir" "$log_dir"
   download_metadata
   exit 0
 fi
 
-available_bytes=$(df --output=avail -B1 "$output_dir" | tail -n 1 | tr -d ' ')
-selected_count=$((end - start + 1))
-if ((start == 1 && end == ARCHIVE_COUNT)); then
+capacity_probe="$output_dir"
+while [[ ! -e "$capacity_probe" ]]; do
+  parent=$(dirname "$capacity_probe")
+  if [[ "$parent" == "$capacity_probe" ]]; then
+    echo "Unable to locate an existing parent for capacity check: $output_dir" >&2
+    exit 1
+  fi
+  capacity_probe="$parent"
+done
+available_bytes=$(df --output=avail -B1 "$capacity_probe" | tail -n 1 | tr -d ' ')
+selected_count=${#selected_ids[@]}
+if ((${#archive_ids[@]} == 0 && start == 1 && end == ARCHIVE_COUNT)); then
   required_bytes=$FULL_DATASET_BYTES
 else
   required_bytes=$((selected_count * 2150000000))
@@ -267,8 +335,23 @@ if ((available_bytes < required_bytes + reserve_bytes)); then
   exit 1
 fi
 
-printf 'repo=%s\nrevision=%s\nrange=%03d-%03d\nengine=%s\nworkers=%d\nconnections_per_file=%d\nstarted_at=%s\n' \
-  "$REPO_ID" "$REVISION" "$start" "$end" "$engine" "$workers" "$connections_per_file" \
+if ((dry_run)); then
+  printf 'repo=%s\nrevision=%s\noutput_dir=%s\nengine=%s\nworkers=%d\nconnections_per_file=%d\nreserve_bytes=%d\nselected_archive_count=%d\n' \
+    "$REPO_ID" "$REVISION" "$output_dir" "$engine" "$workers" \
+    "$connections_per_file" "$reserve_bytes" "$selected_count"
+  for archive_id in "${selected_ids[@]}"; do
+    printf 'archive_%03d.zip -> %s/rgb_archives/archive_%03d.zip\n' \
+      "$archive_id" "$output_dir" "$archive_id"
+  done
+  exit 0
+fi
+
+mkdir -p "$metadata_dir" "$archive_dir" "$log_dir"
+
+selection=$(printf '%03d,' "${selected_ids[@]}")
+selection=${selection%,}
+printf 'repo=%s\nrevision=%s\narchive_ids=%s\nengine=%s\nworkers=%d\nconnections_per_file=%d\nstarted_at=%s\n' \
+  "$REPO_ID" "$REVISION" "$selection" "$engine" "$workers" "$connections_per_file" \
   "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   >"$output_dir/DOWNLOAD_STATE"
 
@@ -292,7 +375,10 @@ export base_url archive_dir log_dir reserve_bytes engine
 export aria2_bin aria2_library_path connections_per_file
 export -f download_archive
 
-seq "$start" "$end" | xargs -P "$workers" -n 1 bash -c 'download_archive "$1"' _
-download_metadata
+printf '%s\n' "${selected_ids[@]}" \
+  | xargs -P "$workers" -n 1 bash -c 'download_archive "$1"' _
+if ((!archives_only)); then
+  download_metadata
+fi
 
 printf 'completed_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$output_dir/DOWNLOAD_STATE"

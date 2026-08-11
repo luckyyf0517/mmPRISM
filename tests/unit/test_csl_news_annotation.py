@@ -73,7 +73,11 @@ runtime:
         }
 
     def _write_integrity_registry(
-        self, root: Path, archive_stats: dict[int, tuple[int, int]]
+        self,
+        root: Path,
+        archive_stats: dict[int, tuple[int, int]],
+        *,
+        archive_paths: dict[int, str] | None = None,
     ) -> Path:
         archives = {}
         for archive_id, (size_bytes, mtime_ns) in archive_stats.items():
@@ -94,11 +98,23 @@ runtime:
                     "sha256": "d" * 64,
                 },
             }
+            if archive_paths is not None:
+                relative_path = archive_paths[archive_id]
+                archives[key]["archive_path_relative"] = relative_path
+                archives[key]["source_kind"] = (
+                    "primary"
+                    if relative_path == f"archive_{key}.zip"
+                    else "replacement"
+                )
         path = root / "registry.json"
         path.write_text(
             json.dumps(
                 {
-                    "schema_version": "mmprism.csl_news_source_integrity_registry.v1",
+                    "schema_version": (
+                        "mmprism.csl_news_source_integrity_registry.v2"
+                        if archive_paths is not None
+                        else "mmprism.csl_news_source_integrity_registry.v1"
+                    ),
                     "source": {
                         "source_id": "fixture",
                         "source_revision": "revision",
@@ -307,6 +323,36 @@ runtime:
                 discover_complete_archives(
                     config, integrity_registry_path=registry
                 )
+
+    def test_registry_resolves_audited_replacement_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_csl_news_annotation_config(self._write_config(root), root)
+            replacement_relative = (
+                "replacements/recovery_v1/rgb_archives/archive_002.zip"
+            )
+            replacement = config.source.archive_root / replacement_relative
+            replacement.parent.mkdir(parents=True)
+            replacement.write_bytes(b"replacement")
+            stat = replacement.stat()
+            registry = self._write_integrity_registry(
+                root,
+                {2: (stat.st_size, stat.st_mtime_ns)},
+                archive_paths={2: replacement_relative},
+            )
+
+            archives = discover_complete_archives(
+                config, integrity_registry_path=registry
+            )
+            provenance = _archive_integrity_provenance(
+                config, registry, replacement
+            )
+
+        self.assertEqual(archives, [replacement.resolve()])
+        self.assertIsNotNone(provenance)
+        assert provenance is not None
+        self.assertEqual(provenance["archive_path_relative"], replacement_relative)
+        self.assertEqual(provenance["archive_source_kind"], "replacement")
 
     def test_archive_provenance_binds_one_registry_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

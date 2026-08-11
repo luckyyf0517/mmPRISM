@@ -20,8 +20,13 @@ from mmprism.data.csl_news import (
     write_csl_news_audit,
 )
 
-INTEGRITY_CONFIG_SCHEMA = "mmprism.csl_news_source_integrity_config.v1"
-INTEGRITY_REGISTRY_SCHEMA = "mmprism.csl_news_source_integrity_registry.v1"
+INTEGRITY_CONFIG_SCHEMA = "mmprism.csl_news_source_integrity_config.v2"
+INTEGRITY_REGISTRY_SCHEMA_V1 = "mmprism.csl_news_source_integrity_registry.v1"
+INTEGRITY_REGISTRY_SCHEMA = "mmprism.csl_news_source_integrity_registry.v2"
+SUPPORTED_INTEGRITY_REGISTRY_SCHEMAS = {
+    INTEGRITY_REGISTRY_SCHEMA_V1,
+    INTEGRITY_REGISTRY_SCHEMA,
+}
 ARCHIVE_PATTERN = re.compile(r"^archive_(\d{3})\.zip$")
 
 
@@ -102,6 +107,7 @@ def _write_json_atomic(payload: Mapping[str, Any], destination: Path) -> Path:
 class CslNewsIntegrityConfig:
     data_root: Path
     archive_root_relative: Path
+    replacement_archives_relative: Mapping[int, Path]
     labels_path_relative: Path
     registry_path_relative: Path
     audit_root_relative: Path
@@ -137,6 +143,12 @@ class CslNewsIntegrityConfig:
             "schema_version": INTEGRITY_CONFIG_SCHEMA,
             "source": {
                 "archive_root": self.archive_root_relative.as_posix(),
+                "replacement_archives": {
+                    f"{archive_id:03d}": path.as_posix()
+                    for archive_id, path in sorted(
+                        self.replacement_archives_relative.items()
+                    )
+                },
                 "labels_path": self.labels_path_relative.as_posix(),
                 "source_id": self.source_id,
                 "source_revision": self.source_revision,
@@ -165,6 +177,8 @@ class CslNewsIntegrityConfig:
 class CslNewsIntegrityArchive:
     archive_id: int
     archive_name: str
+    archive_path_relative: Path
+    source_kind: str
     size_bytes: int
     mtime_ns: int
     sha256: str
@@ -199,6 +213,7 @@ def load_csl_news_integrity_config(path: str | Path) -> CslNewsIntegrityConfig:
         {
             "data_root",
             "archive_root",
+            "replacement_archives",
             "labels_path",
             "source_id",
             "source_revision",
@@ -215,18 +230,54 @@ def load_csl_news_integrity_config(path: str | Path) -> CslNewsIntegrityConfig:
         output, {"registry_path", "audit_root", "scratch_root"}, "output"
     )
 
+    expected_archive_count = _integer(
+        source, "expected_archive_count", "source", minimum=1
+    )
+    replacement_payload = _mapping(
+        source.get("replacement_archives"), "source.replacement_archives"
+    )
+    replacement_archives: dict[int, Path] = {}
+    for raw_archive_id, raw_path in replacement_payload.items():
+        if not isinstance(raw_archive_id, str) or not re.fullmatch(
+            r"\d{3}", raw_archive_id
+        ):
+            raise CslNewsIntegrityError(
+                "source.replacement_archives keys must be three-digit archive IDs"
+            )
+        archive_id = int(raw_archive_id)
+        if not 1 <= archive_id <= expected_archive_count:
+            raise CslNewsIntegrityError(
+                f"replacement archive ID is outside configured range: {raw_archive_id}"
+            )
+        if not isinstance(raw_path, str) or not raw_path.strip():
+            raise CslNewsIntegrityError(
+                f"source.replacement_archives.{raw_archive_id} must be a relative path"
+            )
+        relative_path = Path(raw_path.strip())
+        expected_name = f"archive_{raw_archive_id}.zip"
+        if (
+            relative_path.is_absolute()
+            or ".." in relative_path.parts
+            or relative_path.name != expected_name
+            or relative_path == Path(expected_name)
+        ):
+            raise CslNewsIntegrityError(
+                f"source.replacement_archives.{raw_archive_id} must be a nested "
+                f"path ending in {expected_name}"
+            )
+        replacement_archives[archive_id] = relative_path
+
     return CslNewsIntegrityConfig(
         data_root=Path(_text(source, "data_root", "source")).expanduser().resolve(),
         archive_root_relative=_relative_path(source, "archive_root", "source"),
+        replacement_archives_relative=replacement_archives,
         labels_path_relative=_relative_path(source, "labels_path", "source"),
         registry_path_relative=_relative_path(output, "registry_path", "output"),
         audit_root_relative=_relative_path(output, "audit_root", "output"),
         scratch_root_relative=_relative_path(output, "scratch_root", "output"),
         source_id=_text(source, "source_id", "source"),
         source_revision=_text(source, "source_revision", "source"),
-        expected_archive_count=_integer(
-            source, "expected_archive_count", "source", minimum=1
-        ),
+        expected_archive_count=expected_archive_count,
         verify_crc=_boolean(validation, "verify_crc", "validation"),
         decode_sample_count=_integer(
             validation, "decode_sample_count", "validation", minimum=0
@@ -261,6 +312,10 @@ def _discover_archives(config: CslNewsIntegrityConfig) -> dict[int, Path]:
         )
     archives: dict[int, Path] = {}
     for path in config.archive_root.glob("archive_*.zip"):
+        if path.is_symlink() or not path.is_file():
+            raise CslNewsIntegrityError(
+                f"Primary archive candidate must be a regular file: {path}"
+            )
         archive_id = _archive_id(path)
         if not 1 <= archive_id <= config.expected_archive_count:
             raise CslNewsIntegrityError(
@@ -269,6 +324,22 @@ def _discover_archives(config: CslNewsIntegrityConfig) -> dict[int, Path]:
         if archive_id in archives:
             raise CslNewsIntegrityError(f"Duplicate archive ID: {archive_id:03d}")
         archives[archive_id] = path.resolve()
+    for archive_id, relative_path in config.replacement_archives_relative.items():
+        candidate = config.archive_root / relative_path
+        if not candidate.exists():
+            continue
+        if candidate.is_symlink() or not candidate.is_file():
+            raise CslNewsIntegrityError(
+                f"Replacement archive candidate must be a regular file: {candidate}"
+            )
+        resolved = candidate.resolve()
+        try:
+            resolved.relative_to(config.archive_root)
+        except ValueError as error:
+            raise CslNewsIntegrityError(
+                f"Replacement archive escapes archive_root: {candidate}"
+            ) from error
+        archives[archive_id] = resolved
     return dict(sorted(archives.items()))
 
 
@@ -317,9 +388,10 @@ def read_csl_news_integrity_registry_snapshot(
             f"Unable to load source-integrity registry {registry_path}: {error}"
         ) from error
     registry = dict(_mapping(payload, "registry"))
-    if registry.get("schema_version") != INTEGRITY_REGISTRY_SCHEMA:
+    if registry.get("schema_version") not in SUPPORTED_INTEGRITY_REGISTRY_SCHEMAS:
         raise CslNewsIntegrityError(
-            f"registry schema_version must be {INTEGRITY_REGISTRY_SCHEMA}"
+            "registry schema_version must be one of: "
+            + ", ".join(sorted(SUPPORTED_INTEGRITY_REGISTRY_SCHEMAS))
         )
     source = _mapping(registry.get("source"), "registry.source")
     if source_id is not None and source.get("source_id") != source_id:
@@ -335,6 +407,9 @@ def passed_csl_news_integrity_archives(
 ) -> dict[int, CslNewsIntegrityArchive]:
     """Return typed entries that passed a full source audit."""
 
+    schema_version = registry.get("schema_version")
+    if schema_version not in SUPPORTED_INTEGRITY_REGISTRY_SCHEMAS:
+        raise CslNewsIntegrityError("unsupported integrity registry schema")
     archives = _mapping(registry.get("archives"), "registry.archives")
     passed: dict[int, CslNewsIntegrityArchive] = {}
     for key, raw_entry in archives.items():
@@ -359,12 +434,37 @@ def passed_csl_news_integrity_archives(
         expected_name = f"archive_{key}.zip"
         if archive_name != expected_name:
             raise CslNewsIntegrityError(f"Archive name mismatch for registry entry {key}")
+        if schema_version == INTEGRITY_REGISTRY_SCHEMA_V1:
+            archive_path_relative = Path(expected_name)
+            source_kind = "primary"
+        else:
+            raw_relative_path = entry.get("archive_path_relative")
+            raw_source_kind = entry.get("source_kind")
+            if not isinstance(raw_relative_path, str) or not raw_relative_path:
+                raise CslNewsIntegrityError(
+                    f"Missing archive_path_relative for archive {key}"
+                )
+            archive_path_relative = Path(raw_relative_path)
+            if (
+                archive_path_relative.is_absolute()
+                or ".." in archive_path_relative.parts
+                or archive_path_relative.name != expected_name
+            ):
+                raise CslNewsIntegrityError(
+                    f"Invalid archive_path_relative for archive {key}"
+                )
+            if raw_source_kind not in {"primary", "replacement"}:
+                raise CslNewsIntegrityError(f"Invalid source_kind for archive {key}")
+            assert isinstance(raw_source_kind, str)
+            source_kind = raw_source_kind
         if not isinstance(sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", sha256):
             raise CslNewsIntegrityError(f"Invalid SHA-256 for archive {key}")
         archive_id = int(key)
         passed[archive_id] = CslNewsIntegrityArchive(
             archive_id=archive_id,
             archive_name=archive_name,
+            archive_path_relative=archive_path_relative,
+            source_kind=source_kind,
             size_bytes=size_bytes,
             mtime_ns=mtime_ns,
             sha256=sha256,
@@ -389,17 +489,19 @@ def _load_existing_registry(config: CslNewsIntegrityConfig) -> dict[str, Any] | 
 def _entry_is_reusable(
     entry: Mapping[str, Any],
     archive_path: Path,
-    data_root: Path,
+    config: CslNewsIntegrityConfig,
     *,
     labels_unchanged: bool,
 ) -> bool:
     archive_stat = archive_path.stat()
+    archive_path_relative = archive_path.relative_to(config.archive_root).as_posix()
     if (
         not labels_unchanged
         or entry.get("source_present") is not True
         or entry.get("status") not in {"passed", "failed"}
         or entry.get("size_bytes") != archive_stat.st_size
         or entry.get("mtime_ns") != archive_stat.st_mtime_ns
+        or entry.get("archive_path_relative") != archive_path_relative
     ):
         return False
     audit = entry.get("audit")
@@ -409,9 +511,9 @@ def _entry_is_reusable(
     audit_sha256 = audit.get("sha256")
     if not isinstance(audit_path_value, str) or not isinstance(audit_sha256, str):
         return False
-    audit_path = (data_root / audit_path_value).resolve()
+    audit_path = (config.data_root / audit_path_value).resolve()
     try:
-        audit_path.relative_to(data_root)
+        audit_path.relative_to(config.data_root)
     except ValueError:
         return False
     return audit_path.is_file() and _sha256(audit_path) == audit_sha256
@@ -450,6 +552,7 @@ def _registry_payload(
             "source_id": config.source_id,
             "source_revision": config.source_revision,
             "expected_archive_count": config.expected_archive_count,
+            "archive_root": config.archive_root_relative.as_posix(),
             "labels_sha256": labels_sha256,
         },
         "validation": {
@@ -466,6 +569,11 @@ def _registry_payload(
             "failed_archive_ids": failed_ids,
             "missing_archive_ids": missing_ids,
             "passed_video_count": sum(int(entry.get("video_count", 0)) for entry in passed),
+            "selected_replacement_archive_ids": sorted(
+                str(entry["archive_id"])
+                for entry in present
+                if entry.get("source_kind") == "replacement"
+            ),
         },
         "last_scan": dict(scan),
         "archives": dict(sorted(entries.items())),
@@ -534,7 +642,7 @@ def scan_csl_news_source_integrity(
             if current_entry is not None and _entry_is_reusable(
                 current_entry,
                 archive_path,
-                config.data_root,
+                config,
                 labels_unchanged=labels_unchanged,
             ):
                 current_entry["last_observed_at"] = observed_at
@@ -547,6 +655,16 @@ def scan_csl_news_source_integrity(
                 entries[key] = {
                     "archive_id": key,
                     "archive_name": archive_path.name,
+                    "archive_path_relative": archive_path.relative_to(
+                        config.archive_root
+                    ).as_posix(),
+                    "source_kind": (
+                        "replacement"
+                        if current_id in config.replacement_archives_relative
+                        and archive_path.relative_to(config.archive_root)
+                        == config.replacement_archives_relative[current_id]
+                        else "primary"
+                    ),
                     "status": "pending",
                     "source_present": True,
                     "size_bytes": archive_stat.st_size,
@@ -588,6 +706,16 @@ def scan_csl_news_source_integrity(
             entry = {
                 "archive_id": key,
                 "archive_name": archive_path.name,
+                "archive_path_relative": archive_path.relative_to(
+                    config.archive_root
+                ).as_posix(),
+                "source_kind": (
+                    "replacement"
+                    if current_id in config.replacement_archives_relative
+                    and archive_path.relative_to(config.archive_root)
+                    == config.replacement_archives_relative[current_id]
+                    else "primary"
+                ),
                 "status": report["status"],
                 "source_present": True,
                 "size_bytes": before.st_size,
