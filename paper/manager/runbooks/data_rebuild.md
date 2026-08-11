@@ -25,6 +25,10 @@ Role: `repeatable_data_rebuild_process`
 
 不得在 source discovery 阶段计算全量 checksum；先对大小/mtime/抽样 checksum 建立成本模型。
 
+当前来源尚未在 GFS 上，先按 `../data_upload_checklist.md` 执行 upload preflight：来源端提供目录/归档
+大小、文件数、类别、可重新下载性和 access class。任何内容先进入
+`/mnt/gfs/yanyifan/mmPRISM/incoming/<batch-id>/`，不得直接写入 canonical `raw/`。
+
 ## 2. Inventory
 
 inventory 输出建议为 JSONL/Parquet，每个文件至少包含：
@@ -33,6 +37,9 @@ inventory 输出建议为 JSONL/Parquet，每个文件至少包含：
 source_id, relative_path, size_bytes, mtime, suffix,
 sampled_checksum, detected_family, detected_modality, status
 ```
+
+每个 incoming batch 还必须保留来源端 `UPLOAD_MANIFEST.csv` 和 `SHA256SUMS`。全量 archive checksum
+在来源端生成，GFS 端验证；解压后文件级 checksum 可按数据规模分阶段补齐。
 
 另生成 summary：
 
@@ -85,3 +92,6 @@ provenance.json
 - 重复运行不产生不同 split 或输出。
 - 处理失败有明确记录。
 - 存储峰值不超过批准预算。
+- upload checksum 与来源端一致，incoming 原始包保持只读。
+- subject/session/sequence/radar-config 引用完整；unknown 字段显式记录。
+- license、伦理和 reviewer/public access 范围已登记。

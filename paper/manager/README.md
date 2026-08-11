@@ -15,12 +15,13 @@ Owner Scope: `paper/manager/*`
 4. 当前有哪些 blocker 和风险：`current/issues.md`
 5. 旧代码和目标架构差距是什么：`current/architecture_status.md`
 6. 数据当前在哪里、应该如何重建：`current/data_status.md`
-7. 正文和 response letter 当前状态如何：`current/manuscript_status.md`
-8. 全面路线图是什么：`current/roadmap.md`
-9. 现在具体要做什么：`tasks/todo.md`
-10. 每条 reviewer comment 如何闭环：`reviews/response_letter_tracker.md`
-11. 每个论文结论如何追溯到数据和实验：`evidence/`
-12. 每轮工作如何交接：`rounds/`
+7. 重新上传哪些数据、按什么顺序：`data_upload_checklist.md`
+8. 正文和 response letter 当前状态如何：`current/manuscript_status.md`
+9. 全面路线图是什么：`current/roadmap.md`
+10. 现在具体要做什么：`tasks/todo.md`
+11. 每条 reviewer comment 如何闭环：`reviews/response_letter_tracker.md`
+12. 每个论文结论如何追溯到数据和实验：`evidence/`
+13. 每轮工作如何交接：`rounds/`
 
 ## 2. 快速接管顺序
 

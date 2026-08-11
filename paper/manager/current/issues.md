@@ -10,7 +10,8 @@ Role: `risk_register`
 | `BLOCK-MANUSCRIPT` | P0 | 当前 Overleaf 稿件已接入，但原投稿定稿和 response 未导入，表图 provenance 未登记 | 无法完成新旧稿差异、全部 claim 和 paper-facing 数值审计 | in_progress | 继续执行 `PAPER-001B` |
 | `BLOCK-PROVENANCE` | P0 | 论文数值与 checkpoint/split/metrics 未建立映射 | 结果不可审计 | not_started | 建立 data/experiment/paper evidence registry |
 | `BLOCK-RUNTIME` | P1 | canonical UV/Python/CUDA 环境缺失 | 曾阻断 wheel、ML 和 GPU smoke | done | UV research profile、lockfile、wheel 和 A100 smoke 已验证；后续只通过 pyproject/uv.lock 变更 |
-| `OPS-STORAGE-001` | P1 | `/mnt/gfs` 已使用 98%，仅余约 207GB | 数据重建可能耗尽共享盘 | in_progress | 先 inventory、去重和容量预算，禁止盲目复制 |
+| `OPS-STORAGE-001` | P0 | `/mnt/gfs` 已使用 99%，仅余约 141 GB | 一次完整 raw upload 或解压可能耗尽共享盘 | in_progress | 先收集 source-side size inventory；按 P0 分批上传且禁止盲目解压 |
+| `BLOCK-SIM-PROVENANCE` | P0 | 稿件声称 MANO mesh/ray tracing，当前可见 legacy 仿真主要使用 skeleton 插值 | 无法确认原投稿 synthetic data 方法或直接复现其结果 | blocked | 上传/定位原始 MANO/mesh/simulator 输入、配置、代码和运行证据 |
 | `ARCH-STALE-001` | P1 | legacy 配置引用已删除的 `cubenet_rtm.py` 等模块 | 旧发布包不可运行，但不再阻断 canonical 新实现 | superseded | 仅纳入 forensic/release exclusion audit，不恢复到新包 |
 | `ARCH-CONFIG-001` | P1 | legacy 配置、入口和代码中存在大量硬编码路径/GPU/dtype | 旧代码不可迁移；canonical release 必须彻底隔离 | in_progress | strict path/runtime/run-plan 已落地，继续完成所有新入口 |
 | `DATA-PATH-001` | P1 | dataset 通过路径字符串替换关联多模态文件 | 易错且不可验证 | not_started | 改为 manifest-driven sample record |

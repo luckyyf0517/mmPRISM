@@ -10,7 +10,7 @@ Role: `master_task_index`
 |---|---|---|---|---|
 | `PAPER-001A` | 导入 decision letter 和 reviewer comments | supplied email | done | 原文、英文索引、中文工作版和稳定 ID 已建立 |
 | `PAPER-001B` | 导入原投稿、supplement 和当前返修稿 | user materials | in_progress | 当前稿已接入；补齐原投稿并完成表图/claim inventory |
-| `DATA-001` | 定位所有 mmPRISM 数据、权重、日志和论文结果资产 | source location | blocked | data registry 覆盖所有 data family 和历史 run |
+| `DATA-001` | 定位并分批接收所有 mmPRISM source、权重、日志和论文结果资产 | source location/capacity | blocked | upload gate 通过且 data registry 覆盖所有 data family 和历史 run |
 | `OPS-001` | 建立可复现 Python/CUDA 环境 | CUDA/package selection | done | UV/Python 3.12/cu128 lock、wheel、import 与 A100 smoke 通过 |
 | `ARCH-001` | 建立 greenfield package、配置、CLI 与基础 contract | author rebuild decision | in_progress | foundation tests 通过，legacy 隔离规则生效 |
 | `EXP-001` | 建立 canonical OmniHand/WaveLLM 最小 vertical smoke | `DATA-001`, `OPS-001`, `ARCH-001` | blocked | 两条新链各有可重复 smoke/eval artifact |

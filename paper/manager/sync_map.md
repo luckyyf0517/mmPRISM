@@ -9,6 +9,7 @@ Role: `minimal_cross_document_sync`
 | 触发事件 | 必须更新 | 条件性更新 |
 |---|---|---|
 | 发现新数据目录或权重 | `current/data_status.md`, `evidence/data_registry.md` | blocker 改变时更新 `dashboard.md` |
+| 上传范围、batch 或容量 gate 改变 | `data_upload_checklist.md`, `current/data_status.md`, `tasks/todo_data.md` | source 到达时更新 `evidence/data_registry.md`；风险变化时更新 `current/issues.md` 和 `dashboard.md` |
 | 数据 schema、split 或 manifest 改变 | `evidence/data_registry.md`, `tasks/todo_data.md` | 影响实验时更新 `evidence/experiment_registry.md` |
 | 架构决定拍板 | `decisions/decision_log.md`, `current/architecture_status.md` | 产生任务时更新 `tasks/todo_code.md` |
 | 完成一次实验 | `evidence/experiment_registry.md` | 支撑论文时更新 `evidence/paper_evidence_map.md` |

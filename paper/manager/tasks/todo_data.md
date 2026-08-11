@@ -1,6 +1,6 @@
 # Data Rebuild Todo
 
-Status: `blocked_on_asset_location`
+Status: `upload_preflight_in_progress`
 Last Updated: `2026-08-11`
 Role: `data_execution_tracker`
 
@@ -10,7 +10,13 @@ Role: `data_execution_tracker`
 | `DATA-001-B` | P0 | 只读统计容量、文件数、后缀和目录层次 | blocked | inventory report，不生成副本 |
 | `DATA-001-C` | P0 | 定位 checkpoint、log、prediction、metric artifacts | blocked | historical artifact inventory |
 | `DATA-001-D` | P0 | 评估 `/mnt/gfs` 容量和迁移策略 | in_progress | 峰值空间与清理/归档方案 |
-| `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | not_started | schema v1 reviewed |
+| `DATA-001-E` | P0 | 定义重新上传范围、优先级和 intake gate | done | `data_upload_checklist.md` 覆盖 P0/P1/P2、下载和重建边界 |
+| `DATA-001-F` | P0 | 收集待上传 archive/目录大小及可重下标记 | blocked | source-side preflight inventory 可计算上传/解压峰值 |
+| `DATA-001-G` | P0 | 上传并验证 metadata/radar config/calibration | blocked | checksum、字段字典、config mapping 和 access scope 通过 |
+| `DATA-001-H` | P0 | 分批上传私人真实采集 raw package | blocked | incoming batch checksum 完整且原始包只读 |
+| `DATA-001-I` | P0 | 确认 CSL-Daily/CSL-News 重新下载或上传路径 | blocked | 每个外部数据集有 version/URL/license/checksum 或 incoming batch |
+| `DATA-001-J` | P0 | 恢复原投稿 MANO/mesh/skeleton simulation provenance | blocked | 实际 simulator、输入、配置和历史证据一致 |
+| `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | in_progress | schema v1 reviewed against real source |
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | not_started | 所有数据族 mapping 明确 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | not_started | reader/validator fixture |
 | `DATA-003-A` | P1 | CSL-Daily source adapter 和 manifest | not_started | coverage/shape/annotation report |
@@ -26,6 +32,14 @@ Role: `data_execution_tracker`
 | `DATA-REV-001` | P0 | 统计 sign type/vocab/sentences/length/non-manual/subjects/scenes/splits | blocked | manuscript-ready table + machine-readable summary |
 | `DATA-REV-002` | P0 | 方向/双手重叠/物体遮挡/新用户真实数据 protocol 与采集 | blocked | ethics-cleared held-out manifest and QC |
 | `DATA-REV-003` | P0 | paired/category-matched synthetic-real evaluation set | blocked | same-sign fidelity manifest |
+
+## 当前上传 Gate
+
+1. 当前 GFS 仅余约 141 GB；`DATA-001-F` 完成前不批准 bulk upload。
+2. 先传匿名 metadata、radar config/calibration，再传私人 raw captures。
+3. 每批进入 `incoming/<batch-id>`，完成 checksum 和只读 inventory 后才登记为 source。
+4. 公共模型和可重新生成的 pose/signal/feature/cache 不占用首批上传预算。
+5. 完整操作清单：`../data_upload_checklist.md`。
 
 ## 禁止事项
 
