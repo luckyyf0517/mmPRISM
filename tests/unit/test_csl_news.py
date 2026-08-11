@@ -126,6 +126,26 @@ class CslNewsAuditTest(unittest.TestCase):
         self.assertIsInstance(report["archive"]["crc_error"], str)
         self.assertIn("ZIP integrity failure", report["failures"][0])
 
+    def test_reports_unreadable_final_zip_as_structured_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_path = root / "archive_001.zip"
+            archive_path.write_bytes(b"PK incomplete archive without central directory")
+            labels_path = root / "labels.json"
+            labels_path.write_text("[]", encoding="utf-8")
+
+            report = audit_csl_news_archive(
+                archive_path,
+                labels_path,
+                source_id="fixture",
+                verify_crc=True,
+            )
+
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["archive"]["video_count"], 0)
+        self.assertIn("BadZipFile", report["archive"]["read_error"])
+        self.assertIn("Unable to read ZIP archive", report["failures"][0])
+
     def test_writes_report_atomically(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output_path = Path(directory) / "artifacts" / "report.json"

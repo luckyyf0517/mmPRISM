@@ -23,7 +23,8 @@ Options:
   -h, --help          Show this help.
 
 The downloader pins the official Hugging Face dataset revision, resumes partial
-files, never extracts archives, and atomically renames completed downloads.
+files, never extracts archives, and atomically renames archives only after a
+complete ZIP integrity check.
 EOF
 }
 
@@ -163,20 +164,39 @@ run_aria2() {
   fi
 }
 
+verify_zip_integrity() {
+  local path="$1"
+  local log_path="$2"
+
+  if ! unzip -tqq "$path" >>"$log_path" 2>&1; then
+    printf 'ZIP integrity validation failed: %s\n' "$path" >>"$log_path"
+    return 65
+  fi
+}
+
 download_file() {
   local url="$1"
   local final_path="$2"
   local log_path="$3"
+  local validation="${4:-none}"
   local part_path="${final_path}.part"
+  local transfer_status
 
   if [[ -s "$final_path" ]]; then
+    if [[ "$validation" == "zip" ]]; then
+      verify_zip_integrity "$final_path" "$log_path" || return $?
+    fi
     return 0
   fi
 
   if [[ "$engine" == "aria2" ]]; then
-    run_aria2 "$url" "$part_path" "$log_path"
+    if run_aria2 "$url" "$part_path" "$log_path"; then
+      transfer_status=0
+    else
+      transfer_status=$?
+    fi
   else
-    curl --http1.1 \
+    if curl --http1.1 \
       --silent \
       --show-error \
       --location \
@@ -189,12 +209,29 @@ download_file() {
       --speed-time 300 \
       --continue-at - \
       --output "$part_path" \
-      "$url" >"$log_path" 2>&1
+      "$url" >"$log_path" 2>&1; then
+      transfer_status=0
+    else
+      transfer_status=$?
+    fi
+  fi
+  if ((transfer_status != 0)); then
+    printf 'Download command failed with exit %d; preserving partial file: %s\n' \
+      "$transfer_status" "$part_path" >>"$log_path"
+    return "$transfer_status"
+  fi
+  if [[ -e "${part_path}.aria2" ]]; then
+    printf 'aria2 control file remains after command success; refusing promotion: %s\n' \
+      "${part_path}.aria2" >>"$log_path"
+    return 65
+  fi
+  if [[ "$validation" == "zip" ]]; then
+    verify_zip_integrity "$part_path" "$log_path" || return $?
   fi
   mv "$part_path" "$final_path"
 }
 
-export -f run_aria2 download_file
+export -f run_aria2 verify_zip_integrity download_file
 
 download_metadata() {
   download_file \
@@ -247,7 +284,8 @@ download_archive() {
   download_file \
     "$base_url/archive_${archive_id}.zip" \
     "$archive_dir/archive_${archive_id}.zip" \
-    "$log_dir/archive_${archive_id}.log"
+    "$log_dir/archive_${archive_id}.log" \
+    zip
 }
 
 export base_url archive_dir log_dir reserve_bytes engine
