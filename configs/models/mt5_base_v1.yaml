@@ -1,0 +1,16 @@
+schema_version: mmprism.model_asset_config.v1
+asset_set_id: mt5_base_v1
+
+models:
+  - asset_id: mt5_base
+    repo_id: google/mt5-base
+    revision: 2eb15465c5dd7f72a8f7984306ad05ebc3dd1e1f
+    destination: mt5_base
+    loader: transformers_mt5
+    required_files:
+      - config.json
+      - generation_config.json
+      - pytorch_model.bin
+      - special_tokens_map.json
+      - spiece.model
+      - tokenizer_config.json

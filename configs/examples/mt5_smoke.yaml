@@ -1,0 +1,39 @@
+schema_version: mmprism.mt5_smoke.v1
+smoke_id: mt5_geometry_fusion_v1
+
+model:
+  asset_id: mt5_base
+  hidden_size: 768
+  radar_feature_dim: 1024
+  joint_count: 24
+  coordinate_dim: 3
+  pose_channels: [32, 64]
+  temporal_kernel_size: 5
+  dropout: 0.0
+  label_smoothing: 0.0
+  freeze_language_model: true
+
+batch:
+  batch_size: 2
+  frame_count: 4
+  prompt: "Translate hand sign language videos to Chinese:"
+  targets:
+    - "早上好。"
+    - "请帮我写一封邮件。"
+  max_target_length: 32
+
+optimization:
+  steps: 2
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  beta1: 0.9
+  beta2: 0.98
+
+generation:
+  max_new_tokens: 8
+  num_beams: 2
+
+runtime:
+  seed: 20260811
+  dtype: bfloat16
+  deterministic: true

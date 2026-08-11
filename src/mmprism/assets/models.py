@@ -30,7 +30,9 @@ _SHA1_PATTERN = re.compile(r"[0-9a-f]{40}")
 _SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 _ASSET_ID_PATTERN = re.compile(r"[a-z0-9][a-z0-9_-]*")
 _REPO_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*")
-_SUPPORTED_LOADERS = frozenset({"sentence_transformers", "transformers_auto"})
+_SUPPORTED_LOADERS = frozenset(
+    {"sentence_transformers", "transformers_auto", "transformers_mt5"}
+)
 
 
 class ModelAssetError(RuntimeError):
@@ -291,6 +293,14 @@ class ModelAssetSetConfig:
         return hashlib.sha256(encoded).hexdigest()
 
 
+@dataclass(frozen=True, slots=True)
+class ResolvedModelAsset:
+    spec: ModelAssetSpec
+    path: Path
+    verification: Mapping[str, object]
+    collection_manifest_sha256: str
+
+
 def load_model_asset_config(path: str | Path) -> ModelAssetSetConfig:
     config_path = Path(path).expanduser().resolve()
     try:
@@ -525,6 +535,28 @@ def _verify_collection_manifest(
     return _sha256(path)
 
 
+def resolve_model_asset(
+    config: ModelAssetSetConfig, output_root: str | Path, asset_id: str
+) -> ResolvedModelAsset:
+    root = _output_root(output_root)
+    verified = verify_model_assets(config, root)
+    verified_models = cast(list[dict[str, object]], verified["models"])
+    collection_sha256 = _verify_collection_manifest(config, root, verified_models)
+    matches = [spec for spec in config.models if spec.asset_id == asset_id]
+    if len(matches) != 1:
+        raise ModelAssetError(f"Model asset config does not contain asset_id {asset_id!r}")
+    verification = next(
+        model for model in verified_models if model["asset_id"] == asset_id
+    )
+    spec = matches[0]
+    return ResolvedModelAsset(
+        spec=spec,
+        path=_asset_path(root, spec),
+        verification=verification,
+        collection_manifest_sha256=collection_sha256,
+    )
+
+
 def _builder_payload(runtime_report: Mapping[str, Any] | None) -> dict[str, object]:
     git_commit: object = None
     git_dirty: object = None
@@ -731,7 +763,7 @@ def run_model_asset_smoke(
                     normalize_embeddings=False,
                     show_progress_bar=False,
                 )
-            else:
+            elif spec.loader == "transformers_auto":
                 import torch
                 from transformers import AutoModel, AutoTokenizer
 
@@ -754,6 +786,10 @@ def run_model_asset_smoke(
                 if pooled is None:
                     pooled = output.last_hidden_state[:, 0, :]
                 embeddings = pooled.detach().cpu().numpy()
+            else:
+                raise ModelAssetError(
+                    f"{spec.asset_id} is a generation asset; use the dedicated mT5 smoke"
+                )
         except (ImportError, OSError, RuntimeError, ValueError) as error:
             raise ModelAssetError(f"Unable to load {spec.asset_id} for smoke: {error}") from error
         summary = _embedding_summary(spec.asset_id, embeddings, len(texts))

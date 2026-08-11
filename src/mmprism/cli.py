@@ -50,6 +50,7 @@ from mmprism.release import (
     write_release_audit,
 )
 from mmprism.runtime import build_run_plan, collect_runtime_report, discover_project_root
+from mmprism.training import MT5SmokeError, load_mt5_smoke_config
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -204,6 +205,17 @@ def _build_parser() -> argparse.ArgumentParser:
     models_smoke_parser.add_argument("--device", default="cpu")
     models_smoke_parser.add_argument("--output", type=Path)
 
+    mt5_smoke_parser = subparsers.add_parser(
+        "mt5-smoke",
+        help="Run the pinned mT5 train-and-generate vertical smoke",
+    )
+    mt5_smoke_parser.add_argument("config", type=Path)
+    mt5_smoke_parser.add_argument("--model-assets", type=Path, required=True)
+    mt5_smoke_parser.add_argument("--project-root", type=Path)
+    mt5_smoke_parser.add_argument("--model-root", type=Path)
+    mt5_smoke_parser.add_argument("--device", default="auto")
+    mt5_smoke_parser.add_argument("--output", type=Path, required=True)
+
     return parser
 
 
@@ -213,6 +225,19 @@ def _resolve_model_root(argument: Path | None, project_root: Path) -> Path:
         value = argument
     else:
         value = os.environ.get("MMPRISM_MODEL_ROOT", "pretrained_models")
+    path = Path(value).expanduser()
+    return path.resolve() if path.is_absolute() else (project_root / path).resolve()
+
+
+def _resolve_mt5_model_root(argument: Path | None, project_root: Path) -> Path:
+    value: str | Path
+    if argument is not None:
+        value = argument
+    else:
+        value = os.environ.get(
+            "MMPRISM_MT5_MODEL_ROOT",
+            os.environ.get("MMPRISM_MODEL_ROOT", "pretrained_models/mt5_base_v1"),
+        )
     path = Path(value).expanduser()
     return path.resolve() if path.is_absolute() else (project_root / path).resolve()
 
@@ -416,6 +441,33 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_release_audit(payload, arguments.output)
             exit_code = 0 if payload["status"] == "passed" else 1
+        elif arguments.command == "mt5-smoke":
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            smoke_config = load_mt5_smoke_config(arguments.config)
+            model_config = load_model_asset_config(arguments.model_assets)
+            try:
+                from mmprism.training.mt5_smoke import (
+                    run_mt5_smoke,
+                    write_mt5_smoke_report,
+                )
+            except ImportError as error:
+                raise MT5SmokeError(
+                    "mT5 smoke dependencies are missing; install the train extra"
+                ) from error
+            payload = run_mt5_smoke(
+                smoke_config,
+                model_config,
+                _resolve_mt5_model_root(arguments.model_root, project_root),
+                device=arguments.device,
+                runtime_report=collect_runtime_report(project_root),
+                command=("mmprism", *effective_argv),
+            )
+            write_mt5_smoke_report(payload, arguments.output)
+            exit_code = 0
         else:
             project_root = (
                 arguments.project_root.resolve()
@@ -449,6 +501,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ConfigError,
         ManifestError,
         ModelAssetError,
+        MT5SmokeError,
         ReleaseAuditError,
         CslNewsAnnotationError,
         CslNewsAuditError,

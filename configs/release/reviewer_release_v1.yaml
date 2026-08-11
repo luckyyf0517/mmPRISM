@@ -13,6 +13,8 @@ include:
   - configs/release/**
   - scripts/bootstrap_env.sh
   - scripts/download_models.sh
+  - scripts/download_mt5.sh
+  - scripts/run_mt5_smoke.sh
   - src/mmprism/**
   - tests/**
 
@@ -33,6 +35,8 @@ required_paths:
   - configs/release/reviewer_release_v1.yaml
   - scripts/bootstrap_env.sh
   - scripts/download_models.sh
+  - scripts/download_mt5.sh
+  - scripts/run_mt5_smoke.sh
   - src/mmprism/cli.py
   - tests/fixtures/manifests/pose_smoke.jsonl
 
