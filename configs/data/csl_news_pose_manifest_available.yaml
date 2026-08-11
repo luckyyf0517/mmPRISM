@@ -22,8 +22,8 @@ validation:
       artifact_sha256: 6914b6bb0f26304d87b14d7cd7e8b00ac13e6d65202a97c0d4a89e3b0d38bca3
       declared_artifact_size_bytes: 0
       declared_artifact_sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-      audit_report: identity_audits/audit_20260811T211640Z.json
-      audit_report_sha256: a99f21e3e8db0b3e9b36ff03a0bbb5afa34e776de19a9873f217589fffd7aa16
+      audit_report: identity_audits/audit_20260811T212324Z.json
+      audit_report_sha256: 55478cbb6078d7e4c7b0c9a95577e6260e249239514ec584d082d5b0b4c538b4
       reason: sidecar_artifact_identity_conflict
 output:
   snapshot_root: manifests/csl_news/pose_manifest_v1
