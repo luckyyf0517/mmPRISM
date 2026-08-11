@@ -12,6 +12,7 @@ Role: `risk_register`
 | `BLOCK-RUNTIME` | P1 | canonical UV/Python/CUDA 环境缺失 | 曾阻断 wheel、ML 和 GPU smoke | done | UV research profile、lockfile、wheel 和 A100 smoke 已验证；后续只通过 pyproject/uv.lock 变更 |
 | `OPS-STORAGE-001` | P1 | `/mnt/gfs` 可用空间从约 141 GB 动态变化到约 3.6 TB | 共享容量可能在 935 GB 下载或解压期间再次变化 | in_progress | 下载保留 1 TiB floor；不并行解压，完成后重新预算 |
 | `BLOCK-SIM-PROVENANCE` | P0 | 稿件声称 MANO mesh/ray tracing，当前可见 legacy 仿真主要使用 skeleton 插值 | 无法确认原投稿 synthetic data 方法或直接复现其结果 | blocked | 上传/定位原始 MANO/mesh/simulator 输入、配置、代码和运行证据 |
+| `BLOCK-RADAR-PROVENANCE` | P0 | 稿件与 legacy 的 chirp 数、带宽/分辨率、clutter 顺序、阵列规模和 steering 共轭约定冲突 | 无法复现论文 4D cube 或校准物理坐标，错误假设会污染所有重训结果 | active_mitigated | range-Doppler 已按独立契约实现；上传逐序列 acquisition config、channel map、阵列/校准和历史 fixture 后再实现 beamforming |
 | `ARCH-STALE-001` | P1 | legacy 配置引用已删除的 `cubenet_rtm.py` 等模块 | 旧发布包不可运行，但不再阻断 canonical 新实现 | superseded | 仅纳入 forensic/release exclusion audit，不恢复到新包 |
 | `ARCH-CONFIG-001` | P1 | legacy 配置、入口和代码中存在大量硬编码路径/GPU/dtype | 旧代码不可迁移；canonical release 必须彻底隔离 | in_progress | strict path/runtime/run-plan 已落地，继续完成所有新入口 |
 | `DATA-PATH-001` | P1 | legacy dataset 通过路径字符串替换关联多模态文件 | 易错且不可验证 | in_progress | canonical sample/pose manifest 与 split index 已移除路径替换；待 radar/model-ready adapter 覆盖后关闭 |

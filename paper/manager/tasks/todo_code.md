@@ -8,13 +8,13 @@ Role: `architecture_execution_tracker`
 |---|---|---|---|---|
 | `ARCH-001-A` | P0 | 生成当前 import/config/entrypoint dependency graph | not_started | 缺失 target 和循环依赖清单 |
 | `ARCH-001-B` | P0 | 冻结 legacy forensic inventory 与公开 release 排除边界 | in_progress | archive/retain/exclude 决策记录 |
-| `ARCH-001-C` | P0 | 定义 radar、pose、feature、caption 的 shape/dtype contract | in_progress | sample manifest v1 与 split assignment v1 已落地；其余 tensor contract 待实现 |
+| `ARCH-001-C` | P0 | 定义 radar、pose、feature、caption 的 shape/dtype contract | evidence_ready | explicit axes/dtype/finite/value/unit/coordinate-frame validators 与 9 项 contract tests 通过 |
 | `ARCH-002-A` | P1 | 建立 `pyproject.toml` 和版本锁定方案 | done | Python 3.12、UV lock、research extras、wheel 与 A100 smoke 通过 |
 | `ARCH-002-B` | P1 | 建立 strict typed config 与 validation | evidence_ready | unknown key、类型、环境路径和 protocol version 启动前校验 |
 | `ARCH-002-C` | P1 | 建立统一 path/runtime/run config | evidence_ready | path/runtime/run-plan 与原子 formal-run writer 已落地；resolved config、Git/environment、命令、输入 hash、metric protocol/status contract 通过 |
 | `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | in_progress | doctor/config/manifest/plan/run-init/split、CSL-News audit/integrity/annotate/status/QC/metadata/source/pose manifest 已落地；train/eval/prepare 待实现 |
 | `ARCH-003-A` | P1 | 实现 manifest-driven dataset adapters | in_progress | CSL-News pose+caption adapter 与 dependency-light SplitIndex 已通过真实 snapshot；其他数据族/radar adapter 待实现 |
-| `ARCH-003-B` | P1 | 从明确契约实现 Processor/Simulation | not_started | CPU/GPU shape + numerical tests |
+| `ARCH-003-B` | P1 | 从明确契约实现 Processor/Simulation | in_progress | NumPy range-Doppler 与 17 项 analytic/error tests 通过；beamforming/physical axes/simulation 等 provenance 后实现 |
 | `ARCH-004-A` | P1 | 实现 canonical OmniHand model/training/evaluation | not_started | 2-batch smoke + metric artifact |
 | `ARCH-004-B` | P1 | 实现 batch-first temporal processing | not_started | contract 正确、性能报告完整 |
 | `ARCH-005-A` | P1 | 清理 model factory 与 MT5/Phi-3 支持边界 | not_started | supported model matrix + tests |

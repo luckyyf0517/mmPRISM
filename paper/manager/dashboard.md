@@ -57,6 +57,8 @@ Role: `control_panel`
   incomplete final；promotion gate 已修复，原件保留并等待 versioned 重下验证。
 - `BLOCK-DATA-ROOT`：CSL-News source 已进入下载，但私人 collected、CSL-Daily 和历史 run 仍未知。
 - `BLOCK-SIM-PROVENANCE`：稿件 MANO mesh/ray-tracing 描述与当前可见 skeleton 仿真路径不一致。
+- `BLOCK-RADAR-PROVENANCE`：稿件与 legacy 的 chirp、带宽、clutter、阵列规模和共轭约定冲突；
+  canonical range-Doppler 已独立验收，但 beamforming/物理坐标必须等待 acquisition/calibration 证据。
 - `BLOCK-MANUSCRIPT`：当前稿/supplement 的 19 个 environment/20 个 item 已登记，但原投稿定稿与
   response letter 缺失，科学 provenance 尚未闭合；Supplementary Tables S2-S6 必须由真实实验重建。
 - `BLOCK-PROVENANCE`：历史 checkpoint、split 和 paper-facing 数值尚未建立对应关系。
@@ -69,7 +71,8 @@ Role: `control_panel`
 3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
 4. 继续 `ARCH-001/002`，在已完成的 formal-run writer 上实现 canonical prepare/train/evaluate CLI。
-5. 数据定位后执行 `ARCH-003`，从真实 manifest fixture 建立 radar vertical slice。
+5. 为 `ARCH-003` 收集 radar acquisition/channel/calibration 证据；绑定真实 manifest fixture 后实现
+   beamforming 与完整 cube gate，禁止用 legacy 默认值填补未知项。
 
 ## Source Of Truth
 

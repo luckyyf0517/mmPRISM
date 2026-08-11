@@ -29,6 +29,7 @@ Role: `cross_workstream_decisions`
 | `DEC-021` | 2026-08-11 | CSL-News pose+caption 通过独立、不可变、integrity-gated manifest snapshot 暴露给后续数据链 | 持续写入的 sidecar 目录和失败 archive 历史产物不能直接作为稳定训练输入 | accepted | builder 冻结扫描开始时的 completed pair，只纳入 typed `passed` archive，校验 caption/shape/dtype/checksum 并保存 exact registry bytes；adapter 只解析 portable manifest，不通过路径替换关联数据 |
 | `DEC-022` | 2026-08-11 | canonical split 绑定 exact manifest hash，并以匿名稳定 group ID 和 SHA-256 整数权重分配 | 文件顺序、浮点随机数和机器路径无法提供跨运行稳定且可审计的 split；原始 group value 也不应无必要暴露 | accepted | assignments 只保存 sample_id/group_id/split；builder 强制 coverage/group-disjoint/clean-Git/atomic/checksum gate；partial source 只能生成 partial split，sequence split 不得替代 subject-independent 证据 |
 | `DEC-023` | 2026-08-11 | 所有 canonical formal run 先通过统一 writer 原子冻结配置、环境/Git、命令和具名输入哈希 | 仅保存 logger/checkpoint 或由各训练脚本自由落盘无法满足 paper evidence 审计 | accepted | `run-init` 只建立 provenance envelope；metrics 必须绑定 protocol/sample count 且为有限数值；完成状态要求 metrics；distributed prediction/checkpoint writer 单独实现 |
+| `DEC-024` | 2026-08-11 | canonical radar v1 先冻结显式张量轴并只实现 NumPy range-Doppler，beamforming 等 provenance 恢复后再实现 | 稿件与 legacy 在 chirp 数、带宽、clutter 顺序、116/86 阵列和 `A^H` 共轭上冲突 | accepted | 新处理器不硬编码 64/32，保留复数精度；beamforming、物理轴和 simulation 保持 blocked，不能据此声称完整 4D cube 已复现 |
 
 ## 决策记录模板
 

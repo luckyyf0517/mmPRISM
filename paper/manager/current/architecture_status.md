@@ -41,14 +41,16 @@ provenance、原子 formal-run artifact writer、统一 CLI 和 dependency-light
 冻结 resolved config、环境/Git、命令以及 manifest/split/checkpoint/model 输入 SHA-256，并以显式
 metric protocol 写入有限数值。CSL-News RTMW3D 标注已具有独立 strict
 config、原子 artifact、resume/failure contract、GPU smoke、portable pose+caption manifest builder、
-无训练依赖的随机访问 adapter 和 deterministic group split；Radar、OmniHand、WaveLLM 与通用
-训练/评估服务、checkpoint/prediction writer 尚未实现。
+无训练依赖的随机访问 adapter 和 deterministic group split。Radar 已冻结 raw/range-Doppler/cube、
+pose、feature 和 caption contract，并完成 NumPy range-Doppler；beamforming/physical axes/simulation
+因 provenance 冲突保持 blocked。OmniHand、WaveLLM 与通用训练/评估服务、checkpoint/prediction
+writer 尚未实现。
 
 Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-64 unit tests passed
+90 tests passed（含 9 项 tensor contract 和 17 项 range-Doppler numerical/error tests）
 doctor/config/plan/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -115,6 +117,7 @@ predicted pose [B,T,2,24,3] and/or feature [B,T,D]
 | `ARCH-008` | temporal frame processing 使用 Python 循环 | 性能和显存低效 | 正确性冻结后再 batch flatten/vectorize |
 | `ARCH-009` | 测试期间逐 batch 读写同一 JSON | 慢且易损坏 | rank-local append/aggregate artifact writer |
 | `ARCH-010` | 指标、模型、运行脚本没有 protocol version | 数值漂移难解释 | metric/data/model protocol 显式版本化 |
+| `ARCH-011` | 稿件与 legacy 的带宽、chirp、阵列、clutter 和 steering 共轭不一致 | 直接照搬将生成不可解释的 4D cube | range-Doppler 独立验收；beamforming 等 acquisition/calibration evidence |
 
 ## 4. Canonical Package
 

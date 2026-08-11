@@ -49,6 +49,7 @@ Dataset-specific audits:
 - `csl_news_data.md`: official source, legacy preprocessing flow, interface drift and canonical rebuild stages.
 - `run_artifacts.md`: atomic formal-run initialization, input hashing, metrics and lifecycle contract.
 - `data_splits.md`: deterministic group assignment, portable split artifacts and leakage gates.
+- `tensor_contracts.md`: canonical radar/pose/feature axes and the NumPy range-Doppler protocol.
 
 ## Environment Contract
 
