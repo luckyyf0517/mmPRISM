@@ -15,6 +15,7 @@ from mmprism.data.csl_news_annotation import (
     sha256_file,
     validate_annotation_output,
 )
+from mmprism.data.csl_news_integrity import load_csl_news_integrity_registry
 
 STATUS_SCHEMA_VERSION = "mmprism.csl_news_pose_annotation_status.v1"
 
@@ -103,6 +104,7 @@ def build_csl_news_annotation_status(
     *,
     sample_validate_count: int = 3,
     recent_window: int = 200,
+    integrity_registry_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build a read-only operational report for a running annotation build."""
 
@@ -113,7 +115,28 @@ def build_csl_news_annotation_status(
 
     output_root = config.runtime.output_root
     scratch_root = config.runtime.scratch_root
-    archives = discover_complete_archives(config)
+    registry_path = (
+        Path(integrity_registry_path).expanduser().resolve()
+        if integrity_registry_path is not None
+        else None
+    )
+    integrity_summary: Mapping[str, Any] = {}
+    integrity_registry_sha256: str | None = None
+    if registry_path is not None:
+        registry = load_csl_news_integrity_registry(
+            registry_path,
+            source_id=config.source.source_id,
+            source_revision=config.source.source_revision,
+        )
+        integrity_summary = (
+            summary
+            if isinstance((summary := registry.get("summary")), Mapping)
+            else {}
+        )
+        integrity_registry_sha256 = sha256_file(registry_path)
+    archives = discover_complete_archives(
+        config, integrity_registry_path=registry_path
+    )
     archive_video_counts: dict[str, int] = {}
     archive_errors: dict[str, str] = {}
     for archive_path in archives:
@@ -226,12 +249,18 @@ def build_csl_news_annotation_status(
         for path in latest_sidecars[:sample_validate_count]
     ]
     validations_passed = all(item["passed"] for item in validation)
+    integrity_attention = any(
+        isinstance(integrity_summary.get(key), int)
+        and int(integrity_summary[key]) > 0
+        for key in ("failed_count", "pending_count", "missing_count")
+    )
     healthy = bool(
         not archive_errors
         and not missing_sidecars
         and not missing_artifacts
         and not failures_since_latest_run
         and validations_passed
+        and not integrity_attention
         and (completed_sample_count > 0 or available_video_count == 0)
     )
 
@@ -253,6 +282,9 @@ def build_csl_news_annotation_status(
             "available_video_count": available_video_count,
             "archive_video_counts": archive_video_counts,
             "archive_errors": archive_errors,
+            "integrity_registry": str(registry_path) if registry_path else None,
+            "integrity_registry_sha256": integrity_registry_sha256,
+            "integrity_summary": dict(integrity_summary),
         },
         "annotation": {
             "completed_sample_count": completed_sample_count,

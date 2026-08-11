@@ -15,6 +15,7 @@ from mmprism.data import (
     stable_sample_id,
     validate_annotation_output,
 )
+from mmprism.data.csl_news_annotation import discover_complete_archives
 
 
 class CslNewsAnnotationTest(unittest.TestCase):
@@ -65,6 +66,38 @@ runtime:
             "canonical_confidence": np.ones((frame_count, 2, 24), dtype=np.float32),
             "canonical_valid": np.ones((frame_count, 2, 24), dtype=np.bool_),
         }
+
+    def _write_integrity_registry(
+        self, root: Path, archive_stats: dict[int, tuple[int, int]]
+    ) -> Path:
+        archives = {}
+        for archive_id, (size_bytes, mtime_ns) in archive_stats.items():
+            key = f"{archive_id:03d}"
+            archives[key] = {
+                "archive_id": key,
+                "archive_name": f"archive_{key}.zip",
+                "status": "passed" if archive_id != 1 else "failed",
+                "source_present": True,
+                "size_bytes": size_bytes,
+                "mtime_ns": mtime_ns,
+                "sha256": "b" * 64,
+                "video_count": archive_id,
+            }
+        path = root / "registry.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "schema_version": "mmprism.csl_news_source_integrity_registry.v1",
+                    "source": {
+                        "source_id": "fixture",
+                        "source_revision": "revision",
+                    },
+                    "archives": archives,
+                }
+            ),
+            encoding="utf-8",
+        )
+        return path
 
     def test_loads_strict_config_and_resolves_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -172,6 +205,46 @@ runtime:
             self.assertFalse(
                 is_completed_annotation_archive(marker, "fingerprint", 2048)
             )
+
+    def test_registry_filters_failed_archives_and_applies_worker_shard(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_csl_news_annotation_config(self._write_config(root), root)
+            config.source.archive_root.mkdir()
+            stats = {}
+            for archive_id in (1, 2):
+                path = config.source.archive_root / f"archive_{archive_id:03d}.zip"
+                path.write_bytes(f"archive-{archive_id}".encode())
+                stat = path.stat()
+                stats[archive_id] = (stat.st_size, stat.st_mtime_ns)
+            registry = self._write_integrity_registry(root, stats)
+
+            archives = discover_complete_archives(
+                config,
+                worker_index=0,
+                worker_count=2,
+                integrity_registry_path=registry,
+            )
+
+        self.assertEqual([path.name for path in archives], ["archive_002.zip"])
+
+    def test_registry_rejects_archive_changed_after_audit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_csl_news_annotation_config(self._write_config(root), root)
+            config.source.archive_root.mkdir()
+            archive = config.source.archive_root / "archive_002.zip"
+            archive.write_bytes(b"original")
+            stat = archive.stat()
+            registry = self._write_integrity_registry(
+                root, {2: (stat.st_size, stat.st_mtime_ns)}
+            )
+            archive.write_bytes(b"changed-source")
+
+            with self.assertRaisesRegex(CslNewsAnnotationError, "changed after audit"):
+                discover_complete_archives(
+                    config, integrity_registry_path=registry
+                )
 
 
 if __name__ == "__main__":

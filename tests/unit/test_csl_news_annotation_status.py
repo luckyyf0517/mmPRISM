@@ -130,6 +130,68 @@ runtime:
 
         self.assertEqual(payload, {"status": "healthy"})
 
+    def test_integrity_registry_limits_available_archives(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config, _ = self._write_fixture(root)
+            second_archive = config.source.archive_root / "archive_002.zip"
+            with zipfile.ZipFile(second_archive, "w") as archive:
+                archive.writestr("excluded.mp4", b"not-eligible")
+            first_archive = config.source.archive_root / "archive_001.zip"
+            first_stat = first_archive.stat()
+            second_stat = second_archive.stat()
+            registry = root / "registry.json"
+            registry.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "mmprism.csl_news_source_integrity_registry.v1",
+                        "source": {
+                            "source_id": "fixture",
+                            "source_revision": "revision",
+                        },
+                        "summary": {
+                            "passed_count": 1,
+                            "failed_count": 1,
+                            "pending_count": 0,
+                            "missing_count": 0,
+                        },
+                        "archives": {
+                            "001": {
+                                "archive_id": "001",
+                                "archive_name": "archive_001.zip",
+                                "status": "passed",
+                                "source_present": True,
+                                "size_bytes": first_stat.st_size,
+                                "mtime_ns": first_stat.st_mtime_ns,
+                                "sha256": "a" * 64,
+                                "video_count": 2,
+                            },
+                            "002": {
+                                "archive_id": "002",
+                                "archive_name": "archive_002.zip",
+                                "status": "failed",
+                                "source_present": True,
+                                "size_bytes": second_stat.st_size,
+                                "mtime_ns": second_stat.st_mtime_ns,
+                                "sha256": "b" * 64,
+                                "video_count": 1,
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            report = build_csl_news_annotation_status(
+                config,
+                sample_validate_count=1,
+                integrity_registry_path=registry,
+            )
+
+        self.assertEqual(report["source"]["complete_archive_count"], 1)
+        self.assertEqual(report["source"]["available_video_count"], 2)
+        self.assertEqual(report["status"], "attention_required")
+
 
 if __name__ == "__main__":
     unittest.main()

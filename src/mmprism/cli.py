@@ -9,6 +9,7 @@ from mmprism.contracts import ManifestError, validate_manifest
 from mmprism.data import (
     CslNewsAnnotationError,
     CslNewsAuditError,
+    CslNewsIntegrityError,
     CslNewsMetadataError,
     CslNewsSourceManifestError,
     audit_csl_news_archive,
@@ -17,8 +18,10 @@ from mmprism.data import (
     build_csl_news_metadata_profile,
     build_csl_news_source_manifest_snapshot,
     load_csl_news_annotation_config,
+    load_csl_news_integrity_config,
     load_csl_news_source_manifest_config,
     run_csl_news_annotation,
+    scan_csl_news_source_integrity,
     write_csl_news_annotation_qc,
     write_csl_news_annotation_status,
     write_csl_news_audit,
@@ -63,6 +66,9 @@ def _build_parser() -> argparse.ArgumentParser:
     annotation_parser.add_argument("--project-root", type=Path)
     annotation_parser.add_argument("--max-videos", type=int)
     annotation_parser.add_argument("--archive-id", type=int)
+    annotation_parser.add_argument("--worker-index", type=int)
+    annotation_parser.add_argument("--worker-count", type=int)
+    annotation_parser.add_argument("--integrity-registry", type=Path)
     annotation_parser.add_argument(
         "--once", action="store_true", help="Process currently complete archives and exit"
     )
@@ -76,6 +82,7 @@ def _build_parser() -> argparse.ArgumentParser:
     status_parser.add_argument("--sample-validate", type=int, default=3)
     status_parser.add_argument("--recent-window", type=int, default=200)
     status_parser.add_argument("--output", type=Path)
+    status_parser.add_argument("--integrity-registry", type=Path)
 
     qc_parser = subparsers.add_parser(
         "csl-news-annotation-qc",
@@ -103,6 +110,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     source_manifest_parser.add_argument("config", type=Path)
     source_manifest_parser.add_argument("--project-root", type=Path)
+
+    integrity_parser = subparsers.add_parser(
+        "csl-news-integrity-scan",
+        help="Incrementally audit final CSL-News ZIPs into a cumulative registry",
+    )
+    integrity_parser.add_argument("config", type=Path)
+    integrity_parser.add_argument("--project-root", type=Path)
+    integrity_parser.add_argument("--max-new-archives", type=int)
+    integrity_parser.add_argument("--archive-id", type=int)
 
     return parser
 
@@ -159,6 +175,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 max_videos=arguments.max_videos,
                 once=arguments.once,
                 archive_id=arguments.archive_id,
+                worker_index=arguments.worker_index,
+                worker_count=arguments.worker_count,
+                integrity_registry_path=arguments.integrity_registry,
             )
             exit_code = 0 if payload["failed"] == 0 else 1
         elif arguments.command == "csl-news-annotation-status":
@@ -174,6 +193,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 annotation_config,
                 sample_validate_count=arguments.sample_validate,
                 recent_window=arguments.recent_window,
+                integrity_registry_path=arguments.integrity_registry,
             )
             if arguments.output:
                 write_csl_news_annotation_status(payload, arguments.output)
@@ -204,7 +224,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if arguments.output:
                 write_csl_news_metadata_profile(payload, arguments.output)
             exit_code = 1 if payload["status"] == "failed" else 0
-        else:
+        elif arguments.command == "csl-news-source-manifest":
             project_root = (
                 arguments.project_root.resolve()
                 if arguments.project_root
@@ -218,11 +238,26 @@ def main(argv: Sequence[str] | None = None) -> int:
                 runtime_report=collect_runtime_report(project_root),
             )
             exit_code = 0
+        else:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            integrity_config = load_csl_news_integrity_config(arguments.config)
+            payload = scan_csl_news_source_integrity(
+                integrity_config,
+                runtime_report=collect_runtime_report(project_root),
+                max_new_archives=arguments.max_new_archives,
+                archive_id=arguments.archive_id,
+            )
+            exit_code = 0
     except (
         ConfigError,
         ManifestError,
         CslNewsAnnotationError,
         CslNewsAuditError,
+        CslNewsIntegrityError,
         CslNewsMetadataError,
         CslNewsSourceManifestError,
         FileNotFoundError,

@@ -1,9 +1,11 @@
 """Manifest-driven datasets, transforms, validation, and split construction."""
 
 from mmprism.data.csl_news import (
+    CslNewsAuditContext,
     CslNewsAuditError,
     audit_csl_news_archive,
     csl_news_source_program,
+    load_csl_news_audit_context,
     verify_zip_crc,
     write_csl_news_audit,
 )
@@ -26,6 +28,15 @@ from mmprism.data.csl_news_annotation_status import (
     build_csl_news_annotation_status,
     write_csl_news_annotation_status,
 )
+from mmprism.data.csl_news_integrity import (
+    CslNewsIntegrityArchive,
+    CslNewsIntegrityConfig,
+    CslNewsIntegrityError,
+    load_csl_news_integrity_config,
+    load_csl_news_integrity_registry,
+    passed_csl_news_integrity_archives,
+    scan_csl_news_source_integrity,
+)
 from mmprism.data.csl_news_manifest import (
     CslNewsSourceManifestConfig,
     CslNewsSourceManifestError,
@@ -41,7 +52,11 @@ from mmprism.data.csl_news_metadata import (
 __all__ = [
     "CslNewsAnnotationConfig",
     "CslNewsAnnotationError",
+    "CslNewsAuditContext",
     "CslNewsAuditError",
+    "CslNewsIntegrityArchive",
+    "CslNewsIntegrityConfig",
+    "CslNewsIntegrityError",
     "CslNewsMetadataError",
     "CslNewsSourceManifestConfig",
     "CslNewsSourceManifestError",
@@ -54,9 +69,14 @@ __all__ = [
     "csl_news_source_program",
     "is_completed_annotation_archive",
     "is_completed_annotation_sample",
+    "load_csl_news_audit_context",
     "load_csl_news_annotation_config",
+    "load_csl_news_integrity_config",
+    "load_csl_news_integrity_registry",
     "load_csl_news_source_manifest_config",
     "run_csl_news_annotation",
+    "passed_csl_news_integrity_archives",
+    "scan_csl_news_source_integrity",
     "stable_sample_id",
     "validate_annotation_output",
     "verify_zip_crc",

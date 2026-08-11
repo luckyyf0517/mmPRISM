@@ -21,6 +21,12 @@ from typing import Any, Protocol
 import numpy as np
 import yaml
 
+from mmprism.data.csl_news_integrity import (
+    CslNewsIntegrityError,
+    load_csl_news_integrity_registry,
+    passed_csl_news_integrity_archives,
+)
+
 ANNOTATION_SCHEMA_VERSION = "mmprism.csl_news_pose_annotation.v1"
 OUTPUT_SCHEMA_VERSION = "mmprism.csl_news_pose_sample.v1"
 ARCHIVE_PATTERN = re.compile(r"^archive_(\d{3})\.zip$")
@@ -449,16 +455,73 @@ def _archive_number(path: Path) -> int:
     return int(match.group(1))
 
 
-def discover_complete_archives(config: CslNewsAnnotationConfig) -> list[Path]:
+def _resolve_worker_shard(
+    config: CslNewsAnnotationConfig,
+    worker_index: int | None,
+    worker_count: int | None,
+) -> tuple[int, int]:
+    effective_index = (
+        config.runtime.worker_index if worker_index is None else worker_index
+    )
+    effective_count = (
+        config.runtime.worker_count if worker_count is None else worker_count
+    )
+    if effective_count < 1:
+        raise CslNewsAnnotationError("worker_count must be positive")
+    if not 0 <= effective_index < effective_count:
+        raise CslNewsAnnotationError(
+            "worker_index must be non-negative and less than worker_count"
+        )
+    return effective_index, effective_count
+
+
+def discover_complete_archives(
+    config: CslNewsAnnotationConfig,
+    *,
+    worker_index: int | None = None,
+    worker_count: int | None = None,
+    integrity_registry_path: str | Path | None = None,
+) -> list[Path]:
     if not config.source.archive_root.is_dir():
         raise CslNewsAnnotationError(
             f"Archive root does not exist: {config.source.archive_root}"
         )
-    archives = []
-    for path in config.source.archive_root.glob("archive_*.zip"):
-        archive_number = _archive_number(path)
-        if archive_number % config.runtime.worker_count == config.runtime.worker_index:
-            archives.append(path.resolve())
+    effective_index, effective_count = _resolve_worker_shard(
+        config, worker_index, worker_count
+    )
+    archives: list[Path] = []
+    if integrity_registry_path is not None:
+        try:
+            registry = load_csl_news_integrity_registry(
+                integrity_registry_path,
+                source_id=config.source.source_id,
+                source_revision=config.source.source_revision,
+            )
+            passed = passed_csl_news_integrity_archives(registry)
+        except CslNewsIntegrityError as error:
+            raise CslNewsAnnotationError(str(error)) from error
+        for archive_number, entry in passed.items():
+            if archive_number % effective_count != effective_index:
+                continue
+            path = (config.source.archive_root / entry.archive_name).resolve()
+            if not path.is_file():
+                raise CslNewsAnnotationError(
+                    f"Integrity-passed archive is missing: {entry.archive_name}"
+                )
+            archive_stat = path.stat()
+            if (
+                archive_stat.st_size != entry.size_bytes
+                or archive_stat.st_mtime_ns != entry.mtime_ns
+            ):
+                raise CslNewsAnnotationError(
+                    f"Integrity-passed archive changed after audit: {entry.archive_name}"
+                )
+            archives.append(path)
+    else:
+        for path in config.source.archive_root.glob("archive_*.zip"):
+            archive_number = _archive_number(path)
+            if archive_number % effective_count == effective_index:
+                archives.append(path.resolve())
     return sorted(archives, key=_archive_number)
 
 
@@ -828,7 +891,13 @@ def _emit(event: str, **payload: Any) -> None:
 
 
 def _run_metadata(
-    config: CslNewsAnnotationConfig, model_assets: Mapping[str, str], labels_sha256: str
+    config: CslNewsAnnotationConfig,
+    model_assets: Mapping[str, str],
+    labels_sha256: str,
+    *,
+    worker_index: int,
+    worker_count: int,
+    integrity_registry_path: Path | None,
 ) -> Path:
     try:
         git_commit = subprocess.run(
@@ -863,6 +932,20 @@ def _run_metadata(
             },
             "model_assets": dict(model_assets),
             "labels_sha256": labels_sha256,
+            "orchestration": {
+                "worker_index": worker_index,
+                "worker_count": worker_count,
+                "integrity_registry": (
+                    str(integrity_registry_path)
+                    if integrity_registry_path is not None
+                    else None
+                ),
+                "integrity_registry_sha256": (
+                    sha256_file(integrity_registry_path)
+                    if integrity_registry_path is not None
+                    else None
+                ),
+            },
         },
         path,
     )
@@ -875,6 +958,9 @@ def run_csl_news_annotation(
     max_videos: int | None = None,
     once: bool = False,
     archive_id: int | None = None,
+    worker_index: int | None = None,
+    worker_count: int | None = None,
+    integrity_registry_path: str | Path | None = None,
     estimator: PoseEstimator | None = None,
 ) -> dict[str, Any]:
     """Annotate complete archives, preserving restartable outputs and all scratch data."""
@@ -883,17 +969,39 @@ def run_csl_news_annotation(
         raise CslNewsAnnotationError("max_videos must be positive")
     if archive_id is not None and not 1 <= archive_id <= config.source.expected_archive_count:
         raise CslNewsAnnotationError("archive_id is outside the configured source range")
+    effective_index, effective_count = _resolve_worker_shard(
+        config, worker_index, worker_count
+    )
+    registry_path = (
+        Path(integrity_registry_path).expanduser().resolve()
+        if integrity_registry_path is not None
+        else None
+    )
+    discover_complete_archives(
+        config,
+        worker_index=effective_index,
+        worker_count=effective_count,
+        integrity_registry_path=registry_path,
+    )
     _ensure_disk_floor(config)
     labels = load_csl_news_labels(config.source.labels_path)
     labels_sha256 = sha256_file(config.source.labels_path)
     model_assets = _require_model_assets(config)
-    run_metadata_path = _run_metadata(config, model_assets, labels_sha256)
+    run_metadata_path = _run_metadata(
+        config,
+        model_assets,
+        labels_sha256,
+        worker_index=effective_index,
+        worker_count=effective_count,
+        integrity_registry_path=registry_path,
+    )
     _emit(
         "annotation_run_started",
         config_fingerprint=config.fingerprint,
         run_metadata=str(run_metadata_path),
-        worker_index=config.runtime.worker_index,
-        worker_count=config.runtime.worker_count,
+        worker_index=effective_index,
+        worker_count=effective_count,
+        integrity_registry=str(registry_path) if registry_path is not None else None,
     )
 
     processed = 0
@@ -902,7 +1010,12 @@ def run_csl_news_annotation(
     consecutive_oom = 0
     pose_estimator = estimator
     while True:
-        archives = discover_complete_archives(config)
+        archives = discover_complete_archives(
+            config,
+            worker_index=effective_index,
+            worker_count=effective_count,
+            integrity_registry_path=registry_path,
+        )
         if archive_id is not None:
             archives = [path for path in archives if _archive_number(path) == archive_id]
             if not archives:
@@ -1154,7 +1267,7 @@ def run_csl_news_annotation(
         if once or archive_id is not None:
             break
         expected_for_worker = sum(
-            archive_number % config.runtime.worker_count == config.runtime.worker_index
+            archive_number % effective_count == effective_index
             for archive_number in range(1, config.source.expected_archive_count + 1)
         )
         completed_marker_count = 0
@@ -1163,7 +1276,7 @@ def run_csl_news_annotation(
             if marker_match is None:
                 continue
             marker_number = int(marker_match.group(1))
-            if marker_number % config.runtime.worker_count != config.runtime.worker_index:
+            if marker_number % effective_count != effective_index:
                 continue
             if is_completed_annotation_archive(marker_path, config.fingerprint):
                 completed_marker_count += 1

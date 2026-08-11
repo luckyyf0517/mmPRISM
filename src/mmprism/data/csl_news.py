@@ -20,12 +20,21 @@ class CslNewsAuditError(ValueError):
 
 
 @dataclass(frozen=True)
-class _LabelIndex:
+class CslNewsLabelIndex:
     record_count: int
     invalid_record_count: int
     duplicate_video_count: int
     video_names: frozenset[str]
     empty_text_video_names: frozenset[str]
+
+
+@dataclass(frozen=True)
+class CslNewsAuditContext:
+    labels_path: Path
+    labels_sha256: str
+    labels_size_bytes: int
+    labels_mtime_ns: int
+    label_index: CslNewsLabelIndex
 
 
 def _require_complete_file(path: Path, description: str) -> Path:
@@ -45,7 +54,7 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _load_labels(path: Path) -> _LabelIndex:
+def _load_labels(path: Path) -> CslNewsLabelIndex:
     try:
         with path.open("r", encoding="utf-8") as stream:
             payload: object = json.load(stream)
@@ -74,12 +83,26 @@ def _load_labels(path: Path) -> _LabelIndex:
         if not isinstance(text, str) or not text.strip():
             empty_text_video_names.add(video_name)
 
-    return _LabelIndex(
+    return CslNewsLabelIndex(
         record_count=len(payload),
         invalid_record_count=invalid_record_count,
         duplicate_video_count=sum(count > 1 for count in video_counts.values()),
         video_names=frozenset(video_counts),
         empty_text_video_names=frozenset(empty_text_video_names),
+    )
+
+
+def load_csl_news_audit_context(labels_path: str | Path) -> CslNewsAuditContext:
+    """Load immutable label metadata once for a batch of source audits."""
+
+    labels_file = _require_complete_file(Path(labels_path), "CSL-News labels")
+    labels_stat = labels_file.stat()
+    return CslNewsAuditContext(
+        labels_path=labels_file,
+        labels_sha256=_sha256(labels_file),
+        labels_size_bytes=labels_stat.st_size,
+        labels_mtime_ns=labels_stat.st_mtime_ns,
+        label_index=_load_labels(labels_file),
     )
 
 
@@ -189,6 +212,7 @@ def audit_csl_news_archive(
     verify_crc: bool = True,
     decode_sample_count: int = 0,
     scratch_dir: str | Path | None = None,
+    audit_context: CslNewsAuditContext | None = None,
 ) -> dict[str, Any]:
     """Audit one immutable CSL-News archive against the official labels."""
 
@@ -199,7 +223,18 @@ def audit_csl_news_archive(
     if decode_sample_count < 0:
         raise CslNewsAuditError("decode sample count must be non-negative")
 
-    label_index = _load_labels(labels_file)
+    context = audit_context or load_csl_news_audit_context(labels_file)
+    if context.labels_path != labels_file:
+        raise CslNewsAuditError(
+            "audit context labels path does not match the requested labels file"
+        )
+    labels_stat = labels_file.stat()
+    if (
+        labels_stat.st_size != context.labels_size_bytes
+        or labels_stat.st_mtime_ns != context.labels_mtime_ns
+    ):
+        raise CslNewsAuditError("CSL-News labels changed after audit context creation")
+    label_index = context.label_index
     scratch_root = Path(scratch_dir).expanduser().resolve() if scratch_dir else None
     if scratch_root is not None:
         scratch_root.mkdir(parents=True, exist_ok=True)
@@ -317,8 +352,8 @@ def audit_csl_news_archive(
         },
         "labels": {
             "path": str(labels_file),
-            "size_bytes": labels_file.stat().st_size,
-            "sha256": _sha256(labels_file),
+            "size_bytes": context.labels_size_bytes,
+            "sha256": context.labels_sha256,
             "record_count": label_index.record_count,
             "unique_video_count": len(label_index.video_names),
             "invalid_record_count": label_index.invalid_record_count,
