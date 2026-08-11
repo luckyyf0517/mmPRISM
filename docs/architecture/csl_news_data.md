@@ -192,27 +192,32 @@ The first real-source trial is scheduled for `2026-08-12 08:00 Asia/Shanghai` an
 
 ## Canonical Source Manifest Snapshot
 
-`mmprism csl-news-source-manifest` freezes the set of atomically completed ZIP files visible at scan start.
-It never reads `.part` files and does not extract videos. The versioned configuration keeps all archive,
-label, and output relationships relative to `MMPRISM_DATA_ROOT`.
+`mmprism csl-news-source-manifest` v2 freezes one exact source-integrity v2 registry byte snapshot. It reads
+only typed `passed` entries, resolves each entry's `archive_path_relative` under the configured archive root,
+and never infers an archive path from its ID. It never reads `.part` files and does not extract videos. The
+versioned configuration keeps archive, registry, label, and output relationships relative to
+`MMPRISM_DATA_ROOT`.
 
 Each `mmprism.sample.v1` record contains:
 
 - a stable sample ID derived from source ID, archive name, and member name;
-- video as `zip://archive_NNN.zip!/member.mp4`, resolved only with the configured archive root;
+- video as `zip://<registry-relative-archive-path>!/member.mp4`, resolved only with the configured archive root;
 - the canonical JSON caption as an explicit inline-text modality with a UTF-8 SHA-256;
-- archive SHA-256, ZIP member CRC/size, labels SHA-256, config fingerprint, and clean Git commit;
+- archive path/source kind/SHA-256/stat/audit, exact registry SHA-256, ZIP member CRC/size, labels SHA-256,
+  config fingerprint, and clean Git commit;
 - archive and source-program group keys, while unavailable subject/scene fields remain explicit unknowns.
 
-The builder rejects unsafe/encrypted/duplicate members, cross-archive basename collisions, missing labels,
-stable-ID collisions, source files that change during the scan, insufficient disk space, and dirty Git state.
-It validates the generated JSONL through the general manifest contract before atomically renaming the whole
-snapshot directory. Available-archive snapshots are intentionally `partial`; a final snapshot is complete
-only when all 436 archives and every canonical label are represented.
+The builder requires registry schema v2 and rejects archive-root/label/count mismatches, path escapes,
+symlinks, stat/SHA/video-count drift, unsafe/encrypted/duplicate members, cross-archive basename collisions,
+missing labels, stable-ID collisions, source changes during the scan, insufficient disk space, and dirty Git
+state. It copies the exact registry bytes, validates the JSONL through the general manifest contract, writes
+`SHA256SUMS` for registry/manifest/summary, and only then atomically renames the snapshot directory.
+Available-archive snapshots are intentionally `partial`; a final snapshot is complete only when all 436
+archives and every canonical label are represented.
 
-The current source-manifest implementation scans the configured primary archive root directly and does not
-yet resolve v2 replacement paths. It must not be used as the final source manifest until it consumes the same
-typed registry entries and exact relative paths as annotation and pose-manifest builders.
+The old v1 source snapshot scanned primary ZIP names directly and remains historical linkage evidence only.
+The v2 builder shares the same registry path semantics as annotation and pose-manifest builders, including the
+versioned replacement paths for `001/005/008`.
 
 The canonical label source is JSON. CSV is retained as immutable cross-check evidence because it contains
 the same 722,711 unique keys but four additional conflicting duplicate rows; it may not override JSON.

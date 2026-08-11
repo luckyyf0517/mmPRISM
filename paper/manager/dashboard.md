@@ -43,6 +43,8 @@ Role: `control_panel`
   1,875 个 old/unbound pair 写入 checksum-covered quarantine ledger；五项 `SHA256SUMS`、通用
   contract 和首/中/末 checksum-validating adapter 读取全部通过。同期 11,815-pair 全量审计只发现
   已登记的 `archive_006/3af7...` 冲突。
+- source-manifest v2 已改为冻结并复制 exact integrity-registry bytes，使用 registry relative path 读取
+  primary/replacement，并校验 stat/SHA/video count/audit；真实 clean snapshot 待本轮验证后生成。
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.2 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。

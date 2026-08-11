@@ -85,6 +85,7 @@ CPU-only annotation status report passed against a live writer and ignores atomi
 Deterministic annotation QC passed on 100 live samples / 24,628 frames with no warnings
 Full 722,711-record CSL-News JSON/CSV metadata profiler completed with explicit limitations
 Portable CSL-News source-manifest builder passed atomic/clean-Git/coverage contract tests
+CSL-News source-manifest v2 consumes exact registry paths, rejects source drift, copies registry bytes, and writes SHA256SUMS
 CSL-News download promotion requires transfer success, no residual aria2 control file, and full ZIP CRC
 Source-integrity v2 binds exact primary/replacement paths; `001/005/008` replacements passed CRC/coverage/decode
 Annotation resume binds archive/labels/member identity and preserves source-versioned recomputations side by side

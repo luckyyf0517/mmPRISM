@@ -24,10 +24,17 @@ from mmprism.data.csl_news_annotation import (
     sha256_file,
     stable_sample_id,
 )
+from mmprism.data.csl_news_integrity import (
+    INTEGRITY_REGISTRY_SCHEMA,
+    CslNewsIntegrityArchive,
+    CslNewsIntegrityError,
+    passed_csl_news_integrity_archives,
+    read_csl_news_integrity_registry_snapshot,
+)
 
-SOURCE_MANIFEST_CONFIG_SCHEMA = "mmprism.csl_news_source_manifest.v1"
-SOURCE_MANIFEST_SUMMARY_SCHEMA = "mmprism.csl_news_source_manifest_snapshot.v1"
-ARCHIVE_PATTERN = re.compile(r"^archive_(\d{3})\.zip$")
+SOURCE_MANIFEST_CONFIG_SCHEMA = "mmprism.csl_news_source_manifest.v2"
+SOURCE_MANIFEST_SUMMARY_SCHEMA = "mmprism.csl_news_source_manifest_snapshot.v2"
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 class CslNewsSourceManifestError(RuntimeError):
@@ -89,6 +96,7 @@ class CslNewsSourceManifestConfig:
     data_root: Path
     archive_root_relative: Path
     labels_path_relative: Path
+    integrity_registry_relative: Path
     snapshot_root_relative: Path
     source_id: str
     source_revision: str
@@ -105,6 +113,10 @@ class CslNewsSourceManifestConfig:
         return (self.data_root / self.labels_path_relative).resolve()
 
     @property
+    def integrity_registry_path(self) -> Path:
+        return (self.data_root / self.integrity_registry_relative).resolve()
+
+    @property
     def snapshot_root(self) -> Path:
         return (self.data_root / self.snapshot_root_relative).resolve()
 
@@ -114,6 +126,7 @@ class CslNewsSourceManifestConfig:
             "source": {
                 "archive_root": self.archive_root_relative.as_posix(),
                 "labels_path": self.labels_path_relative.as_posix(),
+                "integrity_registry": self.integrity_registry_relative.as_posix(),
                 "source_id": self.source_id,
                 "source_revision": self.source_revision,
                 "expected_archive_count": self.expected_archive_count,
@@ -163,6 +176,7 @@ def load_csl_news_source_manifest_config(
             "data_root",
             "archive_root",
             "labels_path",
+            "integrity_registry",
             "source_id",
             "source_revision",
             "expected_archive_count",
@@ -181,6 +195,9 @@ def load_csl_news_source_manifest_config(
         data_root=data_root,
         archive_root_relative=_relative_path(source, "archive_root", "source"),
         labels_path_relative=_relative_path(source, "labels_path", "source"),
+        integrity_registry_relative=_relative_path(
+            source, "integrity_registry", "source"
+        ),
         snapshot_root_relative=_relative_path(output, "snapshot_root", "output"),
         source_id=_text(source, "source_id", "source"),
         source_revision=_text(source, "source_revision", "source"),
@@ -214,55 +231,120 @@ def _runtime_git_commit(runtime_report: Mapping[str, Any]) -> str:
     return commit
 
 
-def _archive_files(config: CslNewsSourceManifestConfig) -> list[tuple[int, Path]]:
+@dataclass(frozen=True)
+class _SourceArchive:
+    entry: CslNewsIntegrityArchive
+    path: Path
+    audit_path: str
+    audit_sha256: str
+    audit_builder_commit: str
+    audited_at: str
+
+
+def _source_archives(
+    config: CslNewsSourceManifestConfig,
+    registry: Mapping[str, Any],
+) -> list[_SourceArchive]:
     if not config.archive_root.is_dir():
         raise CslNewsSourceManifestError(
             f"archive root does not exist: {config.archive_root}"
         )
-    archives: list[tuple[int, Path]] = []
-    invalid_names: list[str] = []
-    for path in config.archive_root.glob("archive_*.zip"):
-        match = ARCHIVE_PATTERN.fullmatch(path.name)
-        if match is None:
-            invalid_names.append(path.name)
-            continue
-        archive_id = int(match.group(1))
-        if not 1 <= archive_id <= config.expected_archive_count:
-            invalid_names.append(path.name)
-            continue
-        archives.append((archive_id, path.resolve()))
-    if invalid_names:
+    try:
+        passed = passed_csl_news_integrity_archives(registry)
+    except CslNewsIntegrityError as error:
         raise CslNewsSourceManifestError(
-            f"invalid completed archive names: {', '.join(sorted(invalid_names)[:20])}"
+            f"invalid source-integrity registry: {error}"
+        ) from error
+    if not passed:
+        raise CslNewsSourceManifestError(
+            "source-integrity registry has no passed CSL-News archives"
         )
-    if not archives:
-        raise CslNewsSourceManifestError("no complete CSL-News archives are available")
-    return sorted(archives)
+
+    raw_archives = _mapping(registry.get("archives"), "registry.archives")
+    archives: list[_SourceArchive] = []
+    for archive_id, entry in passed.items():
+        candidate_unresolved = config.archive_root / entry.archive_path_relative
+        if candidate_unresolved.is_symlink() or not candidate_unresolved.is_file():
+            raise CslNewsSourceManifestError(
+                f"registered archive is not a regular file: {candidate_unresolved}"
+            )
+        candidate = candidate_unresolved.resolve()
+        try:
+            candidate.relative_to(config.archive_root)
+        except ValueError as error:
+            raise CslNewsSourceManifestError(
+                f"archive_{archive_id:03d} escapes configured archive root"
+            ) from error
+        if candidate.name != entry.archive_name:
+            raise CslNewsSourceManifestError(
+                f"registered archive path/name mismatch: {candidate}"
+            )
+
+        raw_entry = _mapping(
+            raw_archives.get(f"{archive_id:03d}"),
+            f"registry.archives.{archive_id:03d}",
+        )
+        audit = _mapping(
+            raw_entry.get("audit"), f"registry.archives.{archive_id:03d}.audit"
+        )
+        audit_path = _text(audit, "path", "archive audit")
+        audit_relative = Path(audit_path)
+        if audit_relative.is_absolute() or ".." in audit_relative.parts:
+            raise CslNewsSourceManifestError(
+                f"archive_{archive_id:03d} audit path must be relative"
+            )
+        audit_sha256 = _text(audit, "sha256", "archive audit")
+        if not SHA256_PATTERN.fullmatch(audit_sha256):
+            raise CslNewsSourceManifestError(
+                f"archive_{archive_id:03d} has an invalid audit SHA-256"
+            )
+        audit_builder_commit = _text(raw_entry, "builder_commit", "archive entry")
+        if re.fullmatch(r"[0-9a-f]{40}", audit_builder_commit) is None:
+            raise CslNewsSourceManifestError(
+                f"archive_{archive_id:03d} has an invalid audit builder commit"
+            )
+        audited_at = _text(raw_entry, "audited_at", "archive entry")
+        archives.append(
+            _SourceArchive(
+                entry=entry,
+                path=candidate,
+                audit_path=audit_path,
+                audit_sha256=audit_sha256,
+                audit_builder_commit=audit_builder_commit,
+                audited_at=audited_at,
+            )
+        )
+    return archives
 
 
 def _manifest_record(
     *,
     config: CslNewsSourceManifestConfig,
     git_commit: str,
-    archive_name: str,
-    archive_sha256: str,
+    source_archive: _SourceArchive,
+    integrity_registry_sha256: str,
     labels_sha256: str,
     member: zipfile.ZipInfo,
     video_name: str,
     caption: str,
     official_pose_name: str | None,
 ) -> dict[str, Any]:
+    entry = source_archive.entry
+    archive_name = entry.archive_name
     member_name = member.filename.replace("\\", "/")
     sample_id = stable_sample_id(config.source_id, archive_name, member_name)
     program = csl_news_source_program(video_name)
     caption_sha256 = hashlib.sha256(caption.encode("utf-8")).hexdigest()
+    archive_reference = quote(entry.archive_path_relative.as_posix(), safe="/")
     return {
         "schema_version": "mmprism.sample.v1",
         "sample_id": sample_id,
         "sequence_id": PurePosixPath(video_name).stem,
         "dataset": "csl_news",
         "modalities": {
-            "video": {"uri": f"zip://{archive_name}!/{quote(member_name, safe='/')}"},
+            "video": {
+                "uri": f"zip://{archive_reference}!/{quote(member_name, safe='/')}"
+            },
             "caption": {
                 "text": caption,
                 "dtype": "utf-8",
@@ -279,7 +361,18 @@ def _manifest_record(
             "source_id": config.source_id,
             "source_revision": config.source_revision,
             "archive_name": archive_name,
-            "archive_sha256": archive_sha256,
+            "archive_path_relative": entry.archive_path_relative.as_posix(),
+            "archive_source_kind": entry.source_kind,
+            "archive_sha256": entry.sha256,
+            "archive_size_bytes": entry.size_bytes,
+            "archive_mtime_ns": entry.mtime_ns,
+            "archive_video_count": entry.video_count,
+            "archive_audit_path": source_archive.audit_path,
+            "archive_audit_sha256": source_archive.audit_sha256,
+            "archive_audit_builder_commit": source_archive.audit_builder_commit,
+            "archive_audited_at": source_archive.audited_at,
+            "integrity_registry_path": config.integrity_registry_relative.as_posix(),
+            "integrity_registry_sha256": integrity_registry_sha256,
             "archive_member": member_name,
             "member_crc32": f"{member.CRC:08x}",
             "member_compressed_size_bytes": member.compress_size,
@@ -303,7 +396,35 @@ def build_csl_news_source_manifest_snapshot(
     """Build and atomically finalize a manifest for archives complete at scan start."""
 
     git_commit = _runtime_git_commit(runtime_report)
-    archive_files = _archive_files(config)
+    try:
+        registry, registry_sha256, registry_bytes = (
+            read_csl_news_integrity_registry_snapshot(
+                config.integrity_registry_path,
+                source_id=config.source_id,
+                source_revision=config.source_revision,
+            )
+        )
+    except CslNewsIntegrityError as error:
+        raise CslNewsSourceManifestError(
+            f"unable to load source-integrity registry: {error}"
+        ) from error
+    if registry.get("schema_version") != INTEGRITY_REGISTRY_SCHEMA:
+        raise CslNewsSourceManifestError(
+            f"source manifest requires registry schema {INTEGRITY_REGISTRY_SCHEMA}"
+        )
+    registry_source = _mapping(registry.get("source"), "registry.source")
+    if (
+        registry_source.get("archive_root")
+        != config.archive_root_relative.as_posix()
+    ):
+        raise CslNewsSourceManifestError(
+            "integrity registry archive_root does not match source config"
+        )
+    if registry_source.get("expected_archive_count") != config.expected_archive_count:
+        raise CslNewsSourceManifestError(
+            "integrity registry expected_archive_count does not match source config"
+        )
+    source_archives = _source_archives(config, registry)
     part_file_count_at_scan = len(list(config.archive_root.glob("archive_*.zip.part")))
     if not config.labels_path.is_file() or config.labels_path.name.endswith(".part"):
         raise CslNewsSourceManifestError(
@@ -318,6 +439,10 @@ def build_csl_news_source_manifest_snapshot(
         labels_stat_before.st_mtime_ns,
     ) != (labels_stat_after.st_size, labels_stat_after.st_mtime_ns):
         raise CslNewsSourceManifestError("labels changed while building the snapshot")
+    if registry_source.get("labels_sha256") != labels_sha256:
+        raise CslNewsSourceManifestError(
+            "integrity registry labels SHA-256 does not match canonical labels"
+        )
 
     config.snapshot_root.mkdir(parents=True, exist_ok=True)
     free_bytes = shutil.disk_usage(config.snapshot_root).free
@@ -338,6 +463,8 @@ def build_csl_news_source_manifest_snapshot(
         )
     temporary.mkdir()
     manifest_path = temporary / "manifest.jsonl"
+    registry_copy_path = temporary / "integrity_registry.json"
+    registry_copy_path.write_bytes(registry_bytes)
 
     seen_video_names: set[str] = set()
     sample_ids: set[str] = set()
@@ -348,9 +475,23 @@ def build_csl_news_source_manifest_snapshot(
     total_uncompressed_member_bytes = 0
 
     with manifest_path.open("w", encoding="utf-8") as manifest_stream:
-        for archive_id, archive_path in archive_files:
+        for source_archive in source_archives:
+            entry = source_archive.entry
+            archive_id = entry.archive_id
+            archive_path = source_archive.path
             archive_stat_before = archive_path.stat()
+            if (
+                archive_stat_before.st_size != entry.size_bytes
+                or archive_stat_before.st_mtime_ns != entry.mtime_ns
+            ):
+                raise CslNewsSourceManifestError(
+                    f"{entry.archive_name} stat identity differs from integrity registry"
+                )
             archive_sha256 = sha256_file(archive_path)
+            if archive_sha256 != entry.sha256:
+                raise CslNewsSourceManifestError(
+                    f"{entry.archive_name} SHA-256 differs from integrity registry"
+                )
             try:
                 with zipfile.ZipFile(archive_path, "r") as archive:
                     members = [member for member in archive.infolist() if not member.is_dir()]
@@ -425,8 +566,8 @@ def build_csl_news_source_manifest_snapshot(
                         record = _manifest_record(
                             config=config,
                             git_commit=git_commit,
-                            archive_name=archive_path.name,
-                            archive_sha256=archive_sha256,
+                            source_archive=source_archive,
+                            integrity_registry_sha256=registry_sha256,
                             labels_sha256=labels_sha256,
                             member=member,
                             video_name=video_name,
@@ -460,12 +601,20 @@ def build_csl_news_source_manifest_snapshot(
                     archive_reports.append(
                         {
                             "archive_id": archive_id,
-                            "archive_name": archive_path.name,
+                            "archive_name": entry.archive_name,
                             "archive_path_relative": (
-                                config.archive_root_relative / archive_path.name
-                            ).as_posix(),
+                                entry.archive_path_relative.as_posix()
+                            ),
+                            "archive_source_kind": entry.source_kind,
                             "archive_size_bytes": archive_path.stat().st_size,
                             "archive_sha256": archive_sha256,
+                            "archive_registry_mtime_ns": entry.mtime_ns,
+                            "archive_audit_path": source_archive.audit_path,
+                            "archive_audit_sha256": source_archive.audit_sha256,
+                            "archive_audit_builder_commit": (
+                                source_archive.audit_builder_commit
+                            ),
+                            "archive_audited_at": source_archive.audited_at,
                             "member_count": len(members),
                             "video_count": len(video_members),
                             "compressed_member_bytes": compressed_bytes,
@@ -476,6 +625,10 @@ def build_csl_news_source_manifest_snapshot(
                             "crc_error": crc_error,
                         }
                     )
+                    if len(video_members) != entry.video_count:
+                        raise CslNewsSourceManifestError(
+                            f"{entry.archive_name} video count differs from integrity registry"
+                        )
                     archive_stat_after = archive_path.stat()
                     if (
                         archive_stat_before.st_size,
@@ -498,7 +651,7 @@ def build_csl_news_source_manifest_snapshot(
     represented_label_count = len(seen_video_names)
     unrepresented_label_count = len(labels) - represented_label_count
     complete = (
-        len(archive_files) == config.expected_archive_count
+        len(source_archives) == config.expected_archive_count
         and unrepresented_label_count == 0
     )
     summary = {
@@ -512,11 +665,18 @@ def build_csl_news_source_manifest_snapshot(
             "source_id": config.source_id,
             "source_revision": config.source_revision,
             "expected_archive_count": config.expected_archive_count,
-            "snapshot_archive_count": len(archive_files),
-            "snapshot_archive_ids": [archive_id for archive_id, _ in archive_files],
+            "snapshot_archive_count": len(source_archives),
+            "snapshot_archive_ids": [
+                item.entry.archive_id for item in source_archives
+            ],
             "part_file_count_at_scan": part_file_count_at_scan,
             "labels_path_relative": config.labels_path_relative.as_posix(),
             "labels_sha256": labels_sha256,
+            "integrity_registry_path": "integrity_registry.json",
+            "integrity_registry_source_path": (
+                config.integrity_registry_relative.as_posix()
+            ),
+            "integrity_registry_sha256": registry_sha256,
             "label_record_count": len(labels),
             "represented_label_count": represented_label_count,
             "unrepresented_label_count": unrepresented_label_count,
@@ -542,6 +702,17 @@ def build_csl_news_source_manifest_snapshot(
         json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    summary_sha256 = sha256_file(summary_path)
+    checksums = {
+        "integrity_registry.json": registry_sha256,
+        "manifest.jsonl": manifest_sha256,
+        "summary.json": summary_sha256,
+    }
+    checksums_path = temporary / "SHA256SUMS"
+    checksums_path.write_text(
+        "".join(f"{digest}  {name}\n" for name, digest in sorted(checksums.items())),
+        encoding="utf-8",
+    )
     temporary.replace(destination)
     return {
         "schema_version": SOURCE_MANIFEST_SUMMARY_SCHEMA,
@@ -550,6 +721,8 @@ def build_csl_news_source_manifest_snapshot(
         "manifest_path": str(destination / "manifest.jsonl"),
         "summary_path": str(destination / "summary.json"),
         "record_count": record_count,
-        "snapshot_archive_count": len(archive_files),
+        "snapshot_archive_count": len(source_archives),
         "manifest_sha256": manifest_sha256,
+        "integrity_registry_sha256": registry_sha256,
+        "sha256sums_path": str(destination / "SHA256SUMS"),
     }

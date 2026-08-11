@@ -144,6 +144,11 @@ source-identity quarantine ledger has SHA-256
 the general manifest contract, and first/middle/last checksum-validating adapter reads passed. It remains
 partial and is not a paper-facing dataset-size claim.
 
+The source-manifest builder has been upgraded to schema v2 and now consumes the same exact registry path
+semantics as annotation and pose manifests. It rejects archive stat/SHA/video-count drift, copies the frozen
+registry bytes and writes checksum coverage for registry/manifest/summary. Its first real v2 source snapshot
+is pending a clean-commit run; the older 18,095-record v1 snapshot remains historical linkage evidence only.
+
 Pinned source and download implementation are recorded in `../../../docs/architecture/csl_news_data.md`.
 
 First source-audit artifact target:

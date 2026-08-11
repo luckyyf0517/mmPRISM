@@ -1,10 +1,24 @@
 # CSL-News Source Manifest Evidence
 
-Status: `partial_snapshot_contract_verified_crc_failed`
+Status: `v1_historical_v2_builder_verified_snapshot_pending`
 Last Updated: `2026-08-11`
 Role: `DATA-003-B_source_manifest_evidence`
 
-## 1. Snapshot Identity
+## Current v2 Builder Contract
+
+`mmprism.csl_news_source_manifest.v2` no longer scans primary archive names as the source of truth. It requires
+`source.integrity_registry`, accepts only registry schema v2 and typed `passed` entries, and resolves each exact
+`archive_path_relative` under the configured archive root. Every registered archive is checked against its
+size, mtime, SHA-256, video count and audit provenance; root/count/labels identity mismatches, path escapes and
+symlinks fail before publication.
+
+Each snapshot copies the exact registry bytes to `integrity_registry.json`, writes registry SHA-256 and
+source-kind/path/audit identity into records and summary, validates the general manifest contract, and creates
+`SHA256SUMS` for registry/manifest/summary before atomic publication. Unit tests cover primary and replacement
+selection, preserved corrupt primary input, stat drift, same-stat content drift, symlink rejection, labels,
+clean Git, portable paths and checksum replay. A real clean v2 snapshot is the next evidence gate.
+
+## 1. Historical v1 Snapshot Identity
 
 ```text
 source: huggingface:ZechengLi19/CSL-News
@@ -18,13 +32,13 @@ summary SHA-256: 9fbe74f4655b1f37a951af3ff707c86c2c4199a2177aa2de2551c3a95874f8a
 status: partial
 ```
 
-复现入口：
+Historical entrypoint (the versioned config now targets v2 and will create a new snapshot root):
 
 ```bash
 MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM scripts/run_csl_news_source_manifest.sh
 ```
 
-正式 snapshot 要求 clean Git；因此新运行会生成新目录，不覆盖本目录。
+正式 snapshot 要求 clean Git；因此新运行会生成 v2 新目录，不覆盖本 v1 历史目录。
 
 ## 2. Frozen Input Boundary
 
@@ -82,7 +96,7 @@ manifest 不包含 `/mnt/` 或 `/home/` 绝对路径。存储根只在 versioned
 `DATA-003-B` 仍为 `in_progress`，最终验收还需要：
 
 1. 436 个 archive 全部 final 后生成 `complete` snapshot；
-2. 重新获取并验证损坏的 `005/008`，再对所有 436 个 ZIP 执行 SHA-256、CRC、member safety、label coverage；
+2. `001/005/008` replacement 已验证；继续对其余 archive 执行 SHA-256、CRC、member safety、label coverage；
 3. 对 deterministic video sample 做 decode/shape/FPS 验收；
 4. 以 complete manifest hash 生成 split，并做 group/duplicate leakage audit；
 5. 论文写回只引用 complete/frozen manifest 的统计，不引用本 partial snapshot 作为全量数字。

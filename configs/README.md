@@ -96,3 +96,14 @@ MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM \
 
 This config is deliberately bound to the first 2,157-record partial pose manifest. It is engineering
 evidence and must not be reused as the final dataset split.
+
+Freeze a CSL-News source manifest from one exact source-integrity v2 registry snapshot with:
+
+```bash
+MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM \
+  scripts/run_csl_news_source_manifest.sh
+```
+
+The v2 source-manifest config never scans primary archive names as authority. It resolves only registry-passed
+paths, including versioned replacements, and writes the copied registry, manifest, summary, and `SHA256SUMS`
+to a new atomic snapshot directory.

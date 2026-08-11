@@ -168,7 +168,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     source_manifest_parser = subparsers.add_parser(
         "csl-news-source-manifest",
-        help="Build an atomic source manifest for currently complete CSL-News archives",
+        help="Freeze registry-passed CSL-News archives into a source manifest",
     )
     source_manifest_parser.add_argument("config", type=Path)
     source_manifest_parser.add_argument("--project-root", type=Path)
