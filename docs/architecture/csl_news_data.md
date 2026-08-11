@@ -29,7 +29,8 @@ The downloader supports `curl` and `aria2` engines. The active intake uses four 
 aria2 connections per archive after a controlled benchmark showed about 3.4 MiB/s for one aria2 transfer
 while the previous sixteen single-connection curl transfers delivered about 4.7 MB/s in aggregate. Existing
 curl `.part` files are contiguous prefixes and are resumed by aria2; the final atomic rename contract is
-unchanged.
+unchanged. After disabling aria2's per-fragment low-speed cutoff, a 60-second five-process measurement
+reported 9.95 MB/s of effective writes with all processes healthy.
 
 ## Legacy Preprocessing Flow
 

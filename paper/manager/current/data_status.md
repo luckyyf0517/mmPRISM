@@ -176,6 +176,10 @@ systemctl --user status mmprism-csl-news-archives.service
 单个 aria2 传输稳定约 3.4 MiB/s，原 16 路 curl 同窗口合计约 4.7 MB/s。Legacy 预处理链与接口冲突见
 `../../../docs/architecture/csl_news_data.md`。
 
+切换并稳定后，5 个 aria2 进程的 60 秒有效写入为 9.95 MB/s。多段 Range 写入会提前扩展
+`.part` 的表观文件大小，因此后续进度不再通过 `.part` stat/du 求和，而以完成 `.zip` 数和 aria2
+日志中的完成字节为准。
+
 首批只读审计由 `scripts/run_csl_news_source_trial.sh` 执行，产物写入：
 
 ```text

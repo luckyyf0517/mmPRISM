@@ -70,6 +70,8 @@ scripts/download_csl_news.sh --engine curl --workers 16
 ```
 
 切换引擎不得删除 `.part`；两个引擎都只在命令成功后执行最终原子重命名。
+aria2 多段 Range 会让 `.part` 表观大小提前接近完整长度，不能用 `stat` 或 `du` 将其当作已下载
+字节数。活动文件查看对应 `logs/archive_NNN.log` 的百分比和 `DL`，全局进度以最终 `.zip` 数为准。
 
 明早 source-audit trial：
 
