@@ -1,5 +1,25 @@
 """Manifest-driven datasets, transforms, validation, and split construction."""
 
+from mmprism.data.csl_daily_annotation import (
+    ANNOTATION_JSONL_SCHEMA,
+    CslDailyAnnotationError,
+    CslDailyAnnotationRecord,
+    build_csl_daily_annotation_jsonl,
+    load_csl_daily_annotations,
+    write_csl_daily_annotation_jsonl,
+)
+from mmprism.data.csl_daily_intake import (
+    INTAKE_RECORD_SCHEMA,
+    INTAKE_VALIDATOR_VERSION,
+    CslDailyIntakeCheck,
+    CslDailyIntakeDestinationExistsError,
+    CslDailyIntakeError,
+    CslDailyIntakeReport,
+    CslDailyManifestEntry,
+    CslDailySourceMetadata,
+    promote_csl_daily_batch,
+    validate_csl_daily_batch,
+)
 from mmprism.data.csl_news import (
     CslNewsAuditContext,
     CslNewsAuditError,
@@ -131,6 +151,15 @@ from mmprism.data.split import (
 )
 
 __all__ = [
+    "ANNOTATION_JSONL_SCHEMA",
+    "CslDailyAnnotationError",
+    "CslDailyAnnotationRecord",
+    "CslDailyIntakeCheck",
+    "CslDailyIntakeDestinationExistsError",
+    "CslDailyIntakeError",
+    "CslDailyIntakeReport",
+    "CslDailyManifestEntry",
+    "CslDailySourceMetadata",
     "CslNewsAnnotationConfig",
     "CslNewsAnnotationError",
     "CslNewsAuditContext",
@@ -149,6 +178,8 @@ __all__ = [
     "DataSplitConfig",
     "DataSplitError",
     "FRAME_MASK_MODALITY",
+    "INTAKE_RECORD_SCHEMA",
+    "INTAKE_VALIDATOR_VERSION",
     "MAX_PART_ROWS",
     "MAX_PARTS_PER_CHUNK",
     "PARQUET_DELIVERY_SCHEMA",
@@ -186,6 +217,7 @@ __all__ = [
     "TRANSLATION_POSE_MODALITY",
     "TRANSLATION_RADAR_FEATURE_MODALITY",
     "audit_csl_news_archive",
+    "build_csl_daily_annotation_jsonl",
     "build_csl_news_metadata_profile",
     "build_csl_news_pose_manifest_snapshot",
     "build_csl_news_source_manifest_snapshot",
@@ -202,6 +234,7 @@ __all__ = [
     "is_completed_annotation_sample",
     "claim_csl_news_annotation_archive",
     "initialize_csl_news_scheduler",
+    "load_csl_daily_annotations",
     "load_csl_news_audit_context",
     "load_csl_news_annotation_config",
     "load_csl_news_integrity_config",
@@ -214,6 +247,7 @@ __all__ = [
     "materialize_parquet_delivery",
     "plan_parquet_delivery",
     "plan_parquet_layout",
+    "promote_csl_daily_batch",
     "run_csl_news_annotation",
     "run_csl_news_annotation_scheduled_worker",
     "passed_csl_news_integrity_archives",
@@ -225,8 +259,10 @@ __all__ = [
     "set_csl_news_scheduler_state",
     "stable_sample_id",
     "validate_annotation_output",
+    "validate_csl_daily_batch",
     "validate_parquet_delivery",
     "verify_zip_crc",
+    "write_csl_daily_annotation_jsonl",
     "write_csl_news_annotation_status",
     "write_csl_news_annotation_qc",
     "write_csl_news_annotation_identity_audit",
