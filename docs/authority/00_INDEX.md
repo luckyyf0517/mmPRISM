@@ -37,7 +37,7 @@ evaluation to be the downstream bottleneck. See `DEC-044` in the
 
 ## Workspaces
 
-- [CSL-News annotation](../../workspaces/csl_news_annotation/docs/authority/00_INDEX.md)
+- [CSL-News annotation archive](../../workspaces/csl_news_annotation/docs/authority/00_INDEX.md)
 - [Data rebuild](../../workspaces/data_rebuild/docs/authority/00_INDEX.md)
 - [OmniHand training](../../workspaces/omnihand_training/docs/authority/00_INDEX.md)
 - [WaveLLM training](../../workspaces/wavellm_training/docs/authority/00_INDEX.md)

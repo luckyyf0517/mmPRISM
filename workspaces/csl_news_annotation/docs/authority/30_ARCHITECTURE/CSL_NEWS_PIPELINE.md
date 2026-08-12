@@ -1,9 +1,15 @@
 # CSL-News Source and Rebuild Contract
 
-Status: current
+Status: historical
 Owner: CSL-News annotation lane
-Authority scope: The CSL-News annotation workflow boundary represented by this page.
+Authority scope: Historical CSL-News source and annotation contract retained for evidence recovery only.
 Last reviewed: 2026-08-12
+
+> **Archived on 2026-08-12.** The local CSL-News ZIP/metadata intake, source registries, source manifests, and
+> extracted-video cache have been removed. This page records the historical pipeline and must not be used to
+> download, resume, schedule, annotate, or build a training delivery. Completed pose outputs, frozen pose
+> manifests, and splits are retained only as checkpoint-side visual-pose evidence; see
+> [archival cleanup](../../logs/2026/08/20260812_ARCHIVAL_CLEANUP.md).
 
 ## Official Source
 
@@ -17,7 +23,7 @@ Last reviewed: 2026-08-12
 - Official pose alternative: `ZechengLi19/CSL-News_pose`, revision
   `73f339ebe49c75ba497320c3610b87f42fd497ec`, about 256 GB compressed
 
-The official RGB source is being downloaded without extraction to:
+Historically, the official RGB source was downloaded without extraction to:
 
 ```text
 /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/

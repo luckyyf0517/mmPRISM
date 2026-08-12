@@ -1,35 +1,36 @@
-# CSL-News Annotation Authority
+# CSL-News Annotation Archive Authority
 
 Status: current
 Owner: CSL-News annotation lane
-Authority scope: Current CSL-News source validation, annotation, QC, and manifest workflow.
+Authority scope: Archived CSL-News visual-pose evidence and the boundary preventing its accidental resumption.
 Last reviewed: 2026-08-12
 
 ## Boundary
 
-This workspace consumes the pinned official CSL-News RGB/label source and produces source-bound visual
-pose+caption manifests. Its outputs are intermediate visual evidence, not calibrated radar training data.
+This workspace retains completed source-bound CSL-News visual pose+caption artifacts as intermediate
+evidence. It does not consume a local CSL-News source, produce new annotations, or deliver calibrated radar
+training data.
 
 ## Current State
 
-- Source-integrity v2 selects passed primary or replacement archives without overwriting incident evidence.
-- RTMW3D workers publish source-bound immutable artifacts and quarantine old/unbound results.
-- The former static eight-lane run is intentionally paused for scheduler work. The replacement control plane
-  uses durable archive leases, cooperative pause/resume, and elastic worker capacity; it has not yet been
-  enabled for production consumption.
-- Partial source, pose, metadata, and split snapshots are validated; the full 436-archive build is incomplete.
+- The CSL-News ZIPs, partial downloads, labels, extracted-video cache, live source registry, and ZIP-dependent
+  source-manifest artifacts were removed on 2026-08-12 after the revision priority shifted to CSL-Daily.
+- The RTMW3D annotation root, its sidecars, failure evidence, QC/reviews/run metadata, frozen pose manifests,
+  and partial split evidence are retained as immutable checkpoint-side visual-pose evidence.
+- Scheduler intent remains `paused`, and its source-integrity/status timers are disabled. It is not resumable:
+  the local source registry and source bytes no longer exist.
+- The retained partial outputs are neither final training data nor a paper dataset-size/generalization claim.
 
-Active blockers: full-source completion, signer/subject metadata, and historical inference environment.
+There are no active CSL-News operational blockers because this lane is archived. Any future reactivation
+requires a new source intake, source/license review, immutable manifest lineage, and an explicit decision.
 
-Next actions: CPU-test and operator-test the lease scheduler while paused, resume only through the new
-control plane, then finish source/annotation coverage, rerun full identity audit, freeze the final manifests,
-and perform the planned clean historical cross-check.
+Next action: do not run CSL-News download, integrity, scheduler, or annotation commands. CSL-Daily intake
+and the real semantic CSL collection are the active data-rebuild paths.
 
 ## Canonical Locations
 
 - Code: `src/mmprism/data/csl_news*.py`
-- Config: `configs/data/csl_news_*.yaml`
-- Scripts: `scripts/run_csl_news_*.sh`
+- Config and scripts: retained as historical/recovery references only; not supported operations
 - Tests: `tests/unit/test_csl_news*.py`
 
 ## Authority And Operations

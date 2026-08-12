@@ -6,3 +6,4 @@
 - [Pose split](20260811_POSE_SPLIT.md)
 - [Metadata profile](20260811_METADATA_PROFILE.md)
 - [Historical pose comparison](20260812_LEGACY_POSE_COMPARISON.md)
+- [Archival cleanup](20260812_ARCHIVAL_CLEANUP.md)

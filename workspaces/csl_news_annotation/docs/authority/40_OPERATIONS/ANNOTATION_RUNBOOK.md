@@ -1,11 +1,21 @@
-# CSL-News RTMW3D 标注 Runbook
+# CSL-News RTMW3D 标注归档 Runbook
 
 Status: current
 Owner: CSL-News annotation lane
-Authority scope: The CSL-News annotation workflow boundary represented by this page.
+Authority scope: Historical annotation procedure and the current no-resume archive boundary.
 Last reviewed: 2026-08-12
 
-## 1. 运行模式与授权
+## 1. 当前归档状态
+
+CSL-News 已于 `2026-08-12` 从 revision 数据重建主线移除。原始 ZIP、`.part`、aria2 state、labels、
+提取缓存、live source-integrity registry 和 ZIP-dependent source manifest 已清理；已完成的 NPZ/JSON
+sidecar、QC、review、failure evidence、run metadata、pose manifests 和 splits 保留。
+
+因此，本页面以下所有下载、integrity、scheduler、Slurm 和 worker 命令仅是历史运行记录，**不得执行**。
+`scheduler/control.json` 保持 `paused`，且在本地 source bytes 与 registry 已移除的条件下不可恢复。
+若重新启用 CSL-News，必须新建 source intake 和全新 immutable lineage，不能把本页面当作 resume runbook。
+
+## 2. 历史运行模式与授权
 
 - 对已经完整下载并原子命名为 `archive_*.zip` 的 CSL-News 视频持续生成 RTMW3D-L 姿态。
 - 运行模式为 registry-driven elastic scheduler：每个 worker 只读取 cumulative integrity registry 中
@@ -17,18 +27,19 @@ Last reviewed: 2026-08-12
 - worker 将 OpenMP/BLAS/PyTorch 限制为 4 个 CPU 线程，并将 OpenCV 限制为 1 个线程。
 - 若指定卡达不到最低空闲显存，worker 退出并交给 systemd 稍后重试；自动选卡时在满足门槛的卡中选择空闲显存最多者。
 
-## 2. 严格禁止清理
+## 3. 历史保护规则
 
-在次日上午人工检查前，不得删除、移动或覆盖以下任何内容：
+在当时的次日上午人工检查前，禁止删除、移动或覆盖以下任何内容：
 
 - 已完成或未完成的 ZIP、`.part` 和 aria2 控制文件；
 - 已提取的视频和 `.source.json`；
 - 成功 `.npz`、JSON sidecar、archive marker 和 run metadata；
 - 失败记录、异常样本和进程中断留下的临时文件。
 
-本 runbook 和 annotation service 故意不提供 cleanup 步骤。
+该保护窗口已结束；实际 cleanup 范围及保留物见
+[archival cleanup log](../../logs/2026/08/20260812_ARCHIVAL_CLEANUP.md)。
 
-## 3. 固定输入
+## 4. 历史固定输入（已删除）
 
 ```text
 source: ZechengLi19/CSL-News@3a0601210333fe760efd09b5d9e2ae5f341ce339
@@ -49,7 +60,7 @@ integrity registry: /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrit
 
 只读取最终 `.zip`，绝不读取 `.part`。标签缺失/重复、ZIP 结构不安全、模型提交或 checksum 不一致时停止任务。
 
-## 4. 输出契约
+## 5. 保留输出契约
 
 每个样本用稳定 ID 写入：
 
@@ -69,13 +80,15 @@ NPZ 同时保留 `[T,133,3]` 原生 3D keypoints、`[T,133]` confidence、
 registry worker 额外在每个成功/失败 sidecar 和 archive marker 中保存实际消费时的 registry SHA-256、
 archive SHA-256、audit path/hash、audit builder commit、audited time 和 labels SHA-256。
 
-已提取视频保留在：
+历史提取视频曾保留在：
 
 ```text
 /mnt/gfs/yanyifan/mmPRISM/cache/csl_news_annotation/rtmw3d_l_794dbc78_v1/videos/
 ```
 
-## 5. 执行顺序
+该 cache 已在归档 cleanup 中删除。
+
+## 6. 历史执行顺序（禁止执行）
 
 1. `uv sync --extra annotation` 安装锁定环境。
 2. 对每个已完成 archive 做完整 SHA-256/逐 member CRC/label source audit；未通过者不进入 worker。
@@ -87,7 +100,7 @@ archive SHA-256、audit path/hash、audit builder commit、audited time 和 labe
 7. integrity timer 每 5 分钟扫描新 final ZIP；审计通过后由 worker 最迟在下一次轮询消费。
 8. 已验证输出自动跳过；逐视频普通失败写 sidecar 后继续。registry/source stat 变化时停止而非继续消费。
 
-## 6. 暂停、恢复与扩缩容
+## 7. 历史暂停、恢复与扩缩容（禁止执行）
 
 初始化一次，不覆盖任何已存在 control/lease 或 annotation 产物：
 
@@ -116,7 +129,41 @@ scripts/run_csl_news_annotation_worker.sh --scheduled --gpu auto -- \
 调试时使用 `--once` 让一个 worker 最多领取一个 archive 后退出。常驻 worker 由 process supervisor
 托管，但 supervisor 重启策略必须允许 lease 到期恢复，不能并行写同一个 `worker-id`。
 
-## 7. 停止条件
+### Slurm 提交
+
+本机 GPU 必须经 Slurm 运行，不得在登录 shell 直接启动 annotation worker。标准提交脚本
+`scripts/slurm/csl_news_annotation.sbatch` 申请一张独占 GPU，并在该 Slurm job 内派生 2 个共享
+该分配 GPU 的 scheduler worker。Slurm 设置的 `CUDA_VISIBLE_DEVICES` 是唯一设备来源；脚本和子
+worker 不得重新选择 GPU 或覆盖该变量。
+
+```bash
+scripts/run_csl_news_annotation_scheduler.sh init --lease-seconds 600
+scripts/run_csl_news_annotation_scheduler.sh resume --reason 'Slurm annotation batch'
+sbatch scripts/slurm/csl_news_annotation.sbatch
+squeue -u "$USER"
+```
+
+默认时限为 2 小时、16 CPU、每 GPU 2 个 worker。它是吞吐/显存 smoke 的保守起点；仅在读取 Slurm
+日志、GPU 内存和当前 source-bound QC 后，才可通过 `MMPRISM_CSL_NEWS_WORKERS_PER_GPU` 提升并发。
+到时、`scancel` 或抢占会保留已完成的原子样本，遗留 archive lease 将在 600 秒无 heartbeat 后由下一
+worker 回收。暂停应优先用 scheduler `pause`，不要以 `scancel` 代替普通暂停。
+
+### 帧 batch 验证边界
+
+RTMW3D-L 可以将同一视频的多个帧组成一次 `test_step`，但在当前固定 MMPose/PyTorch/CUDA 环境中，
+该 GPU batch 路径并不与历史单帧 `inference_topdown` 严格数值等价。因此，正式 v1 产物固定使用
+`runtime.inference_batch_size: 1`；不得仅因显存空闲而把该值调大。
+
+`2026-08-12` 的只读 Slurm parity benchmark（`batch_parity_11.json`）在同一 250 帧视频上得到：
+batch 1 为 56.7 frames/s，16 为 229.1 frames/s，64 为 257.1 frames/s，峰值显存分别为约
+0.27、0.66、1.92 GB；但 batch 16/64 相对单帧的 transformed-2D 最大偏差为 36.30/58.72 px，
+不满足当前 artifact 的逐元素等价要求。该性能数字不能作为切换依据。
+
+配置解析保留 batch=1 的历史 fingerprint 以便断点续跑；任何大于 1 的 batch 自动生成不同
+fingerprint，因而不能覆盖或混合到 `rtmw3d_l_794dbc78_v1` 现有样本。若未来需要启用 batch，必须
+建立新的输出版本，并先冻结可接受的输出差异、下游影响评估和完整 QC protocol。
+
+## 8. 历史停止条件
 
 - `/mnt/gfs` 可用空间低于 1 TiB；
 - labels 无效、缺失或重复；
@@ -131,7 +178,7 @@ GPU 利用率高不属于停止条件，这是本次夜间运行的显式授权�
 停止对应 archive worker，但不停止已经通过 source gate 的其他 worker；不得用 partial manifest
 或 central-directory CRC 字段替代完整读取验证。
 
-## 8. 启动与观察
+## 9. 历史启动与观察（禁止执行）
 
 单视频 smoke：
 
@@ -183,7 +230,7 @@ scripts/run_csl_news_annotation_audit.sh
 包含全部异常的报告；不得据此自动删除、覆盖或重算原 pair。正式 quarantine 只能使用 clean Git 报告，
 并由 `configs/data/csl_news_pose_manifest_available.yaml` 中 checksum-bound exclusion 精确绑定。
 
-## 9. 次晨验收
+## 10. 历史次晨验收
 
 - 服务状态、实际 GPU、下载与标注并行状态；
 - completed/failed/skipped 数和最近一次失败原因；
@@ -192,7 +239,7 @@ scripts/run_csl_news_annotation_audit.sh
 - 统计速度、峰值显存、磁盘占用和预计完成时间；
 - 人工确认前保持全部源、scratch、失败与输出不变。
 
-## 10. 运行记录
+## 11. 运行记录
 
 - `2026-08-12T05:36Z`，为进行中午调度系统调试，已先停止 8 个旧式 fixed-shard `registry*-v4`
   transient service，并在 20 秒后确认无 `csl-news-annotate` 进程残留。仅停止计算进程；未删除或

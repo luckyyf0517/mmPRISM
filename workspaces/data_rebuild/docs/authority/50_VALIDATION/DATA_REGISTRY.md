@@ -10,7 +10,7 @@ Last reviewed: 2026-08-12
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 partial source snapshot 63 archives/104,658 records, SHA-256 `a431d14c...`；live registry 78 archives/129,539 videos at 00:45Z；final 436-archive snapshot pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
+| `DATASET-CSL-NEWS` | CSL-News | local source intake removed; retained RTMW3D sidecars/manifests only | CC BY-NC 4.0 | no local raw source | retained partial pose snapshots only; source manifest/registry were removed | historical source/pose validation logs retained; no resumable source validation | optional checkpoint-side visual-pose evidence only | archived_checkpoint_only |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | legacy non-semantic radar gesture/pose evidence only | blocked_legacy_inventory |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | legacy non-semantic development/demo only | blocked_legacy_inventory |
 | `DATASET-COLLECTED-CSL` | historical directory label only; contents are non-semantic gestures | unknown | private | unknown | missing | missing | legacy pose/forensic evidence; prohibited from semantic SLU totals or translation claims | blocked_legacy_inventory |
@@ -27,7 +27,7 @@ New semantic real-data delivery begins only from a frozen, validated `DATASET-SE
 |---|---|---|---|---|
 | `DELIVERY-POSE-RECON-V1` | `mmprism.pose_reconstruction.sample_v1` | eligible manifest, split, radar/calibration evidence | radar cube `[T,D,R,A,E]`, frame mask, metric `[2,24,3]` pose and validity | reader/materializer/validator fixture-verified; blocked on real calibrated source |
 | `DELIVERY-SLU-V1` | `mmprism.sign_language_translation.sample_v1` | eligible manifest, split, metric pose and aligned radar feature | pose/confidence `[T,2,J,*]`, radar feature `[T,F]`, mask and caption | reader/materializer/validator fixture-verified; blocked on real aligned source |
-| `INTERIM-CSLNEWS-VISPOSE-V1` | `intermediate_visual_pose_caption` | source-bound CSL-News pose manifest | native/2D/canonical visual pose arrays and caption remain sidecar/NPZ | in_progress; explicitly not final training delivery |
+| `INTERIM-CSLNEWS-VISPOSE-V1` | `intermediate_visual_pose_caption` | retained frozen CSL-News pose snapshots | native/2D/canonical visual pose arrays and caption remain sidecar/NPZ | archived checkpoint-only evidence; explicitly not final training delivery |
 
 All final delivery profiles use immutable, task-specific Parquet rather than a mixed universal table. The row/part/
 chunk policy, typed payloads, provenance and validator gates are defined in
@@ -59,7 +59,7 @@ frozen delivery inventory, reader parity and formal run are registered.
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；immutable conflict recovery preserved；clean `6e9cc5e` snapshot 12,057 records/12 archives, SHA-256 `cdd450e4...`；01:32Z expanded to 8 registry lanes: 0--3 on GPU 7 and 4--7 on GPU 5, `archive_id % 8`; baseline 16,162 current-source pairs/81 passed archives, first 3 min +157 pairs/0 new failures, all lanes active | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | retained output contains paired NPZ/sidecar artifacts with frozen historical manifests; source bytes/cache were removed | archived_checkpoint_only |
 | `EVID-CSL-NEWS-LEGACY-POSE-002-V1` | historical NAS-derived `archive_002` pose export | immutable ZIP `3b3af27c...`, 1,624 finite float64 `[T,59,3]` arrays; read-only comparison against current source SHA `a1086401...` | upload `/home/yanyifan/upload/20260812/archive_002.zip`; report `interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1/legacy_comparisons/20260812_archive_002_v2` | ZIP test, exact source member/frame/depth-center coverage 1,624/1,624; 1,567 current-source-bound, numerical non-equivalence documented; 57 identity-unbound excluded from strict result | forensic_only_environment_equivalence_open |
 
 ## Model-ready Contracts
@@ -103,11 +103,8 @@ Each batch requires `README.md`, `UPLOAD_MANIFEST.csv` and `SHA256SUMS`. No batc
 `raw/` or `external/` until validation is recorded here. Full upload contents and ordering are defined in
 [data intake operation](../40_OPERATIONS/DATA_INTAKE.md).
 
-Active public-source batch:
-
-```text
-/mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/
-```
+There is no active CSL-News public-source batch. Its local intake, source registries, and source manifests
+were removed under `DEC-043`; the retained pose artifacts are not a resumable input batch.
 
 Pending historical comparison batch:
 
@@ -168,14 +165,9 @@ It binds that exact partial pose
 manifest and has assignment SHA-256 `133f32d58b213947edf09c7c1e1b7c3ee30b8588a9f2b7a863d6a668bce2d7d9`.
 It has zero sequence-group leakage but is not subject-independent because signer metadata is unavailable.
 
-The current source control plane is
-`manifests/csl_news/source_integrity_v2/registry.json`. Snapshot SHA-256
-`ae6b2909e7b12c3f9519ffc493b67a556621d6e7203665b940ea4bee9878a02c` binds 59 passed archives/
-97,997 videos and exact replacement paths for `001/005/008`; failed count is zero. The prior v1 registry and
-pose snapshots remain immutable incident/pipeline evidence but are not the current training source because
-their source identities predate replacement selection. The live v2 status at `22:13Z` counted 9,394
-current-source pairs, 1,875 quarantined old/unbound pairs, zero duplicate-current-source samples and 3/3
-validated samples. The subsequent clean audit and v2-bound pose snapshot are tracked below.
+The former CSL-News source control plane and source manifests were deleted under `DEC-043` with the local
+ZIP/metadata intake. Historical registry identities and validation outcomes remain recorded in dated Logs and
+in frozen pose-manifest metadata, but they are no longer live paths or a current training source.
 
 The first v2-bound snapshot is
 `pose_manifest_v1/snapshot_20260811T222941.214512Z`. It binds the registry hash above and contains 10,011

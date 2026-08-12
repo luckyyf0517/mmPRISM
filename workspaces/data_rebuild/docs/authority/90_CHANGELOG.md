@@ -17,3 +17,5 @@ Last reviewed: 2026-08-12
   data rebuild accepts only its frozen, validated session manifest.
 - Promoted the original-submission CSL-News-100 cam-pose WaveLLM checkpoint to a narrowly scoped P0 historical
   intake/audit asset, with an explicit handoff list and no automatic full-data retraining dependency.
+- Archived CSL-News from the active rebuild: source/download/cache/source-manifest assets were removed and only
+  completed pose artifacts plus frozen pose manifests/splits remain as checkpoint-side evidence.

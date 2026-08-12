@@ -18,7 +18,8 @@ workspace begins only after receiving its immutable raw-session manifest and val
 - Raw/range-Doppler contracts and analytic tests exist; beamforming and physical axes await calibration.
 - Task-specific Parquet delivery v1 reader, planner, materializer, and validator are implemented and fixture-verified;
   real products remain blocked by source, calibration, and final-split evidence.
-- Partial CSL-News visual pose data is upstream evidence, not final radar/model-ready delivery.
+- Archived CSL-News visual pose output is optional checkpoint-side forensic evidence only; CSL-Daily intake and
+  the new semantic CSL collection are the active public/real-data paths. No CSL-News source bytes remain local.
 - The original-submission CSL-News-100 cam-pose WaveLLM checkpoint is a P0 historical intake/audit asset for the
   revision. It remains immutable and is not automatically converted into a new canonical training checkpoint.
 
