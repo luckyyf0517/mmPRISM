@@ -182,6 +182,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     csl_daily_receipt_validate_parser.add_argument("receipt_root", type=Path)
 
+    csl_daily_simulate_parser = subparsers.add_parser(
+        "csl-daily-simulate",
+        help="Materialize simulated radar cubes from a frozen CSL-Daily pose manifest",
+    )
+    csl_daily_simulate_parser.add_argument("config", type=Path)
+
     csl_news_parser = subparsers.add_parser(
         "csl-news-audit", help="Audit one complete CSL-News archive against official labels"
     )
@@ -598,6 +604,31 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         elif arguments.command == "csl-daily-source-receipt-validate":
             payload = validate_csl_daily_source_receipt(arguments.receipt_root)
+        elif arguments.command == "csl-daily-simulate":
+            # The materialization module pulls in torch via mmprism.simulation;
+            # keep the import lazy so the CLI stays dependency-light.
+            try:
+                from mmprism.data.csl_daily_simulation_run import (
+                    CslDailySimulationError,
+                    load_csl_daily_simulation_config,
+                    run_csl_daily_simulation,
+                )
+            except ImportError as error:
+                print(
+                    f"error: csl-daily-simulate requires the training dependencies: {error}",
+                    file=sys.stderr,
+                )
+                return 2
+            try:
+                simulate_config = load_csl_daily_simulation_config(
+                    arguments.config, variables=os.environ
+                )
+                simulate_result = run_csl_daily_simulation(simulate_config)
+            except (CslDailySimulationError, FileNotFoundError) as error:
+                print(f"error: {error}", file=sys.stderr)
+                return 2
+            payload = simulate_result.run_record
+            exit_code = 0 if simulate_result.failed_count == 0 else 1
         elif arguments.command == "csl-news-audit":
             payload = audit_csl_news_archive(
                 arguments.archive,

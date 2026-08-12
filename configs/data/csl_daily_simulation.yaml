@@ -1,0 +1,34 @@
+# CSL-Daily pose -> simulated radar-cube materialization (DEC-012 protocol
+# csl_daily_skeleton_sim_v1). Consumes the frozen RTMW3D pose manifest and
+# emits an mmprism.pose_reconstruction.sample_v1 manifest of simulated
+# IWR1843 power cubes.
+#
+# Consumed via `mmprism csl-daily-simulate` with ${MMPRISM_DATA_ROOT}
+# supplied by the caller environment.
+schema_version: mmprism.csl_daily_simulation.v1
+radar:
+  radar_config_id: iwr1843_sim_v1
+input:
+  # Frozen pose manifest JSONL (sample_id, pose_uri, pose_sha256 per line).
+  pose_manifest_path: ${MMPRISM_DATA_ROOT}/interim/csl_daily/pose_annotation/rtmw3d_l_794dbc78_v1/pose_manifest.jsonl
+  pose_root: ${MMPRISM_DATA_ROOT}/interim/csl_daily/pose_annotation/rtmw3d_l_794dbc78_v1
+output:
+  # Doubles as the data_root of the emitted pose-reconstruction manifest.
+  output_root: ${MMPRISM_DATA_ROOT}/processed/csl_daily/simulated_radar/iwr1843_sim_v1
+  manifest_name: manifest.jsonl
+  run_record_name: run_record.json
+dataset:
+  name: csl-daily
+  coordinate_frame: csl_daily_rtmw3d_camera_v1
+preprocessing:
+  # Legacy run_simulation.py chain parameters; change only with new evidence.
+  smoothing_sigma: 1.0
+  velocity_scale: 10.0
+  decimation: 3
+  min_valid_frames: 2
+  min_output_frames: 1
+runtime:
+  # CPU-only pipeline; GPU scheduling is an operational concern.
+  device: cpu
+  precision: float32
+  frames_per_batch: 4
