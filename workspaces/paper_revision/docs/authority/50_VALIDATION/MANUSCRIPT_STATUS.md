@@ -48,8 +48,12 @@ Last reviewed: 2026-08-12
 7. supplementary ZIP 的 44 个 entry/CRC/内部图形引用已通过静态审计；入口 `mian.tex` 疑似拼写错误，
    11 个 display item 的科学 provenance 尚未验证。Supplementary Tables S2-S6 还含明确“替换为真实数据”
    注释，当前数字统一为 `placeholder_unverified`。
+8. `PAPER-AUDIT-002` 已完成结合当前投稿正文的技术完整性审计。当前 `sn-article.tex` 只加载
+   `chapter/`；`chapter_org/` 是历史会议稿，只作为可恢复线索。审计确认核心架构、数据/split、雷达协议、
+   tensor/coordinate、训练、指标、baseline 公平性和 claim-evidence 闭环均需要实质补写或新增证据。
 
 完整 evidence：[manuscript inventory](../../logs/2026/08/20260811_MANUSCRIPT_INVENTORY.md)；
+逐项技术 findings：[technical manuscript audit](../../logs/2026/08/20260812_TECHNICAL_MANUSCRIPT_AUDIT.md)；
 机器可读 artifact：`paper/manager/evidence/artifacts/manuscript_inventory_v2.json`；逐项控制表：
 [display item registry](../20_CONTRACTS/DISPLAY_ITEM_REGISTRY.md)。
 主文静态审计没有发现 missing input/graphic、duplicate

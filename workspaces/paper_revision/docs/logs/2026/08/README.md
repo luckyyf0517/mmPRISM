@@ -13,3 +13,4 @@
 - [Experiment task snapshot](20260811_EXPERIMENT_TASK_SNAPSHOT.md)
 - [Evidence index snapshot](20260812_EVIDENCE_INDEX_SNAPSHOT.md)
 - [Experiment registry snapshot](20260812_EXPERIMENT_REGISTRY_SNAPSHOT.md)
+- [Current manuscript technical audit](20260812_TECHNICAL_MANUSCRIPT_AUDIT.md)
