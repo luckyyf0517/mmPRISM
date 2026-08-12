@@ -26,3 +26,6 @@ Last reviewed: 2026-08-12
   data may come from explicitly reported video-guided volunteers.
 - Historically recorded the then-planned original-submission CSL-News-100 cam-pose WaveLLM control strategy. It is
   superseded operationally by the incoming-bundle receipt boundary; full CSL-News retraining remains outside P0.
+- Registered the CSL-Daily controlled reconstruction matrix as an upstream diagnostic: baseline/candidate camera-
+  pose QC, cross-fitted predicted-pose and feature inputs, explicit pose-only semantics, and replay-only use of
+  the legacy duplicated validation/test mapping. It does not close real-radar reviewer evidence requirements.

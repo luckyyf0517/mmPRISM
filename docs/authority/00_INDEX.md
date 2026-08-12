@@ -32,6 +32,12 @@ preserve and receipt the incoming historical WaveLLM bundle
 -> run matched sim2real adaptation and new-real-data experiments
 ```
 
+The CSL-Daily control is planned as three separately reported stages: camera-pose semantic ceiling, cross-fitted
+predicted-mmWave-pose translation, and the same predicted pose plus checkpoint-bound CubeNet frame features. This
+is a synthetic-control/historical-replay lane and cannot replace the new real-radar reviewer evidence. Its interface
+change is specified by OpenSpec `add-csl-daily-reproduction-controls` and its executing workspace operations are
+linked from the Data Rebuild, OmniHand Training, WaveLLM Training, and Paper Revision indexes.
+
 Full CSL-News reconstruction and retraining do not block the CSL-Daily revision path. The incoming historical bundle
 does not become a hidden precondition and cannot support historical reproduction claims until its audit passes. See
 `DEC-046` in the [decision log](60_DECISIONS/DECISION_LOG.md).

@@ -10,9 +10,14 @@ from typing import Any
 import yaml
 
 from mmprism.config import expand_environment
+from mmprism.contracts import (
+    POSE_ONLY_INPUT_MODE,
+    POSE_PLUS_RADAR_FEATURE_INPUT_MODE,
+    TRANSLATION_INPUT_MODES,
+)
 from mmprism.training.mt5_config import MT5ModelConfig, MT5SmokeError
 
-WAVELLM_RUN_CONFIG_SCHEMA = "mmprism.wavellm_run.v1"
+WAVELLM_RUN_CONFIG_SCHEMA = "mmprism.wavellm_run.v2"
 
 
 class WaveLLMRunError(RuntimeError):
@@ -229,6 +234,7 @@ class WaveLLMEvaluationConfig:
 
 @dataclass(frozen=True, slots=True)
 class WaveLLMRunConfig:
+    input_mode: str
     model: MT5ModelConfig
     data: WaveLLMDataConfig
     optimization: WaveLLMRunOptimizationConfig
@@ -242,6 +248,7 @@ class WaveLLMRunConfig:
             payload,
             {
                 "schema_version",
+                "input_mode",
                 "model",
                 "data",
                 "optimization",
@@ -254,11 +261,28 @@ class WaveLLMRunConfig:
             raise WaveLLMRunError(
                 f"schema_version must be {WAVELLM_RUN_CONFIG_SCHEMA}"
             )
+        input_mode = payload.get("input_mode")
+        if not isinstance(input_mode, str) or input_mode not in TRANSLATION_INPUT_MODES:
+            raise WaveLLMRunError(
+                "input_mode must be pose_only or pose_plus_radar_feature"
+            )
         try:
             model = MT5ModelConfig.from_mapping(payload.get("model"))
         except MT5SmokeError as error:
             raise WaveLLMRunError(str(error)) from error
+        if input_mode == POSE_ONLY_INPUT_MODE and model.radar_feature_dim is not None:
+            raise WaveLLMRunError(
+                "pose_only config must not declare model.radar_feature_dim"
+            )
+        if (
+            input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE
+            and model.radar_feature_dim is None
+        ):
+            raise WaveLLMRunError(
+                "pose_plus_radar_feature config requires model.radar_feature_dim"
+            )
         return cls(
+            input_mode=input_mode,
             model=model,
             data=WaveLLMDataConfig.from_mapping(payload.get("data")),
             optimization=WaveLLMRunOptimizationConfig.from_mapping(
@@ -271,6 +295,7 @@ class WaveLLMRunConfig:
     def to_dict(self) -> dict[str, object]:
         return {
             "schema_version": WAVELLM_RUN_CONFIG_SCHEMA,
+            "input_mode": self.input_mode,
             "model": self.model.to_dict(),
             "data": self.data.to_dict(),
             "optimization": self.optimization.to_dict(),
@@ -288,7 +313,10 @@ class WaveLLMRunConfig:
     @property
     def model_fingerprint(self) -> str:
         encoded = json.dumps(
-            self.model.to_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            {"input_mode": self.input_mode, "model": self.model.to_dict()},
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
         ).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
 

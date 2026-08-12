@@ -41,7 +41,7 @@ shown to be non-equivalent in the CSL-News lineage.
 
 ### Delivery boundary
 
-This change ends at validated parquet deliveries (DELIVERY-POSE-RECON-V1 and DELIVERY-SLU-V1) plus frozen
+This change ends at validated Parquet deliveries (DELIVERY-POSE-RECON-V1 and DELIVERY-SLU-V2) plus frozen
 manifests/splits. WaveLLM `radar_feature [T, F]` requires a trained OmniHand encoder and is explicitly handed
 off to the training workspaces. If signer metadata arrives with intake, splits are signer-aware
 `sha256_mod_weight_v1` group-disjoint; otherwise the official CSL-Daily split is bound and the limitation is

@@ -1,4 +1,5 @@
-schema_version: mmprism.wavellm_run.v1
+schema_version: mmprism.wavellm_run.v2
+input_mode: pose_plus_radar_feature
 
 model:
   asset_id: mt5_base

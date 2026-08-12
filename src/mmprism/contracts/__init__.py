@@ -32,6 +32,12 @@ from mmprism.contracts.tensors import (
     validate_range_doppler,
     validate_raw_radar,
 )
+from mmprism.contracts.translation import (
+    POSE_ONLY_INPUT_MODE,
+    POSE_PLUS_RADAR_FEATURE_INPUT_MODE,
+    TRANSLATION_INPUT_MODES,
+    translation_input_mode_modalities,
+)
 
 __all__ = [
     "CARTESIAN_COORDINATE_ORDER",
@@ -40,6 +46,8 @@ __all__ = [
     "ManifestError",
     "ManifestSummary",
     "ModalityRef",
+    "POSE_ONLY_INPUT_MODE",
+    "POSE_PLUS_RADAR_FEATURE_INPUT_MODE",
     "DUAL_HAND_POSE_TRAILING_AXES",
     "FEATURE_SEQUENCE_TRAILING_AXES",
     "LeadingAxis",
@@ -54,6 +62,7 @@ __all__ = [
     "SplitValidationSummary",
     "TensorContractError",
     "TensorMetadata",
+    "TRANSLATION_INPUT_MODES",
     "validate_caption",
     "validate_dual_hand_pose",
     "validate_feature_sequence",
@@ -62,4 +71,5 @@ __all__ = [
     "validate_range_doppler",
     "validate_raw_radar",
     "validate_split_assignments",
+    "translation_input_mode_modalities",
 ]

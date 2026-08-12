@@ -96,3 +96,12 @@ checkpoint, per-rank performance, and numerical agreement with a matched single-
 
 DDP resume is rejected until every rank's RNG and sampler state can be captured. Multi-GPU NCCL and real-data
 validation remain open; CPU fixture results and synthetic GPU smokes are engineering evidence only.
+
+## CSL-Daily Synthetic Export Boundary
+
+The accepted CSL-Daily skeleton-simulation control may train the same model only after its immutable delivery and
+split receipt pass. Although `OmniHandCubeNet` returns per-frame features, WaveLLM may consume them only after a
+separate immutable export binds sample/frame identity and mask, source/split hashes, checkpoint and metadata
+checksums, model fingerprint, feature dimension, dtype/shape/checksum, and inference precision. Primary
+predicted-mmWave-pose training rows require cross-fitted producers that excluded those rows; in-sample exports are
+debug-only. See the [CSL-Daily reconstruction operation](../40_OPERATIONS/CSL_DAILY_RECONSTRUCTION.md).

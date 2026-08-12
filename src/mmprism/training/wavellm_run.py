@@ -38,6 +38,7 @@ from mmprism.assets import (
 )
 from mmprism.assets.models import MODEL_ASSET_COLLECTION_NAME, MODEL_ASSET_MANIFEST_NAME
 from mmprism.config import ExperimentConfig, RuntimeConfig, Task
+from mmprism.contracts import POSE_PLUS_RADAR_FEATURE_INPUT_MODE
 from mmprism.data import (
     SignLanguageTranslationBatch,
     SignLanguageTranslationManifest,
@@ -65,7 +66,7 @@ from mmprism.training.wavellm_run_config import (
     load_wavellm_run_config,
 )
 
-WAVELLM_CHECKPOINT_SCHEMA = "mmprism.wavellm_checkpoint.v1"
+WAVELLM_CHECKPOINT_SCHEMA = "mmprism.wavellm_checkpoint.v2"
 WAVELLM_HISTORY_SCHEMA = "mmprism.wavellm_history.v1"
 WAVELLM_PREDICTION_SCHEMA = "mmprism.translation_prediction.v1"
 WAVELLM_PERFORMANCE_SCHEMA = "mmprism.wavellm_performance.v1"
@@ -91,7 +92,7 @@ class _TensorBatch:
     sample_ids: tuple[str, ...]
     pose: Tensor
     pose_confidence: Tensor
-    radar_features: Tensor
+    radar_features: Tensor | None
     frame_attention_mask: Tensor
     captions: tuple[str, ...]
     coordinate_frame: str
@@ -199,6 +200,7 @@ def _load_model_and_tokenizer(
     model = GeometryGuidedMT5(
         language_model,
         hidden_size=config.model.hidden_size,
+        input_mode=config.input_mode,
         radar_feature_dim=config.model.radar_feature_dim,
         joint_count=config.model.joint_count,
         coordinate_dim=config.model.coordinate_dim,
@@ -251,19 +253,29 @@ def _validate_manifest_for_model(
     role: str,
 ) -> None:
     expected = (
-        config.model.radar_feature_dim,
         config.model.joint_count,
         config.model.coordinate_dim,
     )
     observed = (
-        manifest.radar_feature_dim,
         manifest.joint_count,
         manifest.coordinate_dim,
     )
     if observed != expected:
         raise WaveLLMRunError(
-            f"{role} manifest feature/joint/coordinate dimensions are {observed}, "
+            f"{role} manifest joint/coordinate dimensions are {observed}, "
             f"model expects {expected}"
+        )
+    if manifest.input_mode != config.input_mode:
+        raise WaveLLMRunError(
+            f"{role} manifest input_mode {manifest.input_mode!r} does not match "
+            f"configured input_mode {config.input_mode!r}"
+        )
+    if config.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE and (
+        manifest.radar_feature_dim != config.model.radar_feature_dim
+    ):
+        raise WaveLLMRunError(
+            f"{role} manifest radar feature dimension {manifest.radar_feature_dim!r} "
+            f"does not match model {config.model.radar_feature_dim!r}"
         )
     longest = max(record.frame_count for record in manifest.records)
     if longest > config.data.max_frames:
@@ -340,7 +352,12 @@ def _loader(
     return cast(DataLoader[SignLanguageTranslationBatch], loader)
 
 
-def _tensor_batch(batch: SignLanguageTranslationBatch, device: torch.device) -> _TensorBatch:
+def _tensor_batch(
+    batch: SignLanguageTranslationBatch,
+    device: torch.device,
+    *,
+    input_mode: str,
+) -> _TensorBatch:
     non_blocking = device.type == "cuda"
     return _TensorBatch(
         sample_ids=batch.sample_ids,
@@ -348,8 +365,11 @@ def _tensor_batch(batch: SignLanguageTranslationBatch, device: torch.device) -> 
         pose_confidence=torch.from_numpy(batch.pose_confidence).to(
             device, non_blocking=non_blocking
         ),
-        radar_features=torch.from_numpy(batch.radar_feature).to(
-            device, non_blocking=non_blocking
+        radar_features=(
+            torch.from_numpy(batch.radar_feature).to(device, non_blocking=non_blocking)
+            if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE
+            and batch.radar_feature is not None
+            else None
         ),
         frame_attention_mask=torch.from_numpy(batch.frame_mask).to(
             device=device, dtype=torch.long, non_blocking=non_blocking
@@ -419,14 +439,20 @@ def _forward_loss(
         tokenizer, config, batch_size=len(batch.sample_ids), device=batch.pose.device
     )
     labels = _target_labels(tokenizer, batch.captions, config, device=batch.pose.device)
+    if config.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE and batch.radar_features is None:
+        raise WaveLLMRunError("fusion batch is missing radar features")
     output = model(
         pose=batch.pose,
         pose_confidence=batch.pose_confidence,
-        radar_features=batch.radar_features,
         frame_attention_mask=batch.frame_attention_mask,
         prompt_input_ids=prompt_ids,
         prompt_attention_mask=prompt_mask,
         labels=labels,
+        **(
+            {"radar_features": batch.radar_features}
+            if config.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE
+            else {}
+        ),
     )
     loss = getattr(output, "loss", None)
     if not isinstance(loss, Tensor):
@@ -448,7 +474,7 @@ def _validation_loss(
     sample_count = 0
     with torch.inference_mode():
         for numpy_batch in loader:
-            batch = _tensor_batch(numpy_batch, device)
+            batch = _tensor_batch(numpy_batch, device, input_mode=config.input_mode)
             with _precision_context(device, precision):
                 loss = _forward_loss(model, tokenizer, batch, config)
             value = float(loss.detach().float().cpu().item())
@@ -538,7 +564,7 @@ def _train_model(
         gradient_norm_sum = 0.0
         epoch_steps = 0
         for numpy_batch in train_loader:
-            batch = _tensor_batch(numpy_batch, device)
+            batch = _tensor_batch(numpy_batch, device, input_mode=config.input_mode)
             optimizer.zero_grad(set_to_none=True)
             with _precision_context(device, precision):
                 loss = _forward_loss(forward_model, tokenizer, batch, config)
@@ -685,6 +711,7 @@ def _checkpoint_payload(
             "scope": _checkpoint_scope(config),
         },
         "model": config.model.to_dict(),
+        "input_mode": config.input_mode,
         "model_config_sha256": config.model_fingerprint,
         "task_config_sha256": config.fingerprint,
         "model_asset": _asset_identity(asset),
@@ -749,6 +776,8 @@ def _load_checkpoint(
         raise WaveLLMRunError("checkpoint model configuration does not match the run config")
     if metadata.get("task_config_sha256") != config.fingerprint:
         raise WaveLLMRunError("checkpoint task configuration does not match the run config")
+    if metadata.get("input_mode") != config.input_mode:
+        raise WaveLLMRunError("checkpoint input mode does not match the run config")
     if metadata.get("coordinate_frame") != coordinate_frame:
         raise WaveLLMRunError("checkpoint and evaluation manifest coordinate frames do not match")
     if metadata.get("model_asset") != _asset_identity(asset):
@@ -791,21 +820,25 @@ def _prediction_records(
     model.eval()
     with torch.inference_mode():
         for numpy_batch in loader:
-            batch = _tensor_batch(numpy_batch, device)
+            batch = _tensor_batch(numpy_batch, device, input_mode=config.input_mode)
             prompt_ids, prompt_mask = _prompt_tokens(
                 tokenizer, config, batch_size=len(batch.sample_ids), device=device
             )
             with _precision_context(device, precision):
-                generated_ids = model.generate(
-                    pose=batch.pose,
-                    pose_confidence=batch.pose_confidence,
-                    radar_features=batch.radar_features,
-                    frame_attention_mask=batch.frame_attention_mask,
-                    prompt_input_ids=prompt_ids,
-                    prompt_attention_mask=prompt_mask,
-                    max_new_tokens=config.generation.max_new_tokens,
-                    num_beams=config.generation.num_beams,
-                )
+                generation_inputs: dict[str, Any] = {
+                    "pose": batch.pose,
+                    "pose_confidence": batch.pose_confidence,
+                    "frame_attention_mask": batch.frame_attention_mask,
+                    "prompt_input_ids": prompt_ids,
+                    "prompt_attention_mask": prompt_mask,
+                    "max_new_tokens": config.generation.max_new_tokens,
+                    "num_beams": config.generation.num_beams,
+                }
+                if config.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+                    if batch.radar_features is None:
+                        raise WaveLLMRunError("fusion batch is missing radar features")
+                    generation_inputs["radar_features"] = batch.radar_features
+                generated_ids = model.generate(**generation_inputs)
             decoded = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
             if not isinstance(decoded, list) or any(not isinstance(item, str) for item in decoded):
                 raise WaveLLMRunError(

@@ -18,9 +18,13 @@ import yaml
 
 from mmprism.config import expand_environment
 from mmprism.contracts import (
+    POSE_ONLY_INPUT_MODE,
+    POSE_PLUS_RADAR_FEATURE_INPUT_MODE,
+    TRANSLATION_INPUT_MODES,
     ManifestError,
     SampleRecord,
     SplitAssignment,
+    translation_input_mode_modalities,
     validate_manifest,
     validate_split_assignments,
 )
@@ -47,9 +51,9 @@ from mmprism.data.sign_language_translation import (
 )
 from mmprism.runtime import collect_runtime_report
 
-PARQUET_DELIVERY_SCHEMA = "mmprism.parquet_delivery.v1"
+PARQUET_DELIVERY_SCHEMA = "mmprism.parquet_delivery.v2"
 PARQUET_DELIVERY_CONFIG_SCHEMA = "mmprism.parquet_delivery_config.v1"
-PARQUET_DELIVERY_SCHEMA_FILE = "mmprism.parquet_delivery_schema.v1"
+PARQUET_DELIVERY_SCHEMA_FILE = "mmprism.parquet_delivery_schema.v2"
 PARQUET_DELIVERY_INVENTORY_SCHEMA = "mmprism.parquet_delivery_inventory.v1"
 PARQUET_DELIVERY_INDEX_SCHEMA = "mmprism.parquet_delivery_index.v1"
 PARQUET_DELIVERY_VALIDATION_SCHEMA = "mmprism.parquet_delivery_validation.v1"
@@ -138,6 +142,7 @@ class ParquetDeliveryPlan:
     assignments_by_id: dict[str, SplitAssignment]
     parts: tuple[ParquetDeliveryPartPlan, ...]
     datasets: tuple[str, ...]
+    input_mode: str | None
     static_dimensions: dict[str, int]
     coordinate_frame: str
     estimated_payload_bytes: int
@@ -199,6 +204,7 @@ class _DeliveryMetadata:
     split_assignment_sha256: str
     part_rows: int
     parts_per_chunk: int
+    input_mode: str | None
     coordinate_frame: str
     static_dimensions: dict[str, int]
     delivery: dict[str, object]
@@ -633,20 +639,35 @@ def _estimate_array_bytes(record: SampleRecord, modality: str) -> int:
     return item_size * element_count
 
 
-def _estimate_payload_bytes(records: Mapping[str, SampleRecord], product: str) -> int:
+def _estimate_payload_bytes(
+    records: Mapping[str, SampleRecord],
+    product: str,
+    *,
+    input_mode: str | None,
+) -> int:
     if product == POSE_RECONSTRUCTION_PRODUCT:
-        modalities = (
+        modalities: tuple[str, ...] = (
             RADAR_CUBE_MODALITY,
             POSE_TARGET_MODALITY,
             FRAME_MASK_MODALITY,
             POSE_VALID_MODALITY,
         )
-    else:
+    elif input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
         modalities = (
             TRANSLATION_POSE_MODALITY,
             TRANSLATION_POSE_CONFIDENCE_MODALITY,
             TRANSLATION_RADAR_FEATURE_MODALITY,
             TRANSLATION_FRAME_MASK_MODALITY,
+        )
+    elif input_mode == POSE_ONLY_INPUT_MODE:
+        modalities = (
+            TRANSLATION_POSE_MODALITY,
+            TRANSLATION_POSE_CONFIDENCE_MODALITY,
+            TRANSLATION_FRAME_MASK_MODALITY,
+        )
+    else:
+        raise ParquetDeliveryError(
+            f"translation delivery requires a supported input mode, got {input_mode!r}"
         )
     total = 0
     for record in records.values():
@@ -672,11 +693,17 @@ def _load_source_adapter(
                 data_root=config.data_root,
                 verify_checksums=verify_checksums,
             )
-        return SignLanguageTranslationManifest(
+        translation_manifest = SignLanguageTranslationManifest(
             config.source_manifest_path,
             data_root=config.data_root,
             verify_checksums=verify_checksums,
         )
+        if translation_manifest.input_mode not in TRANSLATION_INPUT_MODES:
+            raise ParquetDeliveryError(
+                "translation source has an unsupported input mode: "
+                f"{translation_manifest.input_mode!r}"
+            )
+        return translation_manifest
     except (PoseReconstructionDataError, SignLanguageTranslationDataError) as error:
         raise ParquetDeliveryError(
             f"source data is not model-ready for {config.product}: {error}"
@@ -686,7 +713,7 @@ def _load_source_adapter(
 def _adapter_contract(
     adapter: PoseReconstructionManifest | SignLanguageTranslationManifest,
     product: str,
-) -> tuple[dict[str, int], str]:
+) -> tuple[dict[str, int], str, str | None]:
     if product == POSE_RECONSTRUCTION_PRODUCT:
         pose_adapter = cast(PoseReconstructionManifest, adapter)
         doppler, range_bins, azimuth, elevation = pose_adapter.radar_spatial_shape
@@ -701,16 +728,31 @@ def _adapter_contract(
                 "coordinate_dim": 3,
             },
             pose_adapter.coordinate_frame,
+            None,
         )
     translation_adapter = cast(SignLanguageTranslationManifest, adapter)
+    input_mode = translation_adapter.input_mode
+    if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE and (
+        translation_adapter.radar_feature_dim is None
+    ):
+        raise ParquetDeliveryError(
+            "feature translation Parquet delivery requires a radar feature dimension"
+        )
+    if input_mode == POSE_ONLY_INPUT_MODE and translation_adapter.radar_feature_dim is not None:
+        raise ParquetDeliveryError(
+            "pose_only translation Parquet delivery must not have a radar feature dimension"
+        )
+    dimensions = {
+        "hands": 2,
+        "joints": translation_adapter.joint_count,
+        "coordinate_dim": translation_adapter.coordinate_dim,
+    }
+    if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+        dimensions["radar_feature_dim"] = cast(int, translation_adapter.radar_feature_dim)
     return (
-        {
-            "hands": 2,
-            "joints": translation_adapter.joint_count,
-            "coordinate_dim": translation_adapter.coordinate_dim,
-            "radar_feature_dim": translation_adapter.radar_feature_dim,
-        },
+        dimensions,
         translation_adapter.coordinate_frame,
+        input_mode,
     )
 
 
@@ -756,6 +798,7 @@ def plan_parquet_delivery(
             assignments_by_id=assignments,
             parts=(),
             datasets=(),
+            input_mode=None,
             static_dimensions={},
             coordinate_frame="",
             estimated_payload_bytes=0,
@@ -770,7 +813,7 @@ def plan_parquet_delivery(
             "source adapter records differ from frozen source manifest: "
             f"missing={len(set(records) - adapter_ids)}, extra={len(adapter_ids - set(records))}"
         )
-    static_dimensions, coordinate_frame = _adapter_contract(adapter, config.product)
+    static_dimensions, coordinate_frame, input_mode = _adapter_contract(adapter, config.product)
 
     ids_by_split: dict[str, list[str]] = defaultdict(list)
     for sample_id, assignment in assignments.items():
@@ -780,7 +823,11 @@ def plan_parquet_delivery(
         part_rows=config.part_rows,
         parts_per_chunk=config.parts_per_chunk,
     )
-    payload_bytes = _estimate_payload_bytes(records, config.product)
+    payload_bytes = _estimate_payload_bytes(
+        records,
+        config.product,
+        input_mode=input_mode,
+    )
     staging_bytes = payload_bytes * 2 + len(records) * 2048
     required_free_bytes = config.minimum_free_bytes + staging_bytes
     config_fingerprint = config.fingerprint
@@ -798,6 +845,7 @@ def plan_parquet_delivery(
         assignments_by_id=assignments,
         parts=parts,
         datasets=tuple(sorted({record.dataset for record in records.values()})),
+        input_mode=input_mode,
         static_dimensions=static_dimensions,
         coordinate_frame=coordinate_frame,
         estimated_payload_bytes=payload_bytes,
@@ -855,20 +903,28 @@ def _schema_for_plan(plan: ParquetDeliveryPlan) -> Any:
         )
     else:
         dims = plan.static_dimensions
+        if plan.input_mode not in TRANSLATION_INPUT_MODES:
+            raise ParquetDeliveryError(
+                "translation Parquet schema requires a supported input mode"
+            )
         coordinate = fixed(pa.float32(), dims["coordinate_dim"])
         joints = fixed(coordinate, dims["joints"])
         hands = fixed(joints, dims["hands"])
         confidence_joints = fixed(pa.float32(), dims["joints"])
         confidence_hands = fixed(confidence_joints, dims["hands"])
-        feature = fixed(pa.float32(), dims["radar_feature_dim"])
         fields.extend(
             (
                 pa.field("pose", pa.list_(hands), nullable=False),
                 pa.field("pose_confidence", pa.list_(confidence_hands), nullable=False),
-                pa.field("radar_feature", pa.list_(feature), nullable=False),
                 pa.field("frame_mask", pa.list_(pa.bool_()), nullable=False),
             )
         )
+        if plan.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+            feature = fixed(pa.float32(), dims["radar_feature_dim"])
+            fields.insert(
+                len(fields) - 1,
+                pa.field("radar_feature", pa.list_(feature), nullable=False),
+            )
     return pa.schema(fields)
 
 
@@ -990,6 +1046,20 @@ def _row_for_sample(
             return row
         translation_adapter = cast(SignLanguageTranslationManifest, adapter)
         translation_sample = translation_adapter.load_sample(index)
+        if (
+            plan.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE
+            and translation_sample.radar_feature is None
+        ):
+            raise ParquetDeliveryError(
+                "feature translation Parquet delivery requires radar features"
+            )
+        if (
+            plan.input_mode == POSE_ONLY_INPUT_MODE
+            and translation_sample.radar_feature is not None
+        ):
+            raise ParquetDeliveryError(
+                "pose_only translation Parquet delivery must not load radar features"
+            )
         row = _common_row(
             plan,
             record,
@@ -1001,10 +1071,13 @@ def _row_for_sample(
             {
                 "pose": translation_sample.pose.tolist(),
                 "pose_confidence": translation_sample.pose_confidence.tolist(),
-                "radar_feature": translation_sample.radar_feature.tolist(),
                 "frame_mask": translation_sample.frame_mask.tolist(),
             }
         )
+        if plan.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+            row["radar_feature"] = cast(
+                np.ndarray, translation_sample.radar_feature
+            ).tolist()
         return row
     except (PoseReconstructionDataError, SignLanguageTranslationDataError) as error:
         raise ParquetDeliveryError(
@@ -1082,6 +1155,7 @@ def _delivery_payload(
         "source_manifest_sha256": plan.source_manifest_sha256,
         "split_assignment_sha256": plan.split_assignment_sha256,
         "source_datasets": list(plan.datasets),
+        "input_mode": plan.input_mode,
         "sample_count": plan.sample_count,
         "splits": list(plan.splits),
         "row_policy": {
@@ -1119,6 +1193,7 @@ def _schema_payload(plan: ParquetDeliveryPlan, schema: Any) -> dict[str, object]
         "schema_version": PARQUET_DELIVERY_SCHEMA_FILE,
         "product": plan.config.product,
         "product_protocol": PRODUCT_PROTOCOLS[plan.config.product],
+        "input_mode": plan.input_mode,
         "static_dimensions": plan.static_dimensions,
         "coordinate_frame": plan.coordinate_frame,
         "schema_fingerprint": _schema_fingerprint(schema),
@@ -1360,6 +1435,15 @@ def _load_delivery_metadata(root: Path, *, allow_incomplete: bool) -> _DeliveryM
         raise ParquetDeliveryError(f"unsupported delivery product: {product}")
     if payload.get("product_protocol") != PRODUCT_PROTOCOLS[product]:
         raise ParquetDeliveryError("delivery product protocol is inconsistent")
+    input_mode_value = payload.get("input_mode")
+    if product == SIGN_LANGUAGE_TRANSLATION_PRODUCT:
+        input_mode = _require_text(input_mode_value, "delivery.input_mode")
+        if input_mode not in TRANSLATION_INPUT_MODES:
+            raise ParquetDeliveryError("delivery.input_mode is unsupported")
+    elif input_mode_value is not None:
+        raise ParquetDeliveryError("non-translation delivery must not declare input_mode")
+    else:
+        input_mode = None
     build_id = _require_text(payload.get("build_id"), "delivery.build_id")
     if not _BUILD_ID_PATTERN.fullmatch(build_id):
         raise ParquetDeliveryError("delivery.build_id has invalid format")
@@ -1398,6 +1482,14 @@ def _load_delivery_metadata(root: Path, *, allow_incomplete: bool) -> _DeliveryM
         )
         for key, value in dimensions.items()
     }
+    if product == SIGN_LANGUAGE_TRANSLATION_PRODUCT:
+        required_dimensions = {"hands", "joints", "coordinate_dim"}
+        if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+            required_dimensions.add("radar_feature_dim")
+        if set(static_dimensions) != required_dimensions:
+            raise ParquetDeliveryError(
+                "translation delivery static dimensions do not match input mode"
+            )
     build = payload.get("build")
     if not isinstance(build, Mapping):
         raise ParquetDeliveryError("delivery.build must be an object")
@@ -1473,6 +1565,7 @@ def _load_delivery_metadata(root: Path, *, allow_incomplete: bool) -> _DeliveryM
         ),
         part_rows=part_rows,
         parts_per_chunk=parts_per_chunk,
+        input_mode=input_mode,
         coordinate_frame=_require_text(
             payload.get("coordinate_frame"), "delivery.coordinate_frame"
         ),
@@ -1513,6 +1606,7 @@ def _schema_for_metadata(metadata: _DeliveryMetadata) -> Any:
         assignments_by_id={},
         parts=(),
         datasets=(),
+        input_mode=metadata.input_mode,
         static_dimensions=metadata.static_dimensions,
         coordinate_frame=metadata.coordinate_frame,
         estimated_payload_bytes=0,
@@ -1530,6 +1624,8 @@ def _validate_schema(root: Path, metadata: _DeliveryMetadata) -> tuple[Any, str]
         raise ParquetDeliveryError("schema product does not match delivery product")
     if schema_payload.get("product_protocol") != PRODUCT_PROTOCOLS[metadata.product]:
         raise ParquetDeliveryError("schema product protocol does not match delivery product")
+    if schema_payload.get("input_mode") != metadata.input_mode:
+        raise ParquetDeliveryError("schema input mode does not match delivery product")
     expected_schema = _schema_for_metadata(metadata)
     fingerprint = _schema_fingerprint(expected_schema)
     if schema_payload.get("schema_fingerprint") != fingerprint:
@@ -1568,6 +1664,25 @@ def _validate_frozen_inputs(
             raise ParquetDeliveryError("copied split assignment SHA-256 mismatch")
     records = _read_source_records(source_path)
     assignments = _read_assignments(split_path, set(records))
+    if metadata.product == SIGN_LANGUAGE_TRANSLATION_PRODUCT:
+        if metadata.input_mode not in TRANSLATION_INPUT_MODES:
+            raise ParquetDeliveryError("translation delivery input mode is unsupported")
+        required, forbidden = translation_input_mode_modalities(metadata.input_mode)
+        for record in records.values():
+            acquisition = record.acquisition or {}
+            if acquisition.get("sample_protocol") != SIGN_LANGUAGE_TRANSLATION_SAMPLE_PROTOCOL:
+                raise ParquetDeliveryError(
+                    f"translation source protocol mismatch for {record.sample_id}"
+                )
+            if acquisition.get("input_mode") != metadata.input_mode:
+                raise ParquetDeliveryError(
+                    f"translation source input mode mismatch for {record.sample_id}"
+                )
+            modalities = set(record.modalities)
+            if set(required) - modalities or set(forbidden) & modalities:
+                raise ParquetDeliveryError(
+                    f"translation source modalities do not match input mode for {record.sample_id}"
+                )
     return records, assignments
 
 
@@ -1667,19 +1782,40 @@ def _validate_payload_row(
     try:
         pose = np.asarray(row["pose"], dtype=np.float32)
         confidence = np.asarray(row["pose_confidence"], dtype=np.float32)
-        radar_feature = np.asarray(row["radar_feature"], dtype=np.float32)
         frame_mask = np.asarray(row["frame_mask"], dtype=np.bool_)
     except (KeyError, TypeError, ValueError) as error:
         raise ParquetDeliveryError(f"invalid translation payload for {sample_id}") from error
+    radar_feature: np.ndarray | None = None
+    if metadata.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+        try:
+            radar_feature = np.asarray(row["radar_feature"], dtype=np.float32)
+        except (KeyError, TypeError, ValueError) as error:
+            raise ParquetDeliveryError(
+                f"invalid feature translation payload for {sample_id}"
+            ) from error
+    elif metadata.input_mode == POSE_ONLY_INPUT_MODE:
+        if "radar_feature" in row:
+            raise ParquetDeliveryError(
+                f"pose_only translation payload has a radar feature for {sample_id}"
+            )
+    else:
+        raise ParquetDeliveryError("translation delivery input mode is unsupported")
     if pose.shape != (frame_count, 2, dims["joints"], dims["coordinate_dim"]):
         raise ParquetDeliveryError(f"translation pose shape mismatch for {sample_id}")
     if confidence.shape != (frame_count, 2, dims["joints"]):
         raise ParquetDeliveryError(f"translation confidence shape mismatch for {sample_id}")
-    if radar_feature.shape != (frame_count, dims["radar_feature_dim"]):
+    if radar_feature is not None and radar_feature.shape != (
+        frame_count,
+        dims["radar_feature_dim"],
+    ):
         raise ParquetDeliveryError(f"translation radar feature shape mismatch for {sample_id}")
     if frame_mask.shape != (frame_count,) or not bool(np.any(frame_mask)):
         raise ParquetDeliveryError(f"translation frame mask mismatch for {sample_id}")
-    if not all(bool(np.all(np.isfinite(value))) for value in (pose, confidence, radar_feature)):
+    if not all(
+        bool(np.all(np.isfinite(value)))
+        for value in (pose, confidence, radar_feature)
+        if value is not None
+    ):
         raise ParquetDeliveryError(f"translation payload must be finite for {sample_id}")
     if bool(np.any((confidence < 0) | (confidence > 1))):
         raise ParquetDeliveryError(
@@ -2031,7 +2167,14 @@ class ParquetSignLanguageTranslationDataset(_ParquetDeliveryDataset):
         dims = self.metadata.static_dimensions
         self.joint_count = dims["joints"]
         self.coordinate_dim = dims["coordinate_dim"]
-        self.radar_feature_dim = dims["radar_feature_dim"]
+        if self.metadata.input_mode not in TRANSLATION_INPUT_MODES:
+            raise ParquetDeliveryError("translation delivery input mode is unsupported")
+        self.input_mode = self.metadata.input_mode
+        self.radar_feature_dim = (
+            dims["radar_feature_dim"]
+            if self.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE
+            else None
+        )
         self.coordinate_frame = self.metadata.coordinate_frame
 
     def load_sample(self, index: int) -> SignLanguageTranslationSample:
@@ -2041,22 +2184,40 @@ class ParquetSignLanguageTranslationDataset(_ParquetDeliveryDataset):
         try:
             pose = np.asarray(row["pose"], dtype=np.float32)
             confidence = np.asarray(row["pose_confidence"], dtype=np.float32)
-            radar_feature = np.asarray(row["radar_feature"], dtype=np.float32)
             frame_mask = np.asarray(row["frame_mask"], dtype=np.bool_)
         except (KeyError, TypeError, ValueError) as error:
             raise ParquetDeliveryError(
                 f"invalid translation Parquet payload for {sample_id}"
             ) from error
+        radar_feature: np.ndarray | None = None
+        if self.input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+            try:
+                radar_feature = np.asarray(row["radar_feature"], dtype=np.float32)
+            except (KeyError, TypeError, ValueError) as error:
+                raise ParquetDeliveryError(
+                    f"invalid feature translation Parquet payload for {sample_id}"
+                ) from error
+        elif "radar_feature" in row:
+            raise ParquetDeliveryError(
+                f"pose_only translation Parquet payload has a radar feature for {sample_id}"
+            )
         frames = _require_integer(row.get("frame_count"), "Parquet frame_count", minimum=1)
         if pose.shape != (frames, 2, self.joint_count, self.coordinate_dim):
             raise ParquetDeliveryError(f"translation pose shape mismatch for {sample_id}")
         if confidence.shape != (frames, 2, self.joint_count):
             raise ParquetDeliveryError(f"translation confidence shape mismatch for {sample_id}")
-        if radar_feature.shape != (frames, self.radar_feature_dim):
+        if radar_feature is not None and radar_feature.shape != (
+            frames,
+            self.radar_feature_dim,
+        ):
             raise ParquetDeliveryError(f"translation radar feature shape mismatch for {sample_id}")
         if frame_mask.shape != (frames,) or not bool(np.any(frame_mask)):
             raise ParquetDeliveryError(f"translation frame mask mismatch for {sample_id}")
-        if not all(bool(np.all(np.isfinite(value))) for value in (pose, confidence, radar_feature)):
+        if not all(
+            bool(np.all(np.isfinite(value)))
+            for value in (pose, confidence, radar_feature)
+            if value is not None
+        ):
             raise ParquetDeliveryError(f"translation payload must be finite for {sample_id}")
         if bool(np.any((confidence < 0) | (confidence > 1))):
             raise ParquetDeliveryError(

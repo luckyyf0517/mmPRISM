@@ -7,26 +7,31 @@ Last reviewed: 2026-08-12
 
 ## Boundary
 
-WaveLLM starts from temporally aligned, model-ready geometry and radar features. It does not infer file
-relationships, reconstruct poses, resolve model paths, parse CLI input, or write artifacts.
+WaveLLM starts from temporally aligned, model-ready geometry and optional checkpoint-bound radar features. It does
+not infer file relationships, reconstruct poses, resolve model paths, parse CLI input, or write artifacts.
 
 ```text
 pose             [batch,time,2,24,3] float32, metres
 pose confidence  [batch,time,2,24]   float32, [0,1]
-radar features   [batch,time,F]       float32
+radar features   [batch,time,F]       float32, fusion mode only
 frame mask       [batch,time]         bool/long
 caption          non-empty text
 ```
 
-The manifest owns the sample and radar-feature protocol, coordinate frame, units, shapes, dtypes,
-checksums, and inline caption. Variable-length samples are zero-padded during collation and every model
-path receives the explicit frame mask.
+The v2 JSONL+NPY manifest owns input mode, coordinate frame, units, shapes, dtypes, checksums, and inline caption.
+It requires a frame mask in both modes. Variable-length samples are zero-padded during collation and every model
+path receives the explicit frame mask. `pose_only` accepts pose, confidence, mask, and caption only; it never
+loads, fabricates, projects, or persists a radar feature. Its final Parquet delivery has no `radar_feature` column
+or feature dimension and its reader returns `None`. `pose_plus_radar_feature` additionally requires one declared
+feature sequence and its protocol. Supplying zero radar features to the fusion model is not a valid pose-only
+experiment.
 
 ## Model
 
-- Pose path: dual-hand ST-GCN maps metric geometry to one embedding per frame.
-- Radar path: a feature projector maps the declared feature dimension to mT5 hidden size.
-- Fusion: mean pose confidence and a learned gate combine pose and radar embeddings.
+- Pose path: dual-hand ST-GCN maps metric geometry to one embedding per frame in both modes.
+- Pose-only path: feeds pose embeddings directly to mT5 and has no radar projector or fusion parameters.
+- Fusion path: a feature projector maps the declared feature dimension to mT5 hidden size; mean pose confidence
+  and a learned gate then combine pose and radar embeddings.
 - Prompt: token embeddings are concatenated with fused frame embeddings and their attention masks.
 - Language model: the sole supported backend is a pinned local mT5 asset.
 
@@ -62,11 +67,22 @@ gate for CSL-Daily.
 
 ## Data And Split Gates
 
-`mmprism.sign_language_translation.sample_v1` requires local relative `.npy` references for pose,
-confidence, radar features, and optional masks. Construction validates metadata; formal runs additionally
-verify every array checksum and load-time shape, dtype, finite value, confidence range, and non-empty-mask
-contracts. A training run rejects overlapping sample IDs, overlapping non-null sequence IDs, feature or
-joint dimension drift, coordinate-frame drift, and sequences longer than the configured maximum.
+`mmprism.sign_language_translation.sample_v2` requires local relative `.npy` references for pose, confidence,
+and frame mask. Fusion records additionally require radar features and the radar-feature protocol; pose-only
+records forbid both. Construction validates metadata; formal runs additionally verify every array checksum and
+load-time shape, dtype, finite value, confidence range, and non-empty-mask contracts. A training run rejects
+input-mode, feature/joint dimension, coordinate-frame, sample-ID, sequence-ID, or maximum-frame drift.
+
+## CSL-Daily Control Matrix
+
+The controlled CSL-Daily route consists of camera pose -> text (`pose_only`), cross-fitted predicted mmWave-pose
+-> text (`pose_only`), and that same predicted pose plus a checkpoint-bound CubeNet frame feature -> text
+(`pose_plus_radar_feature`). The latter feature is an immutable producer artifact binding source/split/checkpoint,
+frame identity/mask, shape/dtype/checksum and model fingerprint; it is never inferred by path substitution.
+Training-row predicted inputs are cross-fitted, so their CubeNet producer did not train on those rows. A diagnostic
+in-sample result is separately labelled and cannot serve as the primary comparison. The legacy CSL-Daily validation
+and test JSON are byte-identical, so they only support an explicitly labelled historical replay, not a new test.
+See the [CSL-Daily training operation](../40_OPERATIONS/CSL_DAILY_TRAINING.md).
 
 ## Formal Train And Evaluate
 
@@ -82,8 +98,10 @@ sample/sequence leakage gates. It writes:
 - `history.json`, `performance.json`, `predictions.jsonl`, and `metrics.json`.
 
 For a frozen mT5 backbone, the checkpoint contains only non-language-model tensors and records
-`scope=adapter_only`. Metadata binds the base-model repository/revision and asset/collection manifests,
-model and task fingerprints, coordinate frame, units, Git commit, runtime, and all input hashes.
+`scope=adapter_only`. Metadata binds the input mode, base-model repository/revision and asset/collection
+manifests, model and task fingerprints, coordinate frame, units, Git commit, runtime, and all input hashes.
+Evaluation rejects a checkpoint with a different mode before tensor loading; pose-only adapter inventories cannot
+contain radar projector or fusion tensors.
 
 `mmprism wavellm-evaluate` registers the manifest, split assignments, weights, metadata, configs, and model
 manifests as independent hashed inputs. Before state loading it validates evaluation split membership,

@@ -64,7 +64,7 @@ def _number(
 class MT5ModelConfig:
     asset_id: str
     hidden_size: int
-    radar_feature_dim: int
+    radar_feature_dim: int | None
     joint_count: int
     coordinate_dim: int
     pose_channels: tuple[int, ...]
@@ -121,7 +121,11 @@ class MT5ModelConfig:
         return cls(
             asset_id=asset_id,
             hidden_size=_integer(payload, "hidden_size", location),
-            radar_feature_dim=_integer(payload, "radar_feature_dim", location),
+            radar_feature_dim=(
+                _integer(payload, "radar_feature_dim", location)
+                if "radar_feature_dim" in payload
+                else None
+            ),
             joint_count=_integer(payload, "joint_count", location),
             coordinate_dim=_integer(payload, "coordinate_dim", location),
             pose_channels=tuple(channels_value),
@@ -135,7 +139,11 @@ class MT5ModelConfig:
         return {
             "asset_id": self.asset_id,
             "hidden_size": self.hidden_size,
-            "radar_feature_dim": self.radar_feature_dim,
+            **(
+                {"radar_feature_dim": self.radar_feature_dim}
+                if self.radar_feature_dim is not None
+                else {}
+            ),
             "joint_count": self.joint_count,
             "coordinate_dim": self.coordinate_dim,
             "pose_channels": list(self.pose_channels),
@@ -311,9 +319,12 @@ class MT5SmokeConfig:
         smoke_id = _text(payload, "smoke_id", "mT5 smoke config")
         if not _ID_PATTERN.fullmatch(smoke_id):
             raise MT5SmokeError("smoke_id must be a stable lowercase ID")
+        model = MT5ModelConfig.from_mapping(payload.get("model"))
+        if model.radar_feature_dim is None:
+            raise MT5SmokeError("model.radar_feature_dim is required for the geometry-fusion smoke")
         return cls(
             smoke_id=smoke_id,
-            model=MT5ModelConfig.from_mapping(payload.get("model")),
+            model=model,
             batch=MT5BatchConfig.from_mapping(payload.get("batch")),
             optimization=MT5OptimizationConfig.from_mapping(payload.get("optimization")),
             generation=MT5GenerationConfig.from_mapping(payload.get("generation")),

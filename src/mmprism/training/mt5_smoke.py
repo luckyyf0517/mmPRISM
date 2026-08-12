@@ -102,6 +102,9 @@ def _build_batch(
     batch = config.batch.batch_size
     frames = config.batch.frame_count
     model = config.model
+    radar_feature_dim = model.radar_feature_dim
+    if radar_feature_dim is None:
+        raise MT5SmokeError("geometry-fusion smoke requires model.radar_feature_dim")
     generator = torch.Generator(device="cpu")
     generator.manual_seed(config.runtime.seed + step)
     pose = torch.randn(
@@ -124,7 +127,7 @@ def _build_batch(
     radar = torch.randn(
         batch,
         frames,
-        model.radar_feature_dim,
+        radar_feature_dim,
         generator=generator,
         dtype=torch.float32,
     )

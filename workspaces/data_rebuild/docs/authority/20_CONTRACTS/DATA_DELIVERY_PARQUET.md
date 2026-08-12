@@ -11,6 +11,10 @@ This document defines the only final model-ready delivery format for rebuilt dat
 products. One logical training sample occupies one Parquet row. It applies to the greenfield system and does
 not require legacy file compatibility.
 
+The current delivery metadata and Arrow-schema contract is v2. The v2 translation schema adds explicit input-mode
+binding and permits `pose_only` without a radar-feature column. Existing v1 deliveries remain immutable historical
+artifacts and are not accepted by the v2 reader or validator.
+
 Parquet is a delivery format, not a source of truth. It must not replace raw inputs, frozen manifests,
 annotation sidecars, source-integrity reports, failure records, or intermediate arrays required to reproduce an
 annotation. A product can enter formal training only after its frozen inputs, split assignment, reader, and
@@ -117,18 +121,21 @@ protocol and calibration/acquisition evidence that radar cube and pose share the
 
 ### Sign Language Translation
 
-Protocol: `mmprism.sign_language_translation.sample_v1`.
+Protocol: `mmprism.sign_language_translation.sample_v2`. `delivery.json` and `schema.json` bind one
+`input_mode`; a delivery may not mix modes.
 
 | Column | Arrow logical shape | Required contract |
 |---|---|---|
 | `pose` | `list<fixed_size_list<fixed_size_list<fixed_size_list<float32,3>,J>,2>>` | `[T,2,J,3]` metric pose. |
 | `pose_confidence` | `list<fixed_size_list<fixed_size_list<float32,J>,2>>` | `[T,2,J]`, aligned to pose. |
-| `radar_feature` | `list<fixed_size_list<float32,F>>` | `[T,F]`, aligned to pose. |
+| `radar_feature` | `list<fixed_size_list<float32,F>>`, fusion only | `[T,F]`, aligned to pose; required only for `pose_plus_radar_feature`. |
 | `frame_mask` | `list<bool>` | `[T]`; source omission materializes as all true. |
 | `caption` | `string` | Non-empty inline target text. |
 
 All temporal modalities must have identical `T`; confidence is within `[0,1]`; the mask is non-empty; and pose
-coordinate/radar-feature protocols are explicit. Product schemas must remain separate even where both contain a
+coordinate/radar-feature protocols are explicit. `pose_only` rows and Arrow schemas omit `radar_feature` and
+`radar_feature_dim` entirely; their reader returns `radar_feature=None`. `pose_plus_radar_feature` retains the
+non-null feature column and fixed feature dimension. Product schemas must remain separate even where both contain a
 pose tensor.
 
 ### CSL-News Boundary
@@ -147,10 +154,11 @@ new concrete and validated consumer requires them.
 The canonical writer/reader uses PyArrow, a pinned compatible version, Zstandard compression and exactly one
 row group per part (the final row group has the actual part row count, at most 1,024). It is added as a lazy
 explicit `data-parquet` extra so basic contract tests do not import PyArrow or training dependencies.
-`schema.json` records Arrow types, static dimensions, protocol versions and a schema fingerprint. Opaque objects,
-pickles and arbitrary `.npy` byte payloads are prohibited.
+`schema.json` records Arrow types, static dimensions, protocol versions, translation input mode where relevant,
+and a schema fingerprint. Opaque objects, pickles and arbitrary `.npy` byte payloads are prohibited.
 
-`delivery.json` records product/protocol/schema versions, row/part/chunk policy, compression/writer versions,
+`delivery.json` records product/protocol/schema versions, translation input mode where relevant, row/part/chunk
+policy, compression/writer versions,
 clean Git state, a portable resolved delivery config and config fingerprint, portable runtime environment, build
 time, deterministic-placement policy, frozen inputs, and validation outcome. It is the formal training input
 binding; it excludes data roots, staging paths and other machine-local paths.
@@ -180,8 +188,9 @@ its final training configs may not silently revert to those array paths.
    writing. `mmprism parquet-delivery-build CONFIG` requires clean Git and atomically publishes a no-clobber
    delivery. `mmprism parquet-delivery-validate ROOT` rechecks copied input bindings, inventory, index, schema,
    rows and checksums.
-3. Fixture parity covers both products; placement, split isolation, no-clobber, part tampering, inventory drift,
-   unlisted parts, and the missing optional dependency are rejected. A real delivery still requires a dedicated
+3. Fixture parity covers both translation modes and pose reconstruction; placement, split isolation, no-clobber,
+   input-mode/schema tampering, part tampering, inventory drift, unlisted parts, and the missing optional dependency
+   are rejected. A real delivery still requires a dedicated
    capacity report and CPU/GPU one-batch adapter smoke before formal training.
 
 ## CSL-News Pipeline Boundary

@@ -90,3 +90,60 @@ def test_confidence_gate_has_explicit_low_confidence_fallback() -> None:
     assert torch.count_nonzero(low.pose_gate) == 0
     assert torch.all(high.pose_gate[:, :2] > 0)
     assert not torch.equal(low.embeddings, high.embeddings)
+
+
+def test_pose_only_model_has_no_fusion_parameters_or_feature_input() -> None:
+    torch.manual_seed(31)
+    batch = _batch()
+    labels = torch.tensor([[4, 5, 1, -100], [6, 7, 8, 1]])
+
+    config = transformers.MT5Config(
+        vocab_size=64,
+        d_model=32,
+        d_ff=64,
+        num_layers=1,
+        num_decoder_layers=1,
+        num_heads=4,
+        dropout_rate=0.0,
+        decoder_start_token_id=0,
+        pad_token_id=0,
+        eos_token_id=1,
+    )
+    pose_only = GeometryGuidedMT5(
+        transformers.MT5ForConditionalGeneration(config),
+        hidden_size=32,
+        input_mode="pose_only",
+        joint_count=24,
+        coordinate_dim=3,
+        pose_channels=(8, 16),
+        temporal_kernel_size=3,
+        dropout=0.0,
+        label_smoothing=0.0,
+    )
+
+    assert not hasattr(pose_only, "radar_projector")
+    assert not hasattr(pose_only, "fusion")
+    assert not any(
+        name.startswith(("radar_projector.", "fusion."))
+        for name in pose_only.state_dict()
+    )
+
+    output = pose_only(
+        pose=batch["pose"],
+        pose_confidence=batch["pose_confidence"],
+        frame_attention_mask=batch["frame_attention_mask"],
+        prompt_input_ids=batch["prompt_input_ids"],
+        prompt_attention_mask=batch["prompt_attention_mask"],
+        labels=labels,
+    )
+    assert torch.isfinite(output.loss)
+    with pytest.raises(ValueError, match="must not receive radar_features"):
+        pose_only(
+            pose=batch["pose"],
+            pose_confidence=batch["pose_confidence"],
+            radar_features=batch["radar_features"],
+            frame_attention_mask=batch["frame_attention_mask"],
+            prompt_input_ids=batch["prompt_input_ids"],
+            prompt_attention_mask=batch["prompt_attention_mask"],
+            labels=labels,
+        )

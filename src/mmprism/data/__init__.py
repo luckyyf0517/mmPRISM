@@ -20,6 +20,14 @@ from mmprism.data.csl_daily_intake import (
     promote_csl_daily_batch,
     validate_csl_daily_batch,
 )
+from mmprism.data.csl_daily_receipt import (
+    CSL_DAILY_SOURCE_INVENTORY_SCHEMA,
+    CSL_DAILY_SOURCE_RECEIPT_SCHEMA,
+    CslDailySourceInventoryEntry,
+    CslDailySourceReceiptError,
+    create_csl_daily_source_receipt,
+    validate_csl_daily_source_receipt,
+)
 from mmprism.data.csl_news import (
     CslNewsAuditContext,
     CslNewsAuditError,
@@ -160,6 +168,8 @@ __all__ = [
     "CslDailyIntakeReport",
     "CslDailyManifestEntry",
     "CslDailySourceMetadata",
+    "CslDailySourceInventoryEntry",
+    "CslDailySourceReceiptError",
     "CslNewsAnnotationConfig",
     "CslNewsAnnotationError",
     "CslNewsAuditContext",
@@ -180,6 +190,8 @@ __all__ = [
     "FRAME_MASK_MODALITY",
     "INTAKE_RECORD_SCHEMA",
     "INTAKE_VALIDATOR_VERSION",
+    "CSL_DAILY_SOURCE_INVENTORY_SCHEMA",
+    "CSL_DAILY_SOURCE_RECEIPT_SCHEMA",
     "MAX_PART_ROWS",
     "MAX_PARTS_PER_CHUNK",
     "PARQUET_DELIVERY_SCHEMA",
@@ -218,6 +230,7 @@ __all__ = [
     "TRANSLATION_RADAR_FEATURE_MODALITY",
     "audit_csl_news_archive",
     "build_csl_daily_annotation_jsonl",
+    "create_csl_daily_source_receipt",
     "build_csl_news_metadata_profile",
     "build_csl_news_pose_manifest_snapshot",
     "build_csl_news_source_manifest_snapshot",
@@ -260,6 +273,7 @@ __all__ = [
     "stable_sample_id",
     "validate_annotation_output",
     "validate_csl_daily_batch",
+    "validate_csl_daily_source_receipt",
     "validate_parquet_delivery",
     "verify_zip_crc",
     "write_csl_daily_annotation_jsonl",

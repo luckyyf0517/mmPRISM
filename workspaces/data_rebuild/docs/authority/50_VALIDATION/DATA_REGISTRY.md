@@ -9,7 +9,7 @@ Last reviewed: 2026-08-12
 
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
-| `DATASET-CSL-DAILY` | CSL-Daily | raw preservation upload target `external/csl_daily/csl_daily_original_20260812/`; legacy descriptors under `dataset/csl-daily/` | restricted/unknown | raw upload expected approximately 300 GB; legacy JSON approximately 3.4 MB | legacy `train/val/test/all.json` present but unaccepted | raw upload and source/annotation/split audit pending | visual pose/synthetic training and SLU | direct_preservation_upload_pending |
+| `DATASET-CSL-DAILY` | CSL-Daily | raw preservation upload target `external/csl_daily/csl_daily_original_20260812/`; legacy descriptors under `dataset/csl-daily/` | restricted/unknown | currently 32 GB visible while rsync remains active; original source expected approximately 300 GB; legacy JSON approximately 3.4 MB | legacy `train/val/test/all.json` present but unaccepted; `val.json` and `test.json` are byte-identical | source receipt command is ready but blocked until rsync stops; source/annotation audit, baseline QC and distinct-control split then pending | camera-pose/skeleton-simulation control and SLU; never a real-radar generalization substitute | direct_preservation_upload_in_progress |
 | `DATASET-CSL-NEWS` | CSL-News | local source intake removed; retained RTMW3D sidecars/manifests only | CC BY-NC 4.0 | no local raw source | retained partial pose snapshots only; source manifest/registry were removed | historical source/pose validation logs retained; no resumable source validation | optional checkpoint-side visual-pose evidence only | archived_checkpoint_only |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | legacy non-semantic radar gesture/pose evidence only | blocked_legacy_inventory |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | legacy non-semantic development/demo only | blocked_legacy_inventory |
@@ -20,13 +20,13 @@ Last reviewed: 2026-08-12
 ## Processed Delivery Profiles
 
 All previously self-collected project families are currently classified as non-semantic gestures. Their historical
-directory names do not establish semantic labels, and none may enter `DELIVERY-SLU-V1` or paper translation totals.
+directory names do not establish semantic labels, and none may enter `DELIVERY-SLU-V2` or paper translation totals.
 New semantic real-data delivery begins only from a frozen, validated `DATASET-SEMANTIC-SIGN-V2` handoff.
 
 | ID | Product | Frozen Inputs Required | Payload Boundary | Status |
 |---|---|---|---|---|
-| `DELIVERY-POSE-RECON-V1` | `mmprism.pose_reconstruction.sample_v1` | eligible manifest, split, radar/calibration evidence | radar cube `[T,D,R,A,E]`, frame mask, metric `[2,24,3]` pose and validity | reader/materializer/validator fixture-verified; blocked on real calibrated source |
-| `DELIVERY-SLU-V1` | `mmprism.sign_language_translation.sample_v1` | eligible manifest, split, metric pose and aligned radar feature | pose/confidence `[T,2,J,*]`, radar feature `[T,F]`, mask and caption | reader/materializer/validator fixture-verified; blocked on real aligned source |
+| `DELIVERY-POSE-RECON-V1` | `mmprism.pose_reconstruction.sample_v1` | eligible manifest, split, radar/calibration evidence | radar cube `[T,D,R,A,E]`, frame mask, metric `[2,24,3]` pose and validity | reader/materializer/validator fixture-verified; CSL-Daily skeleton-simulation control awaits accepted source/annotation/simulation; real calibrated delivery remains blocked |
+| `DELIVERY-SLU-V2` | `mmprism.sign_language_translation.sample_v2` | eligible manifest, split, metric pose, confidence, mask and caption; fusion additionally needs aligned checkpoint-bound radar feature | pose/confidence `[T,2,J,*]`, mask and caption; `radar_feature [T,F]` exists only for fusion | reader/materializer/validator fixture-verified for fusion and pose-only; fusion delivery still waits for checkpoint-bound OmniHand frame-feature export |
 | `INTERIM-CSLNEWS-VISPOSE-V1` | `intermediate_visual_pose_caption` | retained frozen CSL-News pose snapshots | native/2D/canonical visual pose arrays and caption remain sidecar/NPZ | archived checkpoint-only evidence; explicitly not final training delivery |
 
 All final delivery profiles use immutable, task-specific Parquet rather than a mixed universal table. The row/part/

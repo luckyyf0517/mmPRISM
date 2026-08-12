@@ -10,7 +10,8 @@ from mmprism.training import WaveLLMRunError, load_wavellm_run_config
 
 def _payload() -> dict[str, object]:
     return {
-        "schema_version": "mmprism.wavellm_run.v1",
+        "schema_version": "mmprism.wavellm_run.v2",
+        "input_mode": "pose_plus_radar_feature",
         "model": {
             "asset_id": "tiny_mt5",
             "hidden_size": 32,
@@ -63,7 +64,7 @@ def test_wavellm_run_config_is_strict_and_stable(tmp_path: Path) -> None:
     assert len(config.fingerprint) == 64
     assert len(config.model_fingerprint) == 64
     assert len(config.training_fingerprint) == 64
-    assert config.to_dict()["schema_version"] == "mmprism.wavellm_run.v1"
+    assert config.to_dict()["schema_version"] == "mmprism.wavellm_run.v2"
 
     extended_payload = _payload()
     extended_optimization = extended_payload["optimization"]
@@ -103,3 +104,23 @@ def test_wavellm_run_config_rejects_invalid_values(
     target[key] = value
     with pytest.raises(WaveLLMRunError, match=message):
         load_wavellm_run_config(_write(tmp_path / f"{location}-{key}.yaml", payload))
+
+
+def test_pose_only_config_omits_radar_dimension_and_rejects_feature_dimension(
+    tmp_path: Path,
+) -> None:
+    payload = _payload()
+    payload["input_mode"] = "pose_only"
+    model = payload["model"]
+    assert isinstance(model, dict)
+    model.pop("radar_feature_dim")
+
+    config = load_wavellm_run_config(_write(tmp_path / "pose-only.yaml", payload))
+
+    assert config.input_mode == "pose_only"
+    assert config.model.radar_feature_dim is None
+    assert "radar_feature_dim" not in config.to_dict()["model"]  # type: ignore[index]
+
+    model["radar_feature_dim"] = 16
+    with pytest.raises(WaveLLMRunError, match="must not declare"):
+        load_wavellm_run_config(_write(tmp_path / "invalid-pose-only.yaml", payload))

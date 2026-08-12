@@ -23,6 +23,7 @@ from mmprism.assets import (
 from mmprism.config import ConfigError, load_experiment_config
 from mmprism.contracts import ManifestError, SplitContractError, validate_manifest
 from mmprism.data import (
+    CslDailySourceReceiptError,
     CslNewsAnnotationError,
     CslNewsAuditError,
     CslNewsIntegrityError,
@@ -39,6 +40,7 @@ from mmprism.data import (
     build_csl_news_pose_manifest_snapshot,
     build_csl_news_source_manifest_snapshot,
     build_data_split_snapshot,
+    create_csl_daily_source_receipt,
     load_csl_news_annotation_config,
     load_csl_news_integrity_config,
     load_csl_news_pose_manifest_config,
@@ -50,6 +52,7 @@ from mmprism.data import (
     run_csl_news_annotation,
     scan_csl_news_source_integrity,
     select_csl_news_integrity_archive,
+    validate_csl_daily_source_receipt,
     validate_parquet_delivery,
     write_csl_news_annotation_identity_audit,
     write_csl_news_annotation_qc,
@@ -162,6 +165,22 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parquet_validate_parser.add_argument("root", type=Path)
     parquet_validate_parser.add_argument("--skip-checksums", action="store_true")
+
+    csl_daily_receipt_parser = subparsers.add_parser(
+        "csl-daily-source-receipt",
+        help="Read-only stable receipt for a completed direct-preservation CSL-Daily upload",
+    )
+    csl_daily_receipt_parser.add_argument("--source-root", type=Path, required=True)
+    csl_daily_receipt_parser.add_argument("--receipt-root", type=Path, required=True)
+    csl_daily_receipt_parser.add_argument("--source-id", required=True)
+    csl_daily_receipt_parser.add_argument("--legacy-split-root", type=Path)
+    csl_daily_receipt_parser.add_argument("--stability-wait-seconds", type=float, default=60.0)
+
+    csl_daily_receipt_validate_parser = subparsers.add_parser(
+        "csl-daily-source-receipt-validate",
+        help="Validate an immutable CSL-Daily direct-preservation receipt",
+    )
+    csl_daily_receipt_validate_parser.add_argument("receipt_root", type=Path)
 
     csl_news_parser = subparsers.add_parser(
         "csl-news-audit", help="Audit one complete CSL-News archive against official labels"
@@ -569,6 +588,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 arguments.root,
                 verify_checksums=not arguments.skip_checksums,
             ).to_dict()
+        elif arguments.command == "csl-daily-source-receipt":
+            payload = create_csl_daily_source_receipt(
+                arguments.source_root,
+                arguments.receipt_root,
+                source_id=arguments.source_id,
+                legacy_split_root=arguments.legacy_split_root,
+                stability_wait_seconds=arguments.stability_wait_seconds,
+            )
+        elif arguments.command == "csl-daily-source-receipt-validate":
+            payload = validate_csl_daily_source_receipt(arguments.receipt_root)
         elif arguments.command == "csl-news-audit":
             payload = audit_csl_news_archive(
                 arguments.archive,
@@ -943,6 +972,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         CslNewsMetadataError,
         CslNewsPoseManifestError,
         CslNewsSourceManifestError,
+        CslDailySourceReceiptError,
         DataSplitError,
         ParquetDeliveryError,
         FileNotFoundError,

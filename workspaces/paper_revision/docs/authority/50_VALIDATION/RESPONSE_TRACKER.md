@@ -20,6 +20,13 @@ audit。因此，当前不能把其目录名、partial checkpoint 或 historical
 无论选择何者，CSL-Daily 数据、canonical geometry adapters、预测和指标都必须重新生成。完整 CSL-News
 重训不属于 P0，边界见 [review analysis](REVIEW_ANALYSIS.md) 和项目 `DEC-046`。
 
+CSL-Daily 现定义为受控的 `cam-pose -> simulated-mmWave-pose -> text` 重建矩阵，而非真实泛化证据：
+`CSLD-WL-01` 是显式 pose-only 的 camera-pose 语义上限，`CSLD-WL-02` 是 cross-fitted predicted-mmWave-pose，
+`CSLD-WL-03` 在相同 predicted pose 上增加 checkpoint-bound CubeNet frame feature。它们必须标记
+`synthetic_csl_daily_control` 或 receipt-bound `historical_replay`，不得关闭 `R1-3`、`R1-4c/d` 或 `R2-3`。
+旧 CSL-Daily `val.json` 与 `test.json` 字节相同，只能作为 `legacy_validation_as_test` historical replay。
+完整协议见 [experiment reproduction](../40_OPERATIONS/EXPERIMENT_REPRODUCTION.md)。
+
 ## Editor
 
 | ID | Type | Priority | Planned Action | Task IDs | Evidence IDs | Status | Risk |
@@ -40,7 +47,7 @@ audit。因此，当前不能把其目录名、partial checkpoint 或 historical
 | `R1-1` | RELATED_WORK | P2 | 核实并讨论 RadarLLM/mmExpert | `PAPER-REV-001` | bibliography/manuscript | not_started | Low |
 | `R1-2` | EFFICIENCY | P0 | 确定可复现的训练/推理成本指标和测量条件；原文未指定指标集 | `EXP-REV-006` | `EVID-REV-EFF` | blocked | Medium |
 | `R1-3` | GENERALIZATION | P0 | cross-orientation analysis；可与 `R2-3` 的 30°/60° 条件合并，角度不是 R1 原话 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
-| `R1-4a` | EMPIRICAL_SUPPORT | P0 | 选择并论证 synthetic-ground-truth closeness 度量；原文未指定 paired protocol 或指标 | `DATA-REV-003`, `EXP-REV-004` | `EVID-REV-SYNREAL` | blocked | High |
+| `R1-4a` | EMPIRICAL_SUPPORT | P0 | 选择并论证 synthetic-ground-truth closeness 度量；CSL-Daily skeleton control 只可诊断 cascade，不替代 paired real-radar protocol | `DATA-REV-003`, `EXP-REV-004`; `CSLD-WL-*` supportive control | `EVID-REV-SYNREAL` | blocked | High |
 | `R1-4b` | REPRODUCIBILITY | P0 | synthetic/train/test 数据详情和 split audit | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |
 | `R1-4c` | GENERALIZATION | P0/P1 | 从原 12 人扩充到约 30 名实际完成者；分别报告专业/熟练 CSL 人员和 video-guided volunteers，不记录报名漏斗 | `DATA-REV-002` | `EVID-REV-REAL` | blocked | High |
 | `R1-4d` | GENERALIZATION | P0 | participant-disjoint 测试不同执行者；只有专业/熟练 CSL 子集可支持自然 signer 泛化，志愿者仅支持 prompted reproduction | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
@@ -51,7 +58,7 @@ audit。因此，当前不能把其目录名、partial checkpoint 或 historical
 
 | ID | Type | Priority | Planned Action | Task IDs | Evidence IDs | Status | Risk |
 |---|---|---|---|---|---|---|---|
-| `R2-1` | FAIR_COMPARISON | P0 | matched direct end-to-end baseline | `EXP-REV-001` | `EVID-REV-ARCH` | blocked | High |
+| `R2-1` | FAIR_COMPARISON | P0 | matched direct end-to-end baseline；CSL-Daily pose-only/fusion cascade controls do not replace the requested direct cube-to-LLM comparison | `EXP-REV-001`; `CSLD-WL-*` diagnostic controls | `EVID-REV-ARCH` | blocked | High |
 | `R2-2` | FAIR_COMPARISON | P0 | DA method matrix under equal real-data budget | `EXP-REV-002` | `EVID-REV-DA` | blocked | High |
 | `R2-3` | ROBUSTNESS | P0 | 在冻结 CSL clips 的小型 stress 子集上做 30°/60° 和 hand/object occlusion，报告 pose+translation；无需所有参与者重复全句库 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
 | `R2-4` | REPRODUCIBILITY | P0 | 补原文列出的 sign type/vocab/sentence count/average length/non-manual features | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |

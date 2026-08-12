@@ -24,7 +24,7 @@ references and cannot be imported.
 - Register the rebuilt simulation as a separately labeled experiment protocol per `DEC-012`: it is a
   code-faithful re-implementation of the original-submission skeleton simulator and is **not** registered as a
   reproduction of the manuscript-described MANO mesh / ray-tracing pipeline.
-- Produce frozen splits and DELIVERY-POSE-RECON-V1 / DELIVERY-SLU-V1 parquet deliveries via the existing
+- Produce frozen splits and DELIVERY-POSE-RECON-V1 / DELIVERY-SLU-V2 Parquet deliveries via the existing
   delivery commands.
 
 ## Non-Goals

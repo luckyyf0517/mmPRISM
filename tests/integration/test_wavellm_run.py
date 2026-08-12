@@ -26,16 +26,24 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _record(data_root: Path, *, sample_id: str, seed: int, frames: int) -> dict[str, object]:
+def _record(
+    data_root: Path,
+    *,
+    sample_id: str,
+    seed: int,
+    frames: int,
+    input_mode: str = "pose_plus_radar_feature",
+) -> dict[str, object]:
     array_root = data_root / "arrays"
     array_root.mkdir(parents=True, exist_ok=True)
     generator = np.random.default_rng(seed)
     arrays = {
         "pose": (generator.normal(size=(frames, 2, 24, 3)) * 0.01).astype(np.float32),
         "pose_confidence": generator.random((frames, 2, 24), dtype=np.float32),
-        "radar_feature": generator.normal(size=(frames, 16)).astype(np.float32),
         "frame_mask": np.ones(frames, dtype=np.bool_),
     }
+    if input_mode == "pose_plus_radar_feature":
+        arrays["radar_feature"] = generator.normal(size=(frames, 16)).astype(np.float32)
     paths: dict[str, Path] = {}
     for name, array in arrays.items():
         path = array_root / f"{sample_id}.{name}.npy"
@@ -59,10 +67,15 @@ def _record(data_root: Path, *, sample_id: str, seed: int, frames: int) -> dict[
         "dataset": "wavellm-run-fixture",
         "modalities": modalities,
         "acquisition": {
-            "sample_protocol": "mmprism.sign_language_translation.sample_v1",
-            "radar_feature_protocol": "mmprism.radar_feature.sequence_v1",
+            "sample_protocol": "mmprism.sign_language_translation.sample_v2",
+            "input_mode": input_mode,
             "pose_units": "m",
             "pose_coordinate_frame": "fixture_radar_cartesian_v1",
+            **(
+                {"radar_feature_protocol": "mmprism.radar_feature.sequence_v1"}
+                if input_mode == "pose_plus_radar_feature"
+                else {}
+            ),
         },
         "provenance": {"purpose": "integration-test"},
     }
@@ -120,11 +133,18 @@ def _experiment(path: Path, root: Path, *, name: str) -> Path:
     return path
 
 
-def _task_config(path: Path, *, epochs: int = 1, max_steps: int | None = 1) -> Path:
+def _task_config(
+    path: Path,
+    *,
+    epochs: int = 1,
+    max_steps: int | None = 1,
+    input_mode: str = "pose_plus_radar_feature",
+) -> Path:
     path.write_text(
         yaml.safe_dump(
             {
-                "schema_version": "mmprism.wavellm_run.v1",
+                "schema_version": "mmprism.wavellm_run.v2",
+                "input_mode": input_mode,
                 "model": {
                     "asset_id": "tiny_mt5",
                     "hidden_size": 32,
@@ -163,6 +183,13 @@ def _task_config(path: Path, *, epochs: int = 1, max_steps: int | None = 1) -> P
         ),
         encoding="utf-8",
     )
+    if input_mode == "pose_only":
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert isinstance(payload, dict)
+        model = payload["model"]
+        assert isinstance(model, dict)
+        model.pop("radar_feature_dim")
+        path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     return path
 
 
@@ -249,6 +276,7 @@ def _fake_model_and_tokenizer(
     model = GeometryGuidedMT5(
         language_model,
         hidden_size=config.model.hidden_size,
+        input_mode=config.input_mode,
         radar_feature_dim=config.model.radar_feature_dim,
         joint_count=config.model.joint_count,
         coordinate_dim=config.model.coordinate_dim,
@@ -490,6 +518,147 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
     failed_payload = json.loads((failed_runs[0] / "run.json").read_text(encoding="utf-8"))
     assert failed_payload["status"] == "failed"
     assert "SHA-256 mismatch" in failed_payload["failure"]
+
+
+def test_pose_only_wavellm_train_evaluate_and_checkpoint_mode_binding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project_root = discover_project_root(Path(__file__))
+    data_root = tmp_path / "data"
+    train_manifest = _manifest(
+        tmp_path / "pose-only-train.jsonl",
+        [
+            _record(
+                data_root,
+                sample_id="pose-only-train-001",
+                seed=11,
+                frames=3,
+                input_mode="pose_only",
+            )
+        ],
+    )
+    validation_manifest = _manifest(
+        tmp_path / "pose-only-validation.jsonl",
+        [
+            _record(
+                data_root,
+                sample_id="pose-only-validation-001",
+                seed=12,
+                frames=2,
+                input_mode="pose_only",
+            )
+        ],
+    )
+    split_assignments = _split_assignments(
+        tmp_path / "pose-only-assignments.jsonl",
+        {
+            "pose-only-train-001": "train",
+            "pose-only-validation-001": "validation",
+        },
+    )
+    task_path = _task_config(
+        tmp_path / "pose-only.yaml", input_mode="pose_only"
+    )
+    task_config = load_wavellm_run_config(task_path)
+    asset_path = _asset_config(tmp_path / "assets.yaml")
+    asset_config = load_model_asset_config(asset_path)
+    model_root = tmp_path / "models"
+    model_path = model_root / "tiny_mt5"
+    model_path.mkdir(parents=True)
+    asset_manifest = model_path / "mmprism_model_asset.json"
+    collection_manifest = model_root / "mmprism_model_assets.json"
+    asset_manifest.write_text('{"fixture": true}\n', encoding="utf-8")
+    collection_manifest.write_text('{"fixture": true}\n', encoding="utf-8")
+    resolved_asset = ResolvedModelAsset(
+        spec=asset_config.models[0],
+        path=model_path,
+        verification={"asset_manifest_sha256": _sha256(asset_manifest)},
+        collection_manifest_sha256=_sha256(collection_manifest),
+    )
+    monkeypatch.setattr(run_module, "resolve_model_asset", lambda *args: resolved_asset)
+    monkeypatch.setattr(run_module, "_load_model_and_tokenizer", _fake_model_and_tokenizer)
+
+    train_experiment = _experiment(
+        tmp_path / "pose-only-train-experiment.yaml", tmp_path, name="wavellm-pose-only"
+    )
+    train_result = run_module.train_wavellm(
+        load_experiment_config(train_experiment),
+        task_config,
+        asset_config,
+        model_root,
+        source_experiment_config=train_experiment,
+        source_task_config=task_path,
+        source_asset_config=asset_path,
+        train_manifest_path=train_manifest,
+        validation_manifest_path=validation_manifest,
+        split_assignments_path=split_assignments,
+        project_root=project_root,
+        command=("mmprism", "wavellm-train", "pose-only"),
+        runtime_report=_runtime(project_root),
+        created_at=datetime(2026, 8, 12, 9, 0, tzinfo=UTC),
+    )
+    train_run = Path(str(train_result["run_dir"]))
+    checkpoint = json.loads((train_run / "checkpoint.json").read_text(encoding="utf-8"))
+    state = load_file(train_run / "checkpoint.safetensors")
+
+    assert checkpoint["input_mode"] == "pose_only"
+    assert "radar_feature_dim" not in checkpoint["model"]
+    assert not any(
+        name.startswith(("radar_projector.", "fusion.")) for name in state
+    )
+    assert not list((data_root / "arrays").glob("*.radar_feature.npy"))
+
+    evaluation_experiment = _experiment(
+        tmp_path / "pose-only-eval-experiment.yaml", tmp_path, name="wavellm-pose-only-eval"
+    )
+    result = run_module.evaluate_wavellm(
+        load_experiment_config(evaluation_experiment),
+        task_config,
+        asset_config,
+        model_root,
+        source_experiment_config=evaluation_experiment,
+        source_task_config=task_path,
+        source_asset_config=asset_path,
+        manifest_path=validation_manifest,
+        checkpoint_path=train_run / "checkpoint.safetensors",
+        checkpoint_metadata_path=train_run / "checkpoint.json",
+        split_assignments_path=split_assignments,
+        split="validation",
+        project_root=project_root,
+        command=("mmprism", "wavellm-evaluate", "pose-only"),
+        runtime_report=_runtime(project_root),
+        created_at=datetime(2026, 8, 12, 9, 5, tzinfo=UTC),
+    )
+    assert result["status"] == "completed"
+
+    invalid_metadata = dict(checkpoint)
+    invalid_metadata["input_mode"] = "pose_plus_radar_feature"
+    invalid_metadata_path = tmp_path / "invalid-mode-checkpoint.json"
+    invalid_metadata_path.write_text(
+        json.dumps(invalid_metadata, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    mismatch_experiment = _experiment(
+        tmp_path / "mode-mismatch.yaml", tmp_path, name="wavellm-mode-mismatch"
+    )
+    with pytest.raises(WaveLLMRunError, match="input mode"):
+        run_module.evaluate_wavellm(
+            load_experiment_config(mismatch_experiment),
+            task_config,
+            asset_config,
+            model_root,
+            source_experiment_config=mismatch_experiment,
+            source_task_config=task_path,
+            source_asset_config=asset_path,
+            manifest_path=validation_manifest,
+            checkpoint_path=train_run / "checkpoint.safetensors",
+            checkpoint_metadata_path=invalid_metadata_path,
+            split_assignments_path=split_assignments,
+            split="validation",
+            project_root=project_root,
+            command=("mmprism", "wavellm-evaluate", "mode-mismatch"),
+            runtime_report=_runtime(project_root),
+            created_at=datetime(2026, 8, 12, 9, 10, tzinfo=UTC),
+        )
 
 
 def test_wavellm_epoch_resume_matches_uninterrupted_training(

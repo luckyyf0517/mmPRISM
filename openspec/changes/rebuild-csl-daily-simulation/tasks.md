@@ -24,7 +24,7 @@
 - [ ] 4.1 Implement the pose-to-cube materialization pipeline and CLI, emitting `mmprism.pose_reconstruction.sample_v1`.
 - [ ] 4.2 Add an end-to-end integration test over a small pose fixture.
 - [ ] 4.3 Freeze splits (signer-aware if metadata allows, else official-split binding with recorded limitation).
-- [ ] 4.4 Build and validate DELIVERY-POSE-RECON-V1 and DELIVERY-SLU-V1 parquet deliveries with reader parity.
+- [ ] 4.4 Build and validate DELIVERY-POSE-RECON-V1 and DELIVERY-SLU-V2 Parquet deliveries with reader parity.
 
 ## 5. Authority Closeout
 

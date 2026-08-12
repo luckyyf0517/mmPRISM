@@ -28,6 +28,13 @@ Last reviewed: 2026-08-12
 - Relocated the original-submission forensic codebase (root `run_*.py`, `config/`, legacy `src/` modules, and
   legacy shell wrappers) into an explicit read-only `legacy/` directory without content changes (`DEC-047`);
   `src/` now contains only the canonical `mmprism` package.
+- Aligned the CSL-Daily controlled reproduction plan across data, reconstruction, translation, and paper workspaces:
+  immutable baseline/candidate annotation, explicit pose-only semantics, checkpoint-bound cross-fitted features, and
+  a strict separation between synthetic control, historical replay, and reviewer-facing real-radar evidence.
 - Added one cross-workspace research execution model defining cam-pose, synthetic radar, synthetic/real-domain
   mmw-pose, radar features, model roles, stage handoffs, and the CSL-Daily end-to-end control path; workspace
   operation pages retain their own commands, gates, outputs, and current state.
+- Implemented the first CSL-Daily WaveLLM control slice: v2 JSONL+NPY manifests and formal train/evaluate now bind
+  `pose_only` or `pose_plus_radar_feature`, with a parameter-free pose-only path and checkpoint mode enforcement.
+  Final Parquet pose-only delivery now omits radar features at the schema/row/reader level; CubeNet
+  prediction/feature provenance remains the explicit follow-up contract.

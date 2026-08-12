@@ -141,8 +141,47 @@ def _translation_record(root: Path, sample_id: str, frames: int) -> dict[str, ob
         "dataset": "translation-fixture",
         "modalities": modalities,
         "acquisition": {
-            "sample_protocol": "mmprism.sign_language_translation.sample_v1",
+            "sample_protocol": "mmprism.sign_language_translation.sample_v2",
+            "input_mode": "pose_plus_radar_feature",
             "radar_feature_protocol": "mmprism.radar_feature.sequence_v1",
+            "pose_units": "m",
+            "pose_coordinate_frame": "fixture_radar_cartesian_v1",
+        },
+    }
+
+
+def _pose_only_translation_record(
+    root: Path, sample_id: str, frames: int
+) -> dict[str, object]:
+    arrays = root / "arrays"
+    arrays.mkdir(exist_ok=True)
+    generator = np.random.default_rng(frames)
+    values = {
+        "pose": generator.normal(size=(frames, 2, 24, 3)).astype(np.float32),
+        "pose_confidence": generator.random((frames, 2, 24), dtype=np.float32),
+        "frame_mask": np.ones(frames, dtype=np.bool_),
+    }
+    values["frame_mask"][-1] = False
+    modalities: dict[str, object] = {"caption": {"text": f"caption {sample_id}"}}
+    for name, value in values.items():
+        path = arrays / f"{sample_id}.{name}.npy"
+        np.save(path, value, allow_pickle=False)
+        modalities[name] = {
+            "uri": path.relative_to(root).as_posix(),
+            "shape": list(value.shape),
+            "dtype": str(value.dtype),
+            "sha256": _sha256(path),
+        }
+    return {
+        "schema_version": "mmprism.sample.v1",
+        "sample_id": sample_id,
+        "sequence_id": f"sequence-{sample_id}",
+        "subject_id": "subject-fixture",
+        "dataset": "translation-fixture",
+        "modalities": modalities,
+        "acquisition": {
+            "sample_protocol": "mmprism.sign_language_translation.sample_v2",
+            "input_mode": "pose_only",
             "pose_units": "m",
             "pose_coordinate_frame": "fixture_radar_cartesian_v1",
         },
@@ -285,6 +324,8 @@ def test_translation_delivery_round_trip_matches_source_adapter(tmp_path: Path) 
     for parquet_sample, source_sample in zip(parquet_samples, source_samples, strict=True):
         assert np.array_equal(parquet_sample.pose, source_sample.pose)
         assert np.array_equal(parquet_sample.pose_confidence, source_sample.pose_confidence)
+        assert parquet_sample.radar_feature is not None
+        assert source_sample.radar_feature is not None
         assert np.array_equal(parquet_sample.radar_feature, source_sample.radar_feature)
         assert np.array_equal(parquet_sample.frame_mask, source_sample.frame_mask)
         assert parquet_sample.caption == source_sample.caption
@@ -293,9 +334,89 @@ def test_translation_delivery_round_trip_matches_source_adapter(tmp_path: Path) 
     source_batch = collate_sign_language_translation_samples(source_samples, max_frames=4)
     assert np.array_equal(parquet_batch.pose, source_batch.pose)
     assert np.array_equal(parquet_batch.pose_confidence, source_batch.pose_confidence)
+    assert parquet_batch.radar_feature is not None
+    assert source_batch.radar_feature is not None
     assert np.array_equal(parquet_batch.radar_feature, source_batch.radar_feature)
     assert parquet_batch.captions == source_batch.captions
 
+
+def test_pose_only_translation_delivery_omits_radar_feature_end_to_end(tmp_path: Path) -> None:
+    records = [
+        _pose_only_translation_record(tmp_path, "sample-003", 3),
+        _pose_only_translation_record(tmp_path, "sample-001", 2),
+        _pose_only_translation_record(tmp_path, "sample-002", 4),
+    ]
+    manifest_path = _write_manifest(tmp_path / "source.jsonl", records)
+    assignments_path = _write_assignments(
+        tmp_path / "assignments.jsonl",
+        {"sample-001": "train", "sample-002": "train", "sample-003": "validation"},
+    )
+    result = materialize_parquet_delivery(
+        _config(
+            tmp_path,
+            SIGN_LANGUAGE_TRANSLATION_PRODUCT,
+            manifest_path,
+            assignments_path,
+        ),
+        runtime_report=_runtime(),
+    )
+    delivery_metadata = json.loads((result.root / "delivery.json").read_text(encoding="utf-8"))
+    schema_metadata = json.loads((result.root / "schema.json").read_text(encoding="utf-8"))
+    assert delivery_metadata["input_mode"] == "pose_only"
+    assert "radar_feature_dim" not in delivery_metadata["static_dimensions"]
+    assert schema_metadata["input_mode"] == "pose_only"
+    assert "radar_feature" not in schema_metadata["arrow_schema"]
+    assert not list((tmp_path / "arrays").glob("*.radar_feature.npy"))
+
+    delivery = ParquetSignLanguageTranslationDataset(result.root, split="train")
+    source = SignLanguageTranslationManifest(manifest_path, data_root=tmp_path)
+    source_by_id = {record.sample_id: index for index, record in enumerate(source.records)}
+    parquet_samples = [delivery.load_sample(index) for index in range(len(delivery))]
+    source_samples = [
+        source.load_sample(source_by_id[sample.sample_id]) for sample in parquet_samples
+    ]
+
+    assert delivery.input_mode == "pose_only"
+    assert delivery.radar_feature_dim is None
+    for parquet_sample, source_sample in zip(parquet_samples, source_samples, strict=True):
+        assert np.array_equal(parquet_sample.pose, source_sample.pose)
+        assert np.array_equal(parquet_sample.pose_confidence, source_sample.pose_confidence)
+        assert parquet_sample.radar_feature is None
+        assert source_sample.radar_feature is None
+        assert np.array_equal(parquet_sample.frame_mask, source_sample.frame_mask)
+        assert parquet_sample.caption == source_sample.caption
+
+    parquet_batch = collate_sign_language_translation_samples(parquet_samples, max_frames=4)
+    source_batch = collate_sign_language_translation_samples(source_samples, max_frames=4)
+    assert parquet_batch.radar_feature is None
+    assert source_batch.radar_feature is None
+    assert np.array_equal(parquet_batch.pose, source_batch.pose)
+    assert np.array_equal(parquet_batch.pose_confidence, source_batch.pose_confidence)
+    assert parquet_batch.captions == source_batch.captions
+
+
+def test_pose_only_delivery_rejects_input_mode_metadata_tampering(tmp_path: Path) -> None:
+    record = _pose_only_translation_record(tmp_path, "sample-001", 2)
+    manifest_path = _write_manifest(tmp_path / "source.jsonl", [record])
+    assignments_path = _write_assignments(
+        tmp_path / "assignments.jsonl", {"sample-001": "train"}
+    )
+    result = materialize_parquet_delivery(
+        _config(
+            tmp_path,
+            SIGN_LANGUAGE_TRANSLATION_PRODUCT,
+            manifest_path,
+            assignments_path,
+        ),
+        runtime_report=_runtime(),
+    )
+    delivery_path = result.root / "delivery.json"
+    payload = json.loads(delivery_path.read_text(encoding="utf-8"))
+    payload["input_mode"] = "pose_plus_radar_feature"
+    delivery_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ParquetDeliveryError, match="static dimensions do not match input mode"):
+        validate_parquet_delivery(result.root, verify_checksums=False)
 
 def test_layout_enforces_part_and_chunk_bounds_deterministically() -> None:
     part_ids = [f"sample-{index:04d}" for index in range(MAX_PART_ROWS + 1)]

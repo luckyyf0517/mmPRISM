@@ -189,11 +189,12 @@ export MMPRISM_SPLIT_ASSIGNMENTS=/path/to/split_assignments.jsonl
 scripts/run_wavellm_train.sh
 ```
 
-`wavellm-train` verifies every manifest-bound pose, confidence, radar-feature, and frame-mask array,
-rejects sample/sequence leakage, requires each manifest sample to match the registered split assignment,
-and writes an adapter-only checkpoint when mT5 is frozen. The separate
+`wavellm-train` verifies every manifest-bound pose, confidence, and frame-mask array. The v2 input contract
+selects either `pose_only`, which forbids radar features, or `pose_plus_radar_feature`, which additionally
+requires one radar-feature sequence. It rejects sample/sequence leakage, requires each manifest sample to match
+the registered split assignment, and writes an adapter-only checkpoint when mT5 is frozen. The separate
 `wavellm-evaluate` command re-registers weights and metadata as hashed inputs and rejects checksum,
-model/task-config, model-asset, unit, coordinate-frame, or tensor-inventory drift before generation.
+model/task-config, input-mode, model-asset, unit, coordinate-frame, or tensor-inventory drift before generation.
 `wavellm-train` uses the same paired epoch-state resume contract and, for adapter-only training, stores
 the trainable adapter model state without duplicating the frozen mT5 backbone.
 The included character metric is an orchestration protocol; full fine-tuning, real-data validation,

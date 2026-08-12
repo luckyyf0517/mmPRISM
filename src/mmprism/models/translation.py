@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as functional
 from torch import Tensor, nn
 
+from mmprism.contracts import POSE_ONLY_INPUT_MODE, POSE_PLUS_RADAR_FEATURE_INPUT_MODE
 from mmprism.models.stgcn import DualHandPoseEncoder
 
 
@@ -96,7 +97,8 @@ class GeometryGuidedMT5(nn.Module):
         language_model: nn.Module,
         *,
         hidden_size: int,
-        radar_feature_dim: int,
+        input_mode: str = POSE_PLUS_RADAR_FEATURE_INPUT_MODE,
+        radar_feature_dim: int | None = None,
         joint_count: int = 24,
         coordinate_dim: int = 3,
         pose_channels: tuple[int, ...] = (64, 128),
@@ -107,6 +109,14 @@ class GeometryGuidedMT5(nn.Module):
         super().__init__()
         if not 0 <= label_smoothing < 1:
             raise ValueError("label_smoothing must be within [0,1)")
+        if input_mode not in {POSE_ONLY_INPUT_MODE, POSE_PLUS_RADAR_FEATURE_INPUT_MODE}:
+            raise ValueError(f"unsupported translation input mode: {input_mode!r}")
+        if input_mode == POSE_ONLY_INPUT_MODE and radar_feature_dim is not None:
+            raise ValueError("pose_only model must not declare radar_feature_dim")
+        if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE and (
+            not isinstance(radar_feature_dim, int) or radar_feature_dim < 1
+        ):
+            raise ValueError("pose_plus_radar_feature model requires positive radar_feature_dim")
         model_config = getattr(language_model, "config", None)
         model_hidden_size = getattr(model_config, "d_model", None)
         if model_hidden_size != hidden_size:
@@ -126,10 +136,15 @@ class GeometryGuidedMT5(nn.Module):
             temporal_kernel_size=temporal_kernel_size,
             dropout=dropout,
         )
-        self.radar_projector = RadarFeatureProjector(radar_feature_dim, hidden_size, dropout)
-        self.fusion = ConfidenceAwareFusion(
-            joint_count=joint_count, hidden_size=hidden_size, dropout=dropout
-        )
+        self.input_mode = input_mode
+        self.radar_feature_dim = radar_feature_dim
+        if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+            self.radar_projector = RadarFeatureProjector(
+                cast(int, radar_feature_dim), hidden_size, dropout
+            )
+            self.fusion = ConfidenceAwareFusion(
+                joint_count=joint_count, hidden_size=hidden_size, dropout=dropout
+            )
         self.joint_count = joint_count
         self.coordinate_dim = coordinate_dim
         self.label_smoothing = label_smoothing
@@ -138,7 +153,7 @@ class GeometryGuidedMT5(nn.Module):
         self,
         pose: Tensor,
         pose_confidence: Tensor,
-        radar_features: Tensor,
+        radar_features: Tensor | None = None,
         frame_attention_mask: Tensor | None = None,
     ) -> ModalityEncoding:
         if frame_attention_mask is None:
@@ -150,12 +165,20 @@ class GeometryGuidedMT5(nn.Module):
         mask = frame_attention_mask.to(device=pose.device, dtype=pose.dtype)
         pose = pose * mask[:, :, None, None, None]
         pose_confidence = pose_confidence * mask[:, :, None, None]
-        radar_features = radar_features * mask[:, :, None]
         pose_embeddings = self.pose_encoder(pose, pose_confidence)
-        radar_embeddings = self.radar_projector(radar_features)
-        fused, pose_gate = self.fusion(
-            pose_embeddings, radar_embeddings, pose_confidence
-        )
+        if self.input_mode == POSE_ONLY_INPUT_MODE:
+            if radar_features is not None:
+                raise ValueError("pose_only model must not receive radar_features")
+            fused = pose_embeddings
+            pose_gate = torch.ones_like(fused)
+        else:
+            if radar_features is None:
+                raise ValueError("pose_plus_radar_feature model requires radar_features")
+            radar_features = radar_features * mask[:, :, None]
+            radar_embeddings = self.radar_projector(radar_features)
+            fused, pose_gate = self.fusion(
+                pose_embeddings, radar_embeddings, pose_confidence
+            )
         return ModalityEncoding(
             embeddings=fused,
             attention_mask=frame_attention_mask.to(device=fused.device, dtype=torch.long),
@@ -194,7 +217,7 @@ class GeometryGuidedMT5(nn.Module):
         *,
         pose: Tensor,
         pose_confidence: Tensor,
-        radar_features: Tensor,
+        radar_features: Tensor | None = None,
         prompt_input_ids: Tensor,
         prompt_attention_mask: Tensor,
         labels: Tensor,
@@ -235,7 +258,7 @@ class GeometryGuidedMT5(nn.Module):
         *,
         pose: Tensor,
         pose_confidence: Tensor,
-        radar_features: Tensor,
+        radar_features: Tensor | None = None,
         prompt_input_ids: Tensor,
         prompt_attention_mask: Tensor,
         frame_attention_mask: Tensor | None = None,

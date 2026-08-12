@@ -22,3 +22,13 @@ Last reviewed: 2026-08-12
   documented the direct-to-final-volume CSL-Daily raw preservation upload to avoid a second 300-GB transfer.
 - Archived CSL-News from the active rebuild: source/download/cache/source-manifest assets were removed and only
   completed pose artifacts plus frozen pose manifests/splits remain as checkpoint-side evidence.
+- Added the CSL-Daily gated reproduction operation: direct-preservation receipt, immutable `annotation_v1`,
+  candidate annotation QC, separately labelled skeleton simulation, and frozen handoffs. The legacy duplicated
+  validation/test mapping is replay-only rather than a new independent evaluation split.
+- Extended final translation Parquet delivery with an input-mode-bound `pose_only` profile: its schema and rows omit
+  radar features and dimensions, while fusion preserves the existing non-null feature contract. Reader round trips
+  and input-mode metadata tampering are covered by fixture validation. This incompatible schema change is published
+  as delivery v2; v1 artifacts remain preserved historical products.
+- Added a no-clobber, read-only source-receipt command for the direct CSL-Daily preservation upload. It compares
+  time-separated inventories, hashes every source file, receipts legacy split identities, and publishes only under
+  `interim/`; it remains deliberately blocked while the active rsync transfer changes the source tree.

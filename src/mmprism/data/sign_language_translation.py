@@ -10,9 +10,17 @@ from typing import cast
 import numpy as np
 from numpy.typing import NDArray
 
-from mmprism.contracts import ManifestError, ModalityRef, SampleRecord
+from mmprism.contracts import (
+    POSE_ONLY_INPUT_MODE,
+    POSE_PLUS_RADAR_FEATURE_INPUT_MODE,
+    TRANSLATION_INPUT_MODES,
+    ManifestError,
+    ModalityRef,
+    SampleRecord,
+    translation_input_mode_modalities,
+)
 
-SIGN_LANGUAGE_TRANSLATION_SAMPLE_PROTOCOL = "mmprism.sign_language_translation.sample_v1"
+SIGN_LANGUAGE_TRANSLATION_SAMPLE_PROTOCOL = "mmprism.sign_language_translation.sample_v2"
 RADAR_FEATURE_SEQUENCE_PROTOCOL = "mmprism.radar_feature.sequence_v1"
 TRANSLATION_POSE_MODALITY = "pose"
 TRANSLATION_POSE_CONFIDENCE_MODALITY = "pose_confidence"
@@ -96,13 +104,14 @@ class SignLanguageTranslationRecord:
     dataset: str
     pose_path: Path
     pose_confidence_path: Path
-    radar_feature_path: Path
+    radar_feature_path: Path | None
     frame_mask_path: Path | None
     caption: str
     frame_count: int
     joint_count: int
     coordinate_dim: int
-    radar_feature_dim: int
+    radar_feature_dim: int | None
+    input_mode: str
     coordinate_frame: str
     checksums: dict[str, str]
 
@@ -112,7 +121,7 @@ class SignLanguageTranslationSample:
     sample_id: str
     pose: NDArray[np.float32]
     pose_confidence: NDArray[np.float32]
-    radar_feature: NDArray[np.float32]
+    radar_feature: NDArray[np.float32] | None
     frame_mask: NDArray[np.bool_]
     caption: str
     coordinate_frame: str
@@ -123,7 +132,7 @@ class SignLanguageTranslationBatch:
     sample_ids: tuple[str, ...]
     pose: NDArray[np.float32]
     pose_confidence: NDArray[np.float32]
-    radar_feature: NDArray[np.float32]
+    radar_feature: NDArray[np.float32] | None
     frame_mask: NDArray[np.bool_]
     captions: tuple[str, ...]
     coordinate_frame: str
@@ -132,15 +141,19 @@ class SignLanguageTranslationBatch:
 def _translation_record(
     record: SampleRecord, data_root: Path
 ) -> SignLanguageTranslationRecord:
-    required = {
-        TRANSLATION_POSE_MODALITY,
-        TRANSLATION_POSE_CONFIDENCE_MODALITY,
-        TRANSLATION_RADAR_FEATURE_MODALITY,
-        TRANSLATION_CAPTION_MODALITY,
-    }
-    optional = {TRANSLATION_FRAME_MASK_MODALITY}
+    acquisition = record.acquisition or {}
+    input_mode = acquisition.get("input_mode")
+    if not isinstance(input_mode, str) or input_mode not in TRANSLATION_INPUT_MODES:
+        raise SignLanguageTranslationDataError(
+            f"sample {record.sample_id} requires a supported translation input_mode"
+        )
+    required_names, forbidden_names = translation_input_mode_modalities(input_mode)
+    required = set(required_names)
     missing = sorted(required - set(record.modalities))
-    unexpected = sorted(set(record.modalities) - required - optional)
+    forbidden = sorted(set(forbidden_names) & set(record.modalities))
+    unexpected = sorted(
+        set(record.modalities) - required - set(forbidden_names)
+    )
     if missing:
         raise SignLanguageTranslationDataError(
             f"sample {record.sample_id} is missing modalities: {', '.join(missing)}"
@@ -149,15 +162,25 @@ def _translation_record(
         raise SignLanguageTranslationDataError(
             f"sample {record.sample_id} has unsupported modalities: {', '.join(unexpected)}"
         )
+    if forbidden:
+        raise SignLanguageTranslationDataError(
+            f"sample {record.sample_id} input_mode {input_mode} forbids modalities: "
+            f"{', '.join(forbidden)}"
+        )
 
-    acquisition = record.acquisition or {}
     if acquisition.get("sample_protocol") != SIGN_LANGUAGE_TRANSLATION_SAMPLE_PROTOCOL:
         raise SignLanguageTranslationDataError(
             f"sample {record.sample_id} has an unsupported translation sample protocol"
         )
-    if acquisition.get("radar_feature_protocol") != RADAR_FEATURE_SEQUENCE_PROTOCOL:
+    radar_feature_protocol = acquisition.get("radar_feature_protocol")
+    if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE:
+        if radar_feature_protocol != RADAR_FEATURE_SEQUENCE_PROTOCOL:
+            raise SignLanguageTranslationDataError(
+                f"sample {record.sample_id} has an unsupported radar feature protocol"
+            )
+    elif radar_feature_protocol is not None:
         raise SignLanguageTranslationDataError(
-            f"sample {record.sample_id} has an unsupported radar feature protocol"
+            f"sample {record.sample_id} pose_only input must not declare a radar feature protocol"
         )
     if acquisition.get("pose_units") != "m":
         raise SignLanguageTranslationDataError(
@@ -171,7 +194,7 @@ def _translation_record(
 
     pose_reference = record.modalities[TRANSLATION_POSE_MODALITY]
     confidence_reference = record.modalities[TRANSLATION_POSE_CONFIDENCE_MODALITY]
-    radar_reference = record.modalities[TRANSLATION_RADAR_FEATURE_MODALITY]
+    radar_reference = record.modalities.get(TRANSLATION_RADAR_FEATURE_MODALITY)
     caption_reference = record.modalities[TRANSLATION_CAPTION_MODALITY]
     pose_shape = _array_shape(
         pose_reference,
@@ -191,20 +214,22 @@ def _translation_record(
         dimensions=3,
         dtype="float32",
     )
-    radar_shape = _array_shape(
-        radar_reference,
-        modality=TRANSLATION_RADAR_FEATURE_MODALITY,
-        sample_id=record.sample_id,
-        dimensions=2,
-        dtype="float32",
-    )
+    radar_shape: tuple[int, ...] | None = None
+    if radar_reference is not None:
+        radar_shape = _array_shape(
+            radar_reference,
+            modality=TRANSLATION_RADAR_FEATURE_MODALITY,
+            sample_id=record.sample_id,
+            dimensions=2,
+            dtype="float32",
+        )
     expected_confidence_shape = (pose_shape[0], pose_shape[1], pose_shape[2])
     if confidence_shape != expected_confidence_shape:
         raise SignLanguageTranslationDataError(
             f"sample {record.sample_id} confidence shape must be "
             f"{expected_confidence_shape}, got {confidence_shape}"
         )
-    if radar_shape[0] != pose_shape[0]:
+    if radar_shape is not None and radar_shape[0] != pose_shape[0]:
         raise SignLanguageTranslationDataError(
             f"sample {record.sample_id} radar and pose frame counts must match"
         )
@@ -224,7 +249,7 @@ def _translation_record(
             f"sample {record.sample_id} inline caption must not declare array metadata"
         )
 
-    paths = {
+    paths: dict[str, Path] = {
         TRANSLATION_POSE_MODALITY: _resolve_local_array(
             pose_reference,
             modality=TRANSLATION_POSE_MODALITY,
@@ -237,39 +262,39 @@ def _translation_record(
             sample_id=record.sample_id,
             data_root=data_root,
         ),
-        TRANSLATION_RADAR_FEATURE_MODALITY: _resolve_local_array(
+    }
+    if radar_reference is not None:
+        paths[TRANSLATION_RADAR_FEATURE_MODALITY] = _resolve_local_array(
             radar_reference,
             modality=TRANSLATION_RADAR_FEATURE_MODALITY,
             sample_id=record.sample_id,
             data_root=data_root,
-        ),
-    }
+        )
     checksums = {
         TRANSLATION_POSE_MODALITY: pose_reference.sha256 or "",
         TRANSLATION_POSE_CONFIDENCE_MODALITY: confidence_reference.sha256 or "",
-        TRANSLATION_RADAR_FEATURE_MODALITY: radar_reference.sha256 or "",
     }
-    frame_mask_path: Path | None = None
-    frame_reference = record.modalities.get(TRANSLATION_FRAME_MASK_MODALITY)
-    if frame_reference is not None:
-        frame_shape = _array_shape(
-            frame_reference,
-            modality=TRANSLATION_FRAME_MASK_MODALITY,
-            sample_id=record.sample_id,
-            dimensions=1,
-            dtype="bool",
+    if radar_reference is not None:
+        checksums[TRANSLATION_RADAR_FEATURE_MODALITY] = radar_reference.sha256 or ""
+    frame_reference = record.modalities[TRANSLATION_FRAME_MASK_MODALITY]
+    frame_shape = _array_shape(
+        frame_reference,
+        modality=TRANSLATION_FRAME_MASK_MODALITY,
+        sample_id=record.sample_id,
+        dimensions=1,
+        dtype="bool",
+    )
+    if frame_shape != (pose_shape[0],):
+        raise SignLanguageTranslationDataError(
+            f"sample {record.sample_id} frame mask must have shape {(pose_shape[0],)}"
         )
-        if frame_shape != (pose_shape[0],):
-            raise SignLanguageTranslationDataError(
-                f"sample {record.sample_id} frame mask must have shape {(pose_shape[0],)}"
-            )
-        frame_mask_path = _resolve_local_array(
-            frame_reference,
-            modality=TRANSLATION_FRAME_MASK_MODALITY,
-            sample_id=record.sample_id,
-            data_root=data_root,
-        )
-        checksums[TRANSLATION_FRAME_MASK_MODALITY] = frame_reference.sha256 or ""
+    frame_mask_path = _resolve_local_array(
+        frame_reference,
+        modality=TRANSLATION_FRAME_MASK_MODALITY,
+        sample_id=record.sample_id,
+        data_root=data_root,
+    )
+    checksums[TRANSLATION_FRAME_MASK_MODALITY] = frame_reference.sha256 or ""
 
     return SignLanguageTranslationRecord(
         sample_id=record.sample_id,
@@ -278,13 +303,14 @@ def _translation_record(
         dataset=record.dataset,
         pose_path=paths[TRANSLATION_POSE_MODALITY],
         pose_confidence_path=paths[TRANSLATION_POSE_CONFIDENCE_MODALITY],
-        radar_feature_path=paths[TRANSLATION_RADAR_FEATURE_MODALITY],
+        radar_feature_path=paths.get(TRANSLATION_RADAR_FEATURE_MODALITY),
         frame_mask_path=frame_mask_path,
         caption=caption_reference.text.strip(),
         frame_count=pose_shape[0],
         joint_count=pose_shape[2],
         coordinate_dim=pose_shape[3],
-        radar_feature_dim=radar_shape[1],
+        radar_feature_dim=radar_shape[1] if radar_shape is not None else None,
+        input_mode=input_mode,
         coordinate_frame=coordinate_frame.strip(),
         checksums=checksums,
     )
@@ -358,20 +384,35 @@ class SignLanguageTranslationManifest:
         if not records:
             raise SignLanguageTranslationDataError("translation manifest is empty")
 
+        input_modes = {record.input_mode for record in records}
         feature_dims = {record.radar_feature_dim for record in records}
         joint_counts = {record.joint_count for record in records}
         coordinate_dims = {record.coordinate_dim for record in records}
         coordinate_frames = {record.coordinate_frame for record in records}
-        if any(len(values) != 1 for values in (feature_dims, joint_counts, coordinate_dims)):
+        if len(input_modes) != 1:
             raise SignLanguageTranslationDataError(
-                "all translation records must share feature, joint, and coordinate dimensions"
+                "all translation records must share one input mode"
+            )
+        input_mode = next(iter(input_modes))
+        if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE and len(feature_dims) != 1:
+            raise SignLanguageTranslationDataError(
+                "all feature translation records must share one radar feature dimension"
+            )
+        if any(len(values) != 1 for values in (joint_counts, coordinate_dims)):
+            raise SignLanguageTranslationDataError(
+                "all translation records must share joint and coordinate dimensions"
             )
         if len(coordinate_frames) != 1:
             raise SignLanguageTranslationDataError(
                 "all translation records must share one pose coordinate frame"
             )
         self.records = tuple(records)
-        self.radar_feature_dim = next(iter(feature_dims))
+        self.input_mode = input_mode
+        self.radar_feature_dim = (
+            next(iter(feature_dims))
+            if input_mode == POSE_PLUS_RADAR_FEATURE_INPUT_MODE
+            else None
+        )
         self.joint_count = next(iter(joint_counts))
         self.coordinate_dim = next(iter(coordinate_dims))
         self.coordinate_frame = next(iter(coordinate_frames))
@@ -386,10 +427,14 @@ class SignLanguageTranslationManifest:
             paths = {
                 TRANSLATION_POSE_MODALITY: record.pose_path,
                 TRANSLATION_POSE_CONFIDENCE_MODALITY: record.pose_confidence_path,
-                TRANSLATION_RADAR_FEATURE_MODALITY: record.radar_feature_path,
             }
-            if record.frame_mask_path is not None:
-                paths[TRANSLATION_FRAME_MASK_MODALITY] = record.frame_mask_path
+            if record.radar_feature_path is not None:
+                paths[TRANSLATION_RADAR_FEATURE_MODALITY] = record.radar_feature_path
+            if record.frame_mask_path is None:
+                raise SignLanguageTranslationDataError(
+                    f"sample {record.sample_id} requires a frame mask"
+                )
+            paths[TRANSLATION_FRAME_MASK_MODALITY] = record.frame_mask_path
             for modality, path in paths.items():
                 observed = _sha256_file(path)
                 expected = record.checksums[modality]
@@ -426,18 +471,21 @@ class SignLanguageTranslationManifest:
                 modality=TRANSLATION_POSE_CONFIDENCE_MODALITY,
             ),
         )
-        radar_feature = cast(
-            NDArray[np.float32],
-            _load_array(
-                record.radar_feature_path,
-                expected_shape=(record.frame_count, record.radar_feature_dim),
-                expected_dtype=np.dtype(np.float32),
-                sample_id=record.sample_id,
-                modality=TRANSLATION_RADAR_FEATURE_MODALITY,
-            ),
-        )
+        radar_feature: NDArray[np.float32] | None = None
+        if record.radar_feature_path is not None and record.radar_feature_dim is not None:
+            radar_feature = cast(
+                NDArray[np.float32],
+                _load_array(
+                    record.radar_feature_path,
+                    expected_shape=(record.frame_count, record.radar_feature_dim),
+                    expected_dtype=np.dtype(np.float32),
+                    sample_id=record.sample_id,
+                    modality=TRANSLATION_RADAR_FEATURE_MODALITY,
+                ),
+            )
+        finite_arrays = (pose, confidence, radar_feature)
         if not all(
-            bool(np.all(np.isfinite(value))) for value in (pose, confidence, radar_feature)
+            bool(np.all(np.isfinite(value))) for value in finite_arrays if value is not None
         ):
             raise SignLanguageTranslationDataError(
                 f"sample {record.sample_id} arrays must contain only finite values"
@@ -447,18 +495,19 @@ class SignLanguageTranslationManifest:
                 f"sample {record.sample_id} pose confidence must be within [0,1]"
             )
         if record.frame_mask_path is None:
-            frame_mask = np.ones(record.frame_count, dtype=np.bool_)
-        else:
-            frame_mask = cast(
-                NDArray[np.bool_],
-                _load_array(
-                    record.frame_mask_path,
-                    expected_shape=(record.frame_count,),
-                    expected_dtype=np.dtype(np.bool_),
-                    sample_id=record.sample_id,
-                    modality=TRANSLATION_FRAME_MASK_MODALITY,
-                ),
+            raise SignLanguageTranslationDataError(
+                f"sample {record.sample_id} requires a frame mask"
             )
+        frame_mask = cast(
+            NDArray[np.bool_],
+            _load_array(
+                record.frame_mask_path,
+                expected_shape=(record.frame_count,),
+                expected_dtype=np.dtype(np.bool_),
+                sample_id=record.sample_id,
+                modality=TRANSLATION_FRAME_MASK_MODALITY,
+            ),
+        )
         if not bool(np.any(frame_mask)):
             raise SignLanguageTranslationDataError(
                 f"sample {record.sample_id} must contain at least one valid frame"
@@ -467,7 +516,11 @@ class SignLanguageTranslationManifest:
             sample_id=record.sample_id,
             pose=np.asarray(pose, dtype=np.float32),
             pose_confidence=np.asarray(confidence, dtype=np.float32),
-            radar_feature=np.asarray(radar_feature, dtype=np.float32),
+            radar_feature=(
+                np.asarray(radar_feature, dtype=np.float32)
+                if radar_feature is not None
+                else None
+            ),
             frame_mask=np.asarray(frame_mask, dtype=np.bool_),
             caption=record.caption,
             coordinate_frame=record.coordinate_frame,
@@ -484,9 +537,24 @@ def collate_sign_language_translation_samples(
     if max_frames < 1:
         raise SignLanguageTranslationDataError("max_frames must be positive")
     pose_shapes = {sample.pose.shape[1:] for sample in samples}
-    feature_dims = {sample.radar_feature.shape[1] for sample in samples}
+    input_modes = {
+        POSE_PLUS_RADAR_FEATURE_INPUT_MODE
+        if sample.radar_feature is not None
+        else POSE_ONLY_INPUT_MODE
+        for sample in samples
+    }
+    feature_dims = {
+        sample.radar_feature.shape[1]
+        for sample in samples
+        if sample.radar_feature is not None
+    }
     coordinate_frames = {sample.coordinate_frame for sample in samples}
-    if len(pose_shapes) != 1 or len(feature_dims) != 1 or len(coordinate_frames) != 1:
+    if (
+        len(pose_shapes) != 1
+        or len(input_modes) != 1
+        or len(feature_dims) > 1
+        or len(coordinate_frames) != 1
+    ):
         raise SignLanguageTranslationDataError(
             "one translation batch requires aligned pose, feature, and coordinate contracts"
         )
@@ -496,24 +564,28 @@ def collate_sign_language_translation_samples(
             f"translation batch contains {batch_frames} frames, model maximum is {max_frames}"
         )
     pose_shape = next(iter(pose_shapes))
-    feature_dim = next(iter(feature_dims))
+    feature_dim = next(iter(feature_dims)) if feature_dims else None
     pose = np.zeros((len(samples), batch_frames, *pose_shape), dtype=np.float32)
     confidence = np.zeros(
         (len(samples), batch_frames, pose_shape[0], pose_shape[1]), dtype=np.float32
     )
-    radar_feature = np.zeros(
-        (len(samples), batch_frames, feature_dim), dtype=np.float32
+    radar_feature = (
+        np.zeros((len(samples), batch_frames, feature_dim), dtype=np.float32)
+        if feature_dim is not None
+        else None
     )
     frame_mask = np.zeros((len(samples), batch_frames), dtype=np.bool_)
     for index, sample in enumerate(samples):
         frames = sample.pose.shape[0]
         pose[index, :frames] = sample.pose
         confidence[index, :frames] = sample.pose_confidence
-        radar_feature[index, :frames] = sample.radar_feature
+        if radar_feature is not None and sample.radar_feature is not None:
+            radar_feature[index, :frames] = sample.radar_feature
         frame_mask[index, :frames] = sample.frame_mask
         pose[index, :frames][~sample.frame_mask] = 0
         confidence[index, :frames][~sample.frame_mask] = 0
-        radar_feature[index, :frames][~sample.frame_mask] = 0
+        if radar_feature is not None:
+            radar_feature[index, :frames][~sample.frame_mask] = 0
     return SignLanguageTranslationBatch(
         sample_ids=tuple(sample.sample_id for sample in samples),
         pose=pose,

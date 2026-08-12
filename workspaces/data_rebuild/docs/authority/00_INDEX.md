@@ -16,7 +16,7 @@ workspace begins only after receiving its immutable raw-session manifest and val
 
 - Private project data is confirmed on NAS but source inventory and accepted transfer batches are incomplete.
 - Raw/range-Doppler contracts and analytic tests exist; beamforming and physical axes await calibration.
-- Task-specific Parquet delivery v1 reader, planner, materializer, and validator are implemented and fixture-verified;
+- Task-specific Parquet delivery v2 reader, planner, materializer, and validator are implemented and fixture-verified;
   real products remain blocked by source, calibration, and final-split evidence.
 - Archived CSL-News visual pose output is optional checkpoint-side forensic evidence only; CSL-Daily intake and
   the new semantic CSL collection are the active public/real-data paths. No CSL-News source bytes remain local.
@@ -26,7 +26,9 @@ workspace begins only after receiving its immutable raw-session manifest and val
   directly from any of these paths.
 - The complete CSL-Daily raw source is being uploaded directly to the dedicated preservation root
   `external/csl_daily/csl_daily_original_20260812/`. It remains an unaccepted source until stable inventory and
-  validation, despite its direct `external/` location.
+  validation, despite its direct `external/` location. The next gated path is receipt -> baseline camera-pose
+  QC -> separately labelled skeleton-simulation delivery -> OmniHand/WaveLLM controls; it is documented in the
+  [CSL-Daily reproduction operation](40_OPERATIONS/CSL_DAILY_REPRODUCTION.md).
 - A historical WaveLLM bundle is uploading under the project mirror `log/archived/`. It is preservation-only until
   stable inventory, checksum, format, and controlled-load receipt completes. The recovered CSL-News-derived mT5-only
   export remains a fallback, not historical end-to-end evidence.
@@ -35,8 +37,9 @@ Active blockers: NAS intake, acquisition/channel/calibration evidence, simulatio
 subject-aware splits.
 
 Next actions: preserve the incoming historical bundle and await upload completion, then receipt/audit it; accept
-CSL-Daily metadata/source, accept metadata/calibration, bind a real radar fixture, freeze a final subject-aware
-split, then build and smoke-test immutable task products.
+CSL-Daily metadata/source, freeze `annotation_v1` and QC before any candidate improvement, create a distinct
+control split (the legacy validation/test files are identical), and build immutable synthetic task products. Real
+radar calibration/metadata and the subject-aware real-data split remain separate blockers.
 
 Full CSL-News source reconstruction and training may be useful for future provenance or ceiling work, but it does not
 block the CSL-Daily revision path. It requires an explicit future decision and cannot restore the missing historical
@@ -69,6 +72,7 @@ Canonical evidence: [source manifest log](../../../csl_news_annotation/docs/logs
 - [Parquet delivery contract](20_CONTRACTS/DATA_DELIVERY_PARQUET.md)
 - [Data intake](40_OPERATIONS/DATA_INTAKE.md)
 - [Data rebuild runbook](40_OPERATIONS/DATA_REBUILD.md)
+- [CSL-Daily reproduction operation](40_OPERATIONS/CSL_DAILY_REPRODUCTION.md)
 - [Data registry](50_VALIDATION/DATA_REGISTRY.md)
 - [Changelog](90_CHANGELOG.md)
 - [Logs](../logs/README.md)

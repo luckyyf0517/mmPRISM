@@ -15,3 +15,12 @@ Last reviewed: 2026-08-12
   formal-training gate for either candidate initialization.
 - Integrated WaveLLM train/evaluate with rank-zero formal-run ownership, distributed checkpoint consistency, exact
   prediction sharding, and cross-rank metrics; multi-process WaveLLM validation and DDP resume remain open.
+- Defined the CSL-Daily reproduction matrix and its missing controls: explicit pose-only mode, checkpoint-bound
+  CubeNet feature export, cross-fitted predicted inputs, production semantic metrics, and replay-only treatment of
+  the historical duplicated validation/test mapping.
+- Implemented the v2 JSONL+NPY WaveLLM input-mode contract: `pose_only` omits and forbids radar features, has no
+  radar projector/fusion parameter surface, and binds its checkpoint metadata and evaluation path to the mode.
+  The focused CPU train/evaluate integration test covers this path.
+- Implemented final Parquet `pose_only` translation delivery: the schema, rows, static dimensions, delivery metadata
+  and reader all bind the mode and omit radar features rather than serializing empty placeholders. CubeNet feature
+  provenance remains pending.

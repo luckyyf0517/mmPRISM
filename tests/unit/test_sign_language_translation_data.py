@@ -26,6 +26,7 @@ def _record(
     feature_dim: int = 8,
     caption: str = "target",
     include_mask: bool = True,
+    input_mode: str = "pose_plus_radar_feature",
 ) -> dict[str, object]:
     arrays = root / "arrays"
     arrays.mkdir(parents=True, exist_ok=True)
@@ -33,8 +34,11 @@ def _record(
     values: dict[str, np.ndarray] = {
         "pose": generator.normal(size=(frames, 2, 24, 3)).astype(np.float32),
         "pose_confidence": generator.random((frames, 2, 24), dtype=np.float32),
-        "radar_feature": generator.normal(size=(frames, feature_dim)).astype(np.float32),
     }
+    if input_mode == "pose_plus_radar_feature":
+        values["radar_feature"] = generator.normal(size=(frames, feature_dim)).astype(
+            np.float32
+        )
     if include_mask:
         mask = np.ones(frames, dtype=np.bool_)
         if frames > 1:
@@ -57,10 +61,15 @@ def _record(
         "dataset": "translation-fixture",
         "modalities": modalities,
         "acquisition": {
-            "sample_protocol": "mmprism.sign_language_translation.sample_v1",
-            "radar_feature_protocol": "mmprism.radar_feature.sequence_v1",
+            "sample_protocol": "mmprism.sign_language_translation.sample_v2",
+            "input_mode": input_mode,
             "pose_units": "m",
             "pose_coordinate_frame": "fixture_radar_cartesian_v1",
+            **(
+                {"radar_feature_protocol": "mmprism.radar_feature.sequence_v1"}
+                if input_mode == "pose_plus_radar_feature"
+                else {}
+            ),
         },
     }
 
@@ -83,7 +92,6 @@ def test_translation_manifest_loads_and_zero_pads_variable_sequences(tmp_path: P
                 sample_id="sample-002",
                 frames=2,
                 caption="second target",
-                include_mask=False,
             ),
         ],
     )
@@ -100,7 +108,7 @@ def test_translation_manifest_loads_and_zero_pads_variable_sequences(tmp_path: P
     assert batch.pose.shape == (2, 3, 2, 24, 3)
     assert batch.pose_confidence.shape == (2, 3, 2, 24)
     assert batch.radar_feature.shape == (2, 3, 8)
-    assert batch.frame_mask.tolist() == [[True, True, False], [True, True, False]]
+    assert batch.frame_mask.tolist() == [[True, True, False], [True, False, False]]
     assert np.count_nonzero(batch.pose[0, 2]) == 0
     assert np.count_nonzero(batch.radar_feature[1, 2]) == 0
     assert batch.captions == ("target", "second target")
@@ -139,4 +147,61 @@ def test_translation_manifest_rejects_tamper_confidence_and_contract_drift(
     with pytest.raises(SignLanguageTranslationDataError, match="radar feature protocol"):
         SignLanguageTranslationManifest(
             _manifest(tmp_path / "protocol.jsonl", [record]), data_root=tmp_path
+        )
+
+    missing_mask = _record(
+        tmp_path, sample_id="sample-004", frames=2, include_mask=False
+    )
+    with pytest.raises(SignLanguageTranslationDataError, match="missing modalities: frame_mask"):
+        SignLanguageTranslationManifest(
+            _manifest(tmp_path / "missing-mask.jsonl", [missing_mask]), data_root=tmp_path
+        )
+
+
+def test_pose_only_manifest_never_loads_or_fabricates_radar_features(tmp_path: Path) -> None:
+    manifest_path = _manifest(
+        tmp_path / "pose-only.jsonl",
+        [
+            _record(
+                tmp_path,
+                sample_id="pose-only-001",
+                frames=3,
+                input_mode="pose_only",
+            ),
+            _record(
+                tmp_path,
+                sample_id="pose-only-002",
+                frames=2,
+                input_mode="pose_only",
+            ),
+        ],
+    )
+
+    manifest = SignLanguageTranslationManifest(manifest_path, data_root=tmp_path)
+    first = manifest.load_sample(0)
+    batch = collate_sign_language_translation_samples(
+        (first, manifest.load_sample(1)), max_frames=4
+    )
+
+    assert manifest.input_mode == "pose_only"
+    assert manifest.radar_feature_dim is None
+    assert first.radar_feature is None
+    assert batch.radar_feature is None
+    assert not list((tmp_path / "arrays").glob("*.radar_feature.npy"))
+
+    forbidden = _record(
+        tmp_path,
+        sample_id="pose-only-forbidden",
+        frames=2,
+        input_mode="pose_plus_radar_feature",
+    )
+    acquisition = forbidden["acquisition"]
+    modalities = forbidden["modalities"]
+    assert isinstance(acquisition, dict)
+    assert isinstance(modalities, dict)
+    acquisition["input_mode"] = "pose_only"
+    acquisition.pop("radar_feature_protocol")
+    with pytest.raises(SignLanguageTranslationDataError, match="forbids modalities"):
+        SignLanguageTranslationManifest(
+            _manifest(tmp_path / "forbidden.jsonl", [forbidden]), data_root=tmp_path
         )
