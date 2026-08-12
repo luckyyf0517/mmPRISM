@@ -17,6 +17,38 @@ Last reviewed: 2026-08-12
 - 上传前必须先提供文件清单和总大小；未通过容量 gate 前不得解压或生成派生数据。
 - 第一优先级是不可替代的私人原始采集与标定资料，不是 pose、feature 或 synthetic radar 缓存。
 
+### Legacy Mirror Boundary
+
+The author restores historical material at its old-project paths:
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/dataset/
+/mnt/gfs/yanyifan/mmPRISM/pretrained_models/
+/mnt/gfs/yanyifan/mmPRISM/log/
+```
+
+These are an in-place **legacy mirror**, not canonical output roots. Preserve their relative layout and filenames;
+the canonical rebuild must not write, cache, resume, or train directly inside them.
+
+- `dataset/` is historical dataset descriptors, split JSON, and path evidence. It cannot establish that referenced
+  raw media, poses, radar, or labels still exist or meet current contracts.
+- `pretrained_models/` is historical model material. Each model remains unaccepted until read-only inventory,
+  checksum, license/source, and loader checks establish a separate canonical asset receipt.
+- `log/` is historical run evidence. Its WaveLLM checkpoints are still transferring and are governed by the
+  preservation-only [transfer record](../../../../wavellm_training/docs/logs/2026/08/20260812_HISTORICAL_WAVELLM_TRANSFER.md).
+
+The current full CSL-Daily raw upload is a documented direct-preservation exception to the usual `incoming/`
+staging convention:
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/external/csl_daily/csl_daily_original_20260812/
+```
+
+The directory is an immutable-source candidate, not an accepted `external` product, until transfer completion,
+stable inventory, checksums, source/license documentation, and reader validation are recorded. Its name means the
+source is already on its final volume, so no second 300-GB copy is required; it does not authorize training or
+derived writes in place.
+
 ## 2. 立即上传清单
 
 ### P0-A 私人真实雷达采集：必须上传

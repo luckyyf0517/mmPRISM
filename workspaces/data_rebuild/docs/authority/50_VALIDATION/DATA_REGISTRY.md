@@ -9,7 +9,7 @@ Last reviewed: 2026-08-12
 
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
-| `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
+| `DATASET-CSL-DAILY` | CSL-Daily | raw preservation upload target `external/csl_daily/csl_daily_original_20260812/`; legacy descriptors under `dataset/csl-daily/` | restricted/unknown | raw upload expected approximately 300 GB; legacy JSON approximately 3.4 MB | legacy `train/val/test/all.json` present but unaccepted | raw upload and source/annotation/split audit pending | visual pose/synthetic training and SLU | direct_preservation_upload_pending |
 | `DATASET-CSL-NEWS` | CSL-News | local source intake removed; retained RTMW3D sidecars/manifests only | CC BY-NC 4.0 | no local raw source | retained partial pose snapshots only; source manifest/registry were removed | historical source/pose validation logs retained; no resumable source validation | optional checkpoint-side visual-pose evidence only | archived_checkpoint_only |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | legacy non-semantic radar gesture/pose evidence only | blocked_legacy_inventory |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | legacy non-semantic development/demo only | blocked_legacy_inventory |
@@ -44,6 +44,7 @@ frozen delivery inventory, reader parity and formal run are registered.
 | `ASSET-SIM-PROVENANCE` | original simulation inputs and method | MANO parameters/mesh/model or skeleton inputs, source/config/checkpoint, example output | mixed/license-bound | resolve manuscript-vs-code discrepancy before reproduction claim | blocked |
 | `ASSET-HISTORICAL-RUNS` | paper experiment evidence | splits, configs, checkpoints, predictions, metrics, logs | private | optional for new training, required for original-paper audit | blocked |
 | `ASSET-FIGURE-SOURCE` | display-item source data | sample-level values, plots, scripts, tables | private | needed for Source Data unless public raw+code fully reproduce figures | blocked |
+| `ASSET-LEGACY-PROJECT-MIRROR` | historical `dataset/`, `pretrained_models/`, and `log/` layout | historical dataset descriptors/splits, model mirrors, checkpoints/evaluations | private/mixed; source and license per asset pending | preserve paths and filenames; audit by read-only receipt only | `dataset` and `pretrained_models` await inventory; `log` transfer remains active under `MODEL-WAVELLM-HISTORICAL-BUNDLE-20260812` | preservation_only |
 
 ## Model Assets
 

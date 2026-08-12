@@ -20,6 +20,13 @@ workspace begins only after receiving its immutable raw-session manifest and val
   real products remain blocked by source, calibration, and final-split evidence.
 - Archived CSL-News visual pose output is optional checkpoint-side forensic evidence only; CSL-Daily intake and
   the new semantic CSL collection are the active public/real-data paths. No CSL-News source bytes remain local.
+- `/mnt/gfs/yanyifan/mmPRISM/{dataset,pretrained_models,log}` is an old-project mirror preserved in its historical
+  layout. `dataset` is legacy metadata/split evidence, `pretrained_models` is a legacy model mirror, and `log` is
+  incoming historical run evidence with checkpoints still transferring; canonical code must not write to or train
+  directly from any of these paths.
+- The complete CSL-Daily raw source is being uploaded directly to the dedicated preservation root
+  `external/csl_daily/csl_daily_original_20260812/`. It remains an unaccepted source until stable inventory and
+  validation, despite its direct `external/` location.
 - A historical WaveLLM bundle is uploading under the project mirror `log/archived/`. It is preservation-only until
   stable inventory, checksum, format, and controlled-load receipt completes. The recovered CSL-News-derived mT5-only
   export remains a fallback, not historical end-to-end evidence.

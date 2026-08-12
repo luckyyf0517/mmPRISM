@@ -18,5 +18,7 @@ Last reviewed: 2026-08-12
 - Registered the incoming historical WaveLLM bundle as transfer-in-progress and preservation-only. The recovered
   CSL-News-derived mT5-only export remains a smoke-verified fallback until a stable bundle receipt/audit resolves
   the historical asset's identity and usable role.
+- Registered the old-project `dataset/`, `pretrained_models/`, and `log/` paths as a read-only legacy mirror, and
+  documented the direct-to-final-volume CSL-Daily raw preservation upload to avoid a second 300-GB transfer.
 - Archived CSL-News from the active rebuild: source/download/cache/source-manifest assets were removed and only
   completed pose artifacts plus frozen pose manifests/splits remain as checkpoint-side evidence.
