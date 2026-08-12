@@ -473,6 +473,104 @@ def passed_csl_news_integrity_archives(
     return dict(sorted(passed.items()))
 
 
+def select_csl_news_integrity_archive(
+    config: CslNewsIntegrityConfig,
+    *,
+    archive_id: int | None = None,
+    verify_sha256: bool = True,
+) -> dict[str, Any]:
+    """Select one registry-passed archive and revalidate its local identity."""
+
+    registry, registry_sha256 = load_csl_news_integrity_registry_snapshot(
+        config.registry_path,
+        source_id=config.source_id,
+        source_revision=config.source_revision,
+    )
+    if registry.get("config_fingerprint") != config.fingerprint:
+        raise CslNewsIntegrityError("integrity registry config fingerprint mismatch")
+    passed = passed_csl_news_integrity_archives(registry)
+    if not passed:
+        raise CslNewsIntegrityError("integrity registry has no passed archives")
+
+    selected_id = min(passed) if archive_id is None else archive_id
+    entry = passed.get(selected_id)
+    if entry is None:
+        raise CslNewsIntegrityError(
+            f"archive_{selected_id:03d}.zip is not present and passed in the registry"
+        )
+
+    unresolved_archive = config.archive_root / entry.archive_path_relative
+    if unresolved_archive.is_symlink() or not unresolved_archive.is_file():
+        raise CslNewsIntegrityError(
+            f"integrity-passed archive is not a regular file: {unresolved_archive}"
+        )
+    archive_path = unresolved_archive.resolve()
+    try:
+        archive_path.relative_to(config.archive_root)
+    except ValueError as error:
+        raise CslNewsIntegrityError(
+            f"integrity-passed archive escapes archive root: {entry.archive_name}"
+        ) from error
+    archive_stat = archive_path.stat()
+    if (
+        archive_path.name != entry.archive_name
+        or archive_stat.st_size != entry.size_bytes
+        or archive_stat.st_mtime_ns != entry.mtime_ns
+    ):
+        raise CslNewsIntegrityError(
+            f"integrity-passed archive changed after audit: {entry.archive_name}"
+        )
+    if verify_sha256 and _sha256(archive_path) != entry.sha256:
+        raise CslNewsIntegrityError(
+            f"integrity-passed archive SHA-256 changed after audit: {entry.archive_name}"
+        )
+
+    labels_path = config.labels_path
+    if labels_path.is_symlink() or not labels_path.is_file():
+        raise CslNewsIntegrityError(
+            f"integrity registry labels are not a regular file: {labels_path}"
+        )
+    source = _mapping(registry.get("source"), "registry.source")
+    labels_sha256 = source.get("labels_sha256")
+    if not isinstance(labels_sha256, str) or not re.fullmatch(
+        r"[0-9a-f]{64}", labels_sha256
+    ):
+        raise CslNewsIntegrityError("integrity registry has no valid labels SHA-256")
+    if verify_sha256 and _sha256(labels_path) != labels_sha256:
+        raise CslNewsIntegrityError("integrity registry labels SHA-256 changed after audit")
+
+    return {
+        "schema_version": "mmprism.csl_news_integrity_selection.v1",
+        "registry": {
+            "path": str(config.registry_path),
+            "sha256": registry_sha256,
+            "config_fingerprint": config.fingerprint,
+        },
+        "source": {
+            "source_id": config.source_id,
+            "source_revision": config.source_revision,
+            "source_ref": f"{config.source_id}@{config.source_revision}",
+            "labels_path": str(labels_path),
+            "labels_sha256": labels_sha256,
+        },
+        "archive": {
+            "archive_id": entry.archive_id,
+            "archive_name": entry.archive_name,
+            "archive_path_relative": entry.archive_path_relative.as_posix(),
+            "path": str(archive_path),
+            "source_kind": entry.source_kind,
+            "size_bytes": entry.size_bytes,
+            "mtime_ns": entry.mtime_ns,
+            "sha256": entry.sha256,
+            "video_count": entry.video_count,
+        },
+        "validation": {
+            "path_stat_verified": True,
+            "sha256_verified": verify_sha256,
+        },
+    }
+
+
 def _load_existing_registry(config: CslNewsIntegrityConfig) -> dict[str, Any] | None:
     if not config.registry_path.is_file():
         return None

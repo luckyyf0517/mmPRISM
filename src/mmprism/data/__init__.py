@@ -42,6 +42,7 @@ from mmprism.data.csl_news_integrity import (
     passed_csl_news_integrity_archives,
     read_csl_news_integrity_registry_snapshot,
     scan_csl_news_source_integrity,
+    select_csl_news_integrity_archive,
 )
 from mmprism.data.csl_news_manifest import (
     CslNewsSourceManifestConfig,
@@ -166,6 +167,7 @@ __all__ = [
     "passed_csl_news_integrity_archives",
     "read_csl_news_integrity_registry_snapshot",
     "scan_csl_news_source_integrity",
+    "select_csl_news_integrity_archive",
     "stable_sample_id",
     "validate_annotation_output",
     "verify_zip_crc",

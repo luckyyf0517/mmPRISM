@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import tempfile
 import unittest
 import zipfile
@@ -13,6 +14,7 @@ from mmprism.data import (
     load_csl_news_integrity_registry_snapshot,
     passed_csl_news_integrity_archives,
     scan_csl_news_source_integrity,
+    select_csl_news_integrity_archive,
 )
 
 
@@ -183,6 +185,49 @@ output:
                 ),
                 primary_identity,
             )
+
+            selection = select_csl_news_integrity_archive(config, archive_id=2)
+            self.assertEqual(
+                selection["schema_version"],
+                "mmprism.csl_news_integrity_selection.v1",
+            )
+            self.assertEqual(selection["archive"]["source_kind"], "replacement")
+            self.assertEqual(
+                selection["archive"]["archive_path_relative"],
+                replacement_relative.as_posix(),
+            )
+            self.assertTrue(selection["validation"]["sha256_verified"])
+
+    def test_selection_rejects_same_stat_archive_tampering(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._prepare_sources(root)
+            with mock.patch.dict("os.environ", {"MMPRISM_DATA_ROOT": str(root)}):
+                config = load_csl_news_integrity_config(self._write_config(root))
+            scan_csl_news_source_integrity(config, runtime_report=self._runtime())
+            archive = config.archive_root / "archive_001.zip"
+            original_stat = archive.stat()
+            content = bytearray(archive.read_bytes())
+            content[-1] ^= 1
+            archive.write_bytes(content)
+            os.utime(
+                archive,
+                ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns),
+            )
+
+            with self.assertRaisesRegex(CslNewsIntegrityError, "SHA-256 changed"):
+                select_csl_news_integrity_archive(config, archive_id=1)
+
+    def test_selection_rejects_archive_without_passed_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._prepare_sources(root)
+            with mock.patch.dict("os.environ", {"MMPRISM_DATA_ROOT": str(root)}):
+                config = load_csl_news_integrity_config(self._write_config(root))
+            scan_csl_news_source_integrity(config, runtime_report=self._runtime())
+
+            with self.assertRaisesRegex(CslNewsIntegrityError, "not present and passed"):
+                select_csl_news_integrity_archive(config, archive_id=2)
 
     def test_rejects_non_nested_replacement_path(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

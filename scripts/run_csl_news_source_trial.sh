@@ -1,35 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-source_root="${MMPRISM_CSL_NEWS_ROOT:-/mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121}"
 artifact_root="${MMPRISM_CSL_NEWS_TRIAL_ROOT:-/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/source_trial_v1}"
-source_id="ZechengLi19/CSL-News@3a0601210333fe760efd09b5d9e2ae5f341ce339"
+integrity_config="${MMPRISM_CSL_NEWS_INTEGRITY_CONFIG:-configs/data/csl_news_source_integrity.yaml}"
 decode_samples="${MMPRISM_CSL_NEWS_DECODE_SAMPLES:-3}"
-archive_path="${MMPRISM_CSL_NEWS_TRIAL_ARCHIVE:-}"
+archive_id="${MMPRISM_CSL_NEWS_TRIAL_ARCHIVE_ID:-}"
+export MMPRISM_DATA_ROOT="${MMPRISM_DATA_ROOT:-/mnt/gfs/yanyifan/mmPRISM}"
 
-if [[ -z "$archive_path" ]]; then
-  archive_path=$(find "$source_root/rgb_archives" -maxdepth 1 -type f -name 'archive_*.zip' | sort | head -n 1)
+project_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+cd "$project_root"
+
+selection_file=$(mktemp)
+trap 'rm -f "$selection_file"' EXIT
+selection_args=(csl-news-integrity-select "$integrity_config")
+if [[ -n "$archive_id" ]]; then
+  selection_args+=(--archive-id "$archive_id")
 fi
+uv run --frozen mmprism "${selection_args[@]}" >"$selection_file"
 
-if [[ -z "$archive_path" || ! -f "$archive_path" ]]; then
-  echo "No complete CSL-News archive is available under $source_root/rgb_archives" >&2
-  exit 2
-fi
+read_json_field() {
+  uv run --frozen python -c \
+    'import json, sys; value=json.load(open(sys.argv[1], encoding="utf-8")); print(value[sys.argv[2]][sys.argv[3]])' \
+    "$selection_file" "$1" "$2"
+}
 
-labels_path="$source_root/metadata/CSL_News_Labels.json"
-if [[ ! -f "$labels_path" ]]; then
-  echo "Complete CSL-News labels are not available: $labels_path" >&2
-  exit 2
-fi
-
-archive_name=$(basename "$archive_path" .zip)
-run_dir="$artifact_root/20260812_${archive_name}"
+archive_path=$(read_json_field archive path)
+archive_name=$(read_json_field archive archive_name)
+labels_path=$(read_json_field source labels_path)
+source_id=$(read_json_field source source_ref)
+registry_sha256=$(read_json_field registry sha256)
+timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+run_dir="$artifact_root/${timestamp}_${archive_name%.zip}_${registry_sha256:0:12}"
 mkdir -p "$run_dir"
+mv "$selection_file" "$run_dir/source_selection.json"
+trap - EXIT
 
 printf '%s\n' \
   "archive=$archive_path" \
   "labels=$labels_path" \
   "source_id=$source_id" \
+  "integrity_config=$integrity_config" \
+  "integrity_registry_sha256=$registry_sha256" \
   "decode_samples=$decode_samples" \
   >"$run_dir/resolved_inputs.txt"
 

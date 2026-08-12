@@ -45,6 +45,7 @@ from mmprism.data import (
     load_data_split_config,
     run_csl_news_annotation,
     scan_csl_news_source_integrity,
+    select_csl_news_integrity_archive,
     write_csl_news_annotation_identity_audit,
     write_csl_news_annotation_qc,
     write_csl_news_annotation_status,
@@ -216,6 +217,18 @@ def _build_parser() -> argparse.ArgumentParser:
     integrity_parser.add_argument("--project-root", type=Path)
     integrity_parser.add_argument("--max-new-archives", type=int)
     integrity_parser.add_argument("--archive-id", type=int)
+
+    integrity_select_parser = subparsers.add_parser(
+        "csl-news-integrity-select",
+        help="Select and revalidate one registry-passed CSL-News archive",
+    )
+    integrity_select_parser.add_argument("config", type=Path)
+    integrity_select_parser.add_argument("--archive-id", type=int)
+    integrity_select_parser.add_argument(
+        "--skip-sha256",
+        action="store_true",
+        help="Validate path and stat only; intended for cheap status probes",
+    )
 
     release_parser = subparsers.add_parser(
         "release-audit",
@@ -570,6 +583,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 runtime_report=collect_runtime_report(project_root),
                 max_new_archives=arguments.max_new_archives,
                 archive_id=arguments.archive_id,
+            )
+            exit_code = 0
+        elif arguments.command == "csl-news-integrity-select":
+            integrity_config = load_csl_news_integrity_config(arguments.config)
+            payload = select_csl_news_integrity_archive(
+                integrity_config,
+                archive_id=arguments.archive_id,
+                verify_sha256=not arguments.skip_sha256,
             )
             exit_code = 0
         elif arguments.command == "release-audit":
