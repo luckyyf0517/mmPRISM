@@ -12,3 +12,5 @@ Last reviewed: 2026-08-12
 - Added a complete reviewer-comments digest with item-by-item analysis, evidence needs, and response direction.
 - Audited the active submission manuscript against its supplementary material, historical conference chapters,
   reviewer concerns, and current engineering contracts without treating historical text as current disclosure.
+- Updated the reviewer-comments analysis with active-manuscript findings and a revision-focused technical
+  checklist, excluding historical-version discrepancies from the discussion brief.
