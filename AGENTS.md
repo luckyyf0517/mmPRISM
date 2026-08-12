@@ -5,8 +5,9 @@
 - New implementation: `src/mmprism/`
 - Versioned configuration: `configs/`
 - Automated verification: `tests/`
-- Architecture documentation: `docs/architecture/`
-- Revision control plane: `paper/manager/`
+- Project authority: `docs/authority/00_INDEX.md`
+- Business workspaces: `workspaces/*/docs/authority/00_INDEX.md`
+- OpenSpec changes: `openspec/changes/`
 - Manuscript submodule: `paper/manuscript/`
 
 ## Legacy Boundary
@@ -48,14 +49,22 @@ uv run mypy
 uv run pytest
 ```
 
-## Agent Handoff
+## Workspace And Handoff
+
+Workspaces represent executable business workflows, not Python package boundaries. Shared code remains in
+`src/mmprism/`, shared configuration in `configs/`, and verification in `tests/`.
 
 Before changing architecture, data definitions, or paper-facing evidence, read:
 
-1. `paper/manager/dashboard.md`
-2. `paper/manager/current/core_rules.md`
-3. `paper/manager/current/issues.md`
-4. `paper/manager/tasks/todo.md`
-5. the relevant runbook and registry
+1. `docs/authority/00_INDEX.md`
+2. the owning workspace `docs/authority/00_INDEX.md`
+3. only the scoped contract, runbook, or dated evidence needed for the task
 
-Update the documents required by `paper/manager/sync_map.md` before ending the task.
+Routine handoff uses task, state, result, evidence, next action, and blocker; no standalone handoff document
+is required. Cross-workspace data or paper-evidence delivery additionally requires producer commit,
+immutable location, manifest/inventory hash, and validation status, preferably in an existing artifact.
+
+Use OpenSpec before changing code, interfaces, data contracts, or ownership. Routine progress updates only
+the owning workspace index when its actionable state changes.
+
+Run `uv run python scripts/audit_docs.py` before completing documentation or Authority changes.

@@ -201,11 +201,25 @@ distributed model/checkpoint execution, and production BLEU/ROUGE/semantic metri
 Historical alternative backend definitions are excluded from the release rather than exposed as
 unsupported claims.
 
+## Project Navigation
+
+- Current project truth: `docs/authority/00_INDEX.md`
+- Business workflow status and operations: `workspaces/*/docs/authority/00_INDEX.md`
+- Proposed code, interface, contract, or ownership changes: `openspec/changes/`
+- Dated project evidence: `docs/logs/`
+
+Workspaces describe executable business workflows. They reference shared code, configuration, scripts, and
+tests at the repository root rather than duplicating those assets. Historical links under
+`docs/architecture/` and `paper/manager/` remain as compatibility entrypoints.
+
 ## Canonical Layout
 
 ```text
 configs/                 validated experiment configuration
-docs/architecture/       package boundaries and rebuild design
+docs/authority/          current project-level boundaries and shared contracts
+docs/logs/               immutable project-level history and evidence
+workspaces/              business workflow Authority, operations, and Logs
+openspec/                proposed and archived implementation/contract changes
 src/mmprism/
   contracts/             data and artifact schemas
   assets/                pinned external model acquisition and verification

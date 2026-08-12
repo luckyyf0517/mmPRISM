@@ -1,0 +1,15 @@
+# Project Logs: 2026-08
+
+- [Business workspace migration](20260812_BUSINESS_WORKSPACE_MIGRATION.md)
+- [Revision manager index snapshot](20260812_REVISION_MANAGER_INDEX_SNAPSHOT.md)
+- [Revision dashboard snapshot](20260812_REVISION_DASHBOARD_SNAPSHOT.md)
+- [Architecture status snapshot](20260812_ARCHITECTURE_STATUS_SNAPSHOT.md)
+- [Active issues snapshot](20260812_ACTIVE_ISSUES_SNAPSHOT.md)
+- [Revision overview snapshot](20260812_REVISION_OVERVIEW_SNAPSHOT.md)
+- [Revision roadmap snapshot](20260812_REVISION_ROADMAP_SNAPSHOT.md)
+- [Architecture refactor runbook snapshot](20260812_ARCHITECTURE_REFACTOR_RUNBOOK_SNAPSHOT.md)
+- [Master task snapshot](20260812_MASTER_TASK_SNAPSHOT.md)
+- [Code task snapshot](20260812_CODE_TASK_SNAPSHOT.md)
+- [Formal-run preflight evidence](20260811_FORMAL_RUN_PREFLIGHT.md)
+- [Model asset validation](20260811_MODEL_ASSETS_VALIDATION.md)
+- [Release audit](20260811_RELEASE_AUDIT.md)

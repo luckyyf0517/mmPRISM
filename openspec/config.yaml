@@ -1,0 +1,33 @@
+schema: spec-driven
+
+context: |
+  mmPRISM is a research rebuild with canonical Python code in src/mmprism,
+  versioned configuration in configs, verification in tests, and a manuscript
+  submodule in paper/manuscript. Root run_*.py, config, and legacy src modules
+  are read-only forensic references. Workspaces represent executable business
+  workflows, not Python package boundaries. Shared code remains at repository
+  root. Documentation governance must minimize routine handoff overhead and
+  preserve immutable research evidence.
+
+rules:
+  proposal:
+    - State explicit non-goals and migration safety boundaries.
+    - Do not propose moving shared source code solely to mirror workspaces.
+  design:
+    - Prefer one current-status page per workspace over synchronized dashboards.
+    - Preserve stable IDs, immutable artifacts, and compatibility pointers.
+  tasks:
+    - Separate documentation migration from any future code or interface change.
+    - Include link, metadata, stale-authority, and whitespace validation.
+
+operations:
+  apply:
+    guidance:
+      - Do not modify runtime artifacts or legacy forensic code.
+      - Keep workspace structure minimal and create optional directories only when used.
+  archive:
+    guidance:
+      - Archive only after old authority paths are compatibility pointers and the new indexes validate.
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

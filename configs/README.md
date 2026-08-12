@@ -28,7 +28,7 @@ uv run mmprism run-init configs/examples/pose_smoke.yaml \
 split assignment input, and one explicit split binding for every manifest; its JSON report is written only
 to stdout. `run-init` is a lower-level artifact-writer smoke and does not enforce those data bindings.
 `run-init` creates only the atomic run provenance envelope. It does not execute training or evaluation.
-The full artifact contract is documented in `docs/architecture/run_artifacts.md`.
+The full artifact contract is documented in `docs/authority/20_CONTRACTS/RUN_ARTIFACTS.md`.
 
 Audit the allowlisted reviewer release with:
 

@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-08-12
+goal: Create one unambiguous, low-overhead authority path for each executable
+  business workflow without moving shared source code or rewriting runtime
+  evidence.

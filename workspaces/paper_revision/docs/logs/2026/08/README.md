@@ -1,0 +1,15 @@
+# Paper Revision Logs: 2026-08
+
+- [Decision letter](20260811_DECISION_LETTER.md)
+- [Redacted decision email](20260811_DECISION_EMAIL_REDACTED.md)
+- [English reviewer index](20260811_REVIEW_EN.md)
+- [Chinese reviewer working copy](20260811_REVIEW_CN.md)
+- [Review source index](20260811_REVIEW_SOURCE_INDEX.md)
+- [Confidential source index](20260811_CONFIDENTIAL_SOURCE_INDEX.md)
+- [Manuscript inventory](20260811_MANUSCRIPT_INVENTORY.md)
+- [Round plan snapshot](20260811_ROUND_PLAN_SNAPSHOT.md)
+- [Round 0 snapshot](20260811_ROUND0_SNAPSHOT.md)
+- [Compliance task snapshot](20260811_COMPLIANCE_TASK_SNAPSHOT.md)
+- [Experiment task snapshot](20260811_EXPERIMENT_TASK_SNAPSHOT.md)
+- [Evidence index snapshot](20260812_EVIDENCE_INDEX_SNAPSHOT.md)
+- [Experiment registry snapshot](20260812_EXPERIMENT_REGISTRY_SNAPSHOT.md)

@@ -1,0 +1,42 @@
+# Active Issues
+
+Status: historical
+Owner: mmPRISM coordinator
+Evidence scope: Immutable migration snapshot or dated evidence retained by this log.
+Recorded: 2026-08-12
+
+| ID | Severity | Issue | Impact | Status | Next Action |
+|---|---|---|---|---|---|
+| `BLOCK-DATA-ROOT` | P0 | 作者已确认全部项目数据在其 NAS，但当前机器尚无 NAS 路径、source-side inventory 或已验收批次；首个 CSL-News historical pose archive 已到达但 environment provenance 未到达 | 真实数据与原投稿结果仍无法验证 | active_mitigated | 已完成 archive_002 逐序列 forensic comparison；继续获取 historical MMPose/runtime evidence，并按 metadata/calibration/raw 顺序分批 transfer 和 intake |
+| `BLOCK-MANUSCRIPT` | P0 | 当前 19 个 display environment/20 个 display item 已登记，但原投稿定稿和 response 未导入，所有科学 provenance 未闭合；Supplementary Tables S2-S6 是未验证占位数据 | 无法完成新旧稿差异、全部 claim 和 paper-facing 数值审计 | in_progress | 导入原投稿；按 `display_item_registry.md` 补 dataset/split/run/checkpoint/metric/script/Source Data，重新生成 S2-S6 |
+| `BLOCK-PROVENANCE` | P0 | 论文数值与 checkpoint/split/metrics 未建立映射 | 结果不可审计 | not_started | 建立 data/experiment/paper evidence registry |
+| `BLOCK-RUNTIME` | P1 | canonical UV/Python/CUDA 环境缺失 | 曾阻断 wheel、ML 和 GPU smoke | done | UV research profile、lockfile、wheel 和 A100 smoke 已验证；后续只通过 pyproject/uv.lock 变更 |
+| `OPS-STORAGE-001` | P1 | `/mnt/gfs` 可用空间从约 141 GB 动态变化到约 3.6 TB | 共享容量可能在 935 GB 下载或解压期间再次变化 | in_progress | 下载保留 1 TiB floor；不并行解压，完成后重新预算 |
+| `BLOCK-SIM-PROVENANCE` | P0 | 稿件声称 MANO mesh/ray tracing，当前可见 legacy 仿真主要使用 skeleton 插值 | 无法确认原投稿 synthetic data 方法或直接复现其结果 | blocked | 上传/定位原始 MANO/mesh/simulator 输入、配置、代码和运行证据 |
+| `BLOCK-RADAR-PROVENANCE` | P0 | 稿件与 legacy 的 chirp 数、带宽/分辨率、clutter 顺序、阵列规模和 steering 共轭约定冲突 | 无法复现论文 4D cube 或校准物理坐标，错误假设会污染所有重训结果 | active_mitigated | range-Doppler 已按独立契约实现；上传逐序列 acquisition config、channel map、阵列/校准和历史 fixture 后再实现 beamforming |
+| `ARCH-STALE-001` | P1 | legacy 配置引用已删除的 `cubenet_rtm.py` 等模块 | 旧发布包不可运行，但不再阻断 canonical 新实现 | superseded | 仅纳入 forensic/release exclusion audit，不恢复到新包 |
+| `ARCH-CONFIG-001` | P1 | legacy 配置、入口和代码中存在大量硬编码路径/GPU/dtype | 旧代码不可迁移；canonical release 必须彻底隔离 | in_progress | strict path/runtime/run-plan 已落地，继续完成所有新入口 |
+| `DATA-PATH-001` | P1 | legacy dataset 通过路径字符串替换关联多模态文件 | 易错且不可验证 | mitigated | canonical pose-reconstruction 与 sign-language-translation adapter 均只读 manifest 显式关系；其他数据族继续按同一契约接入 |
+| `DATA-CSLNEWS-META-001` | P1 | 官方 CSL-News CSV 比唯一 JSON 多 4 条冲突重复行 | CSV last-write-wins 会为 4 个视频静默选择错误译文 | mitigated | 固定 JSON 为 canonical source，CSV 只作审计；保留 profile 和四个 key，必要时反馈上游 |
+| `DATA-CSLNEWS-INTEGRITY-001` | P0 | primary `005/008` member 解压损坏；primary `001` 因 aria2 403 后被旧脚本误晋升为 incomplete final | 旧 source identity 和旧 partial artifact 不得作为当前训练输入；当前 v2 source 已恢复 | active_mitigated | versioned replacement `001/005/008` 已通过 SHA-256/CRC/label/decode gate；clean-worktree timer 保持严格 Git gate；继续保留 primary 原件并完成所有剩余 archives |
+| `DATA-CSLNEWS-ARTIFACT-001` | P1 | GalaxyFS 可见性窗口曾使 `archive_006/3af7...` sidecar 写入空文件 SHA/size，而已晋升 NPZ 实际为 813,674 B | 静默接受会破坏 pose manifest identity；覆盖会销毁 incident evidence | active_mitigated | `6e9cc5e` 已将该 sample 恢复到 immutable source variant；原 pair 字节不变、failure 未新增，12,057-record snapshot 同时保留 checksum-bound exclusion 并选择恢复 record；最终全量 build 前仍需重复 identity audit |
+| `DATA-DELIVERY-001` | P1 | 过早把视觉 sidecar 或不完整模态写成通用 Parquet，会掩盖 radar/metric-coordinate/provenance 缺口并制造大规模重复存储 | 无效产品可能被误用于正式训练或论文证据 | mitigated_by_design | `DEC-038` 固定 task-specific delivery、frozen manifest/split、capacity/reader parity 和 no-promotion gate；实现 materializer 前不写 processed Parquet |
+| `EXP-TEST-001` | P1 | legacy 无自动化测试；canonical 已覆盖 foundation、radar、OmniHand/WaveLLM 工程切片、两条 clean-commit GPU formal 闭环、distributed-safe prediction 与 single-process epoch resume | 真实数据、mid-epoch 恢复、DDP model execution 和 checkpoint aggregation 仍缺保护 | in_progress | 扩展真实 manifest 和 DDP/checkpoint integration tests；仅在确有需求时设计 mid-epoch resume |
+| `DOC-DRIFT-001` | P2 | legacy CLAUDE 描述多个不存在模块；旧公开 README 曾与代码漂移 | 直接复制开发仓库会误导执行 | mitigated | canonical README 已重写，release audit 确认 CLAUDE/internal/legacy 未被选择；最终 archive 继续执行同一 gate |
+| `ARCH-LLM-001` | P2 | legacy Phi-3 路径与 base API 不一致且无 runnable evidence | 若公开会造成伪支持 | mitigated | `DEC-027` 固定 mT5-only；legacy Phi-3 排除，canonical mT5 formal train/evaluate 已通过；后续只扩展 mT5 real-data path |
+| `REV-ARCH-001` | P0 | 两阶段架构缺少 matched direct end-to-end baseline | 核心增益归因不充分 | blocked | `EXP-REV-001` |
+| `REV-DA-001` | P0 | shallow adaptation 缺少 full/adversarial/MMD 横向比较 | “最优/高效”主张不充分 | blocked | `EXP-REV-002` |
+| `REV-REAL-001` | P0 | 方向、遮挡、新用户和真实多样性证据不足 | 编辑明确要求 real-world generalization | blocked | `DATA-REV-002`, `EXP-REV-003` |
+| `REV-SYNREAL-001` | P0 | 合成数据与真实数据 closeness 未直接衡量 | synthetic-trained 真实性依据不足 | blocked | `DATA-REV-003`, `EXP-REV-004` |
+| `REV-ATTN-001` | P0 | spatial/channel/SE 缺少 leave-one-out | 模块堆叠可能被认为任意 | blocked | `EXP-REV-005` |
+| `REV-XMODAL-001` | P1 | WiFi/声学 baseline 请求存在协议不可比风险 | 错误比较会产生新公平性问题 | not_started | 先做 `EXP-REV-007` feasibility audit |
+| `REV-CODE-001` | P0 | Reviewer 已明确列出硬编码、SBERT、文档、LICENSE、Phi-3 问题 | code availability 可能直接阻断返修 | in_progress | evaluator、mT5 formal path 和支持边界 evidence ready；继续 `ARCH-REV-001/003`, `OPS-REV-002` 和 final archive smoke |
+| `BLOCK-REAL-COLLECTION` | P0 | 新增参与者、方向/遮挡采集与伦理条件未知 | P0 real-world evidence 无法排期 | blocked | 作者确认资源、伦理和可采集范围 |
+
+## 风险关闭规则
+
+风险只有在以下条件满足后才能标记 `done`：
+
+1. 有可验证 artifact 或命令输出。
+2. 对应 task 已完成并有验收记录。
+3. 若影响论文，`paper_evidence_map.md` 和 reviewer tracker 已同步。

@@ -1,14 +1,7 @@
-# Original Submission Archive
+# Original submission intake compatibility entrypoint
 
-Status: `awaiting_import`
-Last Updated: `2026-08-11`
+The canonical original submission intake moved to:
+[Original submission intake](../../../workspaces/paper_revision/docs/authority/40_OPERATIONS/ORIGINAL_SUBMISSION.md)
 
-本目录用于保存原投稿版本的索引和可审计快照，建议包含：
-
-- 原投稿 PDF 或 TeX commit/link
-- submission date/version
-- supplementary materials
-- source path/hash
-- 原投稿表格和图片索引
-
-大 PDF 或外部 manuscript 仓库可以只记录路径和 hash，不必重复提交到主代码仓库。
+This file is retained only for links written before the migration.
+It contains no independent authority claims.
