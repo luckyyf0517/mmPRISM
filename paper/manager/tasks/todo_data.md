@@ -1,7 +1,7 @@
 # Data Rebuild Todo
 
 Status: `upload_preflight_in_progress`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 Role: `data_execution_tracker`
 
 | ID | Priority | Task | Status | Acceptance |
@@ -16,7 +16,7 @@ Role: `data_execution_tracker`
 | `DATA-001-H` | P0 | 分批上传私人真实采集 raw package | blocked | incoming batch checksum 完整且原始包只读 |
 | `DATA-001-I` | P0 | 固定 CSL-Daily/CSL-News 重新下载或上传路径 | in_progress | CSL-News 已确认可重下；待补齐各数据集 version/URL/license/checksum 或 incoming batch |
 | `DATA-001-J` | P0 | 恢复原投稿 MANO/mesh/skeleton simulation provenance | blocked | 实际 simulator、输入、配置和历史证据一致 |
-| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | versioned replacement `001/005/008` 已通过完整 gate；v2 registry 当前 71 archives/118,075 videos passed，待其余 365 archives + labels 全量验证 |
+| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | versioned replacement `001/005/008` 已通过完整 gate；v2 registry 当前 73 archives/121,465 videos passed，待其余 363 archives + labels 全量验证 |
 | `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | in_progress | schema v1 reviewed against real source |
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | in_progress | metric `[left/right,24,x/y/z]` contract 已冻结；待各数据族单位/坐标 mapping，RTMW3D 当前仅 shape/order 已证 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | in_progress | complex `[chirp,antenna,sample]` contract 与 range-Doppler v1 已通过；待真实 reader/config fixture |
@@ -88,6 +88,12 @@ cross-group leakage audit 通过。缺少 signer/subject 且 source 未完成，
 `cdd450e4d7e17d4f34266f199ed4ff61f1ead9584715f1d4b9d3286a97d086e5`；五项 checksum、contract、
 portable path 和四个 checksum-validating adapter 读取通过。`23:30Z` live registry 为 71 archives/
 118,075 videos，下载与四个 worker 继续运行。
+
+`2026-08-12T00:11Z`，clean commit `f0c6205` 后 integrity oneshot 从开发期间的 dirty-Git gate
+恢复并以 `0/SUCCESS` 完成；`archive_120` 的 1,636 个视频通过完整 CRC、label coverage 和 decode
+probe，live registry 更新为 73/73 archives、121,465 videos、failed 0。`00:12Z` 状态为 `healthy`：
+13,580 个 current-source pair、missing pair 0、latest-run failure 0、抽检 3/3，近期约 1,799
+samples/hour；下载和四个 GPU 7 worker 均 `active/running`、`NRestarts=0`。
 
 ## 禁止事项
 

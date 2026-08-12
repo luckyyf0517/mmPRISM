@@ -1,7 +1,7 @@
 # Formal Run Artifact Contract
 
 Status: `formal_preflight_prediction_and_epoch_resume_implemented`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 Schema: `mmprism.run.v1`
 
 ## Purpose

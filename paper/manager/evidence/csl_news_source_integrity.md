@@ -1,7 +1,7 @@
 # CSL-News Source Integrity Evidence
 
 Status: `v2_replacement_overlay_verified_download_partial`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 Role: `DATA-001-K_source_integrity_evidence`
 
 ## 1. Audit Identity
@@ -34,6 +34,22 @@ selected replacements: 001,005,008
 ```
 
 该 live 更新不改变已发布 snapshot 内复制的 registry bytes/hash；后续 archive 只进入新的 snapshot。
+
+The clean post-commit scan at `2026-08-12T00:11Z` advanced the live registry again:
+
+```text
+registry writer commit: f0c6205845f6111087fab0071d102779a76271d2
+registry SHA-256: 1f49b3e621c60b8bf9fd5ac96d49f0afdf9ba4abbae3d0773f26fa1ed989bcbf
+present/passed: 73/73 archives
+videos: 121,465
+failed: 0
+new archive: 120 / 1,636 videos
+archive SHA-256: 5a0c7b151714469067d008b84463a9fbb4de28bdc7b808b189eabb12f6705e10
+audit SHA-256: 2ee2bb7b9fc8095eafbd15c29cf96562c7e7ac2d8ec2b38c050df972242e526f
+```
+
+该值是持续变化的 live gate，不追写任何已冻结 source/pose manifest；最终证据仍需 436 archives
+全部完成后重新冻结。
 
 Historical v1 cumulative snapshot retained for incident provenance:
 

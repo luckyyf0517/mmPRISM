@@ -1,7 +1,7 @@
 # Revision Dashboard
 
 Status: `round0_greenfield_foundation_active`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 Role: `control_panel`
 
 本页只保留当前阶段、最高优先级、blocker 和下一步动作。
@@ -30,8 +30,9 @@ Role: `control_panel`
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；source-integrity v2 registry
-  在 `23:30Z` 覆盖 71 个 archive/118,075 videos，全部通过完整 CRC、label coverage 和 decode probe。
-  `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；4 个 source-aware registry
+  在 `00:11Z` 覆盖 73 个 archive/121,465 videos，全部通过完整 CRC、label coverage 和 decode probe。
+  `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；`00:12Z` status 为
+  `healthy`，13,580 个 current-source pair、missing pair 0、抽检 3/3，4 个 source-aware registry
   worker 在 GPU 7 持续运行。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
   5 个 represented archive、15 个 failed-archive 历史 pair 明确排除；checksum/contract/adapter 验收通过。

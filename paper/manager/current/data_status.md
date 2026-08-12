@@ -1,7 +1,7 @@
 # Data Status and Rebuild Plan
 
 Status: `csl_news_download_active_other_asset_intake_blocked`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 Role: `data_source_of_truth`
 
 ## 1. 当前盘点结果
@@ -471,3 +471,18 @@ record 入选。五项 `SHA256SUMS`、通用 contract、portable path 和首/中
 sample、recovered/shadowed-invalid 为 1/1、duplicate/missing pair 为 0、latest-run failure 为 0、抽检
 3/3 通过。随后 integrity scan 于 `23:30:58Z` 将 live registry 推进到 71/71 passed、118,075 videos、
 failed 0；该 live 更新不追写已冻结 snapshot。下载、四个 worker 和两个 timer 继续 active。
+
+`2026-08-12T00:11 UTC`，epoch-resume 代码提交 `f0c6205` 使 worktree 恢复 clean 后，手工触发
+integrity oneshot 并以 `0/SUCCESS` 完成。新 `archive_120` 含 1,636 个视频，完整 CRC、路径安全、
+label coverage 和 decode probe 均通过；archive/audit SHA-256 分别为
+`5a0c7b151714469067d008b84463a9fbb4de28bdc7b808b189eabb12f6705e10` 和
+`2ee2bb7b9fc8095eafbd15c29cf96562c7e7ac2d8ec2b38c050df972242e526f`。live v2 registry 更新为
+73/73 passed、121,465 videos、failed 0，SHA-256 为
+`1f49b3e621c60b8bf9fd5ac96d49f0afdf9ba4abbae3d0773f26fa1ed989bcbf`。
+
+`00:12 UTC` 手工 status `status_20260812T001155Z.json` 为 `healthy`：13,580 个 completed
+current-source pair、remaining available 107,885、duplicate/missing pair 0、latest-run failure 0、
+抽检 3/3 通过，近期约 1,799 samples/hour、32.07 frames/s；报告 SHA-256 为
+`18ed292719a7a44fdecd26e52dd59cd4685a581e5f4035b18b7dba0a175294e0`。下载服务和四个 GPU 7
+registry worker 均 `active/running`、`NRestarts=0`。当前 source intake 约 249 GB、pose output 7.9 GB、
+annotation scratch 20 GB；原始 ZIP、partial、scratch、失败和 pose artifact 均未清理。

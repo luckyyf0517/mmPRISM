@@ -1,7 +1,7 @@
 # Canonical WaveLLM Translation
 
 Status: `single_device_formal_run_and_epoch_resume_implemented_real_data_blocked`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 
 ## Boundary
 

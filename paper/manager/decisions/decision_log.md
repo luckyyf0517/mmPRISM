@@ -1,7 +1,7 @@
 # Revision Decision Log
 
 Status: `active`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 Role: `cross_workstream_decisions`
 
 | ID | Date | Decision | Rationale | Status | Consequence |

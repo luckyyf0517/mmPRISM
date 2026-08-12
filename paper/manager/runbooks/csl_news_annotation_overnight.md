@@ -1,7 +1,7 @@
 # CSL-News 夜间 RTMW3D 标注 Runbook
 
 Status: `approved_for_execution`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 Role: `unattended_pose_annotation_operations`
 
 ## 1. 今晚目标与授权
@@ -325,3 +325,8 @@ scripts/run_csl_news_annotation_audit.sh
   checksum 读取全部通过。扫描边界出现 1 个 NPZ-only 文件；其 sidecar 在 NPZ 后约 20 ms 原子发布，
   未进入本 snapshot，后续 snapshot 会重新纳入。两条误发起的重复只读构建已终止，未发布正式目录；
   相应临时目录按本 runbook 的 no-cleanup 规则保留。
+- `2026-08-12T00:11Z`，clean commit `f0c6205` 后手工触发 integrity oneshot，以 `0/SUCCESS`
+  审计通过 `archive_120` 的 1,636 个视频；live v2 registry 为 73/73 passed、121,465 videos、
+  failed 0。`00:12Z` status 为 `healthy`：13,580 completed current-source pair、missing pair 0、
+  latest-run failure 0、抽检 3/3，近期约 1,799 samples/hour。下载和四个 GPU 7 v3 worker 均
+  `active/running`、`NRestarts=0`；未清理 source、partial、scratch、failure 或 pose artifact。

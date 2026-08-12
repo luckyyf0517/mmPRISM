@@ -1,7 +1,7 @@
 # Language Model Support Boundary
 
 Status: `mt5_formal_single_device_resume_ready_phi3_excluded`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 
 ## Decision
 
