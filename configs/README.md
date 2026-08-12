@@ -1,6 +1,6 @@
 # Canonical Configuration
 
-`configs/` contains validated configuration for the rebuilt `mmprism` package. The legacy `config/` directory is retained only for historical investigation.
+`configs/` contains validated configuration for the rebuilt `mmprism` package. The legacy configuration is retained under `legacy/config/` only for historical investigation.
 
 Rules:
 

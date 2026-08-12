@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Historical note (2026-08-12):** This document describes the original-submission codebase.
+> That codebase has been relocated read-only under `legacy/` (see `legacy/README.md`); every
+> relative path and command below is historical and resolves under `legacy/`. The canonical
+> rebuild lives in `src/mmprism/` and follows `AGENTS.md`, which takes precedence over this file.
+
 ## Project Overview
 
 This repository contains two main systems:

@@ -56,19 +56,11 @@ forbidden_paths:
   - .gitmodules
   - AGENTS.md
   - CLAUDE.md
-  - config/**
+  - legacy/**
   - paper/**
   - requirements.txt
   - run_*.py
-  - scripts/omnihand/**
   - scripts/overleaf_git.sh
-  - scripts/wavellm/**
-  - src/data/**
-  - src/eval/**
-  - src/fmcw/**
-  - src/model/**
-  - src/scripts/**
-  - src/utils/**
 
 forbidden_content_patterns:
   local_absolute_path: '/(?:home|mnt|root)/[^\s`"'']+'
@@ -80,6 +72,7 @@ python_roots:
 
 forbidden_import_prefixes:
   - config
+  - legacy
   - src.data
   - src.eval
   - src.fmcw

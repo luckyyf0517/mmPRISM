@@ -12,7 +12,9 @@
 
 ## Legacy Boundary
 
-The root `run_*.py` files, `config/`, and the pre-existing modules under `src/data`, `src/fmcw`, `src/model`, `src/eval`, `src/scripts`, and `src/utils` are read-only historical references during the rebuild.
+The original-submission codebase is preserved read-only under `legacy/` (entry points, `legacy/config/`,
+`legacy/src/{data,fmcw,model,eval,scripts,utils}`, `legacy/scripts/{omnihand,wavellm}`). It was relocated from
+the repository root, `config/`, `src/`, and `scripts/` on 2026-08-12; see `legacy/README.md`.
 
 - Do not add new features to legacy modules.
 - Do not import legacy modules from `src/mmprism/`.

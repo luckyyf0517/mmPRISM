@@ -138,7 +138,7 @@ must use a dataset-qualified stable sequence ID and validate one-to-one label co
 
 ### 5. Split and model inputs
 
-`src/scripts/split.py` scans pose paths, hashes the basename with MD5 and writes train/validation JSON files.
+`legacy/src/scripts/split.py` scans pose paths, hashes the basename with MD5 and writes train/validation JSON files.
 The JSON values are machine-specific absolute paths and the split is not signer-, source-video- or
 near-duplicate-aware.
 
@@ -152,7 +152,7 @@ The checked-in scripts do not form a valid end-to-end pipeline:
 
 1. `run_csl_news_annotation.py` currently writes `[T, 2, 24, 3]`.
 2. `run_simulation.py` indexes its input as `[T, N, 3]` and slices body/hands from a flat joint axis.
-3. `src/scripts/check.py` documents `[N, 57, 3]` but actually checks for `[N, 59, 3]`; its deletion calls
+3. `legacy/src/scripts/check.py` documents `[N, 57, 3]` but actually checks for `[N, 59, 3]`; its deletion calls
    are currently commented out even though the summary labels rejected paths as "removed".
 4. `run_extract_feature.py` still contains comments and indexing for `[T, 59, 3]` in parts of its path.
 5. The RTMPose dependency, config and weight files are absent from the locked environment.

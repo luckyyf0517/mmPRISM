@@ -39,7 +39,8 @@ reviewer selection:
 
 - `CLAUDE.md`, `AGENTS.md`, `.env`, and `.gitmodules`;
 - `paper/manager/` and the private `paper/manuscript` submodule;
-- root `run_*.py`, legacy `config/`, `requirements.txt`, and legacy `src/*` namespaces;
+- the read-only forensic codebase under `legacy/` (historical entry points, `legacy/config/`, and legacy
+  `legacy/src/*` namespaces) and `requirements.txt`;
 - historical model shell scripts that still invoke unsupported legacy entrypoints;
 - the private Overleaf helper and operational host configs.
 

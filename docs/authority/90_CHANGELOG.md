@@ -25,3 +25,6 @@ Last reviewed: 2026-08-12
   establish the incoming checkpoint identity and admissible role.
 - Added a lightweight, non-authoritative literature-note area and recorded Uni-Sign's pre-training-scale evidence
   without promoting its full-data result into a revision requirement.
+- Relocated the original-submission forensic codebase (root `run_*.py`, `config/`, legacy `src/` modules, and
+  legacy shell wrappers) into an explicit read-only `legacy/` directory without content changes (`DEC-047`);
+  `src/` now contains only the canonical `mmprism` package.
