@@ -86,6 +86,21 @@ build and validation reports
 provenance/runtime metadata
 ```
 
+For a task-specific final delivery, use the strict delivery config rather than a sidecar directory:
+
+```bash
+MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM \
+  uv run --extra data-parquet mmprism parquet-delivery-plan CONFIG
+MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM \
+  uv run --extra data-parquet mmprism parquet-delivery-build CONFIG
+uv run --extra data-parquet mmprism parquet-delivery-validate DELIVERY_ROOT
+```
+
+The plan is read-only. Build accepts only one frozen model-ready JSONL manifest and exact split assignment,
+requires a clean Git worktree, estimates staging capacity, then atomically publishes immutable Parquet. Never
+point this command at live CSL-News annotation sidecars; the current visual pose/caption output is interim evidence
+and fails both final task contracts.
+
 ## 6. Acceptance
 
 - 小样本可端到端读取。

@@ -14,14 +14,15 @@ radar processing recovery until calibrated cube production has an independent st
 
 - Private project data is confirmed on NAS but source inventory and accepted transfer batches are incomplete.
 - Raw/range-Doppler contracts and analytic tests exist; beamforming and physical axes await calibration.
-- Task-specific Parquet delivery is accepted; readers/materializer and real products remain pending.
+- Task-specific Parquet delivery v1 reader, planner, materializer, and validator are implemented and fixture-verified;
+  real products remain blocked by source, calibration, and final-split evidence.
 - Partial CSL-News visual pose data is upstream evidence, not final radar/model-ready delivery.
 
 Active blockers: NAS intake, acquisition/channel/calibration evidence, simulation provenance, and final
 subject-aware splits.
 
-Next actions: accept metadata/calibration first, bind a real radar fixture, validate delivery capacity and
-reader parity, then build immutable task products.
+Next actions: accept metadata/calibration first, bind a real radar fixture, freeze a final subject-aware split,
+run a capacity plan, then build and smoke-test immutable task products.
 
 ## Accepted Upstream Delivery
 

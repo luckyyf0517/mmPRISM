@@ -30,6 +30,7 @@ from mmprism.data import (
     CslNewsPoseManifestError,
     CslNewsSourceManifestError,
     DataSplitError,
+    ParquetDeliveryError,
     audit_csl_news_archive,
     build_csl_news_annotation_identity_audit,
     build_csl_news_annotation_qc,
@@ -43,9 +44,13 @@ from mmprism.data import (
     load_csl_news_pose_manifest_config,
     load_csl_news_source_manifest_config,
     load_data_split_config,
+    load_parquet_delivery_config,
+    materialize_parquet_delivery,
+    plan_parquet_delivery,
     run_csl_news_annotation,
     scan_csl_news_source_integrity,
     select_csl_news_integrity_archive,
+    validate_parquet_delivery,
     write_csl_news_annotation_identity_audit,
     write_csl_news_annotation_qc,
     write_csl_news_annotation_status,
@@ -129,6 +134,27 @@ def _build_parser() -> argparse.ArgumentParser:
     split_parser.add_argument("config", type=Path)
     split_parser.add_argument("--project-root", type=Path)
     split_parser.add_argument("--snapshot-id")
+
+    parquet_plan_parser = subparsers.add_parser(
+        "parquet-delivery-plan",
+        help="Validate frozen data inputs and plan Parquet delivery without writes",
+    )
+    parquet_plan_parser.add_argument("config", type=Path)
+    parquet_plan_parser.add_argument("--project-root", type=Path)
+
+    parquet_build_parser = subparsers.add_parser(
+        "parquet-delivery-build",
+        help="Materialize an immutable Parquet delivery from frozen data inputs",
+    )
+    parquet_build_parser.add_argument("config", type=Path)
+    parquet_build_parser.add_argument("--project-root", type=Path)
+
+    parquet_validate_parser = subparsers.add_parser(
+        "parquet-delivery-validate",
+        help="Validate a completed immutable Parquet delivery",
+    )
+    parquet_validate_parser.add_argument("root", type=Path)
+    parquet_validate_parser.add_argument("--skip-checksums", action="store_true")
 
     csl_news_parser = subparsers.add_parser(
         "csl-news-audit", help="Audit one complete CSL-News archive against official labels"
@@ -462,6 +488,42 @@ def main(argv: Sequence[str] | None = None) -> int:
                 runtime_report=collect_runtime_report(project_root),
                 snapshot_id=arguments.snapshot_id,
             )
+        elif arguments.command in {"parquet-delivery-plan", "parquet-delivery-build"}:
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            delivery_config = load_parquet_delivery_config(arguments.config)
+            runtime_report = collect_runtime_report(project_root)
+            if arguments.command == "parquet-delivery-plan":
+                delivery_plan = plan_parquet_delivery(
+                    delivery_config, runtime_report=runtime_report
+                )
+                payload = {
+                    "schema_version": "mmprism.parquet_delivery_plan.v1",
+                    "product": delivery_plan.config.product,
+                    "build_id": delivery_plan.build_id,
+                    "delivery_root": str(delivery_plan.delivery_root),
+                    "sample_count": delivery_plan.sample_count,
+                    "part_count": len(delivery_plan.parts),
+                    "splits": list(delivery_plan.splits),
+                    "source_manifest_sha256": delivery_plan.source_manifest_sha256,
+                    "split_assignment_sha256": delivery_plan.split_assignment_sha256,
+                    "estimated_payload_bytes": delivery_plan.estimated_payload_bytes,
+                    "estimated_staging_bytes": delivery_plan.estimated_staging_bytes,
+                    "required_free_bytes": delivery_plan.required_free_bytes,
+                }
+            else:
+                payload = materialize_parquet_delivery(
+                    delivery_config,
+                    runtime_report=runtime_report,
+                ).to_dict()
+        elif arguments.command == "parquet-delivery-validate":
+            payload = validate_parquet_delivery(
+                arguments.root,
+                verify_checksums=not arguments.skip_checksums,
+            ).to_dict()
         elif arguments.command == "csl-news-audit":
             payload = audit_csl_news_archive(
                 arguments.archive,
@@ -801,6 +863,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         CslNewsPoseManifestError,
         CslNewsSourceManifestError,
         DataSplitError,
+        ParquetDeliveryError,
         FileNotFoundError,
         SplitContractError,
     ) as error:

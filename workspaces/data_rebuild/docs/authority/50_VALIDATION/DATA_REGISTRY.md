@@ -20,8 +20,8 @@ Last reviewed: 2026-08-12
 
 | ID | Product | Frozen Inputs Required | Payload Boundary | Status |
 |---|---|---|---|---|
-| `DELIVERY-POSE-RECON-V1` | `mmprism.pose_reconstruction.sample_v1` | eligible manifest, split, radar/calibration evidence | radar cube `[T,D,R,A,E]`, frame mask, metric `[2,24,3]` pose and validity | schema accepted; blocked on real calibrated source |
-| `DELIVERY-SLU-V1` | `mmprism.sign_language_translation.sample_v1` | eligible manifest, split, metric pose and aligned radar feature | pose/confidence `[T,2,J,*]`, radar feature `[T,F]`, mask and caption | schema accepted; blocked on real aligned source |
+| `DELIVERY-POSE-RECON-V1` | `mmprism.pose_reconstruction.sample_v1` | eligible manifest, split, radar/calibration evidence | radar cube `[T,D,R,A,E]`, frame mask, metric `[2,24,3]` pose and validity | reader/materializer/validator fixture-verified; blocked on real calibrated source |
+| `DELIVERY-SLU-V1` | `mmprism.sign_language_translation.sample_v1` | eligible manifest, split, metric pose and aligned radar feature | pose/confidence `[T,2,J,*]`, radar feature `[T,F]`, mask and caption | reader/materializer/validator fixture-verified; blocked on real aligned source |
 | `INTERIM-CSLNEWS-VISPOSE-V1` | `intermediate_visual_pose_caption` | source-bound CSL-News pose manifest | native/2D/canonical visual pose arrays and caption remain sidecar/NPZ | in_progress; explicitly not final training delivery |
 
 All final delivery profiles use immutable, task-specific Parquet rather than a mixed universal table. The row/part/

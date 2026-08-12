@@ -688,6 +688,9 @@ annotation = [
     { name = "torch", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "torchvision", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
+data-parquet = [
+    { name = "pyarrow", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+]
 distributed = [
     { name = "deepspeed", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
@@ -753,6 +756,7 @@ requires-dist = [
     { name = "opencv-python", marker = "extra == 'visualization'", specifier = ">=4.10,<5" },
     { name = "peft", marker = "extra == 'train'", specifier = ">=0.15,<1" },
     { name = "pillow", marker = "extra == 'visualization'", specifier = ">=11,<13" },
+    { name = "pyarrow", marker = "extra == 'data-parquet'", specifier = ">=18,<24" },
     { name = "pyyaml", specifier = ">=6.0.2,<7" },
     { name = "rouge-score", marker = "extra == 'evaluation'", specifier = ">=0.1.2,<1" },
     { name = "sacrebleu", marker = "extra == 'evaluation'", specifier = ">=2.5,<3" },
@@ -771,7 +775,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'train'", specifier = ">=4.50,<5" },
     { name = "wandb", marker = "extra == 'tracking'", specifier = ">=0.19,<1" },
 ]
-provides-extras = ["radar", "train", "evaluation", "tracking", "visualization", "annotation", "distributed"]
+provides-extras = ["data-parquet", "radar", "train", "evaluation", "tracking", "visualization", "annotation", "distributed"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1178,6 +1182,16 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/37/a8/d832f7293ebb21690860d2e01d8115e5ff6f2ae8bbdc953f0eb0fa4bd2c7/py-cpuinfo-9.0.0.tar.gz", hash = "sha256:3cdbbf3fac90dc6f118bfd64384f309edeadd902d7c8fb17f02ffa1fc3f49690", size = 104716, upload-time = "2022-10-25T20:38:06.303Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/a9/023730ba63db1e494a271cb018dcd361bd2c917ba7004c3e49d5daf795a2/py_cpuinfo-9.0.0-py3-none-any.whl", hash = "sha256:859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5", size = 22335, upload-time = "2022-10-25T20:38:27.636Z" },
+]
+
+[[package]]
+name = "pyarrow"
+version = "23.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/22/134986a4cc224d593c1afde5494d18ff629393d74cc2eddb176669f234a4/pyarrow-23.0.1.tar.gz", hash = "sha256:b8c5873e33440b2bc2f4a79d2b47017a89c5a24116c055625e6f2ee50523f019", size = 1167336, upload-time = "2026-02-16T10:14:12.39Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/a5/da83046273d990f256cb79796a190bbf7ec999269705ddc609403f8c6b06/pyarrow-23.0.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:813d99f31275919c383aab17f0f455a04f5a429c261cc411b1e9a8f5e4aaaa05", size = 47586063, upload-time = "2026-02-16T10:10:17.95Z" },
+    { url = "https://files.pythonhosted.org/packages/43/b2/b40961262213beaba6acfc88698eb773dfce32ecdf34d19291db94c2bd73/pyarrow-23.0.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:564baf97c858ecc03ec01a41062e8f4698abc3e6e2acd79c01c2e97880a19730", size = 50621741, upload-time = "2026-02-16T10:10:33.477Z" },
 ]
 
 [[package]]

@@ -116,3 +116,20 @@ MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM \
 The v2 source-manifest config never scans primary archive names as authority. It resolves only registry-passed
 paths, including versioned replacements, and writes the copied registry, manifest, summary, and `SHA256SUMS`
 to a new atomic snapshot directory.
+
+Plan or build a final model-ready Parquet delivery with a frozen source manifest and split assignment:
+
+```bash
+MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM \
+  uv run --extra data-parquet mmprism parquet-delivery-plan \
+  configs/data/parquet_delivery_example.yaml
+MMPRISM_DATA_ROOT=/mnt/gfs/yanyifan/mmPRISM \
+  uv run --extra data-parquet mmprism parquet-delivery-build \
+  configs/data/parquet_delivery_example.yaml
+```
+
+Replace the example's zero hashes with the exact frozen source-manifest and split-assignment SHA-256 values.
+The plan command does not write. Build requires clean Git, performs a capacity and source-adapter gate, creates a
+new no-clobber delivery directory, copies its two frozen inputs, writes split-isolated Parquet parts, and validates
+inventory/index/checksums before atomic publication. The current CSL-News RTMW3D pose/caption snapshot is not a
+valid input to either model-ready product; it lacks the required metric radar modalities.

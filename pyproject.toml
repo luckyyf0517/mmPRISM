@@ -14,6 +14,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+data-parquet = [
+  "pyarrow>=18,<24",
+]
 radar = [
   "h5py>=3.12,<4",
   "scipy>=1.14,<2",

@@ -9,3 +9,7 @@ Last reviewed: 2026-08-12
 
 - Consolidated data intake, radar provenance, split, and delivery under one business workspace.
 - Deferred a radar/delivery workspace split until independent ownership and frozen handoffs exist.
+- Implemented Parquet delivery v1: task-specific typed readers, deterministic split-isolated part/chunk planning,
+  atomic materialization, copied frozen inputs, inventory/index/checksum validation, and portable build provenance.
+- Kept the live CSL-News visual-pose lane outside final delivery: it remains intermediate evidence until metric
+  radar/calibration and aligned feature contracts are available.

@@ -144,14 +144,16 @@ new concrete and validated consumer requires them.
 
 ## Serialization And Build Gates
 
-The canonical writer/reader will use PyArrow, a pinned compatible version, Zstandard compression and
-`row_group_size=1024`. It is added as a lazy explicit `data-parquet` extra so basic contract tests do not import
-PyArrow or training dependencies. `schema.json` records Arrow types, static dimensions, protocol versions and a
-schema fingerprint. Opaque objects, pickles and arbitrary `.npy` byte payloads are prohibited.
+The canonical writer/reader uses PyArrow, a pinned compatible version, Zstandard compression and exactly one
+row group per part (the final row group has the actual part row count, at most 1,024). It is added as a lazy
+explicit `data-parquet` extra so basic contract tests do not import PyArrow or training dependencies.
+`schema.json` records Arrow types, static dimensions, protocol versions and a schema fingerprint. Opaque objects,
+pickles and arbitrary `.npy` byte payloads are prohibited.
 
 `delivery.json` records product/protocol/schema versions, row/part/chunk policy, compression/writer versions,
-clean Git state, resolved delivery config, frozen inputs, build time and validation outcome. It is the formal
-training input binding.
+clean Git state, a portable resolved delivery config and config fingerprint, portable runtime environment, build
+time, deterministic-placement policy, frozen inputs, and validation outcome. It is the formal training input
+binding; it excludes data roots, staging paths and other machine-local paths.
 
 The materializer is a downstream consumer only; it must not annotate, simulate, assign splits or repair source
 data while writing Parquet.
@@ -172,13 +174,15 @@ An interrupted or invalid build stays staging/quarantine evidence and cannot be 
 Existing JSONL-plus-NPY adapters remain forensic/build inputs during migration. Once a Parquet product is released,
 its final training configs may not silently revert to those array paths.
 
-1. Implement a dependency-light metadata validator and row reader with lazy PyArrow import.
-2. Implement `ParquetPoseReconstructionDataset` and `ParquetSignLanguageTranslationDataset` exposing current
-   sample/batch contracts exactly.
-3. Add tiny fixture parity tests, malformed nested-length tests, checksum/inventory-drift tests and split-leakage
-   rejection.
-4. Implement deterministic materializer, inventory validator and capacity dry-run.
-5. Run CPU/GPU one-batch smokes, then formal runs bound to `delivery.json` and the split hash.
+1. `ParquetPoseReconstructionDataset` and `ParquetSignLanguageTranslationDataset` expose the current
+   dependency-light sample/batch contracts with lazy PyArrow import.
+2. `mmprism parquet-delivery-plan CONFIG` validates frozen inputs and returns placement/capacity estimates without
+   writing. `mmprism parquet-delivery-build CONFIG` requires clean Git and atomically publishes a no-clobber
+   delivery. `mmprism parquet-delivery-validate ROOT` rechecks copied input bindings, inventory, index, schema,
+   rows and checksums.
+3. Fixture parity covers both products; placement, split isolation, no-clobber, part tampering, inventory drift,
+   unlisted parts, and the missing optional dependency are rejected. A real delivery still requires a dedicated
+   capacity report and CPU/GPU one-batch adapter smoke before formal training.
 
 ## CSL-News Pipeline Boundary
 

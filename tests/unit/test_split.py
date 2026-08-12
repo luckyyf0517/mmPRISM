@@ -1,11 +1,14 @@
 import hashlib
+import io
 import json
 import os
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
+from mmprism.cli import main
 from mmprism.contracts import (
     SplitContractError,
     SplitIndex,
@@ -140,6 +143,33 @@ output:
                     runtime_report=self._runtime(dirty=True),
                     snapshot_id="dirty",
                 )
+
+    def test_cli_builds_the_same_split_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = self._manifest(root)
+            self._config(root, manifest_path)
+            output = io.StringIO()
+            with (
+                patch.dict(os.environ, {"MMPRISM_TEST_DATA_ROOT": str(root)}),
+                patch("mmprism.cli.collect_runtime_report", return_value=self._runtime()),
+                redirect_stdout(output),
+            ):
+                exit_code = main(
+                    [
+                        "split",
+                        str(root / "split.yaml"),
+                        "--project-root",
+                        str(root),
+                        "--snapshot-id",
+                        "cli",
+                    ]
+                )
+
+            result = json.loads(output.getvalue())
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(result["assignment_count"], 200)
+            self.assertTrue(Path(result["assignments_path"]).is_file())
 
     def test_rejects_source_manifest_checksum_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

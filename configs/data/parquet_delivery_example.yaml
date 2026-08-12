@@ -1,0 +1,16 @@
+schema_version: mmprism.parquet_delivery_config.v1
+source:
+  data_root: ${MMPRISM_DATA_ROOT}
+  manifest: manifests/model_ready/source_manifest.jsonl
+  expected_manifest_sha256: 0000000000000000000000000000000000000000000000000000000000000000
+  split_assignments: splits/model_ready/assignments.jsonl
+  expected_split_assignment_sha256: 0000000000000000000000000000000000000000000000000000000000000000
+  scope: partial
+delivery:
+  product: pose_reconstruction
+  processed_root: processed
+  part_rows: 1024
+  parts_per_chunk: 64
+validation:
+  minimum_free_bytes: 1099511627776
+  verify_source_checksums: true
