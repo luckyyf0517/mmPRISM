@@ -84,6 +84,7 @@ class AnnotationRuntimeConfig:
     scratch_root: Path
     worker_index: int
     worker_count: int
+    inference_batch_size: int
     poll_seconds: int
     min_free_bytes: int
     max_consecutive_oom: int
@@ -126,6 +127,7 @@ class CslNewsAnnotationConfig:
                 "scratch_root": str(self.runtime.scratch_root),
                 "worker_index": self.runtime.worker_index,
                 "worker_count": self.runtime.worker_count,
+                "inference_batch_size": self.runtime.inference_batch_size,
                 "poll_seconds": self.runtime.poll_seconds,
                 "min_free_bytes": self.runtime.min_free_bytes,
                 "max_consecutive_oom": self.runtime.max_consecutive_oom,
@@ -134,7 +136,13 @@ class CslNewsAnnotationConfig:
 
     @property
     def fingerprint(self) -> str:
-        encoded = json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":")).encode()
+        # Preserve the historical batch=1 identity so existing verified samples can
+        # resume. A non-default batch can change pose predictions on this runtime,
+        # therefore it forms a distinct artifact configuration.
+        identity = self.to_dict()
+        if self.runtime.inference_batch_size == 1:
+            del identity["runtime"]["inference_batch_size"]
+        encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
         return hashlib.sha256(encoded).hexdigest()
 
 
@@ -258,6 +266,7 @@ def load_csl_news_annotation_config(
             "scratch_root",
             "worker_index",
             "worker_count",
+            "inference_batch_size",
             "poll_seconds",
             "min_free_bytes",
             "max_consecutive_oom",
@@ -269,6 +278,13 @@ def load_csl_news_annotation_config(
     worker_count = _integer(runtime, "worker_count", "runtime", minimum=1)
     if worker_index >= worker_count:
         raise CslNewsAnnotationError("runtime.worker_index must be less than worker_count")
+    inference_batch_size = runtime.get("inference_batch_size", 1)
+    if (
+        isinstance(inference_batch_size, bool)
+        or not isinstance(inference_batch_size, int)
+        or inference_batch_size < 1
+    ):
+        raise CslNewsAnnotationError("runtime.inference_batch_size must be an integer >= 1")
     threshold = _number(transform, "confidence_threshold", "transform")
     if not 0.0 <= threshold <= 1.0:
         raise CslNewsAnnotationError("transform.confidence_threshold must be in [0, 1]")
@@ -306,6 +322,7 @@ def load_csl_news_annotation_config(
             scratch_root=_path(runtime, "scratch_root", "runtime", root),
             worker_index=worker_index,
             worker_count=worker_count,
+            inference_batch_size=inference_batch_size,
             poll_seconds=_integer(runtime, "poll_seconds", "runtime", minimum=1),
             min_free_bytes=_integer(runtime, "min_free_bytes", "runtime", minimum=0),
             max_consecutive_oom=_integer(
@@ -733,7 +750,14 @@ class MMPoseRtmw3dEstimator:
         self._torch = torch
         cpu_threads = int(os.environ.get("MMPRISM_CPU_THREADS", "4"))
         torch.set_num_threads(cpu_threads)
-        torch.set_num_interop_threads(1)
+        try:
+            torch.set_num_interop_threads(1)
+        except RuntimeError as error:
+            # A profiling process may instantiate several pinned estimators.
+            # PyTorch permits configuring inter-op threads only before its first
+            # parallel operation; an already-established value is sufficient.
+            if "cannot set number of interop threads" not in str(error):
+                raise
         self._cv2.setNumThreads(1)
         self._inference_topdown = apis.inference_topdown
         self._model = apis.init_model(
@@ -741,6 +765,15 @@ class MMPoseRtmw3dEstimator:
             str(config.model.checkpoint_path),
             device=config.model.device,
         )
+        # MMPose's public inference_topdown API rebuilds this transform for every
+        # call and accepts only one image. Keeping the pinned test pipeline here
+        # lets us form an equivalent batch of one full-image bbox per video frame.
+        self._compose = importlib.import_module("mmengine.dataset").Compose
+        self._pseudo_collate = importlib.import_module("mmengine.dataset").pseudo_collate
+        self._init_default_scope = importlib.import_module(
+            "mmengine.registry"
+        ).init_default_scope
+        self._pipeline = self._compose(self._model.cfg.test_dataloader.dataset.pipeline)
         if config.model.device.startswith("cuda"):
             torch.cuda.reset_peak_memory_stats()
 
@@ -783,25 +816,14 @@ class MMPoseRtmw3dEstimator:
         scores: list[np.ndarray] = []
         transformed: list[np.ndarray] = []
         crop = self._config.transform
-        try:
-            while True:
-                readable, frame = capture.read()
-                if not readable:
-                    break
-                if (
-                    frame.shape[0] <= crop.crop_top
-                    or frame.shape[1] <= crop.crop_left + crop.crop_right
-                ):
-                    raise CslNewsAnnotationError(
-                        f"Crop exceeds frame dimensions {frame.shape[:2]}: {video_path}"
-                    )
-                right = frame.shape[1] - crop.crop_right if crop.crop_right else frame.shape[1]
-                cropped = frame[crop.crop_top :, crop.crop_left : right]
-                results = self._inference_topdown(self._model, cropped, None)
-                if len(results) != 1:
-                    raise CslNewsAnnotationError(
-                        f"Expected one pose instance, received {len(results)}"
-                    )
+
+        def annotate_frames(frames: list[np.ndarray]) -> None:
+            if not frames:
+                return
+            if len(frames) == 1:
+                # Preserve the original public MMPose path for the batch=1
+                # baseline and for exact historical-output comparison.
+                results = self._inference_topdown(self._model, frames[0], None)
                 instances = results[0].pred_instances
                 keypoints.append(
                     _normalize_prediction(instances.keypoints, (133, 3), "keypoints")
@@ -818,6 +840,63 @@ class MMPoseRtmw3dEstimator:
                         "transformed_keypoints",
                     )
                 )
+                return
+            scope = self._model.cfg.get("default_scope", "mmpose")
+            if scope is not None:
+                self._init_default_scope(scope)
+            data_list = []
+            for cropped in frames:
+                height, width = cropped.shape[:2]
+                data_info: dict[str, Any] = {
+                    "img": cropped,
+                    "bbox": np.asarray([[0, 0, width, height]], dtype=np.float32),
+                    "bbox_score": np.ones(1, dtype=np.float32),
+                }
+                data_info.update(self._model.dataset_meta)
+                data_list.append(self._pipeline(data_info))
+            with self._torch.no_grad():
+                results = self._model.test_step(self._pseudo_collate(data_list))
+            if len(results) != len(frames):
+                raise CslNewsAnnotationError(
+                    f"Expected {len(frames)} pose instances, received {len(results)}"
+                )
+            for result in results:
+                instances = result.pred_instances
+                keypoints.append(
+                    _normalize_prediction(instances.keypoints, (133, 3), "keypoints")
+                )
+                scores.append(
+                    _normalize_prediction(
+                        instances.keypoint_scores, (133,), "keypoint_scores"
+                    )
+                )
+                transformed.append(
+                    _normalize_prediction(
+                        instances.transformed_keypoints,
+                        (133, 2),
+                        "transformed_keypoints",
+                    )
+                )
+
+        frames: list[np.ndarray] = []
+        try:
+            while True:
+                readable, frame = capture.read()
+                if not readable:
+                    break
+                if (
+                    frame.shape[0] <= crop.crop_top
+                    or frame.shape[1] <= crop.crop_left + crop.crop_right
+                ):
+                    raise CslNewsAnnotationError(
+                        f"Crop exceeds frame dimensions {frame.shape[:2]}: {video_path}"
+                    )
+                right = frame.shape[1] - crop.crop_right if crop.crop_right else frame.shape[1]
+                frames.append(frame[crop.crop_top :, crop.crop_left : right])
+                if len(frames) >= self._config.runtime.inference_batch_size:
+                    annotate_frames(frames)
+                    frames.clear()
+            annotate_frames(frames)
         finally:
             capture.release()
         if not keypoints:
@@ -848,6 +927,7 @@ class MMPoseRtmw3dEstimator:
             "cpu_threads": self._torch.get_num_threads(),
             "interop_threads": self._torch.get_num_interop_threads(),
             "opencv_threads": self._cv2.getNumThreads(),
+            "inference_batch_size": self._config.runtime.inference_batch_size,
         }
         if self._config.model.device.startswith("cuda"):
             metadata.update(

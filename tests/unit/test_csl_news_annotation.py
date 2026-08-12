@@ -138,9 +138,27 @@ runtime:
             config = load_csl_news_annotation_config(self._write_config(root), root)
 
         self.assertEqual(config.runtime.worker_count, 1)
+        self.assertEqual(config.runtime.inference_batch_size, 1)
         self.assertEqual(config.transform.crop_top, 20)
         self.assertEqual(config.source.archive_root, root / "archives")
         self.assertEqual(len(config.fingerprint), 64)
+
+    def test_rejects_invalid_inference_batch_size(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self._write_config(root, extra_runtime="  inference_batch_size: 0\n")
+            with self.assertRaisesRegex(CslNewsAnnotationError, "inference_batch_size"):
+                load_csl_news_annotation_config(path, root)
+
+    def test_non_default_inference_batch_size_has_a_distinct_fingerprint(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            default = load_csl_news_annotation_config(self._write_config(root), root)
+            batched = load_csl_news_annotation_config(
+                self._write_config(root, extra_runtime="  inference_batch_size: 16\n"), root
+            )
+
+        self.assertNotEqual(default.fingerprint, batched.fingerprint)
 
     def test_rejects_unknown_config_keys(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
