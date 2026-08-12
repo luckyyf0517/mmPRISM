@@ -40,3 +40,6 @@ src/mano/*.pkl
 paper/manager/reviews/raw/private/
 paper/manager/original_submission/private/
 paper/manuscript/private/
+
+# Local literature originals; only notes and bibliographic metadata are versioned.
+docs/literature/sources/

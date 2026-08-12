@@ -97,8 +97,10 @@ metadata_dictionary.md
 作者已确认 CSL-News 原视频可以重新下载，因此默认不进入上传队列。执行下载前仍需固定官方来源、
 数据版本、访问条款和 archive checksum；原始 `CSL_News_Labels.json` 必须属于同一版本。
 
-当前已固定 `ZechengLi19/CSL-News@3a0601210333fe760efd09b5d9e2ae5f341ce339`，许可证为
-`CC BY-NC 4.0`，436 archives 总计约 935 GB compressed，下载正在 versioned incoming batch 中进行。
+历史 source intake 固定过 `ZechengLi19/CSL-News@3a0601210333fe760efd09b5d9e2ae5f341ce339`，许可证为
+`CC BY-NC 4.0`，436 archives 总计约 935 GB compressed。如 `DEC-044` 的 checkpoint 审计触发完整重训，
+必须从 data registry 复核当前 source availability，并在缺失时重新建立 versioned intake 和 source manifest；
+不能把 partial pose artifacts 当作完整 source 状态。
 
 如果这两个数据集可以从官方来源重新获取，不需要重复占用 GFS；先提供准确版本、URL、访问方式和
 checksum。若链接已失效、需要审批或版本无法确定，则按 P0 上传原始包。
@@ -129,9 +131,32 @@ checksum。若链接已失效、需要审批或版本无法确定，则按 P0 �
 
 该数据登记为独立 revision dataset，不能并入原投稿 test set 后重新报告为同一 protocol。
 
-## 3. 历史审计资产：P1 优先上传
+### P0-G 投稿版 WaveLLM checkpoint：立即 intake 和审计
 
-这些资产不是“从头训练”的前置条件，但用于解释原投稿数字、判断实现差异和准备 Source Data。
+本轮返修默认复用投稿时由 CSL-News 前约 100 archives 训练的 cam-pose WaveLLM checkpoint。数据侧只做
+历史资产恢复、identity 登记和兼容性证据，不改写 checkpoint，也不以当前保留的 partial pose artifacts
+补写其历史 provenance。尽可能提供：
+
+- 原 checkpoint 文件及 SHA-256；
+- mT5 base、tokenizer、revision，以及模型结构和 resolved config；
+- 前约 100 archives 实际使用的 archive、sample、sequence 列表；
+- caption mapping/version 和 train/validation/test split；
+- 历史 RTMW3D checkpoint、pose processing、joint mapping、坐标约定和运行环境；
+- 原评测 prediction、sample-level metrics、汇总指标和 evaluator 版本（若存在）。
+
+验收至少包括 immutable copy、checkpoint hash、strict 或 controlled load report、model/tokenizer identity、
+historical pose compatibility 和固定 holdout 独立评测。无法恢复的字段标记 unknown，不推断补写。该资产以
+`MODEL-WAVELLM-CAMPOSE-ORIGINAL` 登记；在 provenance 不完整时只能称为 audited historical checkpoint，
+不能称为 canonical formal run。
+
+恢复 436 archives 不是该 checkpoint 返修使用的前置条件。只有 checkpoint 无法加载/审计、存在 split
+泄漏、与必要历史 pose 不兼容，或独立评测确认它压制 sim2real 差异时，才按可信 source intake 和显式
+决策恢复全量重训。
+
+## 3. 其他历史审计资产：P1 优先上传
+
+除 P0-G 指定的投稿版 WaveLLM checkpoint 外，这些资产不是“从头训练”的前置条件，但用于解释原投稿
+数字、判断实现差异和准备 Source Data。
 
 - 原投稿实际使用的 split JSON/TXT/PKL 和生成脚本输出。
 - OmniHand/CubeNet、WaveLLM/mT5、domain adaptation 和 baseline checkpoints。
@@ -186,7 +211,7 @@ NAS 上约 `0-99` archive 的历史 RTMPose3D 派生结果不需要整体优先�
 
 | Asset | Historical Reference | Intake Rule |
 |---|---|---|
-| Language backbone | `google/mt5-base` 或历史本地 `mt5-pretrained` | 确认原始 revision；公共 base 下载，历史 fine-tuned 权重按 P1 上传 |
+| Language backbone | `google/mt5-base` 或历史本地 `mt5-pretrained` | 确认原始 revision；公共 base 下载；投稿版 WaveLLM fine-tuned 权重按 P0-G 上传，其他历史权重按 P1 |
 | Pose estimator | `rtmw3d-l_8xb64_cocktail14-384x288-794dbc78_20240626.pth` | 从官方源固定 URL/revision/checksum；若官方源不可用则上传 |
 | SimCSE | `cyclone/simcse-chinese-roberta-wwm-ext` | 固定 Hugging Face revision 后下载 |
 | SBERT | `shibing624/text2vec-base-chinese` | 固定 Hugging Face revision 后下载；必须补齐评估 smoke |
@@ -250,8 +275,9 @@ source_owner,access_class,original_format,notes
 2. 上传匿名 metadata、雷达配置、阵列映射和标定文件；这些体积小且决定后续 reader contract。
 3. 分批上传私人真实采集 raw package，优先 `collected_csl` 和原投稿 test split 对应批次。
 4. 上传 MANO/mesh/simulator provenance，关闭仿真方法不一致风险。
-5. 从固定官方版本重新下载 CSL-News；仅在不能官方重下时上传 CSL-Daily 或其他外部原始包。
-6. 容量允许后上传原投稿 checkpoints、predictions、metrics 和 figure source data。
+5. 优先 intake CSL-Daily；CSL-News 仅在 `DEC-044` 审计触发或批准 future ceiling experiment 后重新下载。
+6. 优先上传 P0-G 投稿版 WaveLLM checkpoint 及其小体积 provenance；容量允许后再上传其他原投稿
+   checkpoints、predictions、metrics 和 figure source data。
 7. 不上传可从以上资产重新生成的 pose/signal/feature/cache，除非它们是唯一历史证据。
 
 完成上述 P0 intake 后，才能冻结 canonical reader、split 和返修新增采集 protocol。

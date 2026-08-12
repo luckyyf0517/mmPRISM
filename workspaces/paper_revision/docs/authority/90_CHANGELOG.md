@@ -20,3 +20,6 @@ Last reviewed: 2026-08-12
   excluded historical non-semantic gestures from translation and new-user claim closure.
 - Recorded the practical cohort boundary: professional/proficient CSL contributors are best-effort, while most new
   data may come from explicitly reported video-guided volunteers.
+- Fixed the original-submission CSL-News-100 cam-pose WaveLLM checkpoint as the shared semantic initialization for
+  revision comparisons, added disclosure and closure gates, and kept full CSL-News retraining outside P0 unless a
+  provenance, compatibility, leakage, or demonstrated-bottleneck trigger fails.

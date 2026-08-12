@@ -14,6 +14,10 @@ Last reviewed: 2026-08-12
 段落的内部跟踪切片，不代表编辑另列了五条意见；原意和措辞强度见
 [reviewer comments brief](REVIEWER_COMMENTS_BRIEF.md)。
 
+本轮实验固定投稿版 CSL-News 前约 100 archives cam-pose WaveLLM checkpoint 作为共享语义初始化；这是
+作者为隔离 sim2real 变量作出的控制设计，不是审稿人要求。完整 436-archive 重训不属于 P0，触发条件见
+[review analysis](REVIEW_ANALYSIS.md) 和项目 `DEC-044`。
+
 ## Editor
 
 | ID | Type | Priority | Planned Action | Task IDs | Evidence IDs | Status | Risk |
@@ -65,6 +69,15 @@ Last reviewed: 2026-08-12
 ## Closure Gate
 
 每条 item 标记 `done` 前必须同时满足：Direct Answer、verified evidence、manuscript revision、response revision 和 claim-strength audit。
+
+所有使用 WaveLLM translation 的架构、DA、真实 stress 和 sim2real 行必须额外满足：
+
+- 结果登记共享的 original-submission checkpoint ID 和 SHA-256；
+- 表中各方法使用相同语义初始化，不能把完整 CSL-News 新预训练混入某一方法；
+- 无法复用 pose-specific tensors 的 matched direct baseline 记录完整 tensor 差异，但保留相同 mT5/语义
+  backbone 初始化和受控数据/预算；
+- Methods/response 如实披露前约 100 archives、可恢复的训练 split/provenance，以及无法恢复的限制；
+- checkpoint 通过受控加载、historical-pose compatibility 和固定 holdout 独立评测。
 
 `EVID-REV-REAL` 必须给出实际有效录制人数和 participant-disjoint split，并把
 `professional_or_proficient_signer` 与 `video_guided_volunteer` 分开统计。约 30 人和 3--4 名专业/熟练

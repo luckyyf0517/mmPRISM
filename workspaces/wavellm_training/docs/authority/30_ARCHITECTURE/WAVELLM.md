@@ -34,6 +34,29 @@ The model class contains no path resolution, logging, checkpoint writing, or CLI
 backbone can be frozen for adapter training or included in a full-model checkpoint through explicit
 configuration. The engineering recipe freezes mT5 and is not the final scientific protocol.
 
+## Revision Semantic Initialization
+
+The paper revision uses the original-submission cam-pose WaveLLM checkpoint, reported as trained from the first
+approximately 100 CSL-News archives, as a shared immutable semantic initialization. It is a historical paper asset,
+not a canonical formal run, until its provenance is sufficiently recovered. Intake must establish at minimum:
+
+- checkpoint bytes and SHA-256;
+- mT5 and tokenizer identity/revision plus model structure and resolved configuration;
+- strict or explicitly controlled state loading with a complete missing/unexpected-tensor report;
+- compatibility with the historical pose representation used by the checkpoint;
+- the recoverable caption mapping, sample/sequence list, and train/validation/test split for the first-100 scope;
+- an independent fixed-holdout evaluation with sample-level predictions and versioned metrics.
+
+All applicable revision architecture, DA, stress, and sim2real experiments must register the same checkpoint ID and
+hash. If an alternative architecture cannot consume some architecture-specific tensors, it must retain the identical
+semantic backbone initialization, declare every unmatched tensor, and keep data, optimization budget, and evaluation
+protocol controlled. It may not silently substitute a newly full-data-pretrained language base.
+
+A new 436-archive CSL-News source intake or completed manifest would not trigger training by itself. Full-data training
+remains P1 or future work unless the historical checkpoint cannot be loaded or audited, has split leakage, is
+incompatible with the required historical pose contract, or controlled evaluation demonstrates that the semantic base
+masks the sim2real differences under study.
+
 ## Data And Split Gates
 
 `mmprism.sign_language_translation.sample_v1` requires local relative `.npy` references for pose,
@@ -86,6 +109,7 @@ evaluation on a deterministic 4/2-record synthetic fixture. An external 250-gate
 hashes, split separation, tensor inventory, prediction replay, metric recomputation, runtime, performance,
 and temporary-file gates. Synthetic outputs and metric values are engineering evidence only.
 
-Real pose/radar feature preparation remains blocked on the upstream OmniHand/radar provenance chain.
+Real pose/radar feature preparation remains blocked on the upstream OmniHand/radar provenance chain. Historical
+checkpoint audit is also open and must close before this asset is used for paper-facing comparisons.
 DDP model execution, distributed checkpoint aggregation, production metrics, and real-data validation
 remain open; prediction aggregation and single-process epoch-boundary resume are implemented.

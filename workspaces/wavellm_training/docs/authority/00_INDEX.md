@@ -15,12 +15,18 @@ not reconstruct radar/pose inputs, resolve model paths inside models, or own pap
 - mT5 is the sole canonical generation backend; legacy Phi-3 support is excluded.
 - Single-device formal train/checkpoint/reload/evaluate and completed-epoch exact resume are validated.
 - Current character metrics and synthetic A100 runs are engineering protocols, not paper results.
+- The revision baseline is the original-submission cam-pose WaveLLM checkpoint trained on the reported first
+  approximately 100 CSL-News archives. Its file location, hash, exact configuration, historical input/split linkage,
+  and independent evaluation are still pending intake and audit.
 
-Active blockers: real aligned model-ready data, production BLEU/ROUGE/semantic protocols, distributed
-execution, and final paper training.
+Active blockers: original-checkpoint intake/audit, real aligned model-ready data, production
+BLEU/ROUGE/semantic protocols, distributed execution, and final paper evaluation.
 
-Next action: close distributed lifecycle and production metric contracts, then execute the frozen real-data
-protocol when delivered.
+Next action: audit and freeze the original checkpoint, restore the CSL-Daily simulation second-stage protocol,
+then use the same semantic initialization for matched architecture, DA, stress, and sim2real comparisons.
+
+Full 436-archive CSL-News retraining is not P0. A complete source intake and retraining are opened only by one of the
+audit triggers in `DEC-044` or as a separately reported future ceiling experiment.
 
 ## Canonical Locations
 

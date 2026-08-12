@@ -9,3 +9,5 @@ Last reviewed: 2026-08-12
 
 - Established a focused training workspace without moving canonical model or training code.
 - Preserved the mT5-only support boundary and reclassified prior engineering runs as Logs.
+- Designated the audited original-submission CSL-News-100 cam-pose WaveLLM checkpoint as the revision-wide shared
+  semantic initialization, with explicit provenance, compatibility, holdout-evaluation, and retraining triggers.

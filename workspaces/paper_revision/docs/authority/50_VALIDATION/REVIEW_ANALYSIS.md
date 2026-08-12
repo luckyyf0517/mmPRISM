@@ -84,9 +84,23 @@ Classification: `PROMISING, EVIDENCE-INTENSIVE MAJOR REVISION`
 下表是为了节省采集和训练成本而提出的内部合并方案。除单元格直接复述的条件外，不代表编辑或审稿人
 规定了这些具体协议。
 
+### Fixed semantic initialization
+
+- 编辑和两位审稿人均未要求重新训练或扩大 CSL-News 预训练基座；相关要求针对替代架构、DA 公平性、
+  synthetic-real fidelity、真实数据、方向/遮挡和新参与者泛化。
+- `P0-2`、`P0-3`、`P0-4` 及其 translation 对照使用投稿版 cam-pose WaveLLM checkpoint 的同一登记
+  ID/hash。直接架构若不能复用 pose-specific tensors，至少必须复用同一语义 backbone 初始化，并逐项
+  报告无法匹配的 tensor；不得静默换成全量 CSL-News 新基座。
+- 投稿 checkpoint 据现有记录使用 CSL-News 前约 100 archives。正文和 response 必须如实披露该范围，
+  不得写成完整 436 archives，也不得等同于 Uni-Sign 随机采样的 25% 条件。
+- Uni-Sign 的规模消融说明更多预训练数据可能提高绝对上限，但不构成本轮审稿要求。当前增加完整重训会
+  同时改变预训练数据、可能的 pose 版本和模型初始化，削弱 sim2real 结果归因。
+- 完整重训只有在历史 checkpoint 无法加载/审计、存在 split 泄漏、与必要 pose 契约不兼容，或独立评测
+  确认语义基座成为下游瓶颈时才进入返修路径；否则保留为 P1/future ceiling experiment。
+
 | Priority | Concern IDs | Underlying Question | Proposed Experiment / Analysis | Minimum Viable Protocol | Result Interpretation | Fallback |
 |---|---|---|---|---|---|---|
-| `P0-1` | all scientific items | 当前数据、split 和指标是否可信？ | Data/provenance reconstruction + original-result baseline | 锁定 paper split、manifest、metric protocol；已有 prediction 先重算指标 | 所有后续实验的前提 | 若资产缺失，明确 unavailable 并重建可审计 split |
+| `P0-1` | all scientific items | 当前数据、split 和指标是否可信？ | Data/provenance reconstruction + original-result baseline | 锁定 paper split、manifest、metric protocol；审计投稿版 WaveLLM checkpoint 的 ID/hash/加载/历史输入；已有 prediction 先重算指标 | 所有后续实验的前提 | 若资产缺失，明确 unavailable 并重建可审计 split；仅在 `DEC-044` 触发时重训语义基座 |
 | `P0-2` | `R2-1`,`ED-SCI-2` | pose bottleneck 是否必要？ | Matched direct 4D-cube-to-LLM baseline | 相同 CubeNet 输入、数据、优化预算和 seed；移除 pose supervision，通过 matched projector 接 mT5；对齐参数/训练策略 | 若两阶段更优，支持 geometry bottleneck；若相近，缩小 necessity claim | 报告负结果并将方法定位为 interpretability/modularity trade-off |
 | `P0-3` | `R2-2`,`ED-SCI-3` | shallow adaptation 是否有效率优势？ | DA matrix: shallow FT / full FT / adversarial DA / MMD | 相同 synthetic checkpoint、真实样本预算、训练 steps、seed；同时报告 pose/translation、trainable params、time/memory | 比较 accuracy-efficiency Pareto，而非只报最高分 | 若当前方法不最优，改为 lightweight option 并诚实呈现 |
 | `P0-4` | `R1-3`,`R1-4c/d`,`R2-3`; `R1-5` 可复用 | 是否真实泛化到方向、遮挡和新参与者？ | 约 30 名实际完成者的 video-guided CSL 采集，并用小型 stress 子集覆盖方向和遮挡 | 固定 CSL 视频和中文含义；主要由志愿者学习后复现，尽力采集 3--4 名专业/熟练 CSL 人员；两类参与者分别记录；stress 子集包含 Reviewer 2 举出的 30°/60°、部分手部或物体遮挡，并同时评估 reconstruction 与 translation | 全体结果只能支持 prompted reproduction 的跨参与者与边界条件测试；专业/熟练人员结果另报 | 专业人员很少或没有时如实报告，并删除或收缩自然手语用户、新手语者和 population-level 泛化主张 |
@@ -142,6 +156,8 @@ Classification: `PROMISING, EVIDENCE-INTENSIVE MAJOR REVISION`
 
 - 当前 manuscript/abstract/supplement 和原投稿表图。
 - 原投稿 paper-facing checkpoint、prediction、split 和 metric artifact。
+- 投稿版 WaveLLM checkpoint 对应的 mT5/tokenizer revision、模型结构/config、前约 100 archives 的实际
+  sample/sequence list、caption mapping、split、历史 RTMW3D pose 处理和已有独立评测记录。
 - 现有 12 人真实数据的采集协议、伦理/同意范围和 metadata。
 - 可实际完成录制的志愿者数量、时间、设备和可覆盖方向/遮挡条件；专业/熟练 CSL 人员按可获得情况记录。
 - 可用 GPU 类型、数量和并行预算。

@@ -19,12 +19,19 @@ workspace begins only after receiving its immutable raw-session manifest and val
 - Task-specific Parquet delivery v1 reader, planner, materializer, and validator are implemented and fixture-verified;
   real products remain blocked by source, calibration, and final-split evidence.
 - Partial CSL-News visual pose data is upstream evidence, not final radar/model-ready delivery.
+- The original-submission CSL-News-100 cam-pose WaveLLM checkpoint is a P0 historical intake/audit asset for the
+  revision. It remains immutable and is not automatically converted into a new canonical training checkpoint.
 
 Active blockers: NAS intake, acquisition/channel/calibration evidence, simulation provenance, and final
 subject-aware splits.
 
-Next actions: accept metadata/calibration first, bind a real radar fixture, freeze a final subject-aware split,
-run a capacity plan, then build and smoke-test immutable task products.
+Next actions: intake and audit the original WaveLLM checkpoint and its recoverable historical manifest/config;
+accept metadata/calibration, bind a real radar fixture, freeze a final subject-aware split, then build and smoke-test
+immutable task products.
+
+Full 436-archive source reconstruction and training may be useful for future provenance or ceiling work, but it does
+not block WaveLLM revision experiments using the audited original checkpoint. Starting it requires an explicit
+decision or one of the retraining triggers in project `DEC-044`.
 
 ## Accepted Upstream Delivery
 

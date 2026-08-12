@@ -15,3 +15,5 @@ Last reviewed: 2026-08-12
   radar/calibration and aligned feature contracts are available.
 - Clarified that new semantic sign-language recruitment and acquisition belong to the collection workspace;
   data rebuild accepts only its frozen, validated session manifest.
+- Promoted the original-submission CSL-News-100 cam-pose WaveLLM checkpoint to a narrowly scoped P0 historical
+  intake/audit asset, with an explicit handoff list and no automatic full-data retraining dependency.

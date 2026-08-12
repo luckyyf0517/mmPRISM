@@ -45,7 +45,7 @@ frozen delivery inventory, reader parity and formal run are registered.
 | `ASSET-HISTORICAL-RUNS` | paper experiment evidence | splits, configs, checkpoints, predictions, metrics, logs | private | optional for new training, required for original-paper audit | blocked |
 | `ASSET-FIGURE-SOURCE` | display-item source data | sample-level values, plots, scripts, tables | private | needed for Source Data unless public raw+code fully reproduce figures | blocked |
 
-## Downloadable Model Assets
+## Model Assets
 
 | ID | Model | Source ID | Revision/Checksum | License | Rule | Status |
 |---|---|---|---|---|---|---|
@@ -53,6 +53,7 @@ frozen delivery inventory, reader parity and formal run are registered.
 | `MODEL-RTMW3D` | RTMPose3D | official OpenMMLab RTMW3D-L; MMPose `759b39c` | `794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed` | upstream research code/model terms; release audit pending | checkpoint/config/commit hash gate before every run | evidence_ready |
 | `MODEL-SIMCSE` | SimCSE evaluator | `cyclone/simcse-chinese-roberta-wwm-ext` | HF `871d7039a3fccd4869d545a25b63c545341ca7f4`; 6 files/409,532,074 B；asset manifest `e57f2eeb...` | HF card does not declare license；do not redistribute until clarified | pinned downloader + `AutoModel` CPU smoke `[2,768]` finite；`EVID-CODE-MODELS-V1` | evidence_ready |
 | `MODEL-SBERT` | SBERT evaluator | `shibing624/text2vec-base-chinese` | HF `183bb99aa7af74355fb58d16edf8c13ae7c5433e`; 8 files/409,209,289 B；asset manifest `81395c0b...` | Apache-2.0 in HF card | pinned downloader + `SentenceTransformer` CPU smoke `[2,768]` finite；`EVID-CODE-MODELS-V1` | evidence_ready |
+| `MODEL-WAVELLM-CAMPOSE-ORIGINAL` | original-submission cam-pose WaveLLM semantic initialization | private historical checkpoint; exact location pending intake | reported first approximately 100 CSL-News archives; checkpoint SHA-256, mT5/tokenizer revision, model config, sample/caption/split and historical pose provenance pending | private paper asset; public release decision pending | retain immutable bytes; controlled load, historical-pose compatibility and fixed-holdout evaluation required; all applicable revision comparisons register the same ID/hash; do not infer full 436-archive training | pending_intake_audit |
 
 ## Derived Dataset Builds
 
