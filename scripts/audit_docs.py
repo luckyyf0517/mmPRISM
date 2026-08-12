@@ -18,6 +18,7 @@ WORKSPACES = (
     "data_rebuild",
     "omnihand_training",
     "paper_revision",
+    "sign_language_collection",
     "wavellm_training",
 )
 LINK_PATTERN = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")

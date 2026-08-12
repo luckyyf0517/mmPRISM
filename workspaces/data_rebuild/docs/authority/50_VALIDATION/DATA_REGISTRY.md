@@ -11,12 +11,17 @@ Last reviewed: 2026-08-12
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
 | `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 partial source snapshot 63 archives/104,658 records, SHA-256 `a431d14c...`；live registry 78 archives/129,539 videos at 00:45Z；final 436-archive snapshot pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
-| `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
-| `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
-| `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
-| `DATASET-REAL-STRESS-REV1` | revision orientation/occlusion/new-user set | not collected | private/ethics pending | unknown | missing | missing | reviewer real-world boundary tests | blocked |
+| `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | legacy non-semantic radar gesture/pose evidence only | blocked_legacy_inventory |
+| `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | legacy non-semantic development/demo only | blocked_legacy_inventory |
+| `DATASET-COLLECTED-CSL` | historical directory label only; contents are non-semantic gestures | unknown | private | unknown | missing | missing | legacy pose/forensic evidence; prohibited from semantic SLU totals or translation claims | blocked_legacy_inventory |
+| `DATASET-SEMANTIC-SIGN-V2` | new semantic continuous sign-language collection | not collected; owned by `sign_language_collection` | private/ethics pending | unknown | missing | readiness `G0` only; language/content/ethics/acquisition/pilot blocked | real semantic SLU, unseen-user and real-world generalization; approximately 30 usable participants planned | planning |
+| `DATASET-REAL-STRESS-REV1` | compact orientation/occlusion subset of `DATASET-SEMANTIC-SIGN-V2` | not collected | private/ethics pending | unknown | missing | condition matrix and pilot pending | reviewer real-world boundary tests; not an independent participant cohort | planning |
 
 ## Processed Delivery Profiles
+
+All previously self-collected project families are currently classified as non-semantic gestures. Their historical
+directory names do not establish semantic labels, and none may enter `DELIVERY-SLU-V1` or paper translation totals.
+New semantic real-data delivery begins only from a frozen, validated `DATASET-SEMANTIC-SIGN-V2` handoff.
 
 | ID | Product | Frozen Inputs Required | Payload Boundary | Status |
 |---|---|---|---|---|

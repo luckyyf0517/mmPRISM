@@ -14,6 +14,8 @@ Current cross-workspace blockers:
 
 - Private source inventory, calibration, and historical run provenance are not yet complete.
 - Full physical radar-cube reconstruction remains blocked on acquisition and calibration evidence.
+- The new semantic sign-language collection targets approximately 30 usable participants, but language,
+  corpus, ethics, recruitment, synchronization, and pilot gates are not yet frozen.
 - Original-submission evidence and paper-facing experiment provenance remain incomplete.
 
 ## Workspaces
@@ -22,6 +24,7 @@ Current cross-workspace blockers:
 - [Data rebuild](../../workspaces/data_rebuild/docs/authority/00_INDEX.md)
 - [OmniHand training](../../workspaces/omnihand_training/docs/authority/00_INDEX.md)
 - [WaveLLM training](../../workspaces/wavellm_training/docs/authority/00_INDEX.md)
+- [Semantic sign-language collection](../../workspaces/sign_language_collection/docs/authority/00_INDEX.md)
 - [Paper revision](../../workspaces/paper_revision/docs/authority/00_INDEX.md)
 
 Workspace ownership and handoffs are defined in the

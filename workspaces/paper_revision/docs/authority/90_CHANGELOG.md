@@ -16,3 +16,5 @@ Last reviewed: 2026-08-12
   checklist, excluding historical-version discrepancies from the discussion brief.
 - Re-audited the reviewer digest against the verbatim decision email, collapsed the editor's scientific request
   back to its single source paragraph, and separated literal requests from author-derived implementation plans.
+- Bound future real semantic evidence to the dedicated approximately 30-participant collection workspace and
+  excluded historical non-semantic gestures from translation and new-user claim closure.

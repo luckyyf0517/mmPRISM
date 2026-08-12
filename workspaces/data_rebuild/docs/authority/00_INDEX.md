@@ -8,7 +8,9 @@ Last reviewed: 2026-08-12
 ## Boundary
 
 This workspace turns frozen source identities into validated, task-specific model-ready products. It owns
-radar processing recovery until calibrated cube production has an independent stable handoff.
+radar processing recovery until calibrated cube production has an independent stable handoff. New participant
+recruitment, sign-language content, acquisition and session QC are owned by `sign_language_collection`; this
+workspace begins only after receiving its immutable raw-session manifest and validation status.
 
 ## Current State
 

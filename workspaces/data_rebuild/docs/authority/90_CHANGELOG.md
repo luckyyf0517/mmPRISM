@@ -13,3 +13,5 @@ Last reviewed: 2026-08-12
   atomic materialization, copied frozen inputs, inventory/index/checksum validation, and portable build provenance.
 - Kept the live CSL-News visual-pose lane outside final delivery: it remains intermediate evidence until metric
   radar/calibration and aligned feature contracts are available.
+- Clarified that new semantic sign-language recruitment and acquisition belong to the collection workspace;
+  data rebuild accepts only its frozen, validated session manifest.
