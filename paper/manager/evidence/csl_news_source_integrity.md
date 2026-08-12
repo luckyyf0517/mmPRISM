@@ -48,6 +48,24 @@ archive SHA-256: 5a0c7b151714469067d008b84463a9fbb4de28bdc7b808b189eabb12f6705e1
 audit SHA-256: 2ee2bb7b9fc8095eafbd15c29cf96562c7e7ac2d8ec2b38c050df972242e526f
 ```
 
+At `2026-08-12T00:43Z`, the timer was rebound to a detached clean operational worktree so unrelated
+development edits cannot stall source promotion:
+
+```text
+worktree: /home/yanyifan/.cache/mmprism-runtime/csl_news_integrity_3f36094
+builder commit: 3f360949eb055e32c7831fa2d7d631d8a8a31045
+environment: worktree-local UV .venv
+newly passed archives: 122,124,125,126
+present/passed: 78/78 archives
+videos: 129,539
+failed: 0
+registry SHA-256: 0414fb75e48b50280d9c943ebef9a4df9a43c93fce878357c67de30d227236ec
+```
+
+The strict clean-Git check was not bypassed. Two consecutive scans from the isolated environment completed
+with exit code 0. The main development worktree and all downloaded, partial, failure and annotation artifacts
+were left unchanged.
+
 该值是持续变化的 live gate，不追写任何已冻结 source/pose manifest；最终证据仍需 436 archives
 全部完成后重新冻结。
 

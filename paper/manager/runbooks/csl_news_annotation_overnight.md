@@ -339,3 +339,11 @@ scripts/run_csl_news_annotation_audit.sh
   CRC 与 label coverage 全通过，首/中/末 3 个视频分别成功解码 87/375/325 帧；产物目录为
   `source_trial_v1/20260812T002504Z_archive_001_da5711261201/`，其 selection 绑定 registry SHA-256
   `da5711261201917ac42f6036f4533642662290cf1019ad5b05c7d379d8e35c9c`。
+- `00:43Z` 发现主开发 worktree 的 DDP 修改使 integrity timer 按 strict provenance gate 以 exit 2
+  拒绝扫描；下载和已通过归档的标注不受影响。timer 随即绑定到 clean detached worktree
+  `/home/yanyifan/.cache/mmprism-runtime/csl_news_integrity_3f36094`（commit `3f36094`），并建立独立
+  UV `.venv`，不与主开发环境共享 editable package。clean-state gate 未放宽。
+- 隔离后的首轮 scan 完整验收 `122/124/125/126`，registry 更新到 78/78 passed、129,539 videos、
+  failed 0；第二轮无新增 scan 也以 exit 0 完成，下一周期仍为 5 分钟。`00:45Z` source-aware status
+  为 `healthy`：14,655 current-source pair、missing pair 0、抽检 3/3，近期约 2,173 samples/hour；
+  报告 SHA-256 为 `788a4e0988fed5112c21995ff64ae8fa0f71af9b8e237c37f746c909c52bfebc`。

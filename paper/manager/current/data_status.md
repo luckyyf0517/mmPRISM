@@ -29,7 +29,7 @@ CSL-News 官方源。`2026-08-12` 作者确认全部项目数据仍保存在其 
 | Data Family | 历史用途 | 预期主要模态 | 当前状态 |
 |---|---|---|---|
 | CSL-Daily | OmniHand simulation、WaveLLM caption | images, pose, pred_pose, feature, annotation | author_nas_confirmed_transfer_pending |
-| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_v2_registry_74_archives_123129_videos_passed；legacy_pose_range_0_99_reported_on_author_nas |
+| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_v2_registry_78_archives_129539_videos_passed；legacy_pose_range_0_99_reported_on_author_nas |
 | Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | author_nas_confirmed_transfer_pending |
 | Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | author_nas_confirmed_transfer_pending |
 | Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | author_nas_confirmed_transfer_pending |
@@ -523,3 +523,12 @@ archive、123,129 videos、14,125 个 completed current-source pair、remaining 
 duplicate/missing pair 0、抽检 3/3；近期约 2,180 samples/hour、36.85 frames/s。`00:38 UTC` 下载目录
 有 76 个 final ZIP 和 51 个 `.part`，aria2 正处理约 `archive_123-127`；下载和四个 GPU 7 worker 均
 `active/running`，没有清理任何 source、partial、scratch、failure 或 historical pose artifact。
+
+`00:43 UTC` 起，integrity timer 从会随开发编辑变脏的主 worktree 隔离到 clean detached worktree
+`/home/yanyifan/.cache/mmprism-runtime/csl_news_integrity_3f36094`，固定 commit `3f36094`，并使用其独立
+UV `.venv`。clean-state gate 保持不变；连续两次 scan 均 exit 0，首轮新验收 `122/124/125/126`。
+`00:45 UTC` 手工状态 `status_20260812T004515Z.json` 为 `healthy`：78 个 passed archive/
+129,539 videos、14,655 个 current-source pair、missing pair 0、抽检 3/3，近期约 2,173 samples/hour、
+37.91 frames/s；报告 SHA-256 为
+`788a4e0988fed5112c21995ff64ae8fa0f71af9b8e237c37f746c909c52bfebc`。下载、四个 worker 和 clean
+integrity timer 均为 `active`；主开发 worktree 的未提交 DDP 文件未被移动、覆盖或提交。

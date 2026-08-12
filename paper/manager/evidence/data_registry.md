@@ -9,7 +9,7 @@ Role: `dataset_and_split_provenance`
 | ID | Family | Source Location | License/Access | Raw Size | Manifest | Validation | Paper Role | Status |
 |---|---|---|---|---|---|---|---|---|
 | `DATASET-CSL-DAILY` | CSL-Daily | official source or incoming upload: unknown | restricted/unknown | unknown | missing | missing | visual pose/synthetic training and SLU | blocked |
-| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 partial source snapshot 63 archives/104,658 records, SHA-256 `a431d14c...`；live registry 71 archives/118,075 videos at 23:30Z；final 436-archive snapshot pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
+| `DATASET-CSL-NEWS` | CSL-News | HF `ZechengLi19/CSL-News@3a060121`; immutable primary + replacement overlay | CC BY-NC 4.0 | 935001573087 B compressed | v2 partial source snapshot 63 archives/104,658 records, SHA-256 `a431d14c...`；live registry 78 archives/129,539 videos at 00:45Z；final 436-archive snapshot pending | JSON 722,711/722,711 valid unique records；replacement `001/005/008` passed full CRC/coverage/decode；primary failures retained | visual pose/synthetic training and SLU | in_progress_download |
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | real radar pose | blocked |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | development/demo | blocked |
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
@@ -39,7 +39,7 @@ Role: `dataset_and_split_provenance`
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 v2 registry workers active；known conflict recovered to immutable source variant with canonical bytes preserved；clean `6e9cc5e` snapshot 12,057 records/12 archives, SHA-256 `cdd450e4...`；1,875 old/unbound pairs checksum-quarantined | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 v2 registry workers active；known conflict recovered to immutable source variant with canonical bytes preserved；clean `6e9cc5e` snapshot 12,057 records/12 archives, SHA-256 `cdd450e4...`；00:45Z live current-source pairs 14,655, missing 0 | in_progress |
 
 ## Model-ready Contracts
 
