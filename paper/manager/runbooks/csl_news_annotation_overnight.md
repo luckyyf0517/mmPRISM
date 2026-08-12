@@ -330,3 +330,12 @@ scripts/run_csl_news_annotation_audit.sh
   failed 0。`00:12Z` status 为 `healthy`：13,580 completed current-source pair、missing pair 0、
   latest-run failure 0、抽检 3/3，近期约 1,799 samples/hour。下载和四个 GPU 7 v3 worker 均
   `active/running`、`NRestarts=0`；未清理 source、partial、scratch、failure 或 pose artifact。
+- `00:00Z` 的一次性晨间 source trial 已按计划触发，但旧 runner 仍按 primary 文件名排序，命中
+  故意保留的损坏 `archive_001.zip` 并以 `BadZipFile` 失败。该 failure artifact 保留，主下载、v2
+  registry 和 annotation worker 未受影响。clean commit `96701de` 新增 typed registry selection，
+  强制 source/revision/config/path/stat/archive SHA/labels SHA 全部一致；不再接受任意 path override。
+- `00:25Z` 在 clean `96701de` 上补跑 source trial，正确选择 replacement `archive_001`，SHA-256
+  `911ed805d80842867c0ecebc86c2f8ad0fbd6790269861dbdc964ebaa9bab7ec`。1,694 个 ZIP member 的
+  CRC 与 label coverage 全通过，首/中/末 3 个视频分别成功解码 87/375/325 帧；产物目录为
+  `source_trial_v1/20260812T002504Z_archive_001_da5711261201/`，其 selection 绑定 registry SHA-256
+  `da5711261201917ac42f6036f4533642662290cf1019ad5b05c7d379d8e35c9c`。

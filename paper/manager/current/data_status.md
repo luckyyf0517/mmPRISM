@@ -273,6 +273,14 @@ SHA-256、source stat、audit report/hash 和 clean builder commit；标签 hash
 重复 member、全部命中官方非空文本；archive SHA-256 为
 `ae348f6cc3088cc755d5af4f4320c3f6851a5564fb27345b3fb0e150f1a655d4`。
 
+`2026-08-12T00:00Z` 的计划 trial 按时触发，但旧脚本按 primary 文件名选择了已知事故原件
+`archive_001.zip`，因此以 `BadZipFile` 失败；该失败不代表 v2 当前来源回退。clean commit
+`96701de` 将 trial 改为只接受 typed source-integrity registry entry，并在执行前复验 registry/config、
+路径、stat、archive SHA-256 和 labels SHA-256。`00:25Z` 补跑正确选择 replacement `001`，完整
+1,694-member CRC/label coverage 与 3 个视频 decode 全部通过；selection registry SHA-256 为
+`da5711261201917ac42f6036f4533642662290cf1019ad5b05c7d379d8e35c9c`，通过产物位于
+`source_trial_v1/20260812T002504Z_archive_001_da5711261201/`。失败目录和 primary 原件均保留。
+
 canonical pose annotation 使用 `configs/data/csl_news_rtmw3d_overnight.yaml` 和
 `paper/manager/runbooks/csl_news_annotation_overnight.md`。首个真实样本生成 125 帧原生
 `[T,133,3]` 与 canonical `[T,2,24,3]`，全部数值有限，峰值显存约 262 MiB；正式输出和

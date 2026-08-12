@@ -31,9 +31,10 @@ Role: `control_panel`
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；source-integrity v2 registry
   在 `00:11Z` 覆盖 73 个 archive/121,465 videos，全部通过完整 CRC、label coverage 和 decode probe。
-  `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；`00:12Z` status 为
-  `healthy`，13,580 个 current-source pair、missing pair 0、抽检 3/3，4 个 source-aware registry
-  worker 在 GPU 7 持续运行。
+  `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；`00:20Z` status 为
+  `healthy`，13,798 个 current-source pair、missing pair 0、抽检 3/3，4 个 source-aware registry
+  worker 在 GPU 7 持续运行。晨间 trial 的旧 primary 选源缺陷已由 clean `96701de` 修复，replacement
+  `001` 的完整 CRC/coverage 与 3/3 decode 补跑通过。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
   5 个 represented archive、15 个 failed-archive 历史 pair 明确排除；checksum/contract/adapter 验收通过。
 - clean commit `3bdd31f` 的全量 published-pair identity audit 冻结 9,519 对、实际哈希 5.116 GB，

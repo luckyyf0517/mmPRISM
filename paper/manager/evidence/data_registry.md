@@ -171,3 +171,11 @@ First source-audit artifact target:
 ```
 
 This trial is not promoted as dataset validation until its CRC, label coverage and video decode report passes.
+
+The scheduled `2026-08-12T00:00Z` trial preserved a useful negative artifact: the old runner selected the
+known-corrupt primary `archive_001.zip` and failed with `BadZipFile`. Clean commit `96701de` replaced filename
+discovery with typed registry selection and live path/stat/archive-SHA/labels-SHA verification. The clean rerun
+at `00:25Z` selected replacement `archive_001` (SHA-256 `911ed805...`), passed all 1,694 members, complete label
+coverage and 3/3 decode probes, and is stored under
+`source_trial_v1/20260812T002504Z_archive_001_da5711261201/`. Its selection binds registry SHA-256
+`da5711261201917ac42f6036f4533642662290cf1019ad5b05c7d379d8e35c9c`.

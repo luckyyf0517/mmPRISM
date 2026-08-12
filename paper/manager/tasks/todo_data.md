@@ -45,9 +45,10 @@ Role: `data_execution_tracker`
 当前 public download 由 `mmprism-csl-news-metadata.service` 和
 `mmprism-csl-news-archives.service` 托管；完成前不得解压。
 
-`archive_003` 的只读 SHA-256/CRC/label/decode smoke 已通过；原定
-`mmprism-csl-news-source-trial.timer` 保留为 `2026-08-12 08:00 Asia/Shanghai` 独立复核。
-RTMW3D 单视频 smoke 也已通过，但不代表 436 个 archive 已完成。
+`archive_003` 的只读 SHA-256/CRC/label/decode smoke 已通过。`2026-08-12 08:00 Asia/Shanghai`
+独立复核按时触发，暴露旧 runner 错选已知损坏 primary `001`；clean commit `96701de` 已切换为
+registry-driven selection，`00:25Z` 对 replacement `001` 的完整 CRC/label/3-video decode 补跑通过。
+RTMW3D 单视频 smoke 也已通过，但这些证据均不代表 436 个 archive 已完成。
 
 11-archive 完整 CRC audit 中 9 个通过，`005/008` 损坏。总表位于
 `manifests/csl_news/source_integrity_v1/audit_20260811T154138Z/summary.json`，SHA-256 为
