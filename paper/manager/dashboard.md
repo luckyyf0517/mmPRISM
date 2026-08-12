@@ -23,16 +23,16 @@ Role: `control_panel`
   并建立逐项 provenance/Source Data registry；Supplementary Tables S2-S6 明确为未验证占位数据。
 - 作者已确认数据与训练从头重建；`src/mmprism` greenfield package、strict config、manifest contract、CLI 和 CPU 基础测试已开始落地。
 - CSL-News 官方 RGB/labels 已锁定到 Hugging Face revision `3a060121`，935 GB compressed 下载已启动；
-  其他 mmPRISM/CSL/OmniHand/WaveLLM 数据仍未到位。
+  作者确认其他项目数据均在其 NAS，当前等待 source-side inventory 和分批 transfer/intake。
 - `archive_003` 的 SHA-256/CRC/722,711 条标签覆盖与视频解码审计通过；canonical RTMW3D
   worker 已在 GPU 7 持续运行，CPU/GPU/磁盘受限且当前健康。
 - CSL-News metadata profile 已扫描全部 722,711 条 canonical JSON 记录；数据集类型、译文单元和
   长度统计已有部分证据，sign vocabulary、non-manual、subject/scene/split 仍待补齐。官方 CSV 的
   4 条冲突重复已隔离，不能覆盖唯一 JSON。
 - 首个 CSL-News partial snapshot 的 18,095 条 schema/linkage 已验证；source-integrity v2 registry
-  在 `00:11Z` 覆盖 73 个 archive/121,465 videos，全部通过完整 CRC、label coverage 和 decode probe。
-  `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；`00:20Z` status 为
-  `healthy`，13,798 个 current-source pair、missing pair 0、抽检 3/3，4 个 source-aware registry
+  在 `00:30Z` 覆盖 74 个 archive/123,129 videos，全部通过完整 CRC、label coverage 和 decode probe。
+  `001/005/008` 已通过 versioned replacement 恢复，原坏文件仍保持不变；同期 status 为
+  `healthy`，14,125 个 current-source pair、missing pair 0、抽检 3/3，4 个 source-aware registry
   worker 在 GPU 7 持续运行。晨间 trial 的旧 primary 选源缺陷已由 clean `96701de` 修复，replacement
   `001` 的完整 CRC/coverage 与 3/3 decode 补跑通过。
 - clean commit `390093b` 已冻结首个 integrity-gated pose+caption partial snapshot：2,157 records、
@@ -55,6 +55,8 @@ Role: `control_panel`
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.1 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
+- NAS 上约 `0-99` archive 的历史 CSL-News pose 已确认存在；两样本 forensic intake 目录已建立，
+  等待按原始 archive/member identity 上传后与 canonical 输出逐帧对照。
 - canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；199 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run writer 与 OmniHand/WaveLLM single-device train/evaluate 已实现：原子冻结
@@ -87,7 +89,8 @@ Role: `control_panel`
 
 1. 补充导入原投稿定稿，并按 20 项 display registry 补齐 dataset/split/run/checkpoint/metric/script/Source Data。
 2. 按已建立的 sober-language 与 Availability 清单准备回写；不在新增实验完成前强化结果主张。
-3. 监控 CSL-News 官方下载和夜间姿态标注，同时收集私人历史 archive/目录的名称、大小和可重下标记。
+3. 监控 CSL-News 官方下载和夜间姿态标注；先验收两条 NAS historical pose 对照样本，再收集其余
+   私人 archive/目录的名称、大小和可重下标记。
 4. 确认可新增真实数据的人数、伦理边界、方向/遮挡采集条件和时间预算。
 5. 在 OmniHand 与 WaveLLM formal synthetic 工程闭环已通过的基础上，待真实 source 到位后完成 data/radar、
    production training/checkpoint/prediction/evaluation 闭环。
@@ -96,7 +99,7 @@ Role: `control_panel`
 
 - `DATA-CSLNEWS-INTEGRITY-001`：`001/005/008` 的当前来源已由 versioned replacement 恢复并通过
   source-integrity v2 gate；原坏文件和旧来源产物继续隔离。全量 436-archive 下载尚未完成。
-- `BLOCK-DATA-ROOT`：CSL-News source 已进入下载，但私人 collected、CSL-Daily 和历史 run 仍未知。
+- `BLOCK-DATA-ROOT`：全部项目数据已确认存在于作者 NAS，但当前机器尚无 NAS 路径、inventory 和已验收批次。
 - `BLOCK-SIM-PROVENANCE`：稿件 MANO mesh/ray-tracing 描述与当前可见 skeleton 仿真路径不一致。
 - `BLOCK-RADAR-PROVENANCE`：稿件与 legacy 的 chirp、带宽、clutter、阵列规模和共轭约定冲突；
   canonical range-Doppler 已独立验收，但 beamforming/物理坐标必须等待 acquisition/calibration 证据。
@@ -109,11 +112,12 @@ Role: `control_panel`
 
 1. 继续执行 `PAPER-001B`，登记当前 manuscript/supplement，并导入原投稿定稿。
 2. 执行 `DATA-001-K/DATA-005-A`，下载 promotion 和标注前都做完整 ZIP gate；只对通过清单生成 pose。
-3. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
+3. 执行 `DATA-005-D`：按 archive/member identity 验收两条 NAS historical pose，并生成新旧逐帧对照报告。
+4. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
-4. 继续 formal training orchestration：为 OmniHand/WaveLLM 补 DDP model execution、checkpoint
+5. 继续 formal training orchestration：为 OmniHand/WaveLLM 补 DDP model execution、checkpoint
    aggregation 和 real-data integration；prediction aggregation 与 single-process epoch resume 已闭合。
-5. 为 `ARCH-003` 收集 radar acquisition/channel/calibration 证据；绑定真实 manifest fixture 后实现
+6. 为 `ARCH-003` 收集 radar acquisition/channel/calibration 证据；绑定真实 manifest fixture 后实现
    beamforming 与完整 cube gate，禁止用 legacy 默认值填补未知项。
 
 ## Source Of Truth

@@ -1,6 +1,6 @@
 # Data Status and Rebuild Plan
 
-Status: `csl_news_download_active_other_asset_intake_blocked`
+Status: `csl_news_download_active_private_nas_transfer_pending`
 Last Updated: `2026-08-12`
 Role: `data_source_of_truth`
 
@@ -16,10 +16,11 @@ huggingface/
 
 盘点开始时未发现目录名包含 `mmPRISM`、`CSL-Daily`、`CSL-News`、`collected_base`、
 `collected_demo`、`OmniHand` 或 `WaveLLM` 的资产。现已建立 canonical incoming root，并开始下载
-CSL-News 官方源；其他数据族仍未到位。
+CSL-News 官方源。`2026-08-12` 作者确认全部项目数据仍保存在其 NAS；这确认了来源仍存在，但当前机器
+尚无 NAS 路径、只读 inventory、容量清单或 checksum，因此状态从“来源未知”改为“等待分批传入和验收”。
 
-`2026-08-11T12:10Z` 复核时，共享 `/mnt/gfs` 约 10 TB，使用率 65%，剩余约 3.6 TB；
-`/mnt/gfs/yanyifan` 约占 698 GB。空间属于共享动态状态，每次批量下载或解压前仍必须重新检查。
+`2026-08-12T00:38Z` 复核时，共享 `/mnt/gfs` 约 10 TB，使用率 70%，剩余约 3.1 TB。
+空间属于共享动态状态，每次批量下载或解压前仍必须重新检查。
 
 面向上传人员的完整 P0/P1/P2 清单见 `../data_upload_checklist.md`。
 
@@ -27,11 +28,11 @@ CSL-News 官方源；其他数据族仍未到位。
 
 | Data Family | 历史用途 | 预期主要模态 | 当前状态 |
 |---|---|---|---|
-| CSL-Daily | OmniHand simulation、WaveLLM caption | images, pose, pred_pose, feature, annotation | missing_location |
-| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_v2_registry_62_archives_102949_videos_passed |
-| Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | missing_location |
-| Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | missing_location |
-| Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | missing_location |
+| CSL-Daily | OmniHand simulation、WaveLLM caption | images, pose, pred_pose, feature, annotation | author_nas_confirmed_transfer_pending |
+| CSL-News | pose annotation、simulation、WaveLLM caption | video, pose, signal/feature, caption | official_download_active_v2_registry_74_archives_123129_videos_passed；legacy_pose_range_0_99_reported_on_author_nas |
+| Collected Base | 真实毫米波 OmniHand | color, raw mmWave, pose | author_nas_confirmed_transfer_pending |
+| Collected Demo | 真实毫米波开发/演示 | color, raw mmWave, pose, pred_pose | author_nas_confirmed_transfer_pending |
+| Collected CSL | 真实手语采集 | color, raw mmWave, pose, caption | author_nas_confirmed_transfer_pending |
 | Model Weights | RTMPose3D、CubeNet、MT5、semantic evaluators | checkpoints/tokenizers | RTMW3D + mT5 base + SimCSE + SBERT verified；historical training checkpoints missing |
 | Historical Runs | paper metrics and checkpoints | config, ckpt, predictions, metrics | missing_location |
 
@@ -81,7 +82,28 @@ CSL-News 官方源；其他数据族仍未到位。
 上传批次使用 `incoming/<YYYYMMDD_source_batch>/`，附带 `UPLOAD_MANIFEST.csv` 和 `SHA256SUMS`。
 容量审计完成前不批量创建目录、解压或 materialize 数据。
 
-### 4.1 已验证模型资产
+### 4.1 CSL-News 历史 pose 对照样本
+
+作者确认 NAS 上保留了约 `0-99` archive 的历史处理后 pose，并先提供两条样本用于验证新旧预处理是否
+一致。已建立只读 intake 目标：
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/incoming/20260812_csl_news_legacy_pose_pair_v1/legacy_evidence/
+```
+
+上传时保留原目录层级和文件名，不 flatten、不改名、不覆盖。每条 `.npy` 需要同时给出原始 archive ID、
+ZIP member/视频相对路径；如有 historical label、mapping 或 split entry 也一并保留。历史脚本预期输出
+`float32 [T,2,24,3]`，当前 canonical NPZ 同时保留 native 133-joint、score、2D transform、frame/time 和
+`canonical_pose [T,2,24,3]`。对照必须先以精确 archive/member identity 定位当前结果，再报告：
+
+- shape、dtype、帧数和 caption identity；
+- bitwise equality、`allclose`、最大/平均绝对误差；
+- 每轴、每关节误差、depth center 和左右手顺序；
+- 不一致时区分视频解码、crop、模型/依赖版本、深度中心或 joint mapping 差异。
+
+该批次只作为 historical forensic evidence；验证前不得进入 canonical training manifest。
+
+### 4.2 已验证模型资产
 
 `evaluation_models_v1` 已通过 canonical pinned downloader 写入
 `external/models/evaluation_models_v1/`。SimCSE/SBERT 共 14 个 loader 文件、818,741,363 bytes，
@@ -165,12 +187,13 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 
 ## 8. 当前下一步
 
-1. 作者先提供所有待上传 archive/目录的名称、估计大小和“可重下/不可重下”标记。
-2. 优先上传体积小的匿名 metadata、雷达配置、阵列映射、标定和仿真 provenance。
-3. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
-4. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
-5. 监控 CSL-News 下载服务；每个 final ZIP 必须先通过完整 CRC gate，才可进入标注或 manifest promotion。
-6. 保留 primary 异常 `archive_001/005/008`、partial output 和失败 sidecar；当前只通过 v2 registry
+1. 作者先提供 NAS 上所有待上传 archive/目录的名称、估计大小和“可重下/不可重下”标记。
+2. 先把两条 CSL-News historical pose 样本按原相对路径放入已建立的对照批次，完成新旧逐帧审计。
+3. 优先上传体积小的匿名 metadata、雷达配置、阵列映射、标定和仿真 provenance。
+4. 分批上传私人 raw captures，优先原投稿 test split 与 `collected_csl` 对应来源。
+5. 每批完成 checksum、只读 inventory 和 data registry 登记后，再批准下一批。
+6. 监控 CSL-News 下载服务；每个 final ZIP 必须先通过完整 CRC gate，才可进入标注或 manifest promotion。
+7. 保留 primary 异常 `archive_001/005/008`、partial output 和失败 sidecar；当前只通过 v2 registry
    选择已验证的 versioned replacement，不移动、覆盖或删除原件。
 
 ## 9. CSL-News 官方下载状态
@@ -494,3 +517,9 @@ current-source pair、remaining available 107,885、duplicate/missing pair 0、l
 `18ed292719a7a44fdecd26e52dd59cd4685a581e5f4035b18b7dba0a175294e0`。下载服务和四个 GPU 7
 registry worker 均 `active/running`、`NRestarts=0`。当前 source intake 约 249 GB、pose output 7.9 GB、
 annotation scratch 20 GB；原始 ZIP、partial、scratch、失败和 pose artifact 均未清理。
+
+`00:30 UTC` 定时 status `status_20260812T003003Z.json` 继续为 `healthy`：74 个 registry-passed
+archive、123,129 videos、14,125 个 completed current-source pair、remaining available 109,004、
+duplicate/missing pair 0、抽检 3/3；近期约 2,180 samples/hour、36.85 frames/s。`00:38 UTC` 下载目录
+有 76 个 final ZIP 和 51 个 `.part`，aria2 正处理约 `archive_123-127`；下载和四个 GPU 7 worker 均
+`active/running`，没有清理任何 source、partial、scratch、failure 或 historical pose artifact。

@@ -6,17 +6,17 @@ Role: `data_execution_tracker`
 
 | ID | Priority | Task | Status | Acceptance |
 |---|---|---|---|---|
-| `DATA-001-A` | P0 | 确认历史数据实际位置和访问方式 | blocked | 每个来源有 owner/location/access |
+| `DATA-001-A` | P0 | 确认历史数据实际位置和访问方式 | in_progress | 作者已确认全部项目数据在其 NAS；待每个来源的 NAS 路径、owner 和 transfer/access 方式 |
 | `DATA-001-B` | P0 | 只读统计容量、文件数、后缀和目录层次 | blocked | inventory report，不生成副本 |
 | `DATA-001-C` | P0 | 定位 checkpoint、log、prediction、metric artifacts | blocked | historical artifact inventory |
 | `DATA-001-D` | P0 | 评估 `/mnt/gfs` 容量和迁移策略 | in_progress | 峰值空间与清理/归档方案 |
 | `DATA-001-E` | P0 | 定义重新上传范围、优先级和 intake gate | done | `data_upload_checklist.md` 覆盖 P0/P1/P2、下载和重建边界 |
-| `DATA-001-F` | P0 | 收集待上传 archive/目录大小及可重下标记 | blocked | source-side preflight inventory 可计算上传/解压峰值 |
+| `DATA-001-F` | P0 | 收集待上传 archive/目录大小及可重下标记 | in_progress | NAS source-side preflight inventory 可计算上传/解压峰值 |
 | `DATA-001-G` | P0 | 上传并验证 metadata/radar config/calibration | blocked | checksum、字段字典、config mapping 和 access scope 通过 |
 | `DATA-001-H` | P0 | 分批上传私人真实采集 raw package | blocked | incoming batch checksum 完整且原始包只读 |
-| `DATA-001-I` | P0 | 固定 CSL-Daily/CSL-News 重新下载或上传路径 | in_progress | CSL-News 已确认可重下；待补齐各数据集 version/URL/license/checksum 或 incoming batch |
+| `DATA-001-I` | P0 | 固定 CSL-Daily/CSL-News 重新下载或上传路径 | in_progress | CSL-News 官方源已固定并下载；CSL-Daily 已确认在 NAS，待版本/路径/license/checksum |
 | `DATA-001-J` | P0 | 恢复原投稿 MANO/mesh/skeleton simulation provenance | blocked | 实际 simulator、输入、配置和历史证据一致 |
-| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | versioned replacement `001/005/008` 已通过完整 gate；v2 registry 当前 73 archives/121,465 videos passed，待其余 363 archives + labels 全量验证 |
+| `DATA-001-K` | P0 | 下载并验证 CSL-News 官方 RGB/labels | in_progress | versioned replacement `001/005/008` 已通过完整 gate；v2 registry 当前 74 archives/123,129 videos passed，待其余 362 archives + labels 全量验证 |
 | `DATA-002-A` | P1 | 定义 sample/sequence/acquisition/provenance schema | in_progress | schema v1 reviewed against real source |
 | `DATA-002-B` | P1 | 定义 pose joint/坐标系/单位规范 | in_progress | metric `[left/right,24,x/y/z]` contract 已冻结；待各数据族单位/坐标 mapping，RTMW3D 当前仅 shape/order 已证 |
 | `DATA-002-C` | P1 | 定义 raw radar complex representation 与 radar config version | in_progress | complex `[chirp,antenna,sample]` contract 与 range-Doppler v1 已通过；待真实 reader/config fixture |
@@ -27,6 +27,7 @@ Role: `data_execution_tracker`
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | in_progress | 2,157-record CSL-News partial sequence split 已通过 deterministic coverage/leakage audit；待 full manifest、signer/subject metadata 和最终 split |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
 | `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | durable publication、source-bound resume、immutable conflict recovery 和 4-worker v2 shard 已通过；12,057-record clean snapshot 已纳入恢复样本且保留原冲突证据，夜间全量 build 待完成 |
+| `DATA-005-D` | P1 | 对照两条 NAS historical CSL-News pose 与 canonical 输出 | awaiting_upload | exact archive/member 匹配；shape/dtype/frame/caption、bitwise/allclose、per-axis/joint、depth-center、left/right 报告 |
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | in_progress | NumPy range-Doppler v1/analytic tests 已通过；beamforming/simulation 等 acquisition、array、calibration evidence |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | in_progress | strict dependency-light radar-cube/metric-pose manifest adapter、checksum 和 variable-time collator 已通过；待真实 collected cube/pose build、validation report 与 frozen manifest hash |
@@ -41,6 +42,10 @@ Role: `data_execution_tracker`
 3. 每批进入 `incoming/<batch-id>`，完成 checksum 和只读 inventory 后才登记为 source。
 4. 公共模型和可重新生成的 pose/signal/feature/cache 不占用首批上传预算。
 5. 完整操作清单：`../data_upload_checklist.md`。
+
+两条 historical CSL-News pose 的首批对照 intake 已建立在
+`incoming/20260812_csl_news_legacy_pose_pair_v1/legacy_evidence/`。必须保留原始目录和文件名，并提供
+archive/member identity；该批次不得直接 promotion 到训练数据。
 
 当前 public download 由 `mmprism-csl-news-metadata.service` 和
 `mmprism-csl-news-archives.service` 托管；完成前不得解压。
@@ -95,6 +100,10 @@ portable path 和四个 checksum-validating adapter 读取通过。`23:30Z` live
 probe，live registry 更新为 73/73 archives、121,465 videos、failed 0。`00:12Z` 状态为 `healthy`：
 13,580 个 current-source pair、missing pair 0、latest-run failure 0、抽检 3/3，近期约 1,799
 samples/hour；下载和四个 GPU 7 worker 均 `active/running`、`NRestarts=0`。
+
+`00:30Z` 定时状态继续为 `healthy`：74 个 archive/123,129 videos、14,125 个 current-source pair、
+missing pair 0、抽检 3/3，近期约 2,180 samples/hour。`00:38Z` 下载目录有 76 个 final ZIP 和 51 个
+`.part`；下载与四个 GPU 7 worker 持续运行，所有 raw/partial/scratch/failure/historical artifact 保留。
 
 ## 禁止事项
 

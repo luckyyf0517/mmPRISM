@@ -1,7 +1,7 @@
 # Data Registry
 
-Status: `upload_contract_ready_awaiting_sources`
-Last Updated: `2026-08-11`
+Status: `partial_sources_active_private_nas_transfer_pending`
+Last Updated: `2026-08-12`
 Role: `dataset_and_split_provenance`
 
 ## Data Families
@@ -87,6 +87,17 @@ Active public-source batch:
 ```text
 /mnt/gfs/yanyifan/mmPRISM/incoming/20260811_csl_news_hf_3a060121/
 ```
+
+Pending historical comparison batch:
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/incoming/20260812_csl_news_legacy_pose_pair_v1/legacy_evidence/
+```
+
+该目录已建立但当前为空。作者报告 NAS 上保留约 `0-99` archive 的历史处理后 CSL-News pose，并将先
+上传两条原始 `.npy`。在收到原始 relative path、archive ID 和精确 video/ZIP-member identity 前，
+该批次状态为 `awaiting_upload`，不是 registered source，也不得进入任何 canonical manifest。验收任务为
+`DATA-005-D`，比较范围见 `../current/data_status.md`。
 
 Metadata at the pinned revision completed on `2026-08-11`: JSON SHA-256
 `3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5`, CSV SHA-256

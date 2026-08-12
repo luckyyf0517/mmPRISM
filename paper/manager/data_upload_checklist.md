@@ -1,7 +1,7 @@
 # Full-Reproduction Data Upload Checklist
 
 Status: `ready_for_source_intake`
-Last Updated: `2026-08-11`
+Last Updated: `2026-08-12`
 Role: `author_facing_upload_contract`
 
 本文档回答“从零完整复现 mmPRISM 需要重新上传什么”。它是上传执行清单，不替代
@@ -10,8 +10,8 @@ Role: `author_facing_upload_contract`
 ## 1. 当前约束
 
 - Canonical data root：`/mnt/gfs/yanyifan/mmPRISM/`。
-- `/mnt/gfs` 为约 10 TB 共享盘；`2026-08-11T12:10Z` 复核时约余 3.6 TB，容量会动态变化。
-- `/mnt/gfs/yanyifan` 当前约占 698 GB，但没有发现 mmPRISM 数据。
+- `/mnt/gfs` 为约 10 TB 共享盘；`2026-08-12T00:38Z` 复核时约余 3.1 TB，容量会动态变化。
+- 作者已确认全部项目数据仍在其 NAS；当前机器尚待接收 source-side inventory 和分批上传内容。
 - 上传前必须先提供文件清单和总大小；未通过容量 gate 前不得解压或生成派生数据。
 - 第一优先级是不可替代的私人原始采集与标定资料，不是 pose、feature 或 synthetic radar 缓存。
 
@@ -152,6 +152,23 @@ collected-cross-individual-*
 ```
 
 名称不等同于 provenance；上传时仍需说明其来源 run 或原投稿表图。
+
+### 首批 CSL-News pose 对照样本
+
+NAS 上约 `0-99` archive 的历史 RTMPose3D 派生结果不需要整体优先上传。先提供两条原始 `.npy`，用于
+与当前重建结果做逐帧等价性审计，目标目录为：
+
+```text
+/mnt/gfs/yanyifan/mmPRISM/incoming/20260812_csl_news_legacy_pose_pair_v1/legacy_evidence/
+```
+
+不要只上传重命名后的两个数组。请保留它们的原始相对路径/文件名，并附带：
+
+- archive ID 和匹配的 ZIP member/视频文件名；
+- historical caption/mapping/split entry（如有）；
+- 生成时使用的模型 config/checkpoint 或环境记录（如仍可找到）。
+
+样本只作历史审计，不替代可重新下载的视频 source，也不会直接进入训练 manifest。
 
 ## 4. 不要优先上传的可再生资产
 
