@@ -1,0 +1,30 @@
+# CSL-Daily sentence-sequence RTMW3D pose annotation (Phase 2 of
+# openspec/changes/rebuild-csl-daily-simulation). Per-frame inference over
+# external/csl_daily sentence frames, emitting NaN-masked [T, 2, 24, 3] poses
+# plus a pose manifest consumed by configs/data/csl_daily_simulation.yaml.
+#
+# Consumed via `mmprism csl-daily-annotate` with ${MMPRISM_DATA_ROOT}
+# supplied by the caller environment.
+schema_version: mmprism.csl_daily_pose_annotation.v1
+source:
+  # Direct-preservation upload batch; sequence dirs look like S000000_P0004_T00.
+  sequence_root: ${MMPRISM_DATA_ROOT}/external/csl_daily/csl_daily_original_20260812/CSL-Daily/sentence/frames_512x512
+  source_id: csl_daily_original_20260812
+model:
+  # Same pinned RTMW3D-L assets as configs/data/csl_news_rtmw3d_overnight.yaml.
+  mmpose_root: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9
+  mmpose_commit: 759b39c13fea6ba094afc1fa932f51dc1b11cbf9
+  project_dir: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9/projects/rtmpose3d
+  config_path: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9/projects/rtmpose3d/configs/rtmw3d-l_8xb64_cocktail14-384x288.py
+  checkpoint_path: /mnt/gfs/yanyifan/mmPRISM/external/models/rtmw3d/794dbc78_20240626/rtmw3d-l_8xb64_cocktail14-384x288-794dbc78_20240626.pth
+  checkpoint_sha256: 794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed
+  device: cuda:0
+transform:
+  # Legacy run_csl_daily_annotation.py --kpt-thr default.
+  confidence_threshold: 0.5
+runtime:
+  # Keep in sync with the input section of configs/data/csl_daily_simulation.yaml.
+  output_root: ${MMPRISM_DATA_ROOT}/interim/csl_daily/pose_annotation/rtmw3d_l_794dbc78_v1
+  # Fixed at 1: larger RTMW3D batches are not numerically equivalent in this
+  # artifact lineage (CSL-News project finding); the loader rejects anything else.
+  inference_batch_size: 1

@@ -15,9 +15,9 @@
 
 ## 3. Pose Annotation
 
-- [ ] 3.1 Implement `csl_daily_pose_annotation.py` on the `PoseEstimator` protocol, batch fixed to 1.
-- [ ] 3.2 Add `configs/data/csl_daily_rtmw3d.yaml` with injected roots.
-- [ ] 3.3 Add mocked unit tests; run GPU smoke on a small sequence subset.
+- [x] 3.1 Implement `csl_daily_pose_annotation.py` on the `PoseEstimator` protocol, batch fixed to 1.
+- [x] 3.2 Add `configs/data/csl_daily_rtmw3d.yaml` with injected roots.
+- [ ] 3.3 Add mocked unit tests; run GPU smoke on a small sequence subset. (unit tests done; GPU smoke pending data upload)
 
 ## 4. Materialization And Delivery
 

@@ -20,6 +20,12 @@ from mmprism.data.csl_daily_intake import (
     promote_csl_daily_batch,
     validate_csl_daily_batch,
 )
+from mmprism.data.csl_daily_pose_annotation import (
+    CslDailyPoseAnnotationConfig,
+    CslDailyPoseAnnotationError,
+    load_csl_daily_pose_annotation_config,
+    run_csl_daily_pose_annotation,
+)
 from mmprism.data.csl_daily_receipt import (
     CSL_DAILY_SOURCE_INVENTORY_SCHEMA,
     CSL_DAILY_SOURCE_RECEIPT_SCHEMA,
@@ -167,6 +173,8 @@ __all__ = [
     "CslDailyIntakeError",
     "CslDailyIntakeReport",
     "CslDailyManifestEntry",
+    "CslDailyPoseAnnotationConfig",
+    "CslDailyPoseAnnotationError",
     "CslDailySourceMetadata",
     "CslDailySourceInventoryEntry",
     "CslDailySourceReceiptError",
@@ -248,6 +256,7 @@ __all__ = [
     "claim_csl_news_annotation_archive",
     "initialize_csl_news_scheduler",
     "load_csl_daily_annotations",
+    "load_csl_daily_pose_annotation_config",
     "load_csl_news_audit_context",
     "load_csl_news_annotation_config",
     "load_csl_news_integrity_config",
@@ -261,6 +270,7 @@ __all__ = [
     "plan_parquet_delivery",
     "plan_parquet_layout",
     "promote_csl_daily_batch",
+    "run_csl_daily_pose_annotation",
     "run_csl_news_annotation",
     "run_csl_news_annotation_scheduled_worker",
     "passed_csl_news_integrity_archives",

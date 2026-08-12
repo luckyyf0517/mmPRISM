@@ -684,37 +684,37 @@ def _archive_integrity_provenance(
     }
 
 
-def _require_model_assets(config: CslNewsAnnotationConfig) -> dict[str, str]:
+def _require_model_assets(model: AnnotationModelConfig) -> dict[str, str]:
     for description, path in (
-        ("MMPose source", config.model.mmpose_root),
-        ("RTMPose3D project", config.model.project_dir),
-        ("model config", config.model.config_path),
-        ("checkpoint", config.model.checkpoint_path),
+        ("MMPose source", model.mmpose_root),
+        ("RTMPose3D project", model.project_dir),
+        ("model config", model.config_path),
+        ("checkpoint", model.checkpoint_path),
     ):
         if not path.exists():
             raise CslNewsAnnotationError(f"{description} does not exist: {path}")
     try:
         commit = subprocess.run(
-            ["git", "-C", str(config.model.mmpose_root), "rev-parse", "HEAD"],
+            ["git", "-C", str(model.mmpose_root), "rev-parse", "HEAD"],
             check=True,
             capture_output=True,
             text=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as error:
         raise CslNewsAnnotationError("Unable to verify the pinned MMPose commit") from error
-    if commit != config.model.mmpose_commit:
+    if commit != model.mmpose_commit:
         raise CslNewsAnnotationError(
-            f"MMPose commit mismatch: expected {config.model.mmpose_commit}, got {commit}"
+            f"MMPose commit mismatch: expected {model.mmpose_commit}, got {commit}"
         )
-    checkpoint_sha256 = sha256_file(config.model.checkpoint_path)
-    if checkpoint_sha256 != config.model.checkpoint_sha256:
+    checkpoint_sha256 = sha256_file(model.checkpoint_path)
+    if checkpoint_sha256 != model.checkpoint_sha256:
         raise CslNewsAnnotationError(
             "Checkpoint SHA-256 mismatch: "
-            f"expected {config.model.checkpoint_sha256}, got {checkpoint_sha256}"
+            f"expected {model.checkpoint_sha256}, got {checkpoint_sha256}"
         )
     return {
         "mmpose_commit": commit,
-        "config_sha256": sha256_file(config.model.config_path),
+        "config_sha256": sha256_file(model.config_path),
         "checkpoint_sha256": checkpoint_sha256,
     }
 
@@ -1366,7 +1366,7 @@ def run_csl_news_annotation(
     _ensure_disk_floor(config)
     labels = load_csl_news_labels(config.source.labels_path)
     labels_sha256 = sha256_file(config.source.labels_path)
-    model_assets = _require_model_assets(config)
+    model_assets = _require_model_assets(config.model)
     run_metadata_path, run_metadata = _run_metadata(
         config,
         model_assets,

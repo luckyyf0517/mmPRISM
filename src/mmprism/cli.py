@@ -23,6 +23,7 @@ from mmprism.assets import (
 from mmprism.config import ConfigError, load_experiment_config
 from mmprism.contracts import ManifestError, SplitContractError, validate_manifest
 from mmprism.data import (
+    CslDailyPoseAnnotationError,
     CslDailySourceReceiptError,
     CslNewsAnnotationError,
     CslNewsAuditError,
@@ -41,6 +42,7 @@ from mmprism.data import (
     build_csl_news_source_manifest_snapshot,
     build_data_split_snapshot,
     create_csl_daily_source_receipt,
+    load_csl_daily_pose_annotation_config,
     load_csl_news_annotation_config,
     load_csl_news_integrity_config,
     load_csl_news_pose_manifest_config,
@@ -49,6 +51,7 @@ from mmprism.data import (
     load_parquet_delivery_config,
     materialize_parquet_delivery,
     plan_parquet_delivery,
+    run_csl_daily_pose_annotation,
     run_csl_news_annotation,
     scan_csl_news_source_integrity,
     select_csl_news_integrity_archive,
@@ -187,6 +190,21 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Materialize simulated radar cubes from a frozen CSL-Daily pose manifest",
     )
     csl_daily_simulate_parser.add_argument("config", type=Path)
+
+    csl_daily_annotate_parser = subparsers.add_parser(
+        "csl-daily-annotate",
+        help="Build restartable RTMW3D pose annotations for CSL-Daily sentence frames",
+    )
+    csl_daily_annotate_parser.add_argument("config", type=Path)
+    csl_daily_annotate_parser.add_argument("--project-root", type=Path)
+    csl_daily_annotate_parser.add_argument("--max-sequences", type=int)
+    csl_daily_annotate_parser.add_argument(
+        "--sequence-id",
+        action="append",
+        default=[],
+        metavar="SEQUENCE_ID",
+        help="Annotate only this sequence; may be repeated",
+    )
 
     csl_news_parser = subparsers.add_parser(
         "csl-news-audit", help="Audit one complete CSL-News archive against official labels"
@@ -629,6 +647,34 @@ def main(argv: Sequence[str] | None = None) -> int:
                 return 2
             payload = simulate_result.run_record
             exit_code = 0 if simulate_result.failed_count == 0 else 1
+        elif arguments.command == "csl-daily-annotate":
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            daily_annotation_config = load_csl_daily_pose_annotation_config(
+                arguments.config, project_root, variables=os.environ
+            )
+            try:
+                from mmprism.data.csl_daily_pose_annotation import (
+                    MMPoseRtmw3dFrameEstimator,
+                )
+
+                daily_estimator = MMPoseRtmw3dFrameEstimator(daily_annotation_config)
+            except ImportError as error:
+                print(
+                    f"error: csl-daily-annotate requires the annotation dependencies: {error}",
+                    file=sys.stderr,
+                )
+                return 2
+            payload = run_csl_daily_pose_annotation(
+                daily_annotation_config,
+                estimator=daily_estimator,
+                max_sequences=arguments.max_sequences,
+                sequence_ids=arguments.sequence_id or None,
+            )
+            exit_code = 0 if payload["failed"] == 0 else 1
         elif arguments.command == "csl-news-audit":
             payload = audit_csl_news_archive(
                 arguments.archive,
@@ -1004,6 +1050,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         CslNewsPoseManifestError,
         CslNewsSourceManifestError,
         CslDailySourceReceiptError,
+        CslDailyPoseAnnotationError,
         DataSplitError,
         ParquetDeliveryError,
         FileNotFoundError,
