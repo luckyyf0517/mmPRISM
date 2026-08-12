@@ -2,7 +2,9 @@ import hashlib
 import json
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -12,6 +14,7 @@ from mmprism.data import (
     is_completed_annotation_archive,
     is_completed_annotation_sample,
     load_csl_news_annotation_config,
+    run_csl_news_annotation,
     stable_sample_id,
     validate_annotation_output,
 )
@@ -486,6 +489,34 @@ runtime:
         self.assertEqual(provenance["archive_sha256"], "b" * 64)
         self.assertEqual(provenance["audit_sha256"], "d" * 64)
         self.assertEqual(provenance["builder_commit"], "c" * 40)
+
+    def test_cooperative_pause_stops_before_the_next_video(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_csl_news_annotation_config(self._write_config(root), root)
+            config.source.archive_root.mkdir()
+            config.source.labels_path.write_text(
+                json.dumps([{"video": "sample.mp4", "text": "测试文本"}]),
+                encoding="utf-8",
+            )
+            with zipfile.ZipFile(config.source.archive_root / "archive_001.zip", "w") as archive:
+                archive.writestr("sample.mp4", b"video")
+
+            with patch(
+                "mmprism.data.csl_news_annotation._require_model_assets", return_value={}
+            ):
+                result = run_csl_news_annotation(
+                    config,
+                    archive_id=1,
+                    continue_requested=lambda: False,
+                )
+
+            output_root_exists = (config.runtime.output_root / "samples").exists()
+
+        self.assertEqual(result["status"], "paused")
+        self.assertEqual(result["processed"], 0)
+        self.assertEqual(result["skipped"], 0)
+        self.assertFalse(output_root_exists)
 
 
 if __name__ == "__main__":

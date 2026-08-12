@@ -171,6 +171,30 @@ The new pipeline will preserve the scientific intent while defining explicit con
 The legacy output will only be compared against this pipeline on a small audit subset; no compatibility shim is
 required.
 
+## Elastic Annotation Scheduling
+
+Annotation execution is controlled separately from the data contract. The static historical worker sharding
+rule (`archive_id % worker_count`) remains supported only for targeted recovery and forensic reproduction; it
+is not the operational production mode because changing worker capacity would reshuffle ownership.
+
+The current operation uses a filesystem control plane below the annotation output root:
+
+```text
+scheduler/control.json             # source/config-bound running or paused intent
+scheduler/claim.lock               # short critical section for archive claims
+scheduler/leases/archive_NNN.json  # active worker lease and heartbeat
+scheduler/leases/history/          # released lease records
+scheduler/leases/expired/          # stale leases retained before recovery
+```
+
+A scheduled worker claims one currently integrity-passed, source-incomplete archive at a time. A lease is
+renewed before every video, so `paused` takes effect after the in-flight video completes. No completed sample
+is revisited: existing source-bound NPZ/sidecar validation remains the completion authority, and archive markers
+continue to bind the exact source identity. An interrupted worker leaves its lease for a bounded expiry period;
+only then may another worker recover the archive. More workers can be started or stopped at any time without
+repartitioning existing work. The control plane is operational metadata, not a source manifest or paper-facing
+artifact.
+
 ## Processed Delivery Boundary
 
 CSL-News annotation output is an `interim` product, not final training data. Each published source-bound NPZ and

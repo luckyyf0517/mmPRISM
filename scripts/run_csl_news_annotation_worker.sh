@@ -10,6 +10,8 @@ Options:
   --config PATH        Annotation YAML configuration.
   --gpu ID|auto        Physical GPU index, or choose by free memory (default: auto).
   --min-free-mib N     Required free GPU memory before model load (default: 2048).
+  --scheduled          Run the elastic lease-controlled worker instead of the
+                       targeted/static annotation CLI.
   -h, --help            Show this help.
 
 GPU utilization is intentionally not a gate. The operator approved sharing a
@@ -21,6 +23,7 @@ project_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 config="$project_root/configs/data/csl_news_rtmw3d_overnight.yaml"
 gpu="auto"
 min_free_mib=2048
+scheduled=false
 annotation_args=()
 
 while (($#)); do
@@ -36,6 +39,10 @@ while (($#)); do
     --min-free-mib)
       min_free_mib="$2"
       shift 2
+      ;;
+    --scheduled)
+      scheduled=true
+      shift
       ;;
     --)
       shift
@@ -92,5 +99,9 @@ export OMP_NUM_THREADS="$MMPRISM_CPU_THREADS"
 export MKL_NUM_THREADS="$MMPRISM_CPU_THREADS"
 export OPENBLAS_NUM_THREADS="$MMPRISM_CPU_THREADS"
 export NUMEXPR_NUM_THREADS="$MMPRISM_CPU_THREADS"
-exec uv run --frozen --extra annotation mmprism csl-news-annotate \
+command="csl-news-annotate"
+if [[ "$scheduled" == true ]]; then
+  command="csl-news-annotate-scheduled"
+fi
+exec uv run --frozen --extra annotation mmprism "$command" \
   "$config" --project-root "$project_root" "${annotation_args[@]}"

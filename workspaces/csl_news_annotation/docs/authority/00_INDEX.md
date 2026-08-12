@@ -14,12 +14,16 @@ pose+caption manifests. Its outputs are intermediate visual evidence, not calibr
 
 - Source-integrity v2 selects passed primary or replacement archives without overwriting incident evidence.
 - RTMW3D workers publish source-bound immutable artifacts and quarantine old/unbound results.
+- The former static eight-lane run is intentionally paused for scheduler work. The replacement control plane
+  uses durable archive leases, cooperative pause/resume, and elastic worker capacity; it has not yet been
+  enabled for production consumption.
 - Partial source, pose, metadata, and split snapshots are validated; the full 436-archive build is incomplete.
 
 Active blockers: full-source completion, signer/subject metadata, and historical inference environment.
 
-Next actions: finish source/annotation coverage, rerun full identity audit, freeze the final manifests, and
-perform the planned clean historical cross-check.
+Next actions: CPU-test and operator-test the lease scheduler while paused, resume only through the new
+control plane, then finish source/annotation coverage, rerun full identity audit, freeze the final manifests,
+and perform the planned clean historical cross-check.
 
 ## Canonical Locations
 

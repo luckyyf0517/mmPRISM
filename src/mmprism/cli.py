@@ -57,6 +57,13 @@ from mmprism.data import (
     write_csl_news_audit,
     write_csl_news_metadata_profile,
 )
+from mmprism.data.csl_news_scheduler import (
+    CslNewsSchedulerError,
+    build_csl_news_scheduler_status,
+    initialize_csl_news_scheduler,
+    run_csl_news_annotation_scheduled_worker,
+    set_csl_news_scheduler_state,
+)
 from mmprism.release import (
     ReleaseAuditError,
     audit_release,
@@ -179,6 +186,44 @@ def _build_parser() -> argparse.ArgumentParser:
     annotation_parser.add_argument("--integrity-registry", type=Path)
     annotation_parser.add_argument(
         "--once", action="store_true", help="Process currently complete archives and exit"
+    )
+
+    scheduler_init_parser = subparsers.add_parser(
+        "csl-news-scheduler-init",
+        help="Initialize the paused durable control plane for elastic CSL-News annotation workers",
+    )
+    scheduler_init_parser.add_argument("config", type=Path)
+    scheduler_init_parser.add_argument("--project-root", type=Path)
+    scheduler_init_parser.add_argument("--lease-seconds", type=int, default=900)
+
+    for command, help_text in (
+        ("csl-news-scheduler-pause", "Cooperatively pause elastic CSL-News annotation workers"),
+        ("csl-news-scheduler-resume", "Resume elastic CSL-News annotation workers"),
+    ):
+        control_parser = subparsers.add_parser(command, help=help_text)
+        control_parser.add_argument("config", type=Path)
+        control_parser.add_argument("--project-root", type=Path)
+        control_parser.add_argument("--reason")
+
+    scheduler_status_parser = subparsers.add_parser(
+        "csl-news-scheduler-status",
+        help="Report elastic CSL-News annotation queue state and active leases",
+    )
+    scheduler_status_parser.add_argument("config", type=Path)
+    scheduler_status_parser.add_argument("--project-root", type=Path)
+    scheduler_status_parser.add_argument("--integrity-registry", type=Path, required=True)
+
+    scheduled_worker_parser = subparsers.add_parser(
+        "csl-news-annotate-scheduled",
+        help="Run one elastic, lease-controlled CSL-News annotation worker",
+    )
+    scheduled_worker_parser.add_argument("config", type=Path)
+    scheduled_worker_parser.add_argument("--project-root", type=Path)
+    scheduled_worker_parser.add_argument("--integrity-registry", type=Path, required=True)
+    scheduled_worker_parser.add_argument("--worker-id")
+    scheduled_worker_parser.add_argument("--poll-seconds", type=int)
+    scheduled_worker_parser.add_argument(
+        "--once", action="store_true", help="Process at most one claimed archive and exit"
     )
 
     status_parser = subparsers.add_parser(
@@ -552,6 +597,41 @@ def main(argv: Sequence[str] | None = None) -> int:
                 integrity_registry_path=arguments.integrity_registry,
             )
             exit_code = 0 if payload["failed"] == 0 else 1
+        elif (
+            arguments.command.startswith("csl-news-scheduler-")
+            or arguments.command == "csl-news-annotate-scheduled"
+        ):
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            annotation_config = load_csl_news_annotation_config(arguments.config, project_root)
+            if arguments.command == "csl-news-scheduler-init":
+                payload = initialize_csl_news_scheduler(
+                    annotation_config, lease_seconds=arguments.lease_seconds
+                )
+            elif arguments.command == "csl-news-scheduler-pause":
+                payload = set_csl_news_scheduler_state(
+                    annotation_config, state="paused", reason=arguments.reason
+                )
+            elif arguments.command == "csl-news-scheduler-resume":
+                payload = set_csl_news_scheduler_state(
+                    annotation_config, state="running", reason=arguments.reason
+                )
+            elif arguments.command == "csl-news-scheduler-status":
+                payload = build_csl_news_scheduler_status(
+                    annotation_config, integrity_registry_path=arguments.integrity_registry
+                )
+            else:
+                payload = run_csl_news_annotation_scheduled_worker(
+                    annotation_config,
+                    integrity_registry_path=arguments.integrity_registry,
+                    worker_id=arguments.worker_id,
+                    once=arguments.once,
+                    poll_seconds=arguments.poll_seconds,
+                )
+            exit_code = 0 if payload.get("failed", 0) == 0 else 1
         elif arguments.command == "csl-news-annotation-status":
             project_root = (
                 arguments.project_root.resolve()
@@ -857,6 +937,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         WaveLLMRunError,
         ReleaseAuditError,
         CslNewsAnnotationError,
+        CslNewsSchedulerError,
         CslNewsAuditError,
         CslNewsIntegrityError,
         CslNewsMetadataError,

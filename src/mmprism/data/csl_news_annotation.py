@@ -12,7 +12,7 @@ import sys
 import time
 import types
 import zipfile
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
@@ -1196,6 +1196,7 @@ def _run_metadata(
     worker_index: int,
     worker_count: int,
     integrity_registry_path: Path | None,
+    orchestration_metadata: Mapping[str, Any] | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     try:
         git_commit = subprocess.run(
@@ -1214,6 +1215,20 @@ def _run_metadata(
         git_dirty = True
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
     path = config.runtime.output_root / "runs" / f"run_{timestamp}_{os.getpid()}.json"
+    orchestration: dict[str, Any] = {
+        "worker_index": worker_index,
+        "worker_count": worker_count,
+        "integrity_registry": (
+            str(integrity_registry_path) if integrity_registry_path is not None else None
+        ),
+        "integrity_registry_sha256": (
+            sha256_file(integrity_registry_path)
+            if integrity_registry_path is not None
+            else None
+        ),
+    }
+    if orchestration_metadata is not None:
+        orchestration["external"] = dict(orchestration_metadata)
     payload = {
         "schema_version": ANNOTATION_SCHEMA_VERSION,
         "started_at": datetime.now(UTC).isoformat(),
@@ -1229,20 +1244,7 @@ def _run_metadata(
         },
         "model_assets": dict(model_assets),
         "labels_sha256": labels_sha256,
-        "orchestration": {
-            "worker_index": worker_index,
-            "worker_count": worker_count,
-            "integrity_registry": (
-                str(integrity_registry_path)
-                if integrity_registry_path is not None
-                else None
-            ),
-            "integrity_registry_sha256": (
-                sha256_file(integrity_registry_path)
-                if integrity_registry_path is not None
-                else None
-            ),
-        },
+        "orchestration": orchestration,
     }
     _write_json_atomic(payload, path)
     return path, payload
@@ -1258,6 +1260,8 @@ def run_csl_news_annotation(
     worker_count: int | None = None,
     integrity_registry_path: str | Path | None = None,
     estimator: PoseEstimator | None = None,
+    continue_requested: Callable[[], bool] | None = None,
+    orchestration_metadata: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Annotate complete archives, preserving restartable outputs and all scratch data."""
 
@@ -1290,6 +1294,7 @@ def run_csl_news_annotation(
         worker_index=effective_index,
         worker_count=effective_count,
         integrity_registry_path=registry_path,
+        orchestration_metadata=orchestration_metadata,
     )
     _emit(
         "annotation_run_started",
@@ -1376,6 +1381,21 @@ def run_csl_news_annotation(
                         if max_videos is not None and processed >= max_videos:
                             return {
                                 "status": "limit_reached",
+                                "processed": processed,
+                                "skipped": skipped,
+                                "failed": failed,
+                                "run_metadata": str(run_metadata_path),
+                            }
+                        if continue_requested is not None and not continue_requested():
+                            _emit(
+                                "annotation_pause_requested",
+                                archive=archive_path.name,
+                                processed=processed,
+                                skipped=skipped,
+                                failed=failed,
+                            )
+                            return {
+                                "status": "paused",
                                 "processed": processed,
                                 "skipped": skipped,
                                 "failed": failed,
@@ -1521,6 +1541,11 @@ def run_csl_news_annotation(
                                     "git": dict(run_metadata["git"]),
                                     "worker_index": effective_index,
                                     "worker_count": effective_count,
+                                    "orchestration": (
+                                        dict(orchestration_metadata)
+                                        if orchestration_metadata is not None
+                                        else None
+                                    ),
                                 },
                                 "artifact": {
                                     "path": str(npz_path),

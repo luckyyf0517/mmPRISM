@@ -1,15 +1,16 @@
-# CSL-News 夜间 RTMW3D 标注 Runbook
+# CSL-News RTMW3D 标注 Runbook
 
 Status: current
 Owner: CSL-News annotation lane
 Authority scope: The CSL-News annotation workflow boundary represented by this page.
 Last reviewed: 2026-08-12
 
-## 1. 今晚目标与授权
+## 1. 运行模式与授权
 
 - 对已经完整下载并原子命名为 `archive_*.zip` 的 CSL-News 视频持续生成 RTMW3D-L 姿态。
-- 使用 4 个 registry-driven 轮询 worker；每个 worker 只读取 cumulative integrity registry 中
-  `status=passed` 的 archive，并按 `archive_id % 4` 分片。GPU 7 总 worker 数上限为 4。
+- 运行模式为 registry-driven elastic scheduler：每个 worker 只读取 cumulative integrity registry 中
+  `status=passed` 的 archive，并经 archive lease 独占领取下一个未完成 archive。worker 数量可随时
+  增减，运行中的 worker 不会因扩缩容重新分片。
 - 项目负责人已明确批准与其他任务共享 GPU。选卡和运行期间只以可用显存为资源门槛，GPU 利用率不是启动、暂停、迁移或退出条件。
 - 授权边界：可以在已有计算任务的卡上同时运行本 worker；只要满足最低可用显存即可，已有任务的 GPU 利用率不构成冲突或迁移理由。不得为了本任务结束、暂停或修改其他用户进程。
 - 默认启动门槛为 2,048 MiB free memory；该值高于当前单 worker 约 838 MiB 的稳定占用并保留加载余量，可通过 `--min-free-mib` 按模型实测结果调整。30 GiB 不再作为固定门槛。
@@ -80,12 +81,42 @@ archive SHA-256、audit path/hash、audit builder commit、audited time 和 labe
 2. 对每个已完成 archive 做完整 SHA-256/逐 member CRC/label source audit；未通过者不进入 worker。
 3. 在满足配置启动门槛的卡上执行单视频 smoke；允许该卡同时有高利用率任务，默认门槛为 2,048 MiB free memory。
 4. 检查输出 shape、有限值、中文文本、sidecar checksum、峰值显存和每帧速度。
-5. smoke 通过后，启动 4 个 `systemd --user` registry worker；CLI override 只改变 orchestration
-   shard，不改变 artifact config fingerprint。
-6. integrity timer 每 5 分钟扫描新 final ZIP；审计通过后由 worker 最迟在下一次 60 秒轮询消费。
-7. 已验证输出自动跳过；逐视频普通失败写 sidecar 后继续。registry/source stat 变化时停止而非继续消费。
+5. 先初始化 scheduler；初始状态必为 `paused`。验收通过后通过 `resume` 开放消费。
+6. smoke 通过后，按当前可用资源启动任意数量的 scheduled worker；CLI 不改变 artifact config
+   fingerprint。worker 仅在短暂 claim lock 内互斥，GPU 任务不需要锁步启动或同步重启。
+7. integrity timer 每 5 分钟扫描新 final ZIP；审计通过后由 worker 最迟在下一次轮询消费。
+8. 已验证输出自动跳过；逐视频普通失败写 sidecar 后继续。registry/source stat 变化时停止而非继续消费。
 
-## 6. 停止条件
+## 6. 暂停、恢复与扩缩容
+
+初始化一次，不覆盖任何已存在 control/lease 或 annotation 产物：
+
+```bash
+scripts/run_csl_news_annotation_scheduler.sh init --lease-seconds 900
+scripts/run_csl_news_annotation_scheduler.sh status
+```
+
+暂停会阻止新视频开始，当前视频完成后 worker 以 `paused` 正常退出。不得用 `kill -9` 作为常规暂停；
+若进程异常中断，完成的 NPZ/sidecar 保持有效，archive lease 仅在 900 秒无 heartbeat 后转存到
+`scheduler/leases/expired/` 并可被后续 worker 恢复。
+
+```bash
+scripts/run_csl_news_annotation_scheduler.sh pause --reason 'midday scheduler validation'
+scripts/run_csl_news_annotation_scheduler.sh status
+scripts/run_csl_news_annotation_scheduler.sh resume --reason 'operator approved capacity'
+```
+
+每增加一个 worker，只需在一张满足空闲显存门槛的卡上执行；不需要更新任何 worker index/count：
+
+```bash
+scripts/run_csl_news_annotation_worker.sh --scheduled --gpu auto -- \
+  --integrity-registry /mnt/gfs/yanyifan/mmPRISM/manifests/csl_news/source_integrity_v2/registry.json
+```
+
+调试时使用 `--once` 让一个 worker 最多领取一个 archive 后退出。常驻 worker 由 process supervisor
+托管，但 supervisor 重启策略必须允许 lease 到期恢复，不能并行写同一个 `worker-id`。
+
+## 7. 停止条件
 
 - `/mnt/gfs` 可用空间低于 1 TiB；
 - labels 无效、缺失或重复；
@@ -100,7 +131,7 @@ GPU 利用率高不属于停止条件，这是本次夜间运行的显式授权�
 停止对应 archive worker，但不停止已经通过 source gate 的其他 worker；不得用 partial manifest
 或 central-directory CRC 字段替代完整读取验证。
 
-## 7. 启动与观察
+## 8. 启动与观察
 
 单视频 smoke：
 
@@ -109,9 +140,9 @@ scripts/run_csl_news_annotation_worker.sh --gpu auto -- \
   --archive-id 3 --max-videos 1 --once
 ```
 
-正式任务由管理员用 `systemd-run --user` 托管，设置 `Restart=on-failure` 和 300 秒重试；
-4 个 worker 分别传入 `--worker-index 0..3 --worker-count 4 --integrity-registry <path>`。
-启动后记录实际物理 GPU、registry SHA-256 和 shard 到 run metadata。观察命令：
+正式任务由管理员用 `systemd-run --user` 托管，设置 `Restart=on-failure` 和 300 秒重试；每个 worker
+传入 `--scheduled --integrity-registry <path>`，并用唯一 `--worker-id` 标识。启动后记录实际物理 GPU、
+registry SHA-256 和 lease token 到 run metadata。观察命令：
 
 ```bash
 systemctl --user status 'mmprism-csl-news-annotation-registry*.service'
@@ -152,7 +183,7 @@ scripts/run_csl_news_annotation_audit.sh
 包含全部异常的报告；不得据此自动删除、覆盖或重算原 pair。正式 quarantine 只能使用 clean Git 报告，
 并由 `configs/data/csl_news_pose_manifest_available.yaml` 中 checksum-bound exclusion 精确绑定。
 
-## 8. 次晨验收
+## 9. 次晨验收
 
 - 服务状态、实际 GPU、下载与标注并行状态；
 - completed/failed/skipped 数和最近一次失败原因；
@@ -161,7 +192,12 @@ scripts/run_csl_news_annotation_audit.sh
 - 统计速度、峰值显存、磁盘占用和预计完成时间；
 - 人工确认前保持全部源、scratch、失败与输出不变。
 
-## 9. 运行记录
+## 10. 运行记录
+
+- `2026-08-12T05:36Z`，为进行中午调度系统调试，已先停止 8 个旧式 fixed-shard `registry*-v4`
+  transient service，并在 20 秒后确认无 `csl-news-annotate` 进程残留。仅停止计算进程；未删除或
+  移动 ZIP、`.part`、aria2 state、scratch、成功/失败 sidecar 或 archive marker。新 elastic scheduler
+  仍未在真实输出根初始化，因此不会自行恢复消费；恢复必须经 `init`、operator review 和 `resume`。
 
 - 单视频 smoke：GPU 5，125 帧，10.49 秒（含首次模型加载），峰值显存 274,832,896 B；
   native/canonical shape、finite values、文本和 artifact SHA-256 均通过。
