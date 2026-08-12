@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 import torch
@@ -156,3 +157,53 @@ class PoseMetricAccumulator:
             "root_relative_mpjpe_mm": (self._relative_distance_sum_mm / self._relative_joint_count),
             "root_relative_pck": self._relative_correct_count / self._relative_joint_count,
         }
+
+    def state_dict(self) -> dict[str, int | float]:
+        return {
+            "pck_threshold_mm": self.pck_threshold_mm,
+            "sample_count": self.sample_count,
+            "coordinate_l1_sum": self._coordinate_l1_sum,
+            "coordinate_count": self._coordinate_count,
+            "absolute_distance_sum_mm": self._absolute_distance_sum_mm,
+            "absolute_joint_count": self._absolute_joint_count,
+            "relative_distance_sum_mm": self._relative_distance_sum_mm,
+            "relative_joint_count": self._relative_joint_count,
+            "relative_correct_count": self._relative_correct_count,
+        }
+
+    def merge_state(self, state: Mapping[str, int | float]) -> None:
+        expected = {
+            "pck_threshold_mm",
+            "sample_count",
+            "coordinate_l1_sum",
+            "coordinate_count",
+            "absolute_distance_sum_mm",
+            "absolute_joint_count",
+            "relative_distance_sum_mm",
+            "relative_joint_count",
+            "relative_correct_count",
+        }
+        if set(state) != expected or float(state["pck_threshold_mm"]) != self.pck_threshold_mm:
+            raise ValueError("pose metric state does not match the accumulator protocol")
+        integer_fields = (
+            "sample_count",
+            "coordinate_count",
+            "absolute_joint_count",
+            "relative_joint_count",
+            "relative_correct_count",
+        )
+        if any(
+            isinstance(state[name], bool)
+            or not isinstance(state[name], int)
+            or state[name] < 0
+            for name in integer_fields
+        ):
+            raise ValueError("pose metric state contains an invalid count")
+        self.sample_count += int(state["sample_count"])
+        self._coordinate_l1_sum += float(state["coordinate_l1_sum"])
+        self._coordinate_count += int(state["coordinate_count"])
+        self._absolute_distance_sum_mm += float(state["absolute_distance_sum_mm"])
+        self._absolute_joint_count += int(state["absolute_joint_count"])
+        self._relative_distance_sum_mm += float(state["relative_distance_sum_mm"])
+        self._relative_joint_count += int(state["relative_joint_count"])
+        self._relative_correct_count += int(state["relative_correct_count"])

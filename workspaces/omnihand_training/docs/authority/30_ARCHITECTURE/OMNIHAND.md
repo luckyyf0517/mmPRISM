@@ -87,5 +87,12 @@ requires exact Git/data/split/model/runtime bindings; only epoch and step target
 increase. A deterministic CPU integration test proves exact final-tensor and history equality between an
 uninterrupted two-epoch run and a one-epoch run resumed for the second epoch.
 
-The current orchestrator is deliberately single-device. DDP model execution and distributed checkpoint
-aggregation remain open; CPU fixture results and synthetic GPU smokes are engineering evidence only.
+Formal train/evaluate detect the `torchrun` environment and use Gloo on CPU or NCCL on CUDA. Rank zero alone
+initializes and finalizes the run and publishes the checkpoint; every rank verifies the same model-state hash.
+Training uses a seeded distributed sampler, while prediction uses an exact no-padding rank-strided sampler before
+the existing immutable shard/receipt aggregator verifies global sample coverage. Metrics and performance are merged
+across ranks. A two-process CPU/Gloo integration test proves one completed run, exact prediction coverage, one
+checkpoint, per-rank performance, and numerical agreement with a matched single-process reference.
+
+DDP resume is rejected until every rank's RNG and sampler state can be captured. Multi-GPU NCCL and real-data
+validation remain open; CPU fixture results and synthetic GPU smokes are engineering evidence only.

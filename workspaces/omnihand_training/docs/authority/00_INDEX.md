@@ -14,13 +14,15 @@ perform beamforming, own shared artifact infrastructure, or manufacture paper-fa
 
 - Canonical CubeNet/temporal model and versioned pose metrics are implemented.
 - Single-device formal train/checkpoint/reload/evaluate and completed-epoch exact resume are validated.
+- Two-process CPU/Gloo formal training is integration-validated with one rank-zero run, exact prediction coverage,
+  merged metrics, consistent model-state hashes, and a checkpoint numerically matched to a single-process reference.
 - Synthetic A100 evidence is accepted as engineering validation, not a paper result.
 
-Active blockers: real calibrated model-ready manifests and production training/evaluation. Distributed
-execution is active implementation work and must be accepted separately before becoming current truth.
+Active blockers: real calibrated model-ready manifests, production training/evaluation, and multi-GPU NCCL smoke.
+DDP completed-epoch resume remains unsupported because per-rank RNG and sampler state are not yet captured.
 
-Next action: complete distributed lifecycle validation, then run the frozen real-data protocol when its
-cross-workspace delivery is available.
+Next action: run the multi-GPU NCCL smoke, then execute the frozen real-data protocol when its cross-workspace
+delivery is available.
 
 ## Canonical Locations
 

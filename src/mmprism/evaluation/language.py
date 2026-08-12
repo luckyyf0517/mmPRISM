@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 LANGUAGE_METRIC_PROTOCOL = "mmprism.language_metric.character_v1"
@@ -99,3 +100,33 @@ class LanguageMetricAccumulator:
             "reference_character_count": self.reference_character_count,
             "prediction_character_count": self.prediction_character_count,
         }
+
+    def state_dict(self) -> dict[str, int]:
+        return {
+            "sample_count": self.sample_count,
+            "exact_match_count": self.exact_match_count,
+            "character_edit_distance_sum": self.character_edit_distance_sum,
+            "reference_character_count": self.reference_character_count,
+            "prediction_character_count": self.prediction_character_count,
+        }
+
+    def merge_state(self, state: Mapping[str, int]) -> None:
+        expected = {
+            "sample_count",
+            "exact_match_count",
+            "character_edit_distance_sum",
+            "reference_character_count",
+            "prediction_character_count",
+        }
+        if set(state) != expected or any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 0
+            for value in state.values()
+        ):
+            raise LanguageMetricError("language metric state violates the protocol")
+        if state["exact_match_count"] > state["sample_count"]:
+            raise LanguageMetricError("language metric state has too many exact matches")
+        self.sample_count += state["sample_count"]
+        self.exact_match_count += state["exact_match_count"]
+        self.character_edit_distance_sum += state["character_edit_distance_sum"]
+        self.reference_character_count += state["reference_character_count"]
+        self.prediction_character_count += state["prediction_character_count"]

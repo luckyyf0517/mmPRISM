@@ -25,9 +25,10 @@ from torch.utils.data import DataLoader, Dataset
 from mmprism.artifacts import (
     RunArtifactWriter,
     RunInput,
+    aggregate_prediction_shards,
     sha256_file,
     validate_split_bindings,
-    write_single_rank_predictions,
+    write_prediction_shard,
 )
 from mmprism.config import ExperimentConfig, RuntimeConfig, Task
 from mmprism.data import (
@@ -40,6 +41,13 @@ from mmprism.evaluation import POSE_METRIC_PROTOCOL, PoseMetricAccumulator
 from mmprism.evaluation.pose import masked_pose_l1_metres
 from mmprism.models import CubeNetSpatialEncoder, OmniHandCubeNet, TemporalTransformerAggregator
 from mmprism.runtime import build_run_plan, collect_runtime_report
+from mmprism.training.distributed import (
+    DistributedContext,
+    DistributedRunError,
+    prediction_sampler,
+    set_training_sampler_epoch,
+    training_sampler,
+)
 from mmprism.training.omnihand_run_config import (
     OmniHandRunConfig,
     OmniHandRunError,
@@ -97,42 +105,6 @@ def _require_formal_runtime(runtime_report: Mapping[str, Any], project_root: Pat
         raise OmniHandRunError("formal OmniHand runs require a clean Git worktree")
 
 
-def _resolve_device(runtime: RuntimeConfig) -> torch.device:
-    accelerator = runtime.accelerator.lower()
-    if accelerator not in {"auto", "cpu", "cuda", "gpu"}:
-        raise OmniHandRunError("OmniHand runtime.accelerator must be auto, cpu, cuda, or gpu")
-    if isinstance(runtime.devices, str) and runtime.devices != "auto":
-        raise OmniHandRunError("OmniHand runtime.devices supports only auto or one device index")
-    if isinstance(runtime.devices, tuple) and len(runtime.devices) != 1:
-        raise OmniHandRunError("OmniHand v1 formal runs currently require exactly one device")
-
-    if accelerator == "cpu":
-        if isinstance(runtime.devices, tuple):
-            raise OmniHandRunError("CPU runs cannot select a CUDA device index")
-        device = torch.device("cpu")
-    else:
-        cuda_requested = accelerator in {"cuda", "gpu"} or isinstance(runtime.devices, tuple)
-        if not torch.cuda.is_available():
-            if cuda_requested:
-                raise OmniHandRunError("CUDA was requested but is unavailable")
-            device = torch.device("cpu")
-        else:
-            index = runtime.devices[0] if isinstance(runtime.devices, tuple) else 0
-            if index >= torch.cuda.device_count():
-                raise OmniHandRunError(f"CUDA device index {index} is unavailable")
-            device = torch.device("cuda", index)
-
-    if device.type == "cpu" and runtime.precision != "32-true":
-        raise OmniHandRunError("CPU OmniHand runs require runtime.precision=32-true")
-    if (
-        device.type == "cuda"
-        and runtime.precision == "bf16-mixed"
-        and not torch.cuda.is_bf16_supported()
-    ):
-        raise OmniHandRunError("the selected CUDA device does not support bfloat16")
-    return device
-
-
 def _seed_runtime(seed: int, deterministic: bool) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -187,6 +159,7 @@ def _runtime_payload(
     model: OmniHandCubeNet,
     runtime: RuntimeConfig,
     device: torch.device,
+    distributed: Mapping[str, object],
 ) -> dict[str, object]:
     return {
         "schema_version": OMNIHAND_RUNTIME_SCHEMA,
@@ -198,6 +171,7 @@ def _runtime_payload(
         "torch_version": torch.__version__,
         "cuda_runtime": torch.version.cuda,
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+        "distributed": dict(distributed),
     }
 
 
@@ -237,13 +211,24 @@ def _loader(
     shuffle: bool,
     seed: int,
     device: torch.device,
+    distributed: DistributedContext | None = None,
+    exact_distributed_coverage: bool = False,
 ) -> DataLoader[PoseReconstructionBatch]:
     generator = torch.Generator()
     generator.manual_seed(seed)
+    dataset = _PoseDataset(manifest)
+    sampler = None
+    if distributed is not None:
+        sampler = (
+            prediction_sampler(dataset, distributed)
+            if exact_distributed_coverage
+            else training_sampler(dataset, distributed, shuffle=shuffle, seed=seed)
+        )
     loader = DataLoader(
-        _PoseDataset(manifest),
+        dataset,
         batch_size=config.data.batch_size,
-        shuffle=shuffle,
+        shuffle=shuffle if sampler is None else False,
+        sampler=sampler,
         num_workers=config.data.num_workers,
         collate_fn=partial(
             collate_pose_reconstruction_samples,
@@ -289,6 +274,7 @@ def _evaluate_summary(
 
 def _train_model(
     model: OmniHandCubeNet,
+    forward_model: torch.nn.Module,
     train_loader: DataLoader[PoseReconstructionBatch],
     validation_loader: DataLoader[PoseReconstructionBatch],
     config: OmniHandRunConfig,
@@ -299,6 +285,7 @@ def _train_model(
     resume_tensor_path: Path | None,
     device: torch.device,
     precision: str,
+    distributed: DistributedContext,
 ) -> tuple[list[dict[str, object]], int, int, str | None]:
     optimization = config.optimization
     named_parameters = tuple(model.named_parameters())
@@ -345,7 +332,8 @@ def _train_model(
     initial_global_step = global_step
     stop = False
     for epoch in range(start_epoch, optimization.epochs + 1):
-        model.train()
+        set_training_sampler_epoch(train_loader, epoch - 1)
+        forward_model.train()
         coordinate_error_sum = 0.0
         coordinate_count = 0
         gradient_norm_sum = 0.0
@@ -354,7 +342,7 @@ def _train_model(
             batch = _tensor_batch(numpy_batch, device)
             optimizer.zero_grad(set_to_none=True)
             with _precision_context(device, precision):
-                prediction = model(batch.radar_cube, batch.frame_mask).joints
+                prediction = forward_model(batch.radar_cube, batch.frame_mask).joints
                 loss = masked_pose_l1_metres(
                     prediction.float(), batch.pose_target.float(), batch.pose_valid
                 )
@@ -383,24 +371,44 @@ def _train_model(
 
         if epoch_steps == 0 or coordinate_count == 0:
             raise OmniHandRunError("training loader produced no optimization batches")
-        validation = _evaluate_summary(
-            model,
-            validation_loader,
-            device=device,
-            precision=precision,
-            pck_threshold_mm=config.evaluation.pck_threshold_mm,
+        (
+            global_coordinate_error_sum,
+            global_coordinate_count,
+            global_gradient_norm_sum,
+            global_epoch_steps,
+        ) = distributed.sum_values(
+            (
+                coordinate_error_sum,
+                coordinate_count,
+                gradient_norm_sum,
+                epoch_steps,
+            )
+        )
+        validation = distributed.rank_zero_call(
+            lambda: _evaluate_summary(
+                model,
+                validation_loader,
+                device=device,
+                precision=precision,
+                pck_threshold_mm=config.evaluation.pck_threshold_mm,
+            ),
+            stage=f"epoch-{epoch} validation",
         )
         history.append(
             {
                 "epoch": epoch,
                 "global_step": global_step,
                 "steps": epoch_steps,
-                "train_masked_pose_l1_metres": coordinate_error_sum / coordinate_count,
-                "mean_preclip_gradient_norm": gradient_norm_sum / epoch_steps,
+                "train_masked_pose_l1_metres": (
+                    global_coordinate_error_sum / global_coordinate_count
+                ),
+                "mean_preclip_gradient_norm": (
+                    global_gradient_norm_sum / global_epoch_steps
+                ),
                 "validation": validation,
             }
         )
-        if epoch_steps == len(train_loader):
+        if not distributed.enabled and epoch_steps == len(train_loader):
             try:
                 save_epoch_training_state(
                     writer,
@@ -455,6 +463,7 @@ def _checkpoint_payload(
     runtime_report: Mapping[str, Any],
     input_hashes: Mapping[str, str],
     runtime_payload: Mapping[str, object],
+    model_state_sha256: str,
 ) -> dict[str, object]:
     git = cast(Mapping[str, Any], runtime_report["git"])
     return {
@@ -474,6 +483,7 @@ def _checkpoint_payload(
         "epochs_executed": epochs_executed,
         "selection": "final_step",
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+        "model_state_sha256": model_state_sha256,
         "runtime": dict(runtime_payload),
         "git_commit": git["commit"],
         "input_sha256": dict(sorted(input_hashes.items())),
@@ -584,44 +594,74 @@ def _prepare_run(
     command: Sequence[str],
     runtime_report: Mapping[str, Any] | None,
     created_at: datetime | None,
+    distributed: DistributedContext,
 ) -> tuple[RunArtifactWriter, dict[str, Path], dict[str, str], Mapping[str, Any]]:
     root = project_root.expanduser().resolve()
     if experiment_config.task is not Task.POSE_RECONSTRUCTION:
         raise OmniHandRunError("OmniHand runs require task=pose_reconstruction")
     if not task_config.data.verify_checksums:
         raise OmniHandRunError("formal OmniHand runs require data.verify_checksums=true")
-    report = dict(collect_runtime_report(root) if runtime_report is None else runtime_report)
-    _require_formal_runtime(report, root)
-    plan = build_run_plan(
-        experiment_config,
-        root,
-        created_at=created_at,
-        runtime_report=report,
-    )
-    paths = {name: _resolved_path(path, root) for name, _, path in input_specs}
-    task_config_path = _resolved_path(source_task_config, root)
-    if load_omnihand_run_config(task_config_path).fingerprint != task_config.fingerprint:
-        raise OmniHandRunError("source OmniHand configuration does not match the loaded config")
-    run_inputs = [
-        RunInput.capture(name="omnihand_config", kind="config", path=task_config_path),
-        *(
-            RunInput.capture(name=name, kind=kind, path=paths[name])
-            for name, kind, _ in input_specs
-        ),
-    ]
-    writer = RunArtifactWriter.initialize(
-        plan,
-        source_config=_resolved_path(source_experiment_config, root),
-        inputs=run_inputs,
-        command=command,
-    )
-    hashes = {item.name: item.sha256 for item in run_inputs}
-    try:
-        writer.write_json_artifact("omnihand.resolved.json", task_config.to_dict())
-    except Exception as error:
-        _finalize_failed_run(writer, error)
-        raise
-    return writer, paths, hashes, report
+
+    def initialize() -> dict[str, object]:
+        report = dict(collect_runtime_report(root) if runtime_report is None else runtime_report)
+        _require_formal_runtime(report, root)
+        plan = build_run_plan(
+            experiment_config,
+            root,
+            created_at=created_at,
+            runtime_report=report,
+        )
+        paths = {name: _resolved_path(path, root) for name, _, path in input_specs}
+        task_config_path = _resolved_path(source_task_config, root)
+        if load_omnihand_run_config(task_config_path).fingerprint != task_config.fingerprint:
+            raise OmniHandRunError(
+                "source OmniHand configuration does not match the loaded config"
+            )
+        run_inputs = [
+            RunInput.capture(name="omnihand_config", kind="config", path=task_config_path),
+            *(
+                RunInput.capture(name=name, kind=kind, path=paths[name])
+                for name, kind, _ in input_specs
+            ),
+        ]
+        writer = RunArtifactWriter.initialize(
+            plan,
+            source_config=_resolved_path(source_experiment_config, root),
+            inputs=run_inputs,
+            command=command,
+        )
+        try:
+            writer.write_json_artifact("omnihand.resolved.json", task_config.to_dict())
+        except Exception as error:
+            _finalize_failed_run(writer, error)
+            raise
+        return {
+            "run_dir": str(writer.run_dir),
+            "run_id": writer.run_id,
+            "paths": {name: str(path) for name, path in paths.items()},
+            "hashes": {item.name: item.sha256 for item in run_inputs},
+            "runtime_report": report,
+        }
+
+    shared = distributed.rank_zero_call(initialize, stage="formal run initialization")
+    if not isinstance(shared, Mapping):
+        raise OmniHandRunError("distributed run initialization returned invalid metadata")
+    run_dir = shared.get("run_dir")
+    run_id = shared.get("run_id")
+    raw_paths = shared.get("paths")
+    raw_hashes = shared.get("hashes")
+    report = shared.get("runtime_report")
+    if (
+        not isinstance(run_dir, str)
+        or not isinstance(run_id, str)
+        or not isinstance(raw_paths, Mapping)
+        or not isinstance(raw_hashes, Mapping)
+        or not isinstance(report, Mapping)
+    ):
+        raise OmniHandRunError("distributed run initialization metadata is incomplete")
+    paths = {str(name): Path(str(path)) for name, path in raw_paths.items()}
+    hashes = {str(name): str(value) for name, value in raw_hashes.items()}
+    return RunArtifactWriter(Path(run_dir), run_id), paths, hashes, report
 
 
 def _finalize_failed_run(writer: RunArtifactWriter, error: BaseException) -> None:
@@ -648,30 +688,48 @@ def train_omnihand(
     run_started = time.perf_counter()
     if (resume_state_metadata_path is None) != (resume_state_tensors_path is None):
         raise OmniHandRunError("resume requires both state metadata and Safetensors")
+    root = project_root.expanduser().resolve()
+    resolved_experiment = experiment_config.resolved(root)
+    try:
+        distributed = DistributedContext.from_environment(resolved_experiment.runtime)
+    except DistributedRunError as error:
+        raise OmniHandRunError(str(error)) from error
+    if distributed.enabled and resume_state_metadata_path is not None:
+        raise OmniHandRunError(
+            "DDP resume is unsupported until every rank's RNG and sampler state is captured"
+        )
+    try:
+        distributed.initialize()
+    except DistributedRunError as error:
+        raise OmniHandRunError(str(error)) from error
     resume_inputs: tuple[tuple[str, str, str | Path], ...] = ()
     if resume_state_metadata_path is not None and resume_state_tensors_path is not None:
         resume_inputs = (
             ("resume_state_metadata", "checkpoint", resume_state_metadata_path),
             ("resume_state_tensors", "checkpoint", resume_state_tensors_path),
         )
-    writer, paths, input_hashes, report = _prepare_run(
-        experiment_config,
-        task_config,
-        source_experiment_config=source_experiment_config,
-        source_task_config=source_task_config,
-        input_specs=(
-            ("train_manifest", "manifest", train_manifest_path),
-            ("validation_manifest", "manifest", validation_manifest_path),
-            ("split_assignments", "split", split_assignments_path),
-        )
-        + resume_inputs,
-        project_root=project_root,
-        command=command,
-        runtime_report=runtime_report,
-        created_at=created_at,
-    )
     try:
-        resolved_experiment = experiment_config.resolved(project_root.expanduser().resolve())
+        writer, paths, input_hashes, report = _prepare_run(
+            experiment_config,
+            task_config,
+            source_experiment_config=source_experiment_config,
+            source_task_config=source_task_config,
+            input_specs=(
+                ("train_manifest", "manifest", train_manifest_path),
+                ("validation_manifest", "manifest", validation_manifest_path),
+                ("split_assignments", "split", split_assignments_path),
+            )
+            + resume_inputs,
+            project_root=project_root,
+            command=command,
+            runtime_report=runtime_report,
+            created_at=created_at,
+            distributed=distributed,
+        )
+    except Exception:
+        distributed.close()
+        raise
+    try:
         train_manifest = PoseReconstructionManifest(
             paths["train_manifest"],
             data_root=resolved_experiment.paths.data_root,
@@ -706,19 +764,29 @@ def train_omnihand(
             {"train_manifest": "train", "validation_manifest": "validation"},
         )
 
-        device = _resolve_device(resolved_experiment.runtime)
+        device = distributed.device
         _seed_runtime(resolved_experiment.runtime.seed, resolved_experiment.runtime.deterministic)
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(device)
         model = _build_model(task_config).to(device)
-        actual_runtime = _runtime_payload(model, resolved_experiment.runtime, device)
-        writer.write_json_artifact("omnihand.runtime.json", actual_runtime)
+        distributed_topology = distributed.topology_payload()
+        actual_runtime = _runtime_payload(
+            model, resolved_experiment.runtime, device, distributed_topology
+        )
+        distributed.rank_zero_call(
+            lambda: str(
+                writer.write_json_artifact("omnihand.runtime.json", actual_runtime)
+            ),
+            stage="runtime artifact publication",
+        )
+        forward_model = distributed.wrap_model(model)
         train_loader = _loader(
             train_manifest,
             task_config,
             shuffle=task_config.data.shuffle,
             seed=resolved_experiment.runtime.seed,
             device=device,
+            distributed=distributed,
         )
         validation_loader = _loader(
             validation_manifest,
@@ -747,6 +815,7 @@ def train_omnihand(
         training_started = time.perf_counter()
         history, global_step, steps_this_run, resumed_from = _train_model(
             model,
+            forward_model,
             train_loader,
             validation_loader,
             task_config,
@@ -756,101 +825,174 @@ def train_omnihand(
             resume_tensor_path=paths.get("resume_state_tensors"),
             device=device,
             precision=resolved_experiment.runtime.precision,
+            distributed=distributed,
         )
-        training_seconds = time.perf_counter() - training_started
+        local_training_seconds = time.perf_counter() - training_started
+        training_seconds = distributed.max_value(local_training_seconds)
 
+        model_state_sha256 = distributed.assert_consistent_state(model.state_dict())
         weights_path = writer.artifact_path("checkpoint.safetensors")
-        weights_sha256 = _save_checkpoint(model, weights_path)
-        writer.register_artifact("checkpoint.safetensors")
-        writer.write_json_artifact(
-            "checkpoint.json",
-            _checkpoint_payload(
-                writer=writer,
-                config=task_config,
-                coordinate_frame=train_manifest.coordinate_frame,
-                weights_sha256=weights_sha256,
-                global_step=global_step,
-                epochs_executed=len(history),
-                model=model,
-                runtime_report=report,
-                input_hashes=input_hashes,
-                runtime_payload=actual_runtime,
-            ),
+
+        def publish_checkpoint() -> str:
+            weights_sha256 = _save_checkpoint(model, weights_path)
+            writer.register_artifact("checkpoint.safetensors")
+            writer.write_json_artifact(
+                "checkpoint.json",
+                _checkpoint_payload(
+                    writer=writer,
+                    config=task_config,
+                    coordinate_frame=train_manifest.coordinate_frame,
+                    weights_sha256=weights_sha256,
+                    global_step=global_step,
+                    epochs_executed=len(history),
+                    model=model,
+                    runtime_report=report,
+                    input_hashes=input_hashes,
+                    runtime_payload=actual_runtime,
+                    model_state_sha256=model_state_sha256,
+                ),
+            )
+            return weights_sha256
+
+        weights_sha256 = distributed.rank_zero_call(
+            publish_checkpoint, stage="checkpoint publication"
         )
 
         accumulator = PoseMetricAccumulator(
             pck_threshold_mm=task_config.evaluation.pck_threshold_mm
         )
+        prediction_loader = _loader(
+            validation_manifest,
+            task_config,
+            shuffle=False,
+            seed=resolved_experiment.runtime.seed,
+            device=device,
+            distributed=distributed,
+            exact_distributed_coverage=True,
+        )
         prediction_started = time.perf_counter()
-        write_single_rank_predictions(
-            writer,
+        write_prediction_shard(
+            writer.run_dir,
+            run_id=writer.run_id,
             prediction_schema=OMNIHAND_PREDICTION_SCHEMA,
+            rank=distributed.rank,
+            world_size=distributed.world_size,
             records=_prediction_records(
                 model,
-                validation_loader,
+                prediction_loader,
                 accumulator,
                 device=device,
                 precision=resolved_experiment.runtime.precision,
                 checkpoint_sha256=weights_sha256,
                 save_targets=task_config.evaluation.save_targets,
             ),
-            expected_sample_ids=(record.sample_id for record in validation_manifest.records),
         )
-        prediction_seconds = time.perf_counter() - prediction_started
-        metrics = accumulator.values()
+        local_prediction_seconds = time.perf_counter() - prediction_started
+        distributed.barrier()
+        distributed.rank_zero_call(
+            lambda: aggregate_prediction_shards(
+                writer,
+                prediction_schema=OMNIHAND_PREDICTION_SCHEMA,
+                world_size=distributed.world_size,
+                expected_sample_ids=(
+                    record.sample_id for record in validation_manifest.records
+                ),
+            ).record_count,
+            stage="prediction aggregation",
+        )
+        distributed.barrier()
+        prediction_seconds = distributed.max_value(local_prediction_seconds)
+        merged_accumulator = PoseMetricAccumulator(
+            pck_threshold_mm=task_config.evaluation.pck_threshold_mm
+        )
+        for state in distributed.all_gather_object(accumulator.state_dict()):
+            merged_accumulator.merge_state(state)
+        metrics = merged_accumulator.values()
         metric_values: dict[str, int | float] = {
             **metrics,
             "pck_threshold_mm": task_config.evaluation.pck_threshold_mm,
             "global_step": global_step,
             "epochs_executed": len(history),
         }
-        writer.write_json_artifact(
-            "history.json",
+        rank_performance = distributed.all_gather_object(
             {
-                "schema_version": OMNIHAND_HISTORY_SCHEMA,
-                "run_id": writer.run_id,
-                "task_config_sha256": task_config.fingerprint,
-                "global_step": global_step,
-                "epochs_executed": len(history),
-                "resumed_from_run_id": resumed_from,
-                "records": history,
-                "final_validation": metrics,
-            },
-        )
-        writer.write_json_artifact(
-            "performance.json",
-            {
-                "schema_version": OMNIHAND_PERFORMANCE_SCHEMA,
-                "mode": "train",
-                "device": str(device),
-                "precision": resolved_experiment.runtime.precision,
-                "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
-                "optimizer_steps": global_step,
+                **distributed.rank_payload(),
                 "optimizer_steps_this_run": steps_this_run,
-                "training_seconds": training_seconds,
-                "optimizer_steps_per_second": steps_this_run / training_seconds,
+                "training_seconds": local_training_seconds,
                 "prediction_samples": accumulator.sample_count,
-                "prediction_seconds": prediction_seconds,
-                "prediction_samples_per_second": accumulator.sample_count / prediction_seconds,
-                "end_to_end_seconds": time.perf_counter() - run_started,
+                "prediction_seconds": local_prediction_seconds,
                 "cuda_memory": _cuda_memory_payload(device),
-            },
+                "model_state_sha256": model_state_sha256,
+            }
         )
-        writer.write_metrics(
-            protocol_id=POSE_METRIC_PROTOCOL,
-            split="validation",
-            values=metric_values,
-            sample_count=accumulator.sample_count,
+        end_to_end_seconds = distributed.max_value(time.perf_counter() - run_started)
+
+        def finalize_run() -> dict[str, int | float]:
+            writer.write_json_artifact(
+                "history.json",
+                {
+                    "schema_version": OMNIHAND_HISTORY_SCHEMA,
+                    "run_id": writer.run_id,
+                    "task_config_sha256": task_config.fingerprint,
+                    "global_step": global_step,
+                    "epochs_executed": len(history),
+                    "resumed_from_run_id": resumed_from,
+                    "records": history,
+                    "final_validation": metrics,
+                },
+            )
+            writer.write_json_artifact(
+                "performance.json",
+                {
+                    "schema_version": OMNIHAND_PERFORMANCE_SCHEMA,
+                    "mode": "train",
+                    "device": str(device),
+                    "precision": resolved_experiment.runtime.precision,
+                    "parameter_count": sum(
+                        parameter.numel() for parameter in model.parameters()
+                    ),
+                    "optimizer_steps": global_step,
+                    "optimizer_steps_this_run": steps_this_run,
+                    "training_seconds": training_seconds,
+                    "optimizer_steps_per_second": steps_this_run / training_seconds,
+                    "prediction_samples": merged_accumulator.sample_count,
+                    "prediction_seconds": prediction_seconds,
+                    "prediction_samples_per_second": (
+                        merged_accumulator.sample_count / prediction_seconds
+                    ),
+                    "end_to_end_seconds": end_to_end_seconds,
+                    "cuda_memory": _cuda_memory_payload(device),
+                    "distributed": {
+                        **distributed_topology,
+                        "rank_performance": rank_performance,
+                        "model_state_sha256": model_state_sha256,
+                    },
+                },
+            )
+            writer.write_metrics(
+                protocol_id=POSE_METRIC_PROTOCOL,
+                split="validation",
+                values=metric_values,
+                sample_count=merged_accumulator.sample_count,
+            )
+            writer.finalize(status="completed")
+            return metric_values
+
+        metric_values = distributed.rank_zero_call(
+            finalize_run, stage="final artifact publication"
         )
-        writer.finalize(status="completed")
     except KeyboardInterrupt as error:
-        writer.finalize(status="aborted", failure="interrupted by operator")
+        if distributed.is_rank_zero:
+            writer.finalize(status="aborted", failure="interrupted by operator")
         raise error
     except Exception as error:
-        _finalize_failed_run(writer, error)
+        if distributed.is_rank_zero:
+            _finalize_failed_run(writer, error)
         if isinstance(error, OmniHandRunError):
             raise
         raise OmniHandRunError(f"OmniHand training failed: {error}") from error
+    finally:
+        distributed.close()
     return {
         "schema_version": OMNIHAND_RUN_RESULT_SCHEMA,
         "mode": "train",
@@ -880,24 +1022,35 @@ def evaluate_omnihand(
     run_started = time.perf_counter()
     if split not in {"train", "validation", "test"}:
         raise OmniHandRunError("evaluation split must be train, validation, or test")
-    writer, paths, _, _ = _prepare_run(
-        experiment_config,
-        task_config,
-        source_experiment_config=source_experiment_config,
-        source_task_config=source_task_config,
-        input_specs=(
-            ("evaluation_manifest", "manifest", manifest_path),
-            ("split_assignments", "split", split_assignments_path),
-            ("checkpoint_weights", "checkpoint", checkpoint_path),
-            ("checkpoint_metadata", "checkpoint", checkpoint_metadata_path),
-        ),
-        project_root=project_root,
-        command=command,
-        runtime_report=runtime_report,
-        created_at=created_at,
-    )
+    root = project_root.expanduser().resolve()
+    resolved_experiment = experiment_config.resolved(root)
     try:
-        resolved_experiment = experiment_config.resolved(project_root.expanduser().resolve())
+        distributed = DistributedContext.from_environment(resolved_experiment.runtime)
+        distributed.initialize()
+    except DistributedRunError as error:
+        raise OmniHandRunError(str(error)) from error
+    try:
+        writer, paths, _, _ = _prepare_run(
+            experiment_config,
+            task_config,
+            source_experiment_config=source_experiment_config,
+            source_task_config=source_task_config,
+            input_specs=(
+                ("evaluation_manifest", "manifest", manifest_path),
+                ("split_assignments", "split", split_assignments_path),
+                ("checkpoint_weights", "checkpoint", checkpoint_path),
+                ("checkpoint_metadata", "checkpoint", checkpoint_metadata_path),
+            ),
+            project_root=project_root,
+            command=command,
+            runtime_report=runtime_report,
+            created_at=created_at,
+            distributed=distributed,
+        )
+    except Exception:
+        distributed.close()
+        raise
+    try:
         manifest = PoseReconstructionManifest(
             paths["evaluation_manifest"],
             data_root=resolved_experiment.paths.data_root,
@@ -909,7 +1062,7 @@ def evaluate_omnihand(
             paths["split_assignments"],
             {"evaluation_manifest": split},
         )
-        device = _resolve_device(resolved_experiment.runtime)
+        device = distributed.device
         _seed_runtime(resolved_experiment.runtime.seed, resolved_experiment.runtime.deterministic)
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(device)
@@ -922,24 +1075,36 @@ def evaluate_omnihand(
             coordinate_frame=manifest.coordinate_frame,
         )
         model.to(device)
-        writer.write_json_artifact(
-            "omnihand.runtime.json",
-            _runtime_payload(model, resolved_experiment.runtime, device),
+        distributed_topology = distributed.topology_payload()
+        actual_runtime = _runtime_payload(
+            model, resolved_experiment.runtime, device, distributed_topology
         )
+        distributed.rank_zero_call(
+            lambda: str(
+                writer.write_json_artifact("omnihand.runtime.json", actual_runtime)
+            ),
+            stage="runtime artifact publication",
+        )
+        model_state_sha256 = distributed.assert_consistent_state(model.state_dict())
         loader = _loader(
             manifest,
             task_config,
             shuffle=False,
             seed=resolved_experiment.runtime.seed,
             device=device,
+            distributed=distributed,
+            exact_distributed_coverage=True,
         )
         accumulator = PoseMetricAccumulator(
             pck_threshold_mm=task_config.evaluation.pck_threshold_mm
         )
         prediction_started = time.perf_counter()
-        write_single_rank_predictions(
-            writer,
+        write_prediction_shard(
+            writer.run_dir,
+            run_id=writer.run_id,
             prediction_schema=OMNIHAND_PREDICTION_SCHEMA,
+            rank=distributed.rank,
+            world_size=distributed.world_size,
             records=_prediction_records(
                 model,
                 loader,
@@ -949,44 +1114,90 @@ def evaluate_omnihand(
                 checkpoint_sha256=checkpoint_sha256,
                 save_targets=task_config.evaluation.save_targets,
             ),
-            expected_sample_ids=(record.sample_id for record in manifest.records),
         )
-        prediction_seconds = time.perf_counter() - prediction_started
-        metrics = accumulator.values()
+        local_prediction_seconds = time.perf_counter() - prediction_started
+        distributed.barrier()
+        distributed.rank_zero_call(
+            lambda: aggregate_prediction_shards(
+                writer,
+                prediction_schema=OMNIHAND_PREDICTION_SCHEMA,
+                world_size=distributed.world_size,
+                expected_sample_ids=(record.sample_id for record in manifest.records),
+            ).record_count,
+            stage="prediction aggregation",
+        )
+        distributed.barrier()
+        prediction_seconds = distributed.max_value(local_prediction_seconds)
+        merged_accumulator = PoseMetricAccumulator(
+            pck_threshold_mm=task_config.evaluation.pck_threshold_mm
+        )
+        for state in distributed.all_gather_object(accumulator.state_dict()):
+            merged_accumulator.merge_state(state)
+        metrics = merged_accumulator.values()
         metric_values: dict[str, int | float] = {
             **metrics,
             "pck_threshold_mm": task_config.evaluation.pck_threshold_mm,
         }
-        writer.write_metrics(
-            protocol_id=POSE_METRIC_PROTOCOL,
-            split=split,
-            values=metric_values,
-            sample_count=accumulator.sample_count,
-        )
-        writer.write_json_artifact(
-            "performance.json",
+        rank_performance = distributed.all_gather_object(
             {
-                "schema_version": OMNIHAND_PERFORMANCE_SCHEMA,
-                "mode": "evaluate",
-                "device": str(device),
-                "precision": resolved_experiment.runtime.precision,
-                "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+                **distributed.rank_payload(),
                 "prediction_samples": accumulator.sample_count,
-                "prediction_seconds": prediction_seconds,
-                "prediction_samples_per_second": accumulator.sample_count / prediction_seconds,
-                "end_to_end_seconds": time.perf_counter() - run_started,
+                "prediction_seconds": local_prediction_seconds,
                 "cuda_memory": _cuda_memory_payload(device),
-            },
+                "model_state_sha256": model_state_sha256,
+            }
         )
-        writer.finalize(status="completed")
+        end_to_end_seconds = distributed.max_value(time.perf_counter() - run_started)
+
+        def finalize_run() -> dict[str, int | float]:
+            writer.write_metrics(
+                protocol_id=POSE_METRIC_PROTOCOL,
+                split=split,
+                values=metric_values,
+                sample_count=merged_accumulator.sample_count,
+            )
+            writer.write_json_artifact(
+                "performance.json",
+                {
+                    "schema_version": OMNIHAND_PERFORMANCE_SCHEMA,
+                    "mode": "evaluate",
+                    "device": str(device),
+                    "precision": resolved_experiment.runtime.precision,
+                    "parameter_count": sum(
+                        parameter.numel() for parameter in model.parameters()
+                    ),
+                    "prediction_samples": merged_accumulator.sample_count,
+                    "prediction_seconds": prediction_seconds,
+                    "prediction_samples_per_second": (
+                        merged_accumulator.sample_count / prediction_seconds
+                    ),
+                    "end_to_end_seconds": end_to_end_seconds,
+                    "cuda_memory": _cuda_memory_payload(device),
+                    "distributed": {
+                        **distributed_topology,
+                        "rank_performance": rank_performance,
+                        "model_state_sha256": model_state_sha256,
+                    },
+                },
+            )
+            writer.finalize(status="completed")
+            return metric_values
+
+        metric_values = distributed.rank_zero_call(
+            finalize_run, stage="final artifact publication"
+        )
     except KeyboardInterrupt as error:
-        writer.finalize(status="aborted", failure="interrupted by operator")
+        if distributed.is_rank_zero:
+            writer.finalize(status="aborted", failure="interrupted by operator")
         raise error
     except Exception as error:
-        _finalize_failed_run(writer, error)
+        if distributed.is_rank_zero:
+            _finalize_failed_run(writer, error)
         if isinstance(error, OmniHandRunError):
             raise
         raise OmniHandRunError(f"OmniHand evaluation failed: {error}") from error
+    finally:
+        distributed.close()
     return {
         "schema_version": OMNIHAND_RUN_RESULT_SCHEMA,
         "mode": "evaluate",

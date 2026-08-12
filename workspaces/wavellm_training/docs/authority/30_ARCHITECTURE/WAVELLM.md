@@ -94,6 +94,11 @@ requires exact Git/data/split/model/runtime compatibility and permits only nonde
 targets. A deterministic CPU integration test proves final adapter tensor and history equality for
 uninterrupted versus segmented two-epoch training.
 
+Formal train/evaluate also detect the `torchrun` environment and share the OmniHand distributed lifecycle: rank zero
+owns run initialization/finalization and checkpoint publication; model-state hashes must agree across ranks; exact
+no-padding prediction shards are aggregated against the full sample set; and character-metric states and performance
+are merged across ranks. DDP resume is rejected until per-rank RNG and sampler state have a complete contract.
+
 ## Metric Protocol
 
 `mmprism.language_metric.character_v1` stores sample-level exact match, Unicode code-point Levenshtein
@@ -111,5 +116,5 @@ and temporary-file gates. Synthetic outputs and metric values are engineering ev
 
 Real pose/radar feature preparation remains blocked on the upstream OmniHand/radar provenance chain. Historical
 checkpoint audit is also open and must close before this asset is used for paper-facing comparisons.
-DDP model execution, distributed checkpoint aggregation, production metrics, and real-data validation
-remain open; prediction aggregation and single-process epoch-boundary resume are implemented.
+WaveLLM-specific multi-process/NCCL validation, production metrics, and real-data validation remain open; the shared
+distributed implementation, prediction aggregation, and single-process epoch-boundary resume are implemented.
