@@ -18,3 +18,5 @@ Last reviewed: 2026-08-12
   back to its single source paragraph, and separated literal requests from author-derived implementation plans.
 - Bound future real semantic evidence to the dedicated approximately 30-participant collection workspace and
   excluded historical non-semantic gestures from translation and new-user claim closure.
+- Recorded the practical cohort boundary: professional/proficient CSL contributors are best-effort, while most new
+  data may come from explicitly reported video-guided volunteers.

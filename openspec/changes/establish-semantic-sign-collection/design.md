@@ -2,18 +2,16 @@
 
 The previous self-collected cohort contains non-semantic gestures, while the paper claims continuous sign-language
 understanding and reviewers request clearer data characterization and real-world generalization. Collection is a
-distinct business workflow: it deals with human recruitment, linguistic correctness, synchronized sensors and raw
-session acceptance. `data_rebuild` should not own participant operations, and `paper_revision` should only consume
-frozen evidence.
+distinct business workflow: it deals with reference content, participants, synchronized sensors and raw session
+acceptance. `data_rebuild` should not own recording operations, and `paper_revision` should only consume frozen
+evidence.
 
 ## Decisions
 
 ### Chinese Sign Language is the primary language
 
-The new semantic collection primarily records Chinese Sign Language (CSL). CSL selection is fixed, while its exact
-regional/register boundary, written translation target, content inventory and non-manual policy remain subject to
-expert review. The protocol does not treat arbitrary gestures or manually encoded spoken-Chinese word sequences as
-CSL evidence.
+The new collection uses fixed Chinese Sign Language (CSL) reference videos and their Chinese meanings. The precise
+video set remains to be selected. The protocol does not relabel arbitrary legacy gestures as CSL.
 
 ### Separate semantic collection ownership
 
@@ -26,43 +24,41 @@ view, not a Python package.
 Historical self-collected data is typed `legacy_nonsemantic` and never contributes to semantic participant,
 utterance or translation totals. It can remain available for pose/hardware forensics under its original provenance.
 
-### Approximately 30 usable participants
+### Mixed participant types
 
-Progress counts accepted participants with a valid core semantic session, not contacts, attempted sessions or raw
-frame volume. Exact reported count is derived from the final validated manifest. Participant identity becomes the
-minimum downstream split group.
+The target is approximately 30 participants with usable recordings. Seek 3--4 professional/proficient CSL
+contributors for demonstration/checking/reference recordings if possible; use volunteers who learn from frozen
+videos for the remaining scale. Do not maintain enrollment funnel statistics. Preserve participant type and make
+participant identity the minimum downstream split group.
 
 ### Core plus compact stress subset
 
-All accepted participants perform a frozen continuous-semantic core. A smaller frozen matrix repeats selected
-utterances for off-axis and occlusion conditions, including reviewer-cited `30 degree`/`60 degree` and partial hand
-or object occlusion. This avoids repeating the entire corpus in every condition while preserving real-boundary
-evidence.
+All recorded participants perform a common video-guided core. A smaller matrix repeats selected clips for
+off-axis and occlusion conditions, including reviewer-cited `30 degree`/`60 degree` and partial hand or object
+occlusion. This avoids repeating the entire corpus in every condition.
 
-### Semantic verification is independent of prompts
+### Claim boundary follows participant type
 
-Every primary take binds a reviewed `utterance_id` and canonical meaning. A sign-language reviewer confirms the
-performed meaning; the shown prompt alone is not ground truth. Non-manual dependencies are explicit so a hand-only
-radar task cannot silently claim coverage it does not observe.
+Every take binds the frozen reference video and its known text meaning. Basic QC checks visible reproduction. A
+professional/proficient contributor may check content or takes when available, but is not required for each
+volunteer take. The paper must describe volunteers as video-guided and cannot claim natural fluent-signer
+generalization from their recordings.
 
 ### Immutable, privacy-aware identities
 
-Direct identifiers and consent records remain in a restricted registry. Research manifests use stable opaque
-participant/session/take IDs and explicit artifact relations. Raw radar/reference streams, acquisition config,
-calibration, synchronization evidence, QC state and checksums are published without overwrite.
+Research manifests use opaque participant/session/take IDs and explicit artifact relations. Raw radar/reference
+streams, acquisition config, synchronization result, participant type, QC state and checksums are not overwritten.
 
 ## Risks
 
-- Recruiting approximately 30 eligible signers may exceed the revision schedule; the protocol prioritizes quality
-  and supports an early editor-extension decision rather than substituting non-signers or non-semantic gestures.
+- Professional/proficient CSL contributors may be unavailable; proceed with volunteers but state that limitation.
 - Reference video is identifiable; access/release scopes must be explicit even if radar is described as private.
-- Mid-collection protocol drift can create incomparable strata; every material change receives a new protocol ID.
+- Changing the reference videos or radar setup mid-collection can create incomparable groups; version the change.
 - An oversized condition matrix can exhaust participants and operators; stress coverage stays compact and frozen.
-- A sentence corpus can overstate linguistic scope; CSL variety/register, written target, task and non-manual
-  boundaries are mandatory.
+- Volunteer imitation can be mistaken for natural CSL; participant types and prompted task wording are mandatory.
 
 ## Handoff
 
-The collection publishes immutable raw session packages, a pseudonymous manifest, content/protocol/config and
-calibration identities, QC/exclusion ledger, coverage summary and checksums. `data_rebuild` independently validates
-that snapshot before constructing subject-disjoint splits or derived tensors.
+The collection publishes raw session packages, an opaque-ID manifest, reference-content/config identities, compact
+QC, participant-type coverage and checksums. `data_rebuild` validates that snapshot before participant-disjoint
+splits or derived tensors.

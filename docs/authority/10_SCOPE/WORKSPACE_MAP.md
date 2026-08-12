@@ -11,7 +11,7 @@ Last reviewed: 2026-08-12
 |---|---|---|---|
 | `csl_news_annotation` | CSL-News source gates, RTMW3D annotation, QC, source/pose manifests | Official RGB/labels and pinned pose model | Frozen visual pose+caption manifest and validation |
 | `data_rebuild` | Data intake, radar recovery, split, quarantine, model-ready delivery | Frozen sources, acquisition/calibration evidence | Task-specific manifests, splits, delivery inventories |
-| `sign_language_collection` | New semantic sign-language corpus, recruitment, synchronized acquisition, semantic review, session QC | Approved protocol, consent, frozen content pack, calibrated equipment | Immutable raw sessions, pseudonymous metadata, QC ledger, frozen collection manifest |
+| `sign_language_collection` | Revision-focused video-guided CSL collection and basic session QC | Frozen CSL videos/text, minimal consent, fixed radar/reference setup | Raw sessions, participant-type metadata, compact QC, frozen manifest |
 | `omnihand_training` | Pose reconstruction train/resume/evaluate | Radar cube, metric pose, split | Checkpoint, pose predictions, pose metrics |
 | `wavellm_training` | Sign-language generation train/resume/evaluate | Pose/confidence/radar feature/caption, split | Adapter, text predictions, language metrics |
 | `paper_revision` | Reviewer closure, evidence promotion, manuscript and response | Frozen producer evidence | Evidence map, manuscript changes, response letter |

@@ -1,107 +1,86 @@
 ## ADDED Requirements
 
-### Requirement: Semantic collection is distinct from legacy gestures
+### Requirement: Legacy gestures remain outside the CSL dataset
 
-The system SHALL treat all historical self-collected project recordings as non-semantic gesture evidence unless a
-separate verified semantic source exists. Historical recordings SHALL NOT contribute to the participant,
-utterance, sentence, or translation totals of the new semantic sign-language dataset.
+Historical self-collected non-semantic gestures SHALL NOT contribute to the new CSL participant, utterance or
+translation totals.
 
-#### Scenario: Build semantic corpus coverage
+#### Scenario: Report new collection coverage
 
-- **WHEN** the collection coverage report counts accepted semantic participants and utterances
-- **THEN** it selects accepted takes from the new semantic collection protocol only
-- **AND** legacy self-collected gesture records are reported separately and excluded from semantic totals.
+- **WHEN** collection statistics are generated
+- **THEN** they use only the new reference-video-based collection
+- **AND** legacy gesture data is reported separately.
 
-### Requirement: Collection progress counts usable participants
+### Requirement: The collection preserves participant type
 
-The collection SHALL target approximately 30 usable participants. A participant SHALL count toward this target
-only after passing the frozen eligibility rule and receiving acceptance for at least one complete core semantic
-session. Attempted, contacted, consented-only, pilot-only, withdrawn, ineligible, or technically rejected sessions
-SHALL NOT be counted as usable production participants.
+The collection SHALL target approximately 30 participants with usable recordings and SHALL record each as either
+`professional_or_proficient_signer` or `video_guided_volunteer`. Professional/proficient contributors SHOULD be
+sought with a planning aim of 3--4, but their availability SHALL NOT block volunteer pilot or main collection.
+Registration, screening and replacement funnel counts SHALL NOT be required.
 
-#### Scenario: A recruited session fails quality control
+#### Scenario: No professional signer is available for the pilot
 
-- **WHEN** a recruited participant's only production session lacks valid synchronization or semantic review
-- **THEN** the session remains visible with its failure reason
-- **AND** the participant is not included in the usable-participant count.
+- **WHEN** the frozen reference set and radar/reference setup are ready but no professional/proficient CSL
+  contributor has been found
+- **THEN** the team may run the video-guided volunteer pilot
+- **AND** the limitation remains explicit in the collection state and later paper text.
 
-### Requirement: Primary records contain verified semantic signing
+### Requirement: Volunteers reproduce frozen CSL reference videos
 
-The primary dataset SHALL record Chinese Sign Language (CSL) and SHALL consist of meaningful continuous CSL
-utterances bound to a frozen CSL variety/register, content-pack identity and canonical meaning. A qualified
-sign-language reviewer SHALL verify performed meaning or an allowed paraphrase; the prompt shown to the participant
-SHALL NOT by itself establish semantic ground truth. Arbitrary non-semantic gestures or manually encoded
-spoken-Chinese word sequences SHALL NOT be accepted as CSL evidence.
+Every primary volunteer take SHALL bind an `utterance_id`, frozen CSL reference video and known Chinese text
+meaning. The participant SHALL be allowed to replay and rehearse before recording. Basic QC SHALL verify visible
+completion against the reference, but SHALL NOT certify the volunteer as a fluent or natural CSL signer.
 
-#### Scenario: Performed signing differs from the prompt
+#### Scenario: Record a volunteer take
 
-- **WHEN** a participant performs an utterance whose meaning does not match the prompt or an allowed paraphrase
-- **THEN** the take is rejected or requested for re-record according to the semantic rubric
-- **AND** the prompt text is not silently retained as its target label.
+- **WHEN** a video-guided volunteer reproduces a reference clip
+- **THEN** the take stores the reference-content version and participant type
+- **AND** downstream reporting describes it as prompted/video-guided reproduction.
 
-### Requirement: Acquisition uses core and stress tiers
+### Requirement: Acquisition uses a common core and compact stress subset
 
-Every usable production participant SHALL complete the frozen core semantic protocol in the nominal calibrated
-setup. A frozen compact subset SHALL cover selected real-world boundary conditions rather than requiring every
-participant to repeat the entire corpus under every condition. The boundary plan SHALL include off-axis conditions
-corresponding to reviewer-cited 30-degree and 60-degree examples and partial hand or object occlusion, retaining
-both reconstruction and translation as downstream evaluation targets.
+Recorded participants SHALL complete a common core set in the nominal setup. A compact subset SHALL cover frontal,
+30-degree, 60-degree, partial hand occlusion and object occlusion conditions without requiring the complete corpus
+under every condition.
 
-#### Scenario: Schedule boundary-condition collection
+#### Scenario: Run the stress subset
 
-- **WHEN** a participant is assigned to the stress tier
-- **THEN** the session plan selects only the frozen compact utterance/condition matrix
-- **AND** operators do not improvise additional conditions or repeat the complete core corpus.
+- **WHEN** a participant is selected for stress recording
+- **THEN** only the frozen stress clips and conditions are used
+- **AND** operators do not expand the matrix during the session.
 
-### Requirement: Participant identity is pseudonymous and split-capable
+### Requirement: Accepted takes preserve minimum evidence
 
-Research manifests SHALL use stable opaque participant, session, utterance and take identifiers. Direct identity
-and consent records SHALL remain in a separate restricted registry. Each accepted take SHALL expose participant
-identity as a grouping key for downstream participant-disjoint split construction without exposing direct
-identifiers.
+Each accepted take SHALL bind opaque participant/session/take IDs, participant type, reference content, raw radar,
+reference video, condition, radar configuration, synchronization result, basic QC state and file checksums. A retry
+SHALL use a new take identity instead of overwriting an earlier file.
 
-#### Scenario: Prepare a new-user evaluation split
+#### Scenario: A file or reproduction is unusable
 
-- **WHEN** data rebuild constructs train, validation and test assignments from the frozen collection manifest
-- **THEN** all takes from one participant are assigned to one split only
-- **AND** filenames or direct participant identifiers are not used to infer the relationship.
+- **WHEN** radar/reference data is unreadable, synchronization is unusable or the visible reproduction is clearly
+  incomplete
+- **THEN** the take is marked rejected/rerecord with a short reason
+- **AND** any retry receives a new `take_id`.
 
-### Requirement: Accepted takes bind raw acquisition and quality evidence
+### Requirement: Research manifests support participant-disjoint splits
 
-Every accepted semantic take SHALL bind immutable raw radar, synchronized reference evidence, exact acquisition
-configuration, calibration, synchronization diagnostics, semantic identity, typed condition metadata, consent
-scope, QC state, relative artifact locations and cryptographic checksums. A re-record SHALL receive a new take
-identity and SHALL NOT overwrite an earlier attempt.
+Research data SHALL use opaque participant IDs and explicit relationships. Direct identifiers SHALL remain outside
+the research manifest. All takes from one participant SHALL be groupable into one downstream split.
 
-#### Scenario: A take is re-recorded
+#### Scenario: Build a cross-participant split
 
-- **WHEN** semantic or technical review requests another attempt
-- **THEN** the operator creates a new take linked to the prior attempt
-- **AND** the rejected or superseded attempt and its QC reason remain immutable.
+- **WHEN** data rebuild assigns train, validation and test data
+- **THEN** one participant appears in only one split
+- **AND** both participant types remain measurable in the split summary.
 
-### Requirement: Production is gated by approval and pilot evidence
+### Requirement: Paper claims match the collected cohort
 
-Production collection SHALL NOT start until language/content, ethics/recruitment, acquisition/synchronization,
-operator dry-run and eligible-signer pilot gates have passed with named evidence. Material content, sensor,
-synchronization or consent changes after the pilot SHALL create a new protocol identity rather than silently
-pooling incompatible sessions.
+The dataset and manuscript SHALL report professional/proficient CSL contributors and video-guided volunteers
+separately. Video-guided volunteer results SHALL NOT be described as spontaneous natural CSL or fluent-signer
+population generalization.
 
-#### Scenario: Hardware changes after the pilot
+#### Scenario: Main collection contains only volunteers
 
-- **WHEN** a material radar configuration or synchronization path changes after the pilot
-- **THEN** production remains blocked until the change is characterized and assigned a new protocol identity
-- **AND** earlier sessions are not silently treated as protocol-equivalent.
-
-### Requirement: Collection handoff is frozen and independently validated
-
-The collection workspace SHALL publish immutable session packages, a pseudonymous manifest, protocol/content/config
-and calibration identities, participant/session/take coverage, QC and exclusion ledger, consent-scope boundary,
-producer commit, checksums and validation status. Data rebuild SHALL independently validate this identity before
-creating derived tensors or subject-disjoint splits.
-
-#### Scenario: Data rebuild receives the collection
-
-- **WHEN** the collection workspace offers a final snapshot for downstream processing
-- **THEN** data rebuild verifies checksums, identity uniqueness, required modalities, participant metadata coverage
-  and accepted QC states
-- **AND** failure leaves the handoff blocked without modifying raw session packages.
+- **WHEN** no professional/proficient CSL participant is ultimately recorded
+- **THEN** the paper states this limitation
+- **AND** conclusions are restricted to prompted CSL reproduction across participants.

@@ -17,9 +17,10 @@ production of upstream data, model checkpoints, predictions, or metrics.
 - Original-submission final materials and complete paper-facing experiment provenance remain missing.
 - Results-based response text is intentionally blocked until corresponding evidence is accepted.
 
-Active blockers: original submission import, historical run mapping, the new approximately 30-participant semantic
-sign-language collection, reviewer-driven real experiments, availability/license decisions, and Source Data
-completion. Historical self-collected non-semantic gestures cannot close semantic translation or new-user claims.
+Active blockers: original submission import, historical run mapping, the new approximately 30-participant
+video-guided CSL collection, reviewer-driven real experiments, availability/license decisions, and Source Data
+completion. Historical non-semantic gestures cannot close translation claims, and volunteer recordings must not be
+presented as natural fluent-signer generalization.
 
 Next actions: import the original submission, close display-item provenance, await a frozen validated delivery from
 [semantic sign-language collection](../../../sign_language_collection/docs/authority/00_INDEX.md), promote completed

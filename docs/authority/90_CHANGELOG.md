@@ -16,3 +16,5 @@ Last reviewed: 2026-08-12
   explicitly excluding legacy non-semantic gestures from semantic cohort and translation evidence.
 - Accepted Chinese Sign Language (CSL) as the primary language of the new semantic collection while leaving its
   precise variety/register and written translation target for expert review.
+- Simplified the collection around the revision deadline: seek 3--4 professional/proficient CSL contributors when
+  available and scale with video-guided volunteers, without maintaining a recruitment funnel.

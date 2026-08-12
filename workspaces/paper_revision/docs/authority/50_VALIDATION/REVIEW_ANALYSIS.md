@@ -89,14 +89,14 @@ Classification: `PROMISING, EVIDENCE-INTENSIVE MAJOR REVISION`
 | `P0-1` | all scientific items | 当前数据、split 和指标是否可信？ | Data/provenance reconstruction + original-result baseline | 锁定 paper split、manifest、metric protocol；已有 prediction 先重算指标 | 所有后续实验的前提 | 若资产缺失，明确 unavailable 并重建可审计 split |
 | `P0-2` | `R2-1`,`ED-SCI-2` | pose bottleneck 是否必要？ | Matched direct 4D-cube-to-LLM baseline | 相同 CubeNet 输入、数据、优化预算和 seed；移除 pose supervision，通过 matched projector 接 mT5；对齐参数/训练策略 | 若两阶段更优，支持 geometry bottleneck；若相近，缩小 necessity claim | 报告负结果并将方法定位为 interpretability/modularity trade-off |
 | `P0-3` | `R2-2`,`ED-SCI-3` | shallow adaptation 是否有效率优势？ | DA matrix: shallow FT / full FT / adversarial DA / MMD | 相同 synthetic checkpoint、真实样本预算、训练 steps、seed；同时报告 pose/translation、trainable params、time/memory | 比较 accuracy-efficiency Pareto，而非只报最高分 | 若当前方法不最优，改为 lightweight option 并诚实呈现 |
-| `P0-4` | `R1-3`,`R1-4c/d`,`R2-3`; `R1-5` 可复用 | 是否真实泛化到方向、遮挡和新用户？ | 在可行时合并 cross-orientation、new-user 和边界场景采集 | Reviewer 2 明确举出 30°/60°、部分手部或物体遮挡，并要求同时评估 reconstruction 与 translation；Reviewer 1 另要求 cross-orientation 和新用户证据；人数和采样协议待定 | 按原文条件分别报告，避免增加没有来源的场景 | 若无法扩充人群，说明限制并缩小 population claim；必要时联系编辑 |
+| `P0-4` | `R1-3`,`R1-4c/d`,`R2-3`; `R1-5` 可复用 | 是否真实泛化到方向、遮挡和新参与者？ | 约 30 名实际完成者的 video-guided CSL 采集，并用小型 stress 子集覆盖方向和遮挡 | 固定 CSL 视频和中文含义；主要由志愿者学习后复现，尽力采集 3--4 名专业/熟练 CSL 人员；两类参与者分别记录；stress 子集包含 Reviewer 2 举出的 30°/60°、部分手部或物体遮挡，并同时评估 reconstruction 与 translation | 全体结果只能支持 prompted reproduction 的跨参与者与边界条件测试；专业/熟练人员结果另报 | 专业人员很少或没有时如实报告，并删除或收缩自然手语用户、新手语者和 population-level 泛化主张 |
 | `P0-5` | `R1-4a` | 如何衡量 synthetic-ground-truth closeness？ | 选择并论证可直接回答该问题的度量/分析 | Reviewer 未规定 paired set、距离函数或统计协议；应先依据现有真实/合成数据关系确定 | 清楚说明所选度量回答什么、不回答什么 | 若数据无法支持直接度量，明确限制，不用 t-SNE 单独替代真实性证据 |
 | `P0-6` | `R2-5` | attention 组件是否必要？ | Leave-one-out CubeNet ablation | full、w/o spatial、w/o channel、w/o SE、必要时 base-none；同 data/seed/budget；报告 MPJPE/PCK 和 downstream translation | 验证单组件贡献与交互 | 无贡献组件应删除或弱化设计主张 |
 | `P0-7` | `R1-2` | 训练和推理成本是多少？ | Compute profile | Reviewer 未指定成本指标；作者需选取能复现训练和推理代价的指标，并写明硬件和测量条件 | 直接报告成本，比较范围按可用 baseline 确定 | 对最终模型做可复现测量，不虚构历史成本 |
 | `P0-8` | `R1-4b`,`R2-4` | 数据描述是否可复现？ | Dataset characterization | 明确补充 synthetic diversity/signs/size/environment、train/test composition，以及 sign type、vocab、sentence count、average length、non-manual features；其他字段仅在定义 split 或复现确有必要时增加 | 形成主文或 supplement 统计 | 无法披露的信息说明限制和访问方式 |
 | `P0-9` | `R2-CODE-*`,`ED-COMP-*` | Reviewer 能否执行代码？ | Clean-environment release reproduction | new environment；configurable paths；complete model download；example data/output；train/eval smoke；release manifest；license decision | reviewer-ready zip/repo | 不支持的 Phi-3 功能应移除 claim，而非保留坏入口 |
 | `P1-1` | `R2-6` | broader modality positioning 是否公平？ | Cross-modal feasibility audit, then 1–2 baselines if alignable | 明确 modality/data/task differences；优先同 vocabulary/split 或公开 continuous SLU protocol | 只有协议可比时才进行数值排名 | 用定性定位和 limitation 回答，不制造伪公平表格 |
-| `P1-2` | `R1-4c` | 12 subjects 是否足够？ | Additional participant collection integrated with stress matrix | 数量、年龄/手型/风格范围由伦理许可和统计设计决定；预注册 held-out usage | 重点看 unseen-user confidence interval | 若返修期不足，联系编辑并降低 claim |
+| `P1-2` | `R1-4c` | 12 subjects 是否足够？ | 将新采集扩展到约 30 名实际完成者并采用 participant-disjoint split | 不管理报名漏斗；报告最终有效人数、两类参与者人数、每类 accepted takes 和 held-out 分配 | 重点报告跨参与者结果及不确定性，不把志愿者人数解释成 fluent-signer diversity | 实际完成数不足时报告真实数字和限制，不以报名或尝试人数补足样本量 |
 | `P2-1` | `R1-1`,`R1-6` | 文献和符号是否完整？ | Related-work and notation revision | 核实文献、增加 4D cube definition/table | clarity closure | 无需实验 |
 
 ## E. Clarification and Compliance Actions
@@ -130,12 +130,20 @@ Classification: `PROMISING, EVIDENCE-INTENSIVE MAJOR REVISION`
 6. Week 12：numeric provenance、code release clean-room test、PDF/colour/reference audit。
 7. Week 13：缓冲、导师/合作者审阅和最终提交；若 P0 真实数据进度不足，在此之前联系编辑延期。
 
+### 新采集的证据边界
+
+- 约 30 人是实际完成可用录制的项目目标，不是专业手语者目标，也不需要统计报名、筛选或补招人数。
+- 专业/熟练 CSL 人员以 3--4 名为尽力目标；找不到时不阻塞志愿者试采和主采集。
+- 普通志愿者必须基于冻结的 CSL 视频学习、排练并复现，论文中称为 `video-guided volunteers`。
+- 两类参与者必须分别统计和分析。志愿者证据可回答跨参与者复现、方向/遮挡鲁棒性和系统可用性，不能单独证明对自然、流利 CSL 用户的泛化。
+- 该设计是作者为集中回答真实数据相关意见而提出的返修方案，不得反向写成编辑或审稿人指定了 30 人或指定了这种参与者构成。
+
 ## G. Author Inputs Needed
 
 - 当前 manuscript/abstract/supplement 和原投稿表图。
 - 原投稿 paper-facing checkpoint、prediction、split 和 metric artifact。
 - 现有 12 人真实数据的采集协议、伦理/同意范围和 metadata。
-- 可新增采集的人数、时间、设备和可覆盖方向/遮挡条件。
+- 可实际完成录制的志愿者数量、时间、设备和可覆盖方向/遮挡条件；专业/熟练 CSL 人员按可获得情况记录。
 - 可用 GPU 类型、数量和并行预算。
 - 是否有同步 WiFi/声学数据或可运行 cross-modal baseline。
 - Phi-3 是否出现在论文贡献/实验中；若没有，建议从正式支持范围移除。

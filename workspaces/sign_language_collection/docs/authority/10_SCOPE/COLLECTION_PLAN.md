@@ -1,192 +1,126 @@
-# New Semantic Sign-Language Collection Plan
+# Revision-Focused CSL Collection Plan
 
 Status: draft
 Owner: Semantic sign-language collection lane
-Authority scope: Scientific scope, cohort, content, condition matrix, phases, resources, risks, and success criteria for the new collection.
+Authority scope: Lightweight scope, participant mix, content, recording matrix, phases, and claim boundary for the new CSL collection.
 Last reviewed: 2026-08-12
 
-## Objective
+## Goal
 
-Build a new real-world dataset that can support both radar hand reconstruction and semantic continuous
-sign-language translation. The collection must correct the central limitation of the historical self-collected
-data: those recordings are non-semantic gestures and cannot establish sentence-level sign-language understanding.
+Collect a new real radar/reference dataset for the paper revision. Historical self-collected data is non-semantic
+gesture material, so the new collection uses fixed Chinese Sign Language (CSL) reference videos with known text
+meaning and records participants reproducing those videos.
 
-The primary signing language is **Chinese Sign Language (CSL)**. Here CSL means an actual sign language used by
-eligible signers, not arbitrary gestures, signed spoken-Chinese word order, or a prompt-by-prompt hand-motion
-encoding. The exact regional/register scope and written translation target remain to be frozen with the
-sign-language lead.
+The target remains approximately 30 participants with usable recordings. We do not maintain contacted, registered,
+screened or replacement counts. The final dataset reports only the actual recorded participant count and usable
+take count.
 
-The production target is approximately 30 **usable** participants. The final paper reports the actual accepted
-count, not the recruitment target or number of attempted sessions. The historical 12-person cohort is reported
-separately and is never added to the new cohort count.
+## Participant Mix
 
-## Scientific Questions
+Use two explicit participant types:
 
-The new dataset is designed to answer the following without claiming that every protocol choice was dictated by
-the reviewers:
+1. `professional_or_proficient_signer`: aim for 3--4 people who know CSL, if they can be found. They can check the
+   reference set, demonstrate difficult items and contribute a small high-quality reference subset.
+2. `video_guided_volunteer`: the main source of scale. Volunteers watch a fixed CSL video, learn/rehearse it, and
+   reproduce it during synchronized radar and reference-video capture.
 
-1. Can a model trained with synthetic/visual supervision operate on real semantic sign-language radar data?
-2. Does performance generalize to unseen signers with different hand sizes and signing styles?
-3. How do reconstruction and translation behave away from frontal alignment and under partial hand/object
-   occlusion, including the reviewer-cited `30 degree` and `60 degree` conditions?
-4. What semantic scope, vocabulary, sentence distribution and non-manual dependencies does the dataset actually
-   cover?
+Professional/proficient signer availability is desirable but is not a gate for starting the pilot. Do not label a
+video-guided volunteer as a fluent signer. This dataset can test cross-participant reproduction and sensor/model
+robustness; by itself it cannot establish natural CSL use by the Deaf/signing community.
 
-## Dataset Boundary
+## Minimal Reference Set
 
-### Included as primary evidence
-
-- Meaningful continuous sign-language utterances from eligible signers.
-- Synchronized raw radar, reference recording sufficient for pose/semantic verification, and canonical text
-  meaning for each accepted take.
-- Participant, session, environment, orientation and occlusion metadata stored under pseudonymous identities.
-- Explicit invalid/re-record decisions and QC evidence.
-
-### Included only as calibration or secondary analysis
-
-- Static poses, isolated signs and non-semantic motion used for sensor checks or pose calibration.
-- Pilot recordings, unless formally promoted after proving protocol identity.
-- Naturally occurring hand-to-hand overlap labels and failure cases.
-
-### Excluded from the new semantic cohort
-
-- All historical self-collected non-semantic gesture recordings.
-- Attempts from participants who do not pass the frozen signer eligibility rule.
-- Takes without verified meaning, usable radar/reference synchronization, consent coverage or session QC.
-- Synthetic radar and public visual corpora; these remain separate upstream datasets.
-
-## Participant Plan
-
-### Target
-
-- Planning target: approximately 30 accepted participants.
-- Counting unit: one pseudonymous participant with at least one fully accepted core session.
-- Replacement rule: an ineligible participant or failed session does not count toward the target; the failure is
-  retained in the restricted recruitment/session ledger and a replacement may be recruited.
-- Downstream rule: participant identity is the minimum split group. Frame- or take-random splits cannot support
-  new-user generalization.
-
-### Eligibility to freeze before recruitment
-
-- Default to adults unless ethics approval explicitly covers another population.
-- Ability to perform the frozen CSL variety/register at the required level.
-- Eligibility assessed by a named sign-language reviewer role using a recorded rubric, not by self-report alone.
-- Ability and consent to complete radar and reference recordings and the planned session duration.
-- Exclusion/withdrawal criteria and compensation treatment defined before the first contact.
-
-Deaf/hearing status, native/second-language status, age band, handedness, hand measurements and other attributes
-are collected only when scientifically justified, approved and consented. They are used to characterize coverage,
-not as informal proxies for sign-language competence.
-
-### Recruitment strategy
-
-Recruit through institutionally approved university, community, interpreter/education and collaborator channels.
-Use one screening form and one eligibility decision process across channels. Recruitment messaging must state the
-recorded modalities, identifiability of reference video, storage/release plan, compensation, withdrawal boundary
-and session burden. No production booking occurs before ethics and consent approval.
-
-## Semantic Content Plan
-
-The content pack must be versioned and frozen before the pilot. It contains:
+Before the pilot, freeze one versioned table containing:
 
 ```text
-content_pack_id and version
-sign language: Chinese Sign Language (CSL)
-CSL regional/register scope
 utterance_id
-canonical written translation/meaning and target language
-allowed paraphrases, if any
-prompt shown to the participant
-content category and lexical tags
-expected continuous/isolated form
-non-manual dependency: required / optional / none / unknown
-known ambiguity or exclusion note
-sign-language reviewer and review status
+reference_video
+Chinese text meaning
+core or stress subset
+notes for obvious ambiguity/difficulty
 ```
 
-The primary set consists of meaningful continuous utterances rather than concatenated arbitrary gestures. The
-pack should cover varied sentence lengths and everyday semantic categories without claiming open-vocabulary
-coverage beyond its actual inventory. Items that require facial/body grammar must either be captured and annotated
-with an appropriate reference modality or explicitly marked outside the hand/radar-only task boundary.
+Prefer meaningful continuous CSL clips from a legally usable, known source such as the project CSL resources. Do
+not construct the primary set from arbitrary motions. Keep the set small enough that volunteers can learn it in a
+reasonable session. If a professional/proficient contributor is available, ask them to check the selected videos
+and meanings; otherwise record that validation is limited to the source dataset/video labels.
 
-The primary language is fixed as CSL. Its precise variety/register, written translation target, vocabulary,
-sentence count, repetition count and length distribution remain open decisions. They are fixed only after a
-language expert review and a timed pilot establish correctness and participant burden.
+The exact clip count, repetition count and session duration are decided by the pilot, not by a large protocol
+document.
 
-## Efficient Two-Tier Acquisition
+## Recording Matrix
 
-### Tier A: core semantic corpus
+### Core set
 
-Every accepted participant completes the same frozen core protocol in the nominal calibrated setup. Tier A is the
-only component used to count progress toward approximately 30 usable participants. It provides participant-held-out
-semantic and pose evidence.
+Every participant watches, rehearses and performs the same core reference clips in the nominal frontal setup.
+Record raw radar and a synchronized reference video. The reference video is needed to confirm whether the motion
+was reproduced and to obtain pose evidence.
 
-### Tier B: compact real-world stress subset
+### Small revision stress set
 
-A predefined compact subset of utterances is repeated under selected boundary conditions. At minimum the plan
-evaluates the reviewer-cited off-axis `30 degree` and `60 degree` conditions and partial hand or object occlusion,
-with reconstruction and translation both retained as downstream targets. A frontal nominal take anchors each
-stress comparison.
+Use a small fixed subset, not the full clip set, for:
 
-The participant count and utterance count for Tier B are not yet fixed. They must cover multiple held-out signers
-and be selected before production analysis, but should not force all 30 participants to repeat the full semantic
-corpus under every condition. Hand-to-hand overlap is labeled when present; a separate forced-overlap condition is
-added only if the mechanism explanation cannot be supported by existing Tier A/B examples.
+- nominal frontal recording;
+- off-axis `30 degree` and `60 degree` recordings;
+- partial hand occlusion;
+- object occlusion.
 
-## Participant-Disjoint Evaluation Design
+Record both professional/proficient contributors and several volunteers in the stress subset when available. Do
+not require all participants to repeat every condition. Hand-to-hand overlap is marked when naturally present;
+there is no separate overlap experiment unless later evidence requires it.
 
-Before production collection, define a split policy over pseudonymous participant IDs. A provisional planning
-allocation for 30 accepted participants is `20 train / 5 validation / 5 test`; this is not final until statistical,
-recruitment and adaptation needs are reviewed. The final assignment must be frozen by `data_rebuild`, contain no
-participant overlap, and preserve a genuinely held-out test cohort.
+## Simple Session Flow
 
-Any calibration or few-shot adaptation study records exactly how much held-out-participant data was exposed. A
-participant cannot simultaneously contribute calibration data and be described as zero-shot. Stress-condition
-results must retain condition labels rather than being collapsed into one overall average.
+1. Assign an opaque participant ID and record participant type.
+2. Confirm the participant agrees to radar and reference-video recording.
+3. Check radar/reference capture and synchronization with one trial.
+4. Show one frozen CSL reference clip; allow replay and rehearsal.
+5. Record the participant's reproduction and immediately check both files.
+6. Re-record only when the motion is clearly incomplete or files/synchronization fail.
+7. Back up the session and generate checksums.
 
-## Phases And Deliverables
+## Minimal Data Fields
 
-| Phase | Main work | Deliverable |
+Keep only what the paper and downstream processing need:
+
+- participant ID and participant type;
+- session/take/utterance IDs;
+- reference-video/content version;
+- frontal/orientation/occlusion condition;
+- raw radar and reference-video locations/checksums;
+- radar configuration/calibration identity;
+- synchronization and take status;
+- short failure reason when unusable.
+
+No names or contact details belong in the research manifest. Do not add demographic fields unless the paper will
+actually analyze them and collection is approved.
+
+## Execution Phases
+
+| Phase | Action | Exit condition |
 |---|---|---|
-| 0. Freeze scientific scope | CSL variety/register, written target, task boundary, cohort target, core/stress principles | approved protocol version |
-| 1. Ethics and recruitment | approval, consent, compensation, screening, identity separation | approved participant package |
-| 2. Content and hardware | reviewed content pack, radar/reference config, synchronization, calibration | immutable protocol bundle |
-| 3. Pilot | small eligible cohort, full operator rehearsal, timing and QC | dated pilot report and go/no-go decision |
-| 4. Production | core collection for approximately 30 accepted participants plus compact stress subset | immutable raw session packages and live QC ledger |
-| 5. Semantic and technical QC | sign correctness, target text, signal/sync/completeness checks, re-records | accepted/rejected take inventory |
-| 6. Freeze and handoff | pseudonymous manifest, checksums, protocol/config copies, coverage summary | frozen collection snapshot accepted by data rebuild |
+| 1. Reference freeze | select CSL videos and text meanings; seek optional professional check | one versioned core/stress list |
+| 2. Setup | prepare minimal consent, radar/reference capture, IDs and backup | one readable synchronized trial package |
+| 3. Pilot | record a few volunteers; optionally one proficient signer | workload and basic QC are workable |
+| 4. Main collection | record toward approximately 30 participants | usable core coverage and compact stress subset |
+| 5. Handoff | freeze manifest, raw files, configuration, QC and checksums | data rebuild accepts the snapshot |
 
-## Roles
+## Paper Claim Boundary
 
-- **Collection lead:** owns protocol version, schedule, operator training and stop decisions.
-- **Sign-language lead/reviewer:** owns eligibility rubric, content correctness, semantic review and ambiguity policy.
-- **Radar lead:** owns radar configuration, array/channel map, calibration and raw-signal health checks.
-- **Reference/pose lead:** owns camera/reference setup, synchronization and pose-ground-truth suitability.
-- **Data steward:** owns consent scope, identity separation, access control, immutable session publication and checksums.
-- **QC reviewer:** independently accepts/rejects sessions and records reasons; the operator cannot silently waive a gate.
+The manuscript must report separately:
 
-One person may hold multiple roles, but every production session records the responsible people by role.
+- number of professional/proficient CSL contributors actually recorded;
+- number of video-guided volunteers;
+- source and size of the fixed CSL reference set;
+- that volunteers learned/reproduced prompted videos rather than producing spontaneous natural CSL;
+- participant-disjoint evaluation and which participants appeared in the stress subset.
 
-## Major Risks And Controls
+This design provides new real semantic-aligned radar data and more performer diversity than the old non-semantic
+cohort. It does not justify claiming population-level generalization to fluent sign-language users unless enough
+professional/proficient signer evidence is actually collected.
 
-| Risk | Control |
-|---|---|
-| Recruiting approximately 30 competent signers is slow | freeze eligibility early, recruit through multiple approved channels, pilot scheduling burden, request revision extension before evidence quality is compromised |
-| Participants reproduce prompts incorrectly or unnaturally | language-reviewed content, rehearsal, per-take semantic review, explicit re-record reasons |
-| Full condition matrix becomes infeasible | core-for-all plus compact stress subset; freeze a minimum matrix before production |
-| Radar/reference streams drift or silently drop | hardware bench test, sync markers, per-session automated integrity report and immediate backup |
-| Reference video creates identifiable data | explicit consent, restricted identity map, access tiers and release-specific redaction/derived products |
-| Dataset leakage inflates new-user results | subject identity in manifest, participant-disjoint split, immutable test assignment and exposure ledger |
-| Protocol changes halfway through production | versioned protocol; material changes trigger a new cohort/protocol stratum and cannot be silently pooled |
+## Completion
 
-## Completion Criteria
-
-Collection is complete only when:
-
-- approximately 30 usable participants have accepted core sessions under the frozen protocol;
-- every accepted take has verified semantics, required modalities, synchronization, metadata and checksums;
-- stress-subset coverage matches the frozen matrix or deviations are explicitly recorded;
-- invalid and missing takes remain visible in the QC ledger;
-- participant identity is pseudonymous in research manifests and direct identifiers remain separately restricted;
-- the final manifest, protocol, content pack, calibration/configuration, QC summary and hashes are immutable;
-- `data_rebuild` accepts the handoff and independently validates sample/participant coverage.
+Stop expanding the plan once the paper-facing minimum is met: approximately 30 participants with usable core data,
+a small verified stress subset, readable synchronized artifacts, a participant-aware manifest and an honest
+dataset description. Further linguistic annotation or public release preparation is separate work.

@@ -7,9 +7,8 @@ Last reviewed: 2026-08-12
 
 ## Boundary
 
-This workspace owns the design and collection of a new, high-quality, semantically meaningful sign-language
-dataset. It covers recruitment, consent, content freeze, synchronized radar/reference recording, sign-language
-review, session QC and publication of a frozen collection manifest.
+This workspace owns the new paper-revision CSL collection. It covers reference-video/text freeze, lightweight
+participant coordination, consent, synchronized radar/reference recording, basic take QC and a frozen handoff.
 
 It does not process raw radar into model tensors, create canonical train/validation/test assignments, train
 models, or promote paper claims. Those responsibilities remain with `data_rebuild`, training workspaces and
@@ -19,38 +18,36 @@ models, or promote paper claims. Those responsibilities remain with `data_rebuil
 
 - All previously self-collected project data consists of non-semantic gestures. It is legacy pose/reconstruction
   or forensic material, not semantic sign-language data.
-- The new planning target is approximately 30 usable participants, substantially beyond the previously reported
-  cohort of 12. Attempts that fail eligibility or session QC do not count as usable participants.
+- The target is approximately 30 participants with technically usable recordings, substantially beyond the
+  previously reported cohort of 12. There is no separate enrollment-funnel accounting.
 - The primary signing language is Chinese Sign Language (CSL). The precise CSL regional/register boundary,
-  written translation target and non-manual grammar policy still require expert review before the pilot.
-- The primary collection unit is a meaningful continuous sign-language utterance with a verified semantic
-  target. Isolated or non-semantic gestures may be recorded for calibration but cannot constitute the primary
-  translation dataset.
-- Every usable participant completes the core semantic protocol. Expensive orientation and occlusion conditions
+  written translation target and reference-video set still require a simple content check before the pilot.
+- Seek 3--4 professional/proficient CSL contributors for demonstration, content checking and a small reference
+  subset if they can be found. Their availability does not block volunteer collection.
+- Most scale comes from volunteers who watch the same frozen CSL video and reproduce it. Their records are typed
+  `video_guided_volunteer`, not represented as natural signing by fluent CSL users.
+- Every recorded participant completes the core video-guided set. Expensive orientation and occlusion conditions
   use a frozen compact stress subset rather than repeating the full corpus in every condition.
 - The new dataset is identity-disjoint by participant for downstream evaluation. Exact split assignments are
   produced later by `data_rebuild` from the frozen participant-aware manifest.
 
 ## Current State
 
-Planning is active; recruitment and collection have not started. CSL is selected as the primary signing language;
-its regional/register boundary, semantic content pack, written translation target, signer eligibility rubric,
-ethics/consent scope, compensation, exact recording modalities, synchronization tolerance, session duration,
-stress-subset size and downstream release scope remain to be frozen.
+Planning is active; collection has not started. CSL is selected. Remaining practical blockers are the fixed
+reference-video/text list, a minimal consent form, radar/reference setup and synchronization, session length, a
+small pilot and the compact stress subset. Professional/proficient CSL support remains best-effort.
 
-No production collection may start until readiness gates `G0` through `G4` pass. A small pilot precedes production,
-and pilot data is excluded from the production dataset unless the protocol and hardware remain identical and an
-explicit acceptance decision is recorded.
+Production follows one small pilot. Pilot data may be retained when the same reference set and hardware setup are
+used and its takes pass the same QC.
 
 ## Phase Status
 
 | Phase | State | Exit condition |
 |---|---|---|
-| Protocol and ownership | in progress | CSL variety/register, task, content, identity and handoff contracts frozen |
-| Ethics and recruitment | blocked | approval/consent, compensation and signer eligibility accepted |
-| Hardware and synchronization | blocked | radar/reference/calibration protocol and tolerances pass bench test |
-| Pilot | blocked | complete small-cohort dry run passes semantic, signal, sync and operator review |
-| Production collection | blocked | approximately 30 usable participants accepted under one frozen protocol |
+| Reference set | in progress | CSL videos, text meanings and core/stress lists frozen |
+| Minimal collection setup | blocked | consent, radar/reference setup, IDs and storage confirmed |
+| Pilot | blocked | a few video-guided takes pass playback, signal, sync and file checks |
+| Production collection | blocked | approximately 30 participants have usable core recordings |
 | Freeze and handoff | blocked | immutable raw sessions, QC ledger and manifest validate and are accepted by data rebuild |
 
 ## Authority And Operations

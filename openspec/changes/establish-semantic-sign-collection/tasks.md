@@ -1,43 +1,31 @@
-## 1. Ownership And Planning
+## 1. Collection Boundary
 
-- [x] 1.1 Add the semantic sign-language collection workspace and project ownership mapping.
-- [x] 1.2 Record the approximately 30-usable-participant target and legacy non-semantic exclusion.
-- [x] 1.3 Define draft collection, identity, runbook, QC and frozen-handoff boundaries.
+- [x] 1.1 Add the CSL collection workspace and exclude legacy non-semantic gestures.
+- [x] 1.2 Set the target at approximately 30 recorded participants.
+- [x] 1.3 Define the mixed cohort: seek 3--4 professional/proficient CSL contributors if available, then scale with
+  explicitly labeled video-guided volunteers.
+- [x] 1.4 Replace the heavy protocol with minimal collection, QC and claim-boundary documents.
 
-## 2. Language, Ethics And Recruitment Freeze
+## 2. Prepare
 
-- [x] 2.1a Select and document Chinese Sign Language (CSL) as the primary signing language.
-- [ ] 2.1b Freeze the CSL regional/register boundary, written translation target and primary continuous task.
-- [ ] 2.2 Approve the content pack, translations, non-manual policy and signer-review rubric.
-- [ ] 2.3 Obtain required ethics/consent approval and freeze compensation, withdrawal, access and release scopes.
-- [ ] 2.4 Freeze participant eligibility, recruitment channels, session burden and replacement policy.
+- [ ] 2.1 Freeze the core and stress CSL reference videos plus Chinese text meanings.
+- [ ] 2.2 Prepare the minimal recording agreement/consent, participant-type field and opaque ID list.
+- [ ] 2.3 Freeze the radar/reference setup, synchronization check, storage path and compact session manifest.
+- [ ] 2.4 Seek professional/proficient CSL contributors for optional content checking/reference recording without
+  blocking the volunteer pilot.
 
-## 3. Acquisition Contract Implementation
+## 3. Pilot And Collect
 
-- [ ] 3.1 Freeze radar/reference hardware, placement, calibration, clock/trigger and synchronization tolerances.
-- [ ] 3.2 Add versioned acquisition/content/condition configuration under `configs/`.
-- [ ] 3.3 Implement dependency-light participant/session/take manifest and QC validation under `src/mmprism/`.
-- [ ] 3.4 Add contract tests for pseudonymization, identity uniqueness, modality/checksum binding and invalid-take rejection.
+- [ ] 3.1 Record a few video-guided volunteers and adjust clip count/session duration from practical timing.
+- [ ] 3.2 Record toward approximately 30 participants using the common core set.
+- [ ] 3.3 Record the compact frontal/30-degree/60-degree/hand-occlusion/object-occlusion subset.
+- [ ] 3.4 Back up sessions, record basic accepted/rejected status and preserve participant type.
 
-## 4. Pilot
+## 4. Handoff And Paper
 
-- [ ] 4.1 Run hardware dry-run and publish its immutable validation report.
-- [ ] 4.2 Run a small eligible-signer pilot covering core and stress paths.
-- [ ] 4.3 Review semantic correctness, timing/burden, signal, synchronization, storage, backup and QC consistency.
-- [ ] 4.4 Record a go/no-go decision and freeze the production protocol or version the required changes.
-
-## 5. Production And Handoff
-
-- [ ] 5.1 Collect and accept core semantic sessions for approximately 30 usable participants.
-- [ ] 5.2 Complete the frozen compact orientation/occlusion stress matrix.
-- [ ] 5.3 Close re-records, semantic/technical QC and manifest-derived coverage reporting.
-- [ ] 5.4 Freeze immutable raw session packages, content/protocol/config/calibration bundle, QC ledger and checksums.
-- [ ] 5.5 Obtain independent `data_rebuild` validation and handoff acceptance.
-
-## 6. Verification And Closure
-
-- [ ] 6.1 Build subject-disjoint downstream splits without exposing direct identifiers.
-- [ ] 6.2 Bind accepted collection evidence to model runs and paper revision without mixing legacy semantic totals.
-- [ ] 6.3 Run document, schema, link, checksum and clean-room reader audits.
-- [ ] 6.4 Archive this change only after the collection interface and ownership contract are implemented and current
-  Authority reflects the accepted final state.
+- [ ] 4.1 Freeze the participant/session/take manifest, reference list, raw files, radar config and checksums.
+- [ ] 4.2 Obtain `data_rebuild` validation and construct participant-disjoint splits.
+- [ ] 4.3 Report professional/proficient and video-guided participant counts separately.
+- [ ] 4.4 Limit paper claims to prompted CSL reproduction unless actual professional/proficient signer evidence supports
+  a stronger statement.
+- [ ] 4.5 Archive the OpenSpec change after the collection interface is implemented and current Authority is updated.

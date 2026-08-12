@@ -10,9 +10,11 @@ Last reviewed: 2026-08-12
 - Established a dedicated collection workspace separate from legacy data rebuild and paper revision.
 - Recorded that all historical self-collected data is non-semantic gesture material and cannot count toward the new
   semantic cohort or translation evidence.
-- Set the planning target at approximately 30 usable participants.
-- Defined a core continuous-semantic protocol for all accepted participants and a compact orientation/occlusion
-  stress subset to control recruitment and recording burden.
-- Added draft acquisition, identity and operator contracts plus current readiness/QC gates.
+- Set the planning target at approximately 30 participants with usable recordings.
+- Defined a common video-guided core and compact orientation/occlusion subset.
+- Added minimal acquisition, operator and QC guidance.
 - Fixed Chinese Sign Language (CSL) as the primary signing language; retained the CSL variety/register, written
   translation target, content pack and non-manual grammar policy as pre-pilot decisions.
+- Replaced the recruitment-heavy protocol with a revision-focused plan: seek 3--4 professional/proficient CSL
+  contributors if available, scale with video-guided volunteers, keep only minimal consent/sync/QC, and report the
+  two participant types separately.

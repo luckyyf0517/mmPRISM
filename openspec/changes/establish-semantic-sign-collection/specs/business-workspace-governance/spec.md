@@ -13,9 +13,9 @@ acceptance criteria. The workspace set SHALL be:
 - `paper_revision`
 
 The repository SHALL NOT create workspaces solely for shared package layers such as contracts, configuration,
-runtime, artifacts, assets, evaluation, release, or CLI composition. `sign_language_collection` SHALL own new
-participant recruitment, semantic content, synchronized acquisition and session acceptance; `data_rebuild` SHALL
-own processing, split and model-ready delivery after a frozen collection handoff.
+runtime, artifacts, assets, evaluation, release, or CLI composition. `sign_language_collection` SHALL own fixed
+reference content, lightweight participant coordination, synchronized acquisition and basic session acceptance;
+`data_rebuild` SHALL own processing, split and model-ready delivery after a frozen collection handoff.
 
 #### Scenario: Place a model training activity
 
@@ -25,7 +25,7 @@ own processing, split and model-ready delivery after a frozen collection handoff
 
 #### Scenario: Place a new human-data acquisition activity
 
-- **WHEN** an activity recruits signers or records and accepts new semantic radar/reference sessions
+- **WHEN** an activity coordinates participants or records and accepts new CSL radar/reference sessions
 - **THEN** its business status, protocol and operations belong to `sign_language_collection`
 - **AND** reusable schemas and validators remain in the canonical root package.
 
