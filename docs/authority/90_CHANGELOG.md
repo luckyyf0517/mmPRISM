@@ -28,3 +28,6 @@ Last reviewed: 2026-08-12
 - Relocated the original-submission forensic codebase (root `run_*.py`, `config/`, legacy `src/` modules, and
   legacy shell wrappers) into an explicit read-only `legacy/` directory without content changes (`DEC-047`);
   `src/` now contains only the canonical `mmprism` package.
+- Added one cross-workspace research execution model defining cam-pose, synthetic radar, synthetic/real-domain
+  mmw-pose, radar features, model roles, stage handoffs, and the CSL-Daily end-to-end control path; workspace
+  operation pages retain their own commands, gates, outputs, and current state.

@@ -58,6 +58,7 @@ Workspace ownership and handoffs are defined in the
 - [Model assets](20_CONTRACTS/MODEL_ASSETS.md)
 - [Documentation governance](20_CONTRACTS/DOCUMENT_GOVERNANCE.md)
 - [System architecture](30_ARCHITECTURE/SYSTEM_ARCHITECTURE.md)
+- [Research terms and end-to-end execution](30_ARCHITECTURE/RESEARCH_EXECUTION_MODEL.md)
 - [Release audit](40_OPERATIONS/RELEASE_AUDIT.md)
 - [Decision log](60_DECISIONS/DECISION_LOG.md)
 - [Project changelog](90_CHANGELOG.md)
