@@ -13,8 +13,9 @@ remains under `src/mmprism/`; business execution and status are organized by wor
 Current cross-workspace blockers:
 
 - Private source inventory, calibration, and historical run provenance are not yet complete.
-- The original-submission cam-pose WaveLLM checkpoint still needs an immutable intake record, SHA-256,
-  configuration/model identity, historical data/split linkage, and an independent holdout evaluation.
+- The complete original-submission cam-pose WaveLLM checkpoint and historical hand-pose encoder are unavailable.
+  A recovered, mT5-only CSL-News-derived export is load-smoke-verified and requires a local-derived asset receipt
+  before formal CSL-Daily training; it cannot establish historical end-to-end reproduction or metrics.
 - Full physical radar-cube reconstruction remains blocked on acquisition and calibration evidence.
 - The new CSL collection targets approximately 30 recorded participants: ideally 3--4 professional/proficient
   signers if available, plus volunteers who learn from fixed reference videos. Reference content, minimal consent,
@@ -24,16 +25,14 @@ Current cross-workspace blockers:
 The revision-critical execution path is:
 
 ```text
-audit and freeze the original-submission WaveLLM semantic initialization
--> recover the CSL-Daily simulation/OmniHand second stage
+receipt and freeze the recovered CSL-News-derived mT5 language initialization
+-> recover the CSL-Daily simulation/OmniHand second stage and train new geometry adapters
 -> run matched sim2real adaptation and new-real-data experiments
 ```
 
-Full 436-archive CSL-News reconstruction and retraining do not block revision experiments that use the audited
-original-submission checkpoint. Retraining is triggered only if that checkpoint cannot be loaded or audited, is
-incompatible with the required historical pose contract, contains split leakage, or is shown by controlled
-evaluation to be the downstream bottleneck. See `DEC-044` in the
-[decision log](60_DECISIONS/DECISION_LOG.md).
+Full CSL-News reconstruction and retraining do not block the CSL-Daily revision path. The recovered mT5 export
+is a controlled initialization only; historical WaveLLM reproduction is unavailable rather than a hidden
+precondition. See `DEC-045` in the [decision log](60_DECISIONS/DECISION_LOG.md).
 
 ## Workspaces
 

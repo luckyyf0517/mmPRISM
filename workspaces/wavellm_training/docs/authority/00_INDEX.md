@@ -17,18 +17,18 @@ not reconstruct radar/pose inputs, resolve model paths inside models, or own pap
 - Formal train/evaluate now use the shared distributed lifecycle, exact prediction sharding, cross-rank metric
   merging, and rank-zero artifact publication; WaveLLM-specific multi-process validation remains open.
 - Current character metrics and synthetic A100 runs are engineering protocols, not paper results.
-- The revision baseline is the original-submission cam-pose WaveLLM checkpoint trained on the reported first
-  approximately 100 CSL-News archives. Its file location, hash, exact configuration, historical input/split linkage,
-  and independent evaluation are still pending intake and audit.
+- The recovered CSL-News-derived mT5-only export is load-smoke-verified as a controlled language initialization.
+  The original complete cam-pose WaveLLM checkpoint and historical hand-pose encoder are unavailable, so historical
+  end-to-end reproduction, pose compatibility, and historical metrics are explicitly out of scope.
 
-Active blockers: original-checkpoint intake/audit, real aligned model-ready data, production
+Active blockers: local-derived mT5 asset receipt/import, real aligned model-ready data, production
 BLEU/ROUGE/semantic protocols, WaveLLM multi-process/NCCL validation, and final paper evaluation.
 
-Next action: audit and freeze the original checkpoint, restore the CSL-Daily simulation second-stage protocol,
-then use the same semantic initialization for matched architecture, DA, stress, and sim2real comparisons.
+Next action: implement a checksum-bound local-derived mT5 receipt/import, restore the CSL-Daily simulation
+second-stage protocol, then train the new canonical geometry adapters and declared language-model scope.
 
-Full 436-archive CSL-News retraining is not P0. A complete source intake and retraining are opened only by one of the
-audit triggers in `DEC-044` or as a separately reported future ceiling experiment.
+Full CSL-News reconstruction and retraining are not P0. They remain a separately reported future ceiling or
+provenance task, not a replacement for the unavailable historical end-to-end checkpoint.
 
 ## Canonical Locations
 

@@ -34,28 +34,26 @@ The model class contains no path resolution, logging, checkpoint writing, or CLI
 backbone can be frozen for adapter training or included in a full-model checkpoint through explicit
 configuration. The engineering recipe freezes mT5 and is not the final scientific protocol.
 
-## Revision Semantic Initialization
+## Revision Language Initialization
 
-The paper revision uses the original-submission cam-pose WaveLLM checkpoint, reported as trained from the first
-approximately 100 CSL-News archives, as a shared immutable semantic initialization. It is a historical paper asset,
-not a canonical formal run, until its provenance is sufficiently recovered. Intake must establish at minimum:
+The historical full cam-pose WaveLLM checkpoint and standalone `HandPoseEncoder` are unavailable. They therefore
+cannot be loaded, evaluated, compared, or described as a reproduced end-to-end baseline. The retained local asset is
+instead a CSL-News-derived mT5-only export, recorded as `MODEL-MT5-CSLNEWS-HISTORICAL-V1` and smoke-verified in the
+[historical initialization log](../../logs/2026/08/20260812_HISTORICAL_MT5_INITIALIZATION_SMOKE.md).
 
-- checkpoint bytes and SHA-256;
-- mT5 and tokenizer identity/revision plus model structure and resolved configuration;
-- strict or explicitly controlled state loading with a complete missing/unexpected-tensor report;
-- compatibility with the historical pose representation used by the checkpoint;
-- the recoverable caption mapping, sample/sequence list, and train/validation/test split for the first-100 scope;
-- an independent fixed-holdout evaluation with sample-level predictions and versioned metrics.
+The export initializes only `GeometryGuidedMT5.language_model`. The current dual-hand ST-GCN pose encoder, radar
+projector, and confidence-aware fusion are deliberately new components and must be freshly initialized and trained on
+frozen CSL-Daily or later real-data manifests. No legacy module is imported and no compatibility shim is permitted.
 
-All applicable revision architecture, DA, stress, and sim2real experiments must register the same checkpoint ID and
-hash. If an alternative architecture cannot consume some architecture-specific tensors, it must retain the identical
-semantic backbone initialization, declare every unmatched tensor, and keep data, optimization budget, and evaluation
-protocol controlled. It may not silently substitute a newly full-data-pretrained language base.
+Before a formal run, a local-derived asset receipt/import must verify the six model/tokenizer files, write immutable
+checksums and a manifest, and record the historical parent checkpoint reference as unverified provenance. A remote
+Hugging Face asset configuration is not a substitute: the recovered weight SHA-256 differs from the pinned official
+`google/mt5-base` asset.
 
-A new 436-archive CSL-News source intake or completed manifest would not trigger training by itself. Full-data training
-remains P1 or future work unless the historical checkpoint cannot be loaded or audited, has split leakage, is
-incompatible with the required historical pose contract, or controlled evaluation demonstrates that the semantic base
-masks the sim2real differences under study.
+Controlled architecture, DA, stress, and sim2real comparisons must register the same imported language initialization
+or explicitly state an alternative initialized under the same data and optimization budget. They must not claim that
+the unavailable historical pose/radar modules, checkpoint metrics, split, or predictions were reused. Full CSL-News
+source reconstruction is P1/future provenance work and is not a training gate for CSL-Daily.
 
 ## Data And Split Gates
 

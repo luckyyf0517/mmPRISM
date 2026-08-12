@@ -7,6 +7,10 @@ Last reviewed: 2026-08-12
 
 ## 2026-08-12
 
+- Replaced the unavailable historical end-to-end WaveLLM prerequisite with a receipt-bound CSL-News-derived mT5-only
+  language initialization for newly trained CSL-Daily and real-data comparisons; the response tracker now prohibits
+  historical checkpoint-reproduction or metric claims.
+
 - Established paper revision as a consumer of frozen data/model evidence rather than its producer.
 - Preserved reviewer, evidence, display, and task IDs while separating current Authority from dated Logs.
 - Added a complete reviewer-comments digest with item-by-item analysis, evidence needs, and response direction.
