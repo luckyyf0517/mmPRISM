@@ -36,24 +36,29 @@ configuration. The engineering recipe freezes mT5 and is not the final scientifi
 
 ## Revision Language Initialization
 
-The historical full cam-pose WaveLLM checkpoint and standalone `HandPoseEncoder` are unavailable. They therefore
-cannot be loaded, evaluated, compared, or described as a reproduced end-to-end baseline. The retained local asset is
-instead a CSL-News-derived mT5-only export, recorded as `MODEL-MT5-CSLNEWS-HISTORICAL-V1` and smoke-verified in the
-[historical initialization log](../../logs/2026/08/20260812_HISTORICAL_MT5_INITIALIZATION_SMOKE.md).
+A historical WaveLLM bundle is uploading under `/mnt/gfs/yanyifan/mmPRISM/log/archived/`. It may include the former
+cam-pose checkpoint and historical hand-pose encoder, but its run labels and partial files do not establish that fact.
+No inbound file may be loaded, converted, moved, or used for initialization until upload completion and the
+[transfer receipt](../../logs/2026/08/20260812_HISTORICAL_WAVELLM_TRANSFER.md) establishes a stable inventory,
+checksums, format/world-size completeness, metadata, and a controlled load report.
+
+The retained local fallback is a CSL-News-derived mT5-only export, recorded as `MODEL-MT5-CSLNEWS-HISTORICAL-V1` and
+smoke-verified in the [historical initialization log](../../logs/2026/08/20260812_HISTORICAL_MT5_INITIALIZATION_SMOKE.md).
 
 The export initializes only `GeometryGuidedMT5.language_model`. The current dual-hand ST-GCN pose encoder, radar
 projector, and confidence-aware fusion are deliberately new components and must be freshly initialized and trained on
 frozen CSL-Daily or later real-data manifests. No legacy module is imported and no compatibility shim is permitted.
 
-Before a formal run, a local-derived asset receipt/import must verify the six model/tokenizer files, write immutable
-checksums and a manifest, and record the historical parent checkpoint reference as unverified provenance. A remote
-Hugging Face asset configuration is not a substitute: the recovered weight SHA-256 differs from the pinned official
-`google/mt5-base` asset.
+Before a formal run, the chosen asset must have a checksum-bound, immutable receipt. The mT5 fallback needs a
+local-derived asset receipt/import; an accepted historical bundle needs an additional DeepSpeed/Lightning format and
+world-size audit. A remote Hugging Face asset configuration is not a substitute: the fallback's weight SHA-256 differs
+from the pinned official `google/mt5-base` asset.
 
-Controlled architecture, DA, stress, and sim2real comparisons must register the same imported language initialization
+Controlled architecture, DA, stress, and sim2real comparisons must register the same accepted language initialization
 or explicitly state an alternative initialized under the same data and optimization budget. They must not claim that
-the unavailable historical pose/radar modules, checkpoint metrics, split, or predictions were reused. Full CSL-News
-source reconstruction is P1/future provenance work and is not a training gate for CSL-Daily.
+historical pose/radar modules, checkpoint metrics, split, or predictions were reused unless the asset-specific audit
+accepts and documents them. Full CSL-News source reconstruction is P1/future provenance work and is not a training
+gate for CSL-Daily.
 
 ## Data And Split Gates
 

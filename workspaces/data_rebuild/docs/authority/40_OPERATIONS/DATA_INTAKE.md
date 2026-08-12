@@ -131,28 +131,30 @@ checksum。若链接已失效、需要审批或版本无法确定，则按 P0 �
 
 该数据登记为独立 revision dataset，不能并入原投稿 test set 后重新报告为同一 protocol。
 
-### P0-G 本地衍生 CSL-News mT5 initialization：receipt 后用于新训练
+### P0-G 历史 WaveLLM bundle：preservation-only receipt
 
-完整投稿版 cam-pose WaveLLM checkpoint 和 historical `HandPoseEncoder` 未恢复。镜像中仅保留一个
-CSL-News-derived mT5-only export；它可作为新 canonical CSL-Daily 训练的受控语言初始化，但不能补写为
-完整历史 checkpoint，也不能支持历史 pose compatibility 或 holdout reproduction。
+作者已在 project mirror 的 `/mnt/gfs/yanyifan/mmPRISM/log/archived/` 发现并上传历史 WaveLLM run bundle。
+上传尚未完成，当前目录内容、checkpoint role、world size、model/config、historical pose contract、split 和
+evaluation linkage 都必须视为 `unknown`。不可从目录名、partial bytes 或 evaluation JSON 推断其是否为投稿版
+cam-pose checkpoint、训练范围或历史指标。
 
-正式使用前，建立 local-derived asset receipt，至少记录：
+在作者确认传输结束前，不得写入、移动、删除、压缩、转换、`torch.load` 或运行任何 checkpoint recovery。
+完成后以 read-only stable receipt 接收，至少记录：
 
-- 只读源目录和六个 model/tokenizer 文件的 SHA-256；
-- file inventory、loader identity 和 controlled-load report；
-- 明确的来源说明：legacy export script 所记录的 parent checkpoint 是 unverified claim；
-- 与官方 `google/mt5-base` 固定资产不同的权重 SHA-256；
-- 允许用途仅为 language backbone initialization，pose/radar/fusion adapters 全部新训。
+- 两次时间分隔的相同 relative inventory，以及文件 count、size、mtime、SHA-256；
+- checkpoint format、rank/world-size completeness 和缺失 shard 报告；
+- observed metadata/tensor namespaces、model/config/data/split/evaluation reference，未知字段明确为 unknown；
+- 在独立、checksum-bound derived asset 或 read-only adapter 上的 controlled-load report；
+- 与 manuscript/投稿 run 的实际链接证据，而不是基于名称的推断。
 
-该资产以 `MODEL-MT5-CSLNEWS-HISTORICAL-V1` 登记。原完整 checkpoint 保留
-`MODEL-WAVELLM-CAMPOSE-ORIGINAL` 的 unavailable 状态；未知的 config、split、pose contract、predictions
-和 metrics 不得推断补写或转换为新训练的事实。详情见 WaveLLM
-[historical initialization log](../../../../wavellm_training/docs/logs/2026/08/20260812_HISTORICAL_MT5_INITIALIZATION_SMOKE.md)。
+该入库资产为 `MODEL-WAVELLM-HISTORICAL-BUNDLE-20260812`，详情见
+[historical transfer record](../../../../wavellm_training/docs/logs/2026/08/20260812_HISTORICAL_WAVELLM_TRANSFER.md)。
+`MODEL-MT5-CSLNEWS-HISTORICAL-V1` 保留为可 load-smoke 的 fallback；无论最终选用哪一个，canonical
+pose/radar/fusion adapters 都必须新训，且历史 split、prediction、metric 未经验收不得转写为新训练事实。
 
 ## 3. 其他历史审计资产：P1 优先上传
 
-除 P0-G 指定的本地衍生 mT5 initialization 外，这些资产不是“从头训练”的前置条件，但用于解释原投稿
+除 P0-G 正在接收的历史 WaveLLM bundle 外，这些资产不是“从头训练”的前置条件，但用于解释原投稿
 数字、判断实现差异和准备 Source Data。
 
 - 原投稿实际使用的 split JSON/TXT/PKL 和生成脚本输出。

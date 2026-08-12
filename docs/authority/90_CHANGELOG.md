@@ -20,8 +20,8 @@ Last reviewed: 2026-08-12
   available and scale with video-guided volunteers, without maintaining a recruitment funnel.
 - Archived CSL-News as checkpoint-side visual-pose evidence and removed its local source/download/cache layer;
   CSL-Daily intake and the new semantic CSL collection are now the active data-rebuild paths.
-- Replaced the unavailable complete original-submission WaveLLM baseline with a load-smoke-verified,
-  CSL-News-derived mT5-only initialization for new CSL-Daily training. Historical end-to-end WaveLLM reproduction
-  and metrics are explicitly out of scope; full CSL-News reconstruction remains outside P0.
+- Registered the author's incoming historical WaveLLM bundle as preservation-only while transfer is in progress.
+  The existing CSL-News-derived mT5-only export remains a fallback until a stable receipt and controlled audit
+  establish the incoming checkpoint identity and admissible role.
 - Added a lightweight, non-authoritative literature-note area and recorded Uni-Sign's pre-training-scale evidence
   without promoting its full-data result into a revision requirement.

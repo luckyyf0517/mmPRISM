@@ -43,5 +43,5 @@ initialization across architecture, adaptation, and real stress comparisons. The
 annotation, and manifest would still be useful for source provenance, dataset statistics, simulation input, and a
 future full-data ceiling experiment, but they need not be completed or resumed for the revision.
 
-This interpretation was originally promoted as `DEC-044` and is superseded by `DEC-045` in the
+This interpretation was originally promoted as `DEC-044` and its current historical-asset boundary is `DEC-046` in the
 [project decision log](../../authority/60_DECISIONS/DECISION_LOG.md).

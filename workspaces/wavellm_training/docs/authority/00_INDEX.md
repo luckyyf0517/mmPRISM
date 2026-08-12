@@ -17,18 +17,20 @@ not reconstruct radar/pose inputs, resolve model paths inside models, or own pap
 - Formal train/evaluate now use the shared distributed lifecycle, exact prediction sharding, cross-rank metric
   merging, and rank-zero artifact publication; WaveLLM-specific multi-process validation remains open.
 - Current character metrics and synthetic A100 runs are engineering protocols, not paper results.
-- The recovered CSL-News-derived mT5-only export is load-smoke-verified as a controlled language initialization.
-  The original complete cam-pose WaveLLM checkpoint and historical hand-pose encoder are unavailable, so historical
-  end-to-end reproduction, pose compatibility, and historical metrics are explicitly out of scope.
+- A historical WaveLLM bundle is uploading under the project mirror `log/archived/`. It is preservation-only until
+  transfer completion, a stable checksum-bound receipt, format/world-size audit, and controlled load establish its
+  identity and completeness. The CSL-News-derived mT5-only export remains a load-smoke-verified fallback;
+  no historical end-to-end reproduction, pose compatibility, or metric claim is currently accepted.
 
-Active blockers: local-derived mT5 asset receipt/import, real aligned model-ready data, production
-BLEU/ROUGE/semantic protocols, WaveLLM multi-process/NCCL validation, and final paper evaluation.
+Active blockers: historical bundle receipt/audit and initialization decision, real aligned model-ready data,
+production BLEU/ROUGE/semantic protocols, WaveLLM multi-process/NCCL validation, and final paper evaluation.
 
-Next action: implement a checksum-bound local-derived mT5 receipt/import, restore the CSL-Daily simulation
-second-stage protocol, then train the new canonical geometry adapters and declared language-model scope.
+Next action: preserve the inbound bundle, await upload completion, then create a stable checksum-bound receipt and
+format audit. In parallel, restore the CSL-Daily simulation second-stage protocol; only accepted assets can initialize
+the new canonical geometry-adapter training.
 
 Full CSL-News reconstruction and retraining are not P0. They remain a separately reported future ceiling or
-provenance task, not a replacement for the unavailable historical end-to-end checkpoint.
+provenance task, regardless of the result of this historical bundle audit.
 
 ## Canonical Locations
 

@@ -15,8 +15,8 @@ Last reviewed: 2026-08-12
   radar/calibration and aligned feature contracts are available.
 - Clarified that new semantic sign-language recruitment and acquisition belong to the collection workspace;
   data rebuild accepts only its frozen, validated session manifest.
-- Reclassified the unavailable complete original WaveLLM/hand-pose encoder as historical evidence only and registered
-  the recovered CSL-News-derived mT5-only export as a smoke-verified, receipt-pending initialization for new
-  CSL-Daily training.
+- Registered the incoming historical WaveLLM bundle as transfer-in-progress and preservation-only. The recovered
+  CSL-News-derived mT5-only export remains a smoke-verified fallback until a stable bundle receipt/audit resolves
+  the historical asset's identity and usable role.
 - Archived CSL-News from the active rebuild: source/download/cache/source-manifest assets were removed and only
   completed pose artifacts plus frozen pose manifests/splits remain as checkpoint-side evidence.

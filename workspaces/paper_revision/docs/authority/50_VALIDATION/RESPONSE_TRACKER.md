@@ -14,11 +14,11 @@ Last reviewed: 2026-08-12
 段落的内部跟踪切片，不代表编辑另列了五条意见；原意和措辞强度见
 [reviewer comments brief](REVIEWER_COMMENTS_BRIEF.md)。
 
-本轮新训练固定使用同一份恢复的 CSL-News-derived mT5-only export 作为语言初始化；这是为隔离
-architecture、DA 和 sim2real 变量作出的控制设计，不是审稿人要求。完整历史 cam-pose WaveLLM checkpoint
-和 hand-pose encoder 未恢复，因此不得把新实验写成历史端到端 checkpoint 的复现。CSL-Daily 数据、canonical
-geometry adapters、预测和指标均需重新生成；完整 CSL-News 重训不属于 P0，边界见
-[review analysis](REVIEW_ANALYSIS.md) 和项目 `DEC-045`。
+一组历史 WaveLLM bundle 正在接收，尚未完成 inventory、checksum、format/world-size 或 controlled-load
+audit。因此，当前不能把其目录名、partial checkpoint 或 historical evaluation 文件写成可用的投稿模型或
+结果。待 receipt 后才选择本轮各方法共享的 language initialization；此前 mT5-only export 仅为 fallback。
+无论选择何者，CSL-Daily 数据、canonical geometry adapters、预测和指标都必须重新生成。完整 CSL-News
+重训不属于 P0，边界见 [review analysis](REVIEW_ANALYSIS.md) 和项目 `DEC-046`。
 
 ## Editor
 
@@ -74,14 +74,15 @@ geometry adapters、预测和指标均需重新生成；完整 CSL-News 重训�
 
 所有使用 WaveLLM translation 的架构、DA、真实 stress 和 sim2real 行必须额外满足：
 
-- 结果登记同一个 receipt-bound `MODEL-MT5-CSLNEWS-HISTORICAL-V1` language initialization；
+- 结果登记同一个 receipt-bound accepted language initialization；上传中的
+  `MODEL-WAVELLM-HISTORICAL-BUNDLE-20260812` 不能作为 run input；
 - 表中各方法使用相同语义初始化，不能把完整 CSL-News 新预训练混入某一方法；
 - 无法复用 architecture-specific tensors 的 matched direct baseline 记录完整 tensor 差异，但保留相同 mT5
   初始化和受控数据/预算；
 - canonical pose/radar/fusion modules、CSL-Daily/real-data manifests、split、预测和指标均以新 formal run
   生成；
-- Methods/response 如实披露该 mT5 export 的受控初始化角色，并说明完整历史 WaveLLM、pose contract、split
-  和端到端指标不可恢复，绝不将其表述为 historical reproduction。
+- Methods/response 如实披露最终接受 asset 的受控初始化角色；在 historical bundle receipt/audit 通过前，
+  不得对其 pose contract、split、evaluation JSON 或端到端指标作任何 reproduction claim。
 
 `EVID-REV-REAL` 必须给出实际有效录制人数和 participant-disjoint split，并把
 `professional_or_proficient_signer` 与 `video_guided_volunteer` 分开统计。约 30 人和 3--4 名专业/熟练

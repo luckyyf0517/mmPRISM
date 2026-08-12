@@ -50,8 +50,12 @@ separately under `EVID-CODE-MODELS-V1`.
 
 ## Historical Initialization Boundary
 
-`MODEL-MT5-CSLNEWS-HISTORICAL-V1` is a local-derived, mT5-only language initialization, not an upstream pinned
+`MODEL-MT5-CSLNEWS-HISTORICAL-V1` is a local-derived, mT5-only fallback initialization, not an upstream pinned
 model or a complete WaveLLM checkpoint. It has a verified local load smoke, but it becomes admissible to a formal
 CSL-Daily run only after the model asset service records an immutable receipt with its six-file SHA-256 inventory.
-The original cam-pose WaveLLM and `HandPoseEncoder` are unavailable; legacy end-to-end loading, evaluation, and metric
-claims are not supported. See the dated [initialization smoke](../../logs/2026/08/20260812_HISTORICAL_MT5_INITIALIZATION_SMOKE.md).
+
+An incoming historical WaveLLM bundle is preservation-only while transfer remains in progress. Its checkpoint role,
+hand-pose encoder content, world-size completeness, and metric linkage are unknown until post-transfer receipt/audit;
+legacy end-to-end loading, evaluation, and metric claims remain unsupported. See the dated
+[transfer record](../../logs/2026/08/20260812_HISTORICAL_WAVELLM_TRANSFER.md) and
+[fallback initialization smoke](../../logs/2026/08/20260812_HISTORICAL_MT5_INITIALIZATION_SMOKE.md).

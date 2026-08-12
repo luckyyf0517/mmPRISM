@@ -84,23 +84,26 @@ Classification: `PROMISING, EVIDENCE-INTENSIVE MAJOR REVISION`
 下表是为了节省采集和训练成本而提出的内部合并方案。除单元格直接复述的条件外，不代表编辑或审稿人
 规定了这些具体协议。
 
-### Fixed language initialization
+### Pending controlled language initialization
 
 - 编辑和两位审稿人均未要求重新训练或扩大 CSL-News 预训练基座；相关要求针对替代架构、DA 公平性、
   synthetic-real fidelity、真实数据、方向/遮挡和新参与者泛化。
-- 完整投稿版 cam-pose WaveLLM checkpoint 和 standalone hand-pose encoder 未恢复。可验证的资产仅为
-  CSL-News-derived mT5-only export；它在 receipt 后作为 `P0-2`、`P0-3`、`P0-4` translation 对照的相同
-  language initialization。所有 canonical pose/radar/fusion modules 和下游训练结果都重新生成。
-- 直接架构若不能复用 architecture-specific tensors，至少必须复用同一 mT5 initialization，并逐项报告
-  新模块和无法匹配的 tensor；不得静默换成全量 CSL-News 新基座。
-- 该导出的 historical parent checkpoint 与训练数据范围未被独立验证。正文和 response 不得将它写成完整
-  436 archives、前约 100 archives 的可复现端到端训练，或 historical result reproduction。
+- 历史 WaveLLM bundle 正在接收，尚未完成 stable inventory、checksum、DeepSpeed/Lightning format 与
+  world-size、metadata/tensor audit 或 controlled load。receipt 前，不能从 run directory 名称、partial
+  bytes 或 historical evaluation JSON 推断其是否为投稿版 cam-pose checkpoint、其训练范围、split 或指标。
+- 可验证的 CSL-News-derived mT5-only export 保留为 fallback。receipt/audit 后，`P0-2`、`P0-3`、`P0-4`
+  translation 对照使用同一个 accepted language initialization；所有 canonical pose/radar/fusion modules
+  和下游训练结果都重新生成。
+- 直接架构若不能复用 architecture-specific tensors，至少必须复用同一 accepted initialization，并逐项
+  报告新模块和无法匹配的 tensor；不得静默换成全量 CSL-News 新基座。
+- Methods 和 response 不得将未 receipt 的 bundle 写成完整 436 archives、前约 100 archives 的可复现
+  端到端训练，或 historical result reproduction。
 - Uni-Sign 的规模消融说明更多预训练数据可能提高绝对上限，但不构成本轮审稿要求。完整 CSL-News 重训
   保留为 P1/future ceiling experiment，不能替代当前 CSL-Daily 和新真实数据上的可审计训练与评测。
 
 | Priority | Concern IDs | Underlying Question | Proposed Experiment / Analysis | Minimum Viable Protocol | Result Interpretation | Fallback |
 |---|---|---|---|---|---|---|
-| `P0-1` | all scientific items | 当前数据、split 和指标是否可信？ | Data/provenance reconstruction + new-result baseline | 锁定新训练的 manifest、split、metric protocol 和 run receipt；保留可验证的 mT5 initialization receipt；历史完整 WaveLLM 仅登记 unavailable | 所有后续实验的前提 | 若历史资产缺失，明确 unavailable；以可审计 CSL-Daily/real-data formal runs 建立新证据，不推断旧结果 |
+| `P0-1` | all scientific items | 当前数据、split 和指标是否可信？ | Data/provenance reconstruction + new-result baseline | 锁定新训练 manifest、split、metric protocol 和 run receipt；对 incoming historical bundle 先完成 preservation receipt/audit，再决定语言初始化 | 所有后续实验的前提 | 若 bundle 缺失或审计失败，明确其状态并使用 receipt-bound mT5 fallback；以可审计 CSL-Daily/real-data formal runs 建立新证据，不推断旧结果 |
 | `P0-2` | `R2-1`,`ED-SCI-2` | pose bottleneck 是否必要？ | Matched direct 4D-cube-to-LLM baseline | 相同 CubeNet 输入、数据、优化预算和 seed；移除 pose supervision，通过 matched projector 接 mT5；对齐参数/训练策略 | 若两阶段更优，支持 geometry bottleneck；若相近，缩小 necessity claim | 报告负结果并将方法定位为 interpretability/modularity trade-off |
 | `P0-3` | `R2-2`,`ED-SCI-3` | shallow adaptation 是否有效率优势？ | DA matrix: shallow FT / full FT / adversarial DA / MMD | 相同 synthetic checkpoint、真实样本预算、训练 steps、seed；同时报告 pose/translation、trainable params、time/memory | 比较 accuracy-efficiency Pareto，而非只报最高分 | 若当前方法不最优，改为 lightweight option 并诚实呈现 |
 | `P0-4` | `R1-3`,`R1-4c/d`,`R2-3`; `R1-5` 可复用 | 是否真实泛化到方向、遮挡和新参与者？ | 约 30 名实际完成者的 video-guided CSL 采集，并用小型 stress 子集覆盖方向和遮挡 | 固定 CSL 视频和中文含义；主要由志愿者学习后复现，尽力采集 3--4 名专业/熟练 CSL 人员；两类参与者分别记录；stress 子集包含 Reviewer 2 举出的 30°/60°、部分手部或物体遮挡，并同时评估 reconstruction 与 translation | 全体结果只能支持 prompted reproduction 的跨参与者与边界条件测试；专业/熟练人员结果另报 | 专业人员很少或没有时如实报告，并删除或收缩自然手语用户、新手语者和 population-level 泛化主张 |

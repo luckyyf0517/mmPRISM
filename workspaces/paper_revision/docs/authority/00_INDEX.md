@@ -14,7 +14,8 @@ production of upstream data, model checkpoints, predictions, or metrics.
 
 - Decision letter and reviewer comments are indexed with stable IDs.
 - The current manuscript/supplement display inventory and evidence map exist.
-- Original-submission final materials and complete paper-facing experiment provenance remain missing.
+- Historical WaveLLM artifacts are uploading and are preservation-only until the producing workspace completes a
+  stable receipt and controlled audit; original-submission linkage and historical metrics remain unaccepted.
 - Results-based response text is intentionally blocked until corresponding evidence is accepted.
 
 Active blockers: original submission import, historical run mapping, the new approximately 30-participant

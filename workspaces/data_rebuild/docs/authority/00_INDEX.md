@@ -20,16 +20,16 @@ workspace begins only after receiving its immutable raw-session manifest and val
   real products remain blocked by source, calibration, and final-split evidence.
 - Archived CSL-News visual pose output is optional checkpoint-side forensic evidence only; CSL-Daily intake and
   the new semantic CSL collection are the active public/real-data paths. No CSL-News source bytes remain local.
-- The complete original WaveLLM checkpoint and historical hand-pose encoder are unavailable. A recovered CSL-News-
-  derived mT5-only export is load-smoke-verified as a controlled language initialization for new CSL-Daily training;
-  it requires a local-derived asset receipt and is not historical end-to-end evidence.
+- A historical WaveLLM bundle is uploading under the project mirror `log/archived/`. It is preservation-only until
+  stable inventory, checksum, format, and controlled-load receipt completes. The recovered CSL-News-derived mT5-only
+  export remains a fallback, not historical end-to-end evidence.
 
 Active blockers: NAS intake, acquisition/channel/calibration evidence, simulation provenance, and final
 subject-aware splits.
 
-Next actions: implement the local-derived mT5 asset receipt, accept CSL-Daily metadata/source, accept
-metadata/calibration, bind a real radar fixture, freeze a final subject-aware split, then build and smoke-test
-immutable task products.
+Next actions: preserve the incoming historical bundle and await upload completion, then receipt/audit it; accept
+CSL-Daily metadata/source, accept metadata/calibration, bind a real radar fixture, freeze a final subject-aware
+split, then build and smoke-test immutable task products.
 
 Full CSL-News source reconstruction and training may be useful for future provenance or ceiling work, but it does not
 block the CSL-Daily revision path. It requires an explicit future decision and cannot restore the missing historical

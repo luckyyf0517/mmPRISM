@@ -9,10 +9,9 @@ Last reviewed: 2026-08-12
 
 - Established a focused training workspace without moving canonical model or training code.
 - Preserved the mT5-only support boundary and reclassified prior engineering runs as Logs.
-- Superseded the unavailable complete original WaveLLM baseline with a CSL-News-derived mT5-only initialization for
-  new canonical CSL-Daily training; historical end-to-end model, hand-pose encoder, and metrics are unavailable and
-  excluded from reproduction claims.
-- Recorded the verified local mT5 load/canonical-wrapper smoke and made a checksum-bound local-derived asset receipt
-  an explicit formal-training gate.
+- Recorded the incoming historical WaveLLM bundle as preservation-only while transfer is in progress. The historical
+  model role is pending stable receipt and audit; no recovered checkpoint, encoder, or metric claim is yet accepted.
+- Retained the verified local CSL-News-derived mT5 smoke as fallback and made an immutable asset receipt an explicit
+  formal-training gate for either candidate initialization.
 - Integrated WaveLLM train/evaluate with rank-zero formal-run ownership, distributed checkpoint consistency, exact
   prediction sharding, and cross-rank metrics; multi-process WaveLLM validation and DDP resume remain open.

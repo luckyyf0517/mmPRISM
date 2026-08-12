@@ -13,9 +13,10 @@ remains under `src/mmprism/`; business execution and status are organized by wor
 Current cross-workspace blockers:
 
 - Private source inventory, calibration, and historical run provenance are not yet complete.
-- The complete original-submission cam-pose WaveLLM checkpoint and historical hand-pose encoder are unavailable.
-  A recovered, mT5-only CSL-News-derived export is load-smoke-verified and requires a local-derived asset receipt
-  before formal CSL-Daily training; it cannot establish historical end-to-end reproduction or metrics.
+- A historical WaveLLM bundle is uploading to the project mirror. It is preservation-only until a stable,
+  checksum-bound receipt, checkpoint-format audit, and controlled load complete; directory names and partial bytes
+  establish neither original-submission linkage nor usable weights. The recovered mT5-only export remains a
+  load-smoke-verified fallback initialization.
 - Full physical radar-cube reconstruction remains blocked on acquisition and calibration evidence.
 - The new CSL collection targets approximately 30 recorded participants: ideally 3--4 professional/proficient
   signers if available, plus volunteers who learn from fixed reference videos. Reference content, minimal consent,
@@ -25,14 +26,15 @@ Current cross-workspace blockers:
 The revision-critical execution path is:
 
 ```text
-receipt and freeze the recovered CSL-News-derived mT5 language initialization
+preserve and receipt the incoming historical WaveLLM bundle
+-> audit its model/data/provenance boundary and select a controlled language initialization
 -> recover the CSL-Daily simulation/OmniHand second stage and train new geometry adapters
 -> run matched sim2real adaptation and new-real-data experiments
 ```
 
-Full CSL-News reconstruction and retraining do not block the CSL-Daily revision path. The recovered mT5 export
-is a controlled initialization only; historical WaveLLM reproduction is unavailable rather than a hidden
-precondition. See `DEC-045` in the [decision log](60_DECISIONS/DECISION_LOG.md).
+Full CSL-News reconstruction and retraining do not block the CSL-Daily revision path. The incoming historical bundle
+does not become a hidden precondition and cannot support historical reproduction claims until its audit passes. See
+`DEC-046` in the [decision log](60_DECISIONS/DECISION_LOG.md).
 
 ## Workspaces
 
