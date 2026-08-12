@@ -35,7 +35,7 @@ evidence, then write manuscript and response changes without strengthening unsup
 - [Availability contract](20_CONTRACTS/AVAILABILITY.md)
 - [Display-item registry](20_CONTRACTS/DISPLAY_ITEM_REGISTRY.md)
 - [Operator guide](40_OPERATIONS/OPERATOR_GUIDE.md)
-- [Major revision advisor discussion](40_OPERATIONS/ADVISOR_DISCUSSION.md)
+- [Reviewer comments brief](50_VALIDATION/REVIEWER_COMMENTS_BRIEF.md)
 - [Experiment reproduction](40_OPERATIONS/EXPERIMENT_REPRODUCTION.md)
 - [Final submission audit](40_OPERATIONS/FINAL_SUBMISSION_AUDIT.md)
 - [Original submission intake](40_OPERATIONS/ORIGINAL_SUBMISSION.md)
