@@ -79,6 +79,13 @@ CSL-News 官方源。`2026-08-12` 作者确认全部项目数据仍保存在其 
   quarantine/          corrupted or ambiguous assets
 ```
 
+`processed/` is reserved for immutable, task-specific Parquet delivery products only. A final product has one
+logical training sample per row, at most 1,024 rows per Parquet part and at most 64 parts per split-homogeneous
+chunk. `interim/` remains the recoverable per-sample sidecar/NPZ layer; neither a live sidecar directory nor a
+partial manifest can be used as formal training input. The payload is defined by the current target adapter, so
+CSL-News visual pose+caption is currently an intermediate product rather than OmniHand/WaveLLM training data.
+The full contract and gates are in `../../../docs/architecture/data_delivery_parquet.md`.
+
 上传批次使用 `incoming/<YYYYMMDD_source_batch>/`，附带 `UPLOAD_MANIFEST.csv` 和 `SHA256SUMS`。
 容量审计完成前不批量创建目录、解压或 materialize 数据。
 
@@ -173,6 +180,8 @@ timestamp/synchronization 和 coordinate-system references；无法恢复的字�
 9. `build splits`：按 subject/signer/sequence/scene group 生成确定性 split。
 10. `materialize processed`：仅为正式实验生成 model-ready 数据，并设置 quota。
 11. `validate processed`：schema、shape、统计、泄漏和小样本可视化。
+12. `deliver`：冻结 `delivery.json`、Parquet inventory/checksum、reader parity 和 adapter smoke；只有通过后
+    才可把该 delivery 绑定到 formal run。
 
 ## 7. 必须回答的盘点问题
 

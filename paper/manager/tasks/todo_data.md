@@ -31,6 +31,9 @@ Role: `data_execution_tracker`
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | in_progress | NumPy range-Doppler v1/analytic tests 已通过；beamforming/simulation 等 acquisition、array、calibration evidence |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | in_progress | strict dependency-light radar-cube/metric-pose manifest adapter、checksum 和 variable-time collator 已通过；待真实 collected cube/pose build、validation report 与 frozen manifest hash |
+| `DATA-006-B` | P1 | 定义 task-specific Parquet delivery schema 与 provenance config | evidence_ready | `DEC-038`/architecture contract: one row/sample, <=1024 rows/part, <=64 parts/split-homogeneous chunk; no universal mixed schema |
+| `DATA-006-C` | P1 | 实现确定性 Parquet materializer | not_started | frozen manifest+split exact coverage, typed Arrow payload, atomic no-clobber publish and deterministic placement |
+| `DATA-006-D` | P1 | 实现 delivery inventory/validator/capacity dry-run | not_started | part/chunk/row-group bounds, checksum/index/schema/shape gates, capacity report and source-to-reader parity |
 | `DATA-REV-001` | P0 | 统计 sign type/vocab/sentences/length/non-manual/subjects/scenes/splits | in_progress | CSL-News 722,711 条 metadata profile 已生成；sign vocab/non-manual/subjects/scenes/splits 仍缺，待 manuscript-ready table + frozen manifest summary |
 | `DATA-REV-002` | P0 | 方向/双手重叠/物体遮挡/新用户真实数据 protocol 与采集 | blocked | ethics-cleared held-out manifest and QC |
 | `DATA-REV-003` | P0 | paired/category-matched synthetic-real evaluation set | blocked | same-sign fidelity manifest |

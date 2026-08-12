@@ -49,6 +49,7 @@ Dataset-specific audits:
 - `csl_news_data.md`: official source, legacy preprocessing flow, interface drift and canonical rebuild stages.
 - `run_artifacts.md`: atomic formal-run initialization, input hashing, metrics and lifecycle contract.
 - `data_splits.md`: deterministic group assignment, portable split artifacts and leakage gates.
+- `data_delivery_parquet.md`: final task-specific Parquet delivery, sidecar boundary, chunk policy and reader migration.
 - `tensor_contracts.md`: canonical radar/pose/feature axes and the NumPy range-Doppler protocol.
 - `release_audit.md`: Git-backed public inventory, dependency graph, and reviewer-release gates.
 - `model_support.md`: mT5-only generation boundary, verified engineering smoke, and excluded legacy backend.

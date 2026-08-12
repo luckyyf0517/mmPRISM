@@ -87,6 +87,9 @@ Role: `control_panel`
 - `DEC-027` 已固定 mT5-only generation rebuild；legacy Phi-3 不进入 public support，clean commit
   `812c117` 的 66-file release content gate 零命中并有回归测试，`ARCH-REV-004` 达到 evidence ready。
 - 原投稿定稿与独立 response letter 尚未导入；当前子模块中已有主稿、章节、参考文献、图和 supplementary 压缩包。
+- `DEC-038` 已冻结 processed delivery：最终训练数据按 task-specific Parquet 交付（一行一个 sample、
+  每 part 最多 1,024 行、每 split-homogeneous chunk 最多 64 part）；CSL-News visual pose+caption 仍只是
+  interim annotation，不能替代 calibrated radar/metric model-ready input。
 
 ## 当前最高优先级
 
@@ -122,6 +125,8 @@ Role: `control_panel`
    aggregation 和 real-data integration；prediction aggregation 与 single-process epoch resume 已闭合。
 6. 为 `ARCH-003` 收集 radar acquisition/channel/calibration 证据；绑定真实 manifest fixture 后实现
    beamforming 与完整 cube gate，禁止用 legacy 默认值填补未知项。
+7. 在一个完整 frozen source/pose manifest 和真实 task modalities 可用后，先做 Parquet delivery 容量 dry-run
+   与 reader fixture parity，再实现 materializer；不得由 live CSL-News sidecar 目录直接生成 processed data。
 
 ## Source Of Truth
 

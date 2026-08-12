@@ -170,6 +170,25 @@ The new pipeline will preserve the scientific intent while defining explicit con
 The legacy output will only be compared against this pipeline on a small audit subset; no compatibility shim is
 required.
 
+## Processed Delivery Boundary
+
+CSL-News annotation output is an `interim` product, not final training data. Each published source-bound NPZ and
+JSON sidecar preserves native 133-joint RTMW3D evidence, transform details, frame/timestamp arrays, canonical
+visual 2x24 pose, confidence, validity, source identity and annotation checksum. A frozen pose manifest selects
+eligible sidecars without copying or reinterpreting them.
+
+Final model-ready data is delivered separately as task-specific Parquet according to
+`data_delivery_parquet.md`: one training sample per row, at most 1,024 rows per Parquet part and at most 64 parts
+per split-homogeneous chunk. The builder may consume only a frozen eligible manifest and frozen split assignment;
+it is not allowed to read a live annotation directory or repair inputs during materialization.
+
+Current CSL-News output is specifically `intermediate_visual_pose_caption`. It is not yet admissible as either
+current training product: OmniHand additionally requires a calibrated non-negative radar cube and metric target
+pose; WaveLLM additionally requires a time-aligned radar feature and metric pose-coordinate contract. The visual
+RTMW3D arrays, including canonical `[T,2,24,3]`, must not be described as metre-space radar ground truth merely
+because their shape matches a downstream hand-pose tensor. Audit fields remain in sidecars until a concrete,
+validated consumer requires a separate product.
+
 ## Source Audit Smoke
 
 `mmprism csl-news-audit` implements the first read-only gate for one complete archive. It rejects `.part`

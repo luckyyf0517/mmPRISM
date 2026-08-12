@@ -15,6 +15,19 @@ Role: `dataset_and_split_provenance`
 | `DATASET-COLLECTED-CSL` | collected_csl | unknown | private | unknown | missing | missing | real sign language | blocked |
 | `DATASET-REAL-STRESS-REV1` | revision orientation/occlusion/new-user set | not collected | private/ethics pending | unknown | missing | missing | reviewer real-world boundary tests | blocked |
 
+## Processed Delivery Profiles
+
+| ID | Product | Frozen Inputs Required | Payload Boundary | Status |
+|---|---|---|---|---|
+| `DELIVERY-POSE-RECON-V1` | `mmprism.pose_reconstruction.sample_v1` | eligible manifest, split, radar/calibration evidence | radar cube `[T,D,R,A,E]`, frame mask, metric `[2,24,3]` pose and validity | schema accepted; blocked on real calibrated source |
+| `DELIVERY-SLU-V1` | `mmprism.sign_language_translation.sample_v1` | eligible manifest, split, metric pose and aligned radar feature | pose/confidence `[T,2,J,*]`, radar feature `[T,F]`, mask and caption | schema accepted; blocked on real aligned source |
+| `INTERIM-CSLNEWS-VISPOSE-V1` | `intermediate_visual_pose_caption` | source-bound CSL-News pose manifest | native/2D/canonical visual pose arrays and caption remain sidecar/NPZ | in_progress; explicitly not final training delivery |
+
+All final delivery profiles use immutable, task-specific Parquet rather than a mixed universal table. The row/part/
+chunk policy, typed payloads, provenance and validator gates are defined in
+`../../../docs/architecture/data_delivery_parquet.md` and `DEC-038`; a profile is not paper evidence until its
+frozen delivery inventory, reader parity and formal run are registered.
+
 ## Supporting Source Assets
 
 | ID | Asset | Required Contents | Access | Rebuild Rule | Status |

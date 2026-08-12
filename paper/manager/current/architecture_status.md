@@ -4,6 +4,16 @@ Status: `greenfield_foundation_active`
 Last Updated: `2026-08-12`
 Role: `architecture_source_of_truth`
 
+## 0. Parquet Delivery Decision
+
+Final rebuilt training data will be immutable, task-specific Parquet products, not a universal mixed schema.
+Each row is one logical training sample; a part has at most 1,024 rows and a split-homogeneous chunk at most 64
+parts. Sidecars/NPZ remain the recoverable annotation layer, while frozen manifests and split assignments remain
+the provenance input. The exact payloads are constrained by the current OmniHand and WaveLLM adapters: the former
+needs a calibrated metric radar cube plus `[2,24,3]` pose target, and the latter needs aligned metric
+pose/confidence/radar-feature/caption sequences. CSL-News RTMW3D pose+caption is therefore an intermediate visual
+product, not a trainable final delivery. See `../../docs/architecture/data_delivery_parquet.md` and `DEC-038`.
+
 ## 1. 当前代码结构
 
 ```text

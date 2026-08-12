@@ -14,6 +14,9 @@ Role: `architecture_execution_tracker`
 | `ARCH-002-C` | P1 | 建立统一 path/runtime/run config | evidence_ready | path/runtime/run-plan、原子 writer、manifest/split membership 与 split input provenance 已落地；resolved config、Git/environment、命令、输入 hash、metric protocol/status contract 通过 |
 | `ARCH-002-D` | P1 | 建立统一 CLI 和 dry-run | evidence_ready | clean commit `766453b` 的 `mmprism.prepare` 以 JSON 报告验证 config/Git/destination/hash/manifest/split 且不创建目录；OmniHand/WaveLLM train/evaluate 重复 split gate；`EVID-CODE-FORMAL-PREFLIGHT-V1` |
 | `ARCH-003-A` | P1 | 实现 manifest-driven dataset adapters | in_progress | CSL-News source-manifest v2 真实 104,658-record snapshot、pose+caption adapter 与 dependency-light SplitIndex 已通过；待其他数据族/radar adapter |
+| `ARCH-003-C` | P1 | 实现 Parquet pose/translation reader 与 old/new fixture parity | not_started | lazy PyArrow import、dependency-light validator、exact tensor contract and malformed-row rejection |
+| `ARCH-003-D` | P1 | 实现 split-aware Parquet sampler/reader integration | not_started | delivery inventory binding, split isolation and CPU/GPU one-batch adapter smoke |
+| `ARCH-003-E` | P2 | live run 结束后模块化 CSL-News annotation package | not_started | split config/estimator/archive/artifact/runner/transform; retain facade until controlled parity-proven migration |
 | `ARCH-003-B` | P1 | 从明确契约实现 Processor/Simulation | in_progress | NumPy range-Doppler 与 17 项 analytic/error tests 通过；beamforming/physical axes/simulation 等 provenance 后实现 |
 | `ARCH-004-A` | P1 | 实现 canonical OmniHand model/training/evaluation | evidence_ready | 模型 smoke 与 clean commit `81e9b89` A100/BF16 formal train/checkpoint/reload/evaluate、prediction replay 和独立审计均通过；待真实 manifest |
 | `ARCH-004-B` | P1 | 实现 batch-first temporal processing | evidence_ready | 10-frame vectorized encoder、8-layer/16-head mask-aware transformer、single-frame path、padding counterfactual和显存/吞吐报告通过 |
