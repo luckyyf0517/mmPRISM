@@ -10,6 +10,10 @@ Last reviewed: 2026-08-12
 [review CN](../../logs/2026/08/20260811_REVIEW_CN.md)，优先级解释见
 [review analysis](REVIEW_ANALYSIS.md)。
 
+下表的 `Planned Action` 是作者方案，不是原文复述。`ED-SCI-1` 至 `ED-SCI-5` 是对编辑同一个科学总括
+段落的内部跟踪切片，不代表编辑另列了五条意见；原意和措辞强度见
+[reviewer comments brief](REVIEWER_COMMENTS_BRIEF.md)。
+
 ## Editor
 
 | ID | Type | Priority | Planned Action | Task IDs | Evidence IDs | Status | Risk |
@@ -28,13 +32,13 @@ Last reviewed: 2026-08-12
 | ID | Type | Priority | Planned Action | Task IDs | Evidence IDs | Status | Risk |
 |---|---|---|---|---|---|---|---|
 | `R1-1` | RELATED_WORK | P2 | 核实并讨论 RadarLLM/mmExpert | `PAPER-REV-001` | bibliography/manuscript | not_started | Low |
-| `R1-2` | EFFICIENCY | P0 | 参数、FLOPs、GPU-hours、显存、latency、throughput | `EXP-REV-006` | `EVID-REV-EFF` | blocked | Medium |
-| `R1-3` | GENERALIZATION | P0 | 0°/30°/60° orientation-stratified real test | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
-| `R1-4a` | EMPIRICAL_SUPPORT | P0 | paired/category-matched synthetic-real fidelity | `DATA-REV-003`, `EXP-REV-004` | `EVID-REV-SYNREAL` | blocked | High |
+| `R1-2` | EFFICIENCY | P0 | 确定可复现的训练/推理成本指标和测量条件；原文未指定指标集 | `EXP-REV-006` | `EVID-REV-EFF` | blocked | Medium |
+| `R1-3` | GENERALIZATION | P0 | cross-orientation analysis；可与 `R2-3` 的 30°/60° 条件合并，角度不是 R1 原话 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
+| `R1-4a` | EMPIRICAL_SUPPORT | P0 | 选择并论证 synthetic-ground-truth closeness 度量；原文未指定 paired protocol 或指标 | `DATA-REV-003`, `EXP-REV-004` | `EVID-REV-SYNREAL` | blocked | High |
 | `R1-4b` | REPRODUCIBILITY | P0 | synthetic/train/test 数据详情和 split audit | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |
 | `R1-4c` | GENERALIZATION | P0/P1 | 扩充真实参与者并记录多样性 | `DATA-REV-002` | `EVID-REV-REAL` | blocked | High |
-| `R1-4d` | GENERALIZATION | P0 | held-out user 与 low-data adaptation 分析 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
-| `R1-5` | ROBUSTNESS | P0 | hand-overlap/occlusion stratified pose+translation test 与机制解释 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
+| `R1-4d` | GENERALIZATION | P0 | 展示不同手型/大小/风格的新用户泛化及不过量重训练；具体协议待定 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
+| `R1-5` | CLARITY/ROBUSTNESS | P1 | 先解释 hand-to-hand occlusion 区分机制；原文未明确要求独立实验，必要时复用 `R2-3` 证据 | `PAPER-REV-001`; optional `EXP-REV-003` | manuscript/evidence if needed | in_progress | Medium |
 | `R1-6` | CLARITY | P2 | 当前 Methods 已有 4D 维度定义；补齐首次出现、单位和 tensor layout 并标记修订 | `PAPER-REV-001` | manuscript diff | in_progress | Low |
 
 ## Reviewer 2 — Manuscript
@@ -44,7 +48,7 @@ Last reviewed: 2026-08-12
 | `R2-1` | FAIR_COMPARISON | P0 | matched direct end-to-end baseline | `EXP-REV-001` | `EVID-REV-ARCH` | blocked | High |
 | `R2-2` | FAIR_COMPARISON | P0 | DA method matrix under equal real-data budget | `EXP-REV-002` | `EVID-REV-DA` | blocked | High |
 | `R2-3` | ROBUSTNESS | P0 | orientation + hand/object occlusion，pose+translation 双任务 | `DATA-REV-002`, `EXP-REV-003` | `EVID-REV-REAL` | blocked | High |
-| `R2-4` | REPRODUCIBILITY | P0 | sign type/vocab/sentences/length/non-manual/split statistics | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |
+| `R2-4` | REPRODUCIBILITY | P0 | 补原文列出的 sign type/vocab/sentence count/average length/non-manual features | `DATA-REV-001` | `EVID-REV-DATASET` | in_progress | High |
 | `R2-5` | EMPIRICAL_SUPPORT | P0 | spatial/channel/SE leave-one-out ablation | `EXP-REV-005` | `EVID-REV-ATTN` | blocked | High |
 | `R2-6` | MISSING_BASELINE | P1 | 先做 cross-modal protocol feasibility audit，再决定重实现/定位 | `EXP-REV-007` | `EVID-REV-XMODAL` | not_started | Medium |
 

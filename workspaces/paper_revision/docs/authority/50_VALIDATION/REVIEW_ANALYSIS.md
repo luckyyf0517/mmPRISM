@@ -1,11 +1,13 @@
-# Major Revision Diagnosis and Prioritized Action Plan
+# Major Revision Internal Triage
 
 Status: current
 Owner: Paper revision lane
-Authority scope: The manuscript revision and evidence-promotion boundary represented by this page.
+Authority scope: Author-derived prioritization and possible response actions; not a restatement of reviewer text.
 Last reviewed: 2026-08-12
 
-本文件执行返修 Stage 1：诊断 underlying concern、排列实验优先级和澄清项。当前不撰写最终 response letter，不填入任何未经验证的新结果。
+本文件是作者侧的内部诊断和候选执行方案，不是审稿意见原文。原意、措辞强度及哪些事项并未被要求，
+以 [reviewer comments brief](REVIEWER_COMMENTS_BRIEF.md) 为准。下文的优先级、实验合并方式、指标和协议均
+属于作者规划；当前不撰写结果型 response，也不填入未经验证的新结果。
 
 ## A. 返修可行性判断
 
@@ -40,7 +42,7 @@ Classification: `PROMISING, EVIDENCE-INTENSIVE MAJOR REVISION`
 | `R1-4a` | synthetic closeness | 合成信号是否真的接近真实信号，而不仅是生成可用标签？ | EMPIRICAL_SUPPORT | MAJOR | SINGLE+EDITOR-THEME | MEDIUM |
 | `R1-4b`,`R2-4` | dataset 细节不足 | 数据规模、语义覆盖、split 和非手部因素是否足以支撑结论并可复现？ | REPRODUCIBILITY | MAJOR | MULTIPLE+EDITOR | HIGH |
 | `R1-4c`,`R1-4d` | 12 人过少、新用户泛化 | real calibration 是否对人群过拟合，能否迁移到不同手型/风格？ | GENERALIZATION | MAJOR | SINGLE+EDITOR-THEME | MEDIUM |
-| `R1-5`,`R2-3` | 双手重叠/遮挡 | geometry reconstruction 在 radar ambiguity 下是否仍可识别，失败边界是什么？ | ROBUSTNESS | MAJOR | MULTIPLE | MEDIUM |
+| `R1-5`,`R2-3` | 双手重叠/遮挡 | geometry reconstruction 在 radar ambiguity 下如何工作，是否需要额外证据？ | ROBUSTNESS | MODERATE/MAJOR | MULTIPLE | MEDIUM |
 | `R2-5` | 三种 attention 同时堆叠 | CubeNet 设计是否有机制依据，还是任意模块堆叠？ | EMPIRICAL_SUPPORT | MAJOR | SINGLE | HIGH |
 | `R1-2` | 4D encoder + LLM 昂贵 | 论文性能提升的资源代价是否可接受、可部署、可复现？ | EFFICIENCY | MODERATE | SINGLE | HIGH |
 | `R2-6` | WiFi/声学 baseline | mmPRISM 在 broader non-contact SLU 中的位置是否清楚？ | MISSING_BASELINE | MODERATE | SINGLE | LOW-MEDIUM |
@@ -74,20 +76,24 @@ Classification: `PROMISING, EVIDENCE-INTENSIVE MAJOR REVISION`
 - Most likely concern：模型在两个手部散射簇合并时是否仍能恢复双手 geometry。
 - Alternative interpretation：仅需要解释 temporal/geometry prior，而不是要求独立 benchmark。
 - Confidence：`medium-high`。
-- Safe strategy：解释机制，但必须用 occlusion-stratified reconstruction/translation 结果或失败案例支撑，不只做概念说明。
+- Safe strategy：先核对正文是否能准确解释机制。Reviewer 1 原文只要求 `clarify`，没有明确要求独立实验；
+  若现有证据不足，可复用 `R2-3` 的遮挡实验或补失败案例，而不是自动新建一套实验。
 
-## D. Prioritized Experiment and Analysis Plan
+## D. Author-Proposed Experiment and Analysis Plan
+
+下表是为了节省采集和训练成本而提出的内部合并方案。除单元格直接复述的条件外，不代表编辑或审稿人
+规定了这些具体协议。
 
 | Priority | Concern IDs | Underlying Question | Proposed Experiment / Analysis | Minimum Viable Protocol | Result Interpretation | Fallback |
 |---|---|---|---|---|---|---|
 | `P0-1` | all scientific items | 当前数据、split 和指标是否可信？ | Data/provenance reconstruction + original-result baseline | 锁定 paper split、manifest、metric protocol；已有 prediction 先重算指标 | 所有后续实验的前提 | 若资产缺失，明确 unavailable 并重建可审计 split |
 | `P0-2` | `R2-1`,`ED-SCI-2` | pose bottleneck 是否必要？ | Matched direct 4D-cube-to-LLM baseline | 相同 CubeNet 输入、数据、优化预算和 seed；移除 pose supervision，通过 matched projector 接 mT5；对齐参数/训练策略 | 若两阶段更优，支持 geometry bottleneck；若相近，缩小 necessity claim | 报告负结果并将方法定位为 interpretability/modularity trade-off |
 | `P0-3` | `R2-2`,`ED-SCI-3` | shallow adaptation 是否有效率优势？ | DA matrix: shallow FT / full FT / adversarial DA / MMD | 相同 synthetic checkpoint、真实样本预算、训练 steps、seed；同时报告 pose/translation、trainable params、time/memory | 比较 accuracy-efficiency Pareto，而非只报最高分 | 若当前方法不最优，改为 lightweight option 并诚实呈现 |
-| `P0-4` | `R1-3`,`R1-4c/d`,`R1-5`,`R2-3`,`ED-SCI-5` | 是否真实泛化到方向、遮挡和新用户？ | Information-dense real-world stress matrix | held-out users；至少 0°/30°/60°；无遮挡/双手重叠/物体部分遮挡；同时评估 reconstruction 与 translation；记录 hand size/style/scene metadata | 条件级曲线与 failure boundary 比单一均值更有说服力 | 若无法扩充人群，降低 population claim，并请求延期或说明限制 |
-| `P0-5` | `R1-4a`,`ED-SCI-5` | synthetic 数据与真实数据多接近？ | Matched-sign synthetic-real fidelity analysis | paired/category-matched samples；同 preprocessing；信号统计、冻结特征分布距离、nearest-neighbor/retrieval 或分类可分性、synthetic-to-real transfer | 多层证据共同说明 closeness 与剩余 domain gap | 若无 paired 数据，使用 category-matched 分布并明确非逐样本 ground truth |
+| `P0-4` | `R1-3`,`R1-4c/d`,`R2-3`; `R1-5` 可复用 | 是否真实泛化到方向、遮挡和新用户？ | 在可行时合并 cross-orientation、new-user 和边界场景采集 | Reviewer 2 明确举出 30°/60°、部分手部或物体遮挡，并要求同时评估 reconstruction 与 translation；Reviewer 1 另要求 cross-orientation 和新用户证据；人数和采样协议待定 | 按原文条件分别报告，避免增加没有来源的场景 | 若无法扩充人群，说明限制并缩小 population claim；必要时联系编辑 |
+| `P0-5` | `R1-4a` | 如何衡量 synthetic-ground-truth closeness？ | 选择并论证可直接回答该问题的度量/分析 | Reviewer 未规定 paired set、距离函数或统计协议；应先依据现有真实/合成数据关系确定 | 清楚说明所选度量回答什么、不回答什么 | 若数据无法支持直接度量，明确限制，不用 t-SNE 单独替代真实性证据 |
 | `P0-6` | `R2-5` | attention 组件是否必要？ | Leave-one-out CubeNet ablation | full、w/o spatial、w/o channel、w/o SE、必要时 base-none；同 data/seed/budget；报告 MPJPE/PCK 和 downstream translation | 验证单组件贡献与交互 | 无贡献组件应删除或弱化设计主张 |
-| `P0-7` | `R1-2` | 资源代价是否合理？ | Standard compute profile | total/trainable params、FLOPs/MACs、GPU-hours、peak memory、batch-1 latency、throughput；固定硬件/序列长度；与 direct baseline 对比 | 给出 accuracy-cost trade-off | 无需新训练，可对最终模型和 baseline 统一 profile |
-| `P0-8` | `R1-4b`,`R2-4`,`ED-SCI-4` | 数据描述是否可复现？ | Dataset characterization and split audit | sign type、vocab、sentences、frames、subjects、age/sex if consent permits、sentence length、non-manual coverage、scene/orientation、split groups、missingness | 形成主文表 + supplement + data statement | 不能公开的字段说明限制和访问方式 |
+| `P0-7` | `R1-2` | 训练和推理成本是多少？ | Compute profile | Reviewer 未指定成本指标；作者需选取能复现训练和推理代价的指标，并写明硬件和测量条件 | 直接报告成本，比较范围按可用 baseline 确定 | 对最终模型做可复现测量，不虚构历史成本 |
+| `P0-8` | `R1-4b`,`R2-4` | 数据描述是否可复现？ | Dataset characterization | 明确补充 synthetic diversity/signs/size/environment、train/test composition，以及 sign type、vocab、sentence count、average length、non-manual features；其他字段仅在定义 split 或复现确有必要时增加 | 形成主文或 supplement 统计 | 无法披露的信息说明限制和访问方式 |
 | `P0-9` | `R2-CODE-*`,`ED-COMP-*` | Reviewer 能否执行代码？ | Clean-environment release reproduction | new environment；configurable paths；complete model download；example data/output；train/eval smoke；release manifest；license decision | reviewer-ready zip/repo | 不支持的 Phi-3 功能应移除 claim，而非保留坏入口 |
 | `P1-1` | `R2-6` | broader modality positioning 是否公平？ | Cross-modal feasibility audit, then 1–2 baselines if alignable | 明确 modality/data/task differences；优先同 vocabulary/split 或公开 continuous SLU protocol | 只有协议可比时才进行数值排名 | 用定性定位和 limitation 回答，不制造伪公平表格 |
 | `P1-2` | `R1-4c` | 12 subjects 是否足够？ | Additional participant collection integrated with stress matrix | 数量、年龄/手型/风格范围由伦理许可和统计设计决定；预注册 held-out usage | 重点看 unseen-user confidence interval | 若返修期不足，联系编辑并降低 claim |
@@ -99,6 +105,7 @@ Classification: `PROMISING, EVIDENCE-INTENSIVE MAJOR REVISION`
 
 - `R1-1`：核实并讨论 RadarLLM 与 mmExpert，不只添加引用。
 - `R1-6`：主文定义 4D cube 的四个维度、单位、符号和 tensor layout。
+- `R1-5`：原文首先要求解释双手重叠时如何区分；现有证据不足时再决定是否补实验。
 - `ED-WRITE-*`：全稿扫描 novelty/primacy/exaggeration 表达。
 - `ED-COMP-*`：checklist、Data/Code Availability、Source Data、色觉友好图表、ORCID、cover letter。
 

@@ -7,13 +7,13 @@ Last reviewed: 2026-08-12
 
 | Item Group | Original Ask Understood | Evidence | Manuscript | Response | Claim Strength | Re-read Risk | Closure |
 |---|---|---|---|---|---|---|---|
-| Editor stronger validation | yes | missing | not audited | not drafted | unchecked | High | open |
+| Editor stronger validation (one paragraph; four emphasized directions) | yes | missing | audited; revisions pending | not drafted | unchecked | High | open |
 | Editor sober writing | yes | n/a | not imported | not drafted | unchecked | Medium | open |
 | Editorial compliance | yes | partial planning | not imported | not drafted | n/a | High | open |
 | R1 efficiency | yes | missing | not imported | not drafted | unchecked | Medium | open |
-| R1/R2 orientation/occlusion/real generalization | yes | missing | not imported | not drafted | unchecked | High | open |
+| R1/R2 orientation and real-world boundary testing | yes | missing | audited; revisions pending | not drafted | unchecked | High | open |
 | R1 synthetic-real closeness | yes | missing | not imported | not drafted | unchecked | High | open |
-| R1/R2 dataset transparency/new users | yes | CSL-News metadata partial；subjects/splits/non-manual missing | not imported | not drafted | unchecked | High | open |
+| R1/R2 dataset transparency; R1 new-user generalization | yes | CSL-News metadata partial；subjects/splits/non-manual missing | audited; revisions pending | not drafted | unchecked | High | open |
 | R2 architecture necessity | yes | missing | not imported | not drafted | unchecked | High | open |
 | R2 domain adaptation | yes | missing | not imported | not drafted | unchecked | High | open |
 | R2 attention ablation | yes | missing | not imported | not drafted | unchecked | High | open |
