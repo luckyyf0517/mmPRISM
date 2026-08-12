@@ -62,7 +62,26 @@ def test_wavellm_run_config_is_strict_and_stable(tmp_path: Path) -> None:
     assert config.evaluation.save_references is True
     assert len(config.fingerprint) == 64
     assert len(config.model_fingerprint) == 64
+    assert len(config.training_fingerprint) == 64
     assert config.to_dict()["schema_version"] == "mmprism.wavellm_run.v1"
+
+    extended_payload = _payload()
+    extended_optimization = extended_payload["optimization"]
+    assert isinstance(extended_optimization, dict)
+    extended_optimization["epochs"] = 5
+    extended_optimization["max_steps"] = None
+    extended = load_wavellm_run_config(
+        _write(tmp_path / "extended.yaml", extended_payload)
+    )
+    assert extended.fingerprint != config.fingerprint
+    assert extended.training_fingerprint == config.training_fingerprint
+
+    changed_payload = _payload()
+    changed_optimization = changed_payload["optimization"]
+    assert isinstance(changed_optimization, dict)
+    changed_optimization["learning_rate"] = 0.002
+    changed = load_wavellm_run_config(_write(tmp_path / "changed.yaml", changed_payload))
+    assert changed.training_fingerprint != config.training_fingerprint
 
 
 @pytest.mark.parametrize(

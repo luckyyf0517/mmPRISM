@@ -228,6 +228,15 @@ class OmniHandRunConfig:
     def model_fingerprint(self) -> str:
         return _fingerprint(self.model.to_dict())
 
+    @property
+    def training_fingerprint(self) -> str:
+        payload = self.to_dict()
+        optimization = dict(self.optimization.to_dict())
+        optimization.pop("epochs")
+        optimization.pop("max_steps")
+        payload["optimization"] = optimization
+        return _fingerprint(payload)
+
 
 def _fingerprint(payload: Mapping[str, object]) -> str:
     encoded = json.dumps(

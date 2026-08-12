@@ -1,6 +1,6 @@
 # Canonical OmniHand Reconstruction
 
-Status: `single_device_formal_run_implemented_real_data_blocked`
+Status: `single_device_formal_run_and_epoch_resume_implemented_real_data_blocked`
 Last Updated: `2026-08-11`
 
 ## Boundary
@@ -70,6 +70,7 @@ A completed training run contains:
 
 - `omnihand.resolved.json` and `omnihand.runtime.json`;
 - `checkpoint.safetensors` and checksum-bound `checkpoint.json`;
+- immutable JSON/Safetensors training-state pairs for every fully completed epoch;
 - `history.json`, `performance.json`, streaming `predictions.jsonl`, and versioned `metrics.json`;
 - the generic resolved experiment, environment, input-hash, and run lifecycle artifacts.
 
@@ -78,5 +79,11 @@ as independent inputs. It validates evaluation split membership, weight checksum
 model-config fingerprint, metric units, and coordinate frame before strict state loading. Prediction records retain sample ID, checkpoint hash,
 coordinate frame, metres, valid-joint mask, prediction, optional target, and per-sample absolute MPJPE.
 
-The current orchestrator is deliberately single-device. Resume state and rank-safe distributed
+`omnihand-train` accepts a metadata/Safetensors state pair together and restores model, AdamW,
+GradScaler, RNG, DataLoader generator, history, and global step at a completed epoch boundary. Resume
+requires exact Git/data/split/model/runtime bindings; only epoch and step targets may stay fixed or
+increase. A deterministic CPU integration test proves exact final-tensor and history equality between an
+uninterrupted two-epoch run and a one-epoch run resumed for the second epoch.
+
+The current orchestrator is deliberately single-device. DDP model execution and distributed checkpoint
 aggregation remain open; CPU fixture results and synthetic GPU smokes are engineering evidence only.

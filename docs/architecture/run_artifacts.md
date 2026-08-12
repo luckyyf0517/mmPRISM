@@ -1,6 +1,6 @@
 # Formal Run Artifact Contract
 
-Status: `formal_preflight_and_distributed_prediction_artifacts_implemented`
+Status: `formal_preflight_prediction_and_epoch_resume_implemented`
 Last Updated: `2026-08-11`
 Schema: `mmprism.run.v1`
 
@@ -75,7 +75,8 @@ use manifest URIs and the release/export contract; they must not copy these path
    manifest-to-split membership, and a non-empty launch command.
 3. Initialize the run atomically. The source YAML must resolve to the exact config hash in the plan.
 4. The task service writes typed artifacts. Model processes publish immutable rank-local prediction
-   shards and receipts; rank zero validates, aggregates, and registers the complete result set.
+   shards and receipts; rank zero validates, aggregates, and registers the complete result set. A
+   single-process trainer publishes an immutable state pair after each fully completed epoch.
 5. Write `metrics.json` once with `mmprism.metrics.v1`, a non-empty protocol ID, split, sample count and only
    finite numeric values.
 6. Finalize as `completed`, `failed` or `aborted`. `completed` is rejected until `metrics.json` exists;
@@ -111,8 +112,32 @@ merged-file checksum. Only rank zero updates `run.json`, registering the whole c
 metadata update. Shards remain as provenance and are not deleted. OmniHand and WaveLLM world-size-one
 formal runs use this same path so the distributed contract is continuously exercised.
 
-This contract covers prediction publication and aggregation. DDP model execution, checkpoint aggregation
-and resume remain separate training-orchestration work.
+## Epoch-Boundary Training Resume
+
+OmniHand and WaveLLM use `mmprism.training_state.v1` for exact single-process recovery. Every fully
+completed epoch publishes and registers one no-clobber pair:
+
+```text
+training-state.epoch-00001.json
+training-state.epoch-00001.safetensors
+```
+
+The strict canonical JSON records source run ID, completed epoch, cumulative global step, full history,
+configured epoch/step targets, tensor checksum/size, and exact compatibility bindings for Git commit,
+manifests, split assignments, model/training configuration, runtime seed/precision/determinism, device
+type, coordinate frame, and applicable model assets/checkpoint scope. The Safetensors payload contains
+the resumable model scope, AdamW tensor state, Torch CPU/CUDA RNG, and DataLoader generator state. JSON
+contains the remaining AdamW scalars/options, GradScaler state, and Python/NumPy RNG.
+
+Both `--resume-state-metadata` and `--resume-state-tensors` are mandatory when resuming. They are captured
+as independent `checkpoint` inputs before loading. The loader verifies strict JSON bytes, filename,
+checksum, size, schema, bindings, optimizer topology, model keys, tensor shapes, device expectations, and
+that every Safetensors tensor is referenced exactly once. Training may keep or increase `epochs` and
+`max_steps`; any other compatibility drift or target decrease is rejected.
+
+No state is published for a partial epoch. After mid-epoch interruption, the next run restores the last
+complete boundary and reruns only the incomplete epoch. This contract does not claim mid-epoch recovery,
+DDP model execution, or distributed checkpoint aggregation.
 
 ## CLI Smoke
 

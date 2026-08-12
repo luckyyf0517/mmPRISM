@@ -292,6 +292,21 @@ class WaveLLMRunConfig:
         ).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
 
+    @property
+    def training_fingerprint(self) -> str:
+        payload = self.to_dict()
+        optimization = dict(self.optimization.to_dict())
+        optimization.pop("epochs")
+        optimization.pop("max_steps")
+        payload["optimization"] = optimization
+        encoded = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
 
 def load_wavellm_run_config(path: str | Path) -> WaveLLMRunConfig:
     config_path = Path(path).expanduser().resolve()

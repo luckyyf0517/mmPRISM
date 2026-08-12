@@ -1,6 +1,6 @@
 # Canonical WaveLLM Translation
 
-Status: `single_device_formal_run_implemented_real_data_blocked`
+Status: `single_device_formal_run_and_epoch_resume_implemented_real_data_blocked`
 Last Updated: `2026-08-11`
 
 ## Boundary
@@ -50,6 +50,7 @@ sample/sequence leakage gates. It writes:
 - generic resolved experiment, environment, input hashes, and run lifecycle metadata;
 - `wavellm.resolved.json` and `wavellm.runtime.json`;
 - atomic `checkpoint.safetensors` plus checksum-bound `checkpoint.json`;
+- immutable JSON/Safetensors training-state pairs for every fully completed epoch;
 - `history.json`, `performance.json`, `predictions.jsonl`, and `metrics.json`.
 
 For a frozen mT5 backbone, the checkpoint contains only non-language-model tensors and records
@@ -60,6 +61,13 @@ model and task fingerprints, coordinate frame, units, Git commit, runtime, and a
 manifests as independent hashed inputs. Before state loading it validates evaluation split membership,
 weight checksum/format/scope, complete model and task fingerprints, model-asset identity, units, coordinate
 frame, and exact adapter tensor inventory.
+
+`wavellm-train` uses the shared completed-epoch resume contract. It restores AdamW, GradScaler, all RNG
+states, loader generator, history, global step, and the configured model checkpoint scope. Adapter-only
+states contain the non-language-model tensors and bind the exact frozen mT5 asset identity. Resume
+requires exact Git/data/split/model/runtime compatibility and permits only nondecreasing epoch/step
+targets. A deterministic CPU integration test proves final adapter tensor and history equality for
+uninterrupted versus segmented two-epoch training.
 
 ## Metric Protocol
 
@@ -77,5 +85,5 @@ hashes, split separation, tensor inventory, prediction replay, metric recomputat
 and temporary-file gates. Synthetic outputs and metric values are engineering evidence only.
 
 Real pose/radar feature preparation remains blocked on the upstream OmniHand/radar provenance chain.
-Resume, distributed training, rank-safe aggregation, production metrics, and real-data validation remain
-open.
+DDP model execution, distributed checkpoint aggregation, production metrics, and real-data validation
+remain open; prediction aggregation and single-process epoch-boundary resume are implemented.

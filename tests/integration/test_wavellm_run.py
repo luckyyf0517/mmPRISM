@@ -120,7 +120,7 @@ def _experiment(path: Path, root: Path, *, name: str) -> Path:
     return path
 
 
-def _task_config(path: Path) -> Path:
+def _task_config(path: Path, *, epochs: int = 1, max_steps: int | None = 1) -> Path:
     path.write_text(
         yaml.safe_dump(
             {
@@ -148,8 +148,8 @@ def _task_config(path: Path) -> Path:
                     "max_target_length": 16,
                 },
                 "optimization": {
-                    "epochs": 1,
-                    "max_steps": 1,
+                    "epochs": epochs,
+                    "max_steps": max_steps,
                     "learning_rate": 0.001,
                     "weight_decay": 0.0001,
                     "beta1": 0.9,
@@ -355,6 +355,8 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
         "predictions.rank-00000-of-00001.json",
         "predictions.rank-00000-of-00001.jsonl",
         "run.json",
+        "training-state.epoch-00001.json",
+        "training-state.epoch-00001.safetensors",
         "wavellm.resolved.json",
         "wavellm.runtime.json",
     }
@@ -396,9 +398,21 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
     performance = json.loads((train_run / "performance.json").read_text(encoding="utf-8"))
     assert performance["mode"] == "train"
     assert performance["optimizer_steps"] == 1
+    assert performance["optimizer_steps_this_run"] == 1
     assert performance["prediction_samples"] == 2
     assert performance["parameter_count"]["trainable"] > 0
     assert performance["parameter_count"]["frozen"] > 0
+    training_state = json.loads(
+        (train_run / "training-state.epoch-00001.json").read_text(encoding="utf-8")
+    )
+    assert training_state["schema_version"] == "mmprism.training_state.v1"
+    assert training_state["progress"] == {
+        "completed_epoch": 1,
+        "configured_epochs": 1,
+        "configured_max_steps": 1,
+        "global_step": 1,
+        "resume_granularity": "completed_epoch",
+    }
 
     evaluation_experiment_path = _experiment(
         tmp_path / "evaluation-experiment.yaml", tmp_path, name="wavellm-eval-fixture"
@@ -476,6 +490,159 @@ def test_formal_wavellm_train_adapter_prediction_and_evaluate(
     failed_payload = json.loads((failed_runs[0] / "run.json").read_text(encoding="utf-8"))
     assert failed_payload["status"] == "failed"
     assert "SHA-256 mismatch" in failed_payload["failure"]
+
+
+def test_wavellm_epoch_resume_matches_uninterrupted_training(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project_root = discover_project_root(Path(__file__))
+    data_root = tmp_path / "data"
+    train_manifest = _manifest(
+        tmp_path / "resume-train.jsonl",
+        [
+            _record(data_root, sample_id=f"train-{index:03d}", seed=index, frames=3)
+            for index in range(1, 5)
+        ],
+    )
+    validation_manifest = _manifest(
+        tmp_path / "resume-validation.jsonl",
+        [
+            _record(data_root, sample_id=f"validation-{index:03d}", seed=index + 10, frames=3)
+            for index in range(1, 3)
+        ],
+    )
+    split_assignments = _split_assignments(
+        tmp_path / "resume-assignments.jsonl",
+        {
+            **{f"train-{index:03d}": "train" for index in range(1, 5)},
+            **{f"validation-{index:03d}": "validation" for index in range(1, 3)},
+        },
+    )
+    segment_task_path = _task_config(
+        tmp_path / "wavellm-segment.yaml", epochs=1, max_steps=None
+    )
+    target_task_path = _task_config(
+        tmp_path / "wavellm-target.yaml", epochs=2, max_steps=None
+    )
+    asset_path = _asset_config(tmp_path / "assets.yaml")
+    asset_config = load_model_asset_config(asset_path)
+    model_root = tmp_path / "models"
+    model_path = model_root / "tiny_mt5"
+    model_path.mkdir(parents=True)
+    asset_manifest = model_path / "mmprism_model_asset.json"
+    collection_manifest = model_root / "mmprism_model_assets.json"
+    asset_manifest.write_text('{"fixture": true}\n', encoding="utf-8")
+    collection_manifest.write_text('{"fixture": true}\n', encoding="utf-8")
+    resolved_asset = ResolvedModelAsset(
+        spec=asset_config.models[0],
+        path=model_path,
+        verification={"asset_manifest_sha256": _sha256(asset_manifest)},
+        collection_manifest_sha256=_sha256(collection_manifest),
+    )
+    monkeypatch.setattr(run_module, "resolve_model_asset", lambda *args: resolved_asset)
+    monkeypatch.setattr(run_module, "_load_model_and_tokenizer", _fake_model_and_tokenizer)
+    segment_experiment = _experiment(
+        tmp_path / "segment-experiment.yaml", tmp_path, name="wavellm-resume-segment"
+    )
+    full_experiment = _experiment(
+        tmp_path / "full-experiment.yaml", tmp_path, name="wavellm-resume-full"
+    )
+    resumed_experiment = _experiment(
+        tmp_path / "resumed-experiment.yaml", tmp_path, name="wavellm-resume-restored"
+    )
+
+    segment = run_module.train_wavellm(
+        load_experiment_config(segment_experiment),
+        load_wavellm_run_config(segment_task_path),
+        asset_config,
+        model_root,
+        source_experiment_config=segment_experiment,
+        source_task_config=segment_task_path,
+        source_asset_config=asset_path,
+        train_manifest_path=train_manifest,
+        validation_manifest_path=validation_manifest,
+        split_assignments_path=split_assignments,
+        project_root=project_root,
+        command=("mmprism", "wavellm-train", "segment"),
+        runtime_report=_runtime(project_root),
+        created_at=datetime(2026, 8, 11, 23, 0, tzinfo=UTC),
+    )
+    full = run_module.train_wavellm(
+        load_experiment_config(full_experiment),
+        load_wavellm_run_config(target_task_path),
+        asset_config,
+        model_root,
+        source_experiment_config=full_experiment,
+        source_task_config=target_task_path,
+        source_asset_config=asset_path,
+        train_manifest_path=train_manifest,
+        validation_manifest_path=validation_manifest,
+        split_assignments_path=split_assignments,
+        project_root=project_root,
+        command=("mmprism", "wavellm-train", "full"),
+        runtime_report=_runtime(project_root),
+        created_at=datetime(2026, 8, 11, 23, 5, tzinfo=UTC),
+    )
+    segment_run = Path(str(segment["run_dir"]))
+    with pytest.raises(WaveLLMRunError, match="requires both"):
+        run_module.train_wavellm(
+            load_experiment_config(resumed_experiment),
+            load_wavellm_run_config(target_task_path),
+            asset_config,
+            model_root,
+            source_experiment_config=resumed_experiment,
+            source_task_config=target_task_path,
+            source_asset_config=asset_path,
+            train_manifest_path=train_manifest,
+            validation_manifest_path=validation_manifest,
+            split_assignments_path=split_assignments,
+            resume_state_metadata_path=segment_run / "training-state.epoch-00001.json",
+            project_root=project_root,
+            command=("mmprism", "wavellm-train", "incomplete-resume"),
+            runtime_report=_runtime(project_root),
+        )
+    resumed = run_module.train_wavellm(
+        load_experiment_config(resumed_experiment),
+        load_wavellm_run_config(target_task_path),
+        asset_config,
+        model_root,
+        source_experiment_config=resumed_experiment,
+        source_task_config=target_task_path,
+        source_asset_config=asset_path,
+        train_manifest_path=train_manifest,
+        validation_manifest_path=validation_manifest,
+        split_assignments_path=split_assignments,
+        resume_state_metadata_path=segment_run / "training-state.epoch-00001.json",
+        resume_state_tensors_path=segment_run / "training-state.epoch-00001.safetensors",
+        project_root=project_root,
+        command=("mmprism", "wavellm-train", "resumed"),
+        runtime_report=_runtime(project_root),
+        created_at=datetime(2026, 8, 11, 23, 10, tzinfo=UTC),
+    )
+
+    full_run = Path(str(full["run_dir"]))
+    resumed_run = Path(str(resumed["run_dir"]))
+    full_state = load_file(full_run / "checkpoint.safetensors")
+    resumed_state = load_file(resumed_run / "checkpoint.safetensors")
+    assert set(full_state) == set(resumed_state)
+    assert all(torch.equal(full_state[name], resumed_state[name]) for name in full_state)
+    full_history = json.loads((full_run / "history.json").read_text(encoding="utf-8"))
+    resumed_history = json.loads(
+        (resumed_run / "history.json").read_text(encoding="utf-8")
+    )
+    assert resumed_history["records"] == full_history["records"]
+    assert resumed_history["global_step"] == full_history["global_step"] == 4
+    assert resumed_history["resumed_from_run_id"] == segment_run.name
+    resumed_performance = json.loads(
+        (resumed_run / "performance.json").read_text(encoding="utf-8")
+    )
+    assert resumed_performance["optimizer_steps"] == 4
+    assert resumed_performance["optimizer_steps_this_run"] == 2
+    resumed_inputs = json.loads((resumed_run / "inputs.json").read_text(encoding="utf-8"))
+    assert {item["name"] for item in resumed_inputs["inputs"]} >= {
+        "resume_state_metadata",
+        "resume_state_tensors",
+    }
 
 
 def test_wavellm_rejects_sequence_leakage_and_checkpoint_contract_drift(

@@ -154,6 +154,13 @@ requires the checkpoint weights and metadata as separate hashed inputs and rejec
 model-config, unit, or coordinate-frame mismatch. The example is a two-step engineering recipe, not a
 paper training protocol.
 
+Every fully completed epoch also publishes an immutable `training-state.epoch-NNNNN.json` and
+`.safetensors` pair. Resume by setting both `MMPRISM_RESUME_STATE_METADATA` and
+`MMPRISM_RESUME_STATE_TENSORS` before invoking the same script. The state restores model, AdamW,
+GradScaler, RNG, loader generator, history, and global step only when all Git/data/split/model/runtime
+bindings match. Epoch and step targets may only stay fixed or increase; an interrupted partial epoch is
+rerun from the preceding complete boundary.
+
 ## Language Model Support
 
 mT5 is the sole canonical language-generation backend. The pinned engineering smoke exercises the
@@ -187,8 +194,10 @@ rejects sample/sequence leakage, requires each manifest sample to match the regi
 and writes an adapter-only checkpoint when mT5 is frozen. The separate
 `wavellm-evaluate` command re-registers weights and metadata as hashed inputs and rejects checksum,
 model/task-config, model-asset, unit, coordinate-frame, or tensor-inventory drift before generation.
+`wavellm-train` uses the same paired epoch-state resume contract and, for adapter-only training, stores
+the trainable adapter model state without duplicating the frozen mT5 backbone.
 The included character metric is an orchestration protocol; full fine-tuning, real-data validation,
-distributed aggregation, and production BLEU/ROUGE/semantic metrics remain under construction.
+distributed model/checkpoint execution, and production BLEU/ROUGE/semantic metrics remain under construction.
 Historical alternative backend definitions are excluded from the release rather than exposed as
 unsupported claims.
 

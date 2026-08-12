@@ -46,6 +46,11 @@ from mmprism.data import (
 from mmprism.evaluation import LANGUAGE_METRIC_PROTOCOL, LanguageMetricAccumulator
 from mmprism.models import GeometryGuidedMT5
 from mmprism.runtime import build_run_plan, collect_runtime_report
+from mmprism.training.resume import (
+    TrainingStateError,
+    load_epoch_training_state,
+    save_epoch_training_state,
+)
 from mmprism.training.wavellm_run_config import (
     WaveLLMRunConfig,
     WaveLLMRunError,
@@ -472,11 +477,18 @@ def _train_model(
     validation_loader: DataLoader[SignLanguageTranslationBatch],
     config: WaveLLMRunConfig,
     *,
+    writer: RunArtifactWriter,
+    state_bindings: Mapping[str, str],
+    resume_metadata_path: Path | None,
+    resume_tensor_path: Path | None,
     device: torch.device,
     precision: str,
-) -> tuple[list[dict[str, object]], int]:
-    trainable = [parameter for parameter in model.parameters() if parameter.requires_grad]
-    if not trainable:
+) -> tuple[list[dict[str, object]], int, int, str | None]:
+    named_parameters = tuple(
+        (name, parameter) for name, parameter in model.named_parameters() if parameter.requires_grad
+    )
+    trainable = [parameter for _, parameter in named_parameters]
+    if not named_parameters:
         raise WaveLLMRunError("WaveLLM run has no trainable parameters")
     optimization = config.optimization
     optimizer = torch.optim.AdamW(
@@ -486,10 +498,44 @@ def _train_model(
         weight_decay=optimization.weight_decay,
     )
     scaler = GradScaler("cuda", enabled=device.type == "cuda" and precision == "16-mixed")
+    loader_generator = train_loader.generator
+    if loader_generator is None:
+        raise WaveLLMRunError("training loader has no reproducible generator")
     history: list[dict[str, object]] = []
     global_step = 0
+    start_epoch = 1
+    resumed_from: str | None = None
+    scope = _checkpoint_scope(config)
+    model_state_names = set(_checkpoint_state(model, scope))
+    if resume_metadata_path is not None and resume_tensor_path is not None:
+        try:
+            state = load_epoch_training_state(
+                resume_metadata_path,
+                resume_tensor_path,
+                model=model,
+                expected_model_state_names=model_state_names,
+                named_parameters=named_parameters,
+                optimizer=optimizer,
+                scaler=scaler,
+                loader_generator=loader_generator,
+                device=device,
+                expected_bindings=state_bindings,
+                target_epochs=optimization.epochs,
+                target_max_steps=optimization.max_steps,
+            )
+        except TrainingStateError as error:
+            raise WaveLLMRunError(str(error)) from error
+        history = list(state.history)
+        global_step = state.global_step
+        start_epoch = state.completed_epoch + 1
+        resumed_from = state.source_run_id
+    if start_epoch > optimization.epochs:
+        raise WaveLLMRunError("resume state has already reached the configured epoch target")
+    if optimization.max_steps is not None and global_step >= optimization.max_steps:
+        raise WaveLLMRunError("resume state has already reached the configured step target")
+    initial_global_step = global_step
     stop = False
-    for epoch in range(1, optimization.epochs + 1):
+    for epoch in range(start_epoch, optimization.epochs + 1):
         model.train()
         if config.model.freeze_language_model:
             model.language_model.eval()
@@ -545,9 +591,28 @@ def _train_model(
                 "validation_token_cross_entropy": validation_loss,
             }
         )
+        if epoch_steps == len(train_loader):
+            try:
+                save_epoch_training_state(
+                    writer,
+                    model_state=_checkpoint_state(model, scope),
+                    named_parameters=named_parameters,
+                    optimizer=optimizer,
+                    scaler=scaler,
+                    loader_generator=loader_generator,
+                    device=device,
+                    bindings=state_bindings,
+                    completed_epoch=epoch,
+                    global_step=global_step,
+                    configured_epochs=optimization.epochs,
+                    configured_max_steps=optimization.max_steps,
+                    history=history,
+                )
+            except TrainingStateError as error:
+                raise WaveLLMRunError(str(error)) from error
         if stop:
             break
-    return history, global_step
+    return history, global_step, global_step - initial_global_step, resumed_from
 
 
 def _checkpoint_scope(config: WaveLLMRunConfig) -> str:
@@ -858,10 +923,20 @@ def train_wavellm(
     split_assignments_path: str | Path,
     project_root: Path,
     command: Sequence[str],
+    resume_state_metadata_path: str | Path | None = None,
+    resume_state_tensors_path: str | Path | None = None,
     runtime_report: Mapping[str, Any] | None = None,
     created_at: datetime | None = None,
 ) -> dict[str, object]:
     run_started = time.perf_counter()
+    if (resume_state_metadata_path is None) != (resume_state_tensors_path is None):
+        raise WaveLLMRunError("resume requires both state metadata and Safetensors")
+    resume_inputs: tuple[tuple[str, str, str | Path], ...] = ()
+    if resume_state_metadata_path is not None and resume_state_tensors_path is not None:
+        resume_inputs = (
+            ("resume_state_metadata", "checkpoint", resume_state_metadata_path),
+            ("resume_state_tensors", "checkpoint", resume_state_tensors_path),
+        )
     writer, paths, input_hashes, report, asset = _prepare_run(
         experiment_config,
         task_config,
@@ -874,7 +949,8 @@ def train_wavellm(
             ("train_manifest", "manifest", train_manifest_path),
             ("validation_manifest", "manifest", validation_manifest_path),
             ("split_assignments", "split", split_assignments_path),
-        ),
+        )
+        + resume_inputs,
         project_root=project_root,
         command=command,
         runtime_report=runtime_report,
@@ -932,13 +1008,38 @@ def train_wavellm(
             seed=resolved_experiment.runtime.seed,
             device=device,
         )
+        git = cast(Mapping[str, Any], report["git"])
+        state_bindings = {
+            "task": "sign_language_translation",
+            "training_config_sha256": task_config.training_fingerprint,
+            "model_config_sha256": task_config.model_fingerprint,
+            "model_asset_config_sha256": input_hashes["model_asset_config"],
+            "model_asset_collection_sha256": input_hashes["model_asset_collection"],
+            "model_asset_manifest_sha256": input_hashes["model_asset_manifest"],
+            "train_manifest_sha256": input_hashes["train_manifest"],
+            "validation_manifest_sha256": input_hashes["validation_manifest"],
+            "split_assignments_sha256": input_hashes["split_assignments"],
+            "coordinate_frame": train_manifest.coordinate_frame,
+            "checkpoint_scope": _checkpoint_scope(task_config),
+            "runtime_seed": str(resolved_experiment.runtime.seed),
+            "runtime_precision": resolved_experiment.runtime.precision,
+            "runtime_deterministic": str(
+                resolved_experiment.runtime.deterministic
+            ).lower(),
+            "device_type": device.type,
+            "git_commit": str(git["commit"]),
+        }
         training_started = time.perf_counter()
-        history, global_step = _train_model(
+        history, global_step, steps_this_run, resumed_from = _train_model(
             model,
             tokenizer,
             train_loader,
             validation_loader,
             task_config,
+            writer=writer,
+            state_bindings=state_bindings,
+            resume_metadata_path=paths.get("resume_state_metadata"),
+            resume_tensor_path=paths.get("resume_state_tensors"),
             device=device,
             precision=resolved_experiment.runtime.precision,
         )
@@ -997,6 +1098,7 @@ def train_wavellm(
                 "task_config_sha256": task_config.fingerprint,
                 "global_step": global_step,
                 "epochs_executed": len(history),
+                "resumed_from_run_id": resumed_from,
                 "records": history,
                 "final_validation": metrics,
             },
@@ -1012,8 +1114,9 @@ def train_wavellm(
                 "parameter_count": counts,
                 "checkpoint_scope": scope,
                 "optimizer_steps": global_step,
+                "optimizer_steps_this_run": steps_this_run,
                 "training_seconds": training_seconds,
-                "optimizer_steps_per_second": global_step / training_seconds,
+                "optimizer_steps_per_second": steps_this_run / training_seconds,
                 "prediction_samples": accumulator.sample_count,
                 "prediction_seconds": prediction_seconds,
                 "prediction_samples_per_second": accumulator.sample_count / prediction_seconds,

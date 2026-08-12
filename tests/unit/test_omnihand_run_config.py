@@ -62,7 +62,25 @@ def test_omnihand_run_config_is_strict_and_stable() -> None:
     assert config.evaluation.save_targets is True
     assert len(config.fingerprint) == 64
     assert len(config.model_fingerprint) == 64
+    assert len(config.training_fingerprint) == 64
     assert config.fingerprint == OmniHandRunConfig.from_mapping(config.to_dict()).fingerprint
+    extended = deepcopy(config.to_dict())
+    extended_optimization = extended["optimization"]
+    assert isinstance(extended_optimization, dict)
+    extended_optimization["epochs"] = 5
+    extended_optimization["max_steps"] = None
+    extended_config = OmniHandRunConfig.from_mapping(extended)
+    assert extended_config.fingerprint != config.fingerprint
+    assert extended_config.training_fingerprint == config.training_fingerprint
+
+    changed = deepcopy(config.to_dict())
+    changed_optimization = changed["optimization"]
+    assert isinstance(changed_optimization, dict)
+    changed_optimization["learning_rate"] = 0.002
+    assert (
+        OmniHandRunConfig.from_mapping(changed).training_fingerprint
+        != config.training_fingerprint
+    )
 
 
 @pytest.mark.parametrize(

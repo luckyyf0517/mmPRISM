@@ -280,6 +280,8 @@ def _build_parser() -> argparse.ArgumentParser:
     omnihand_train_parser.add_argument("--train-manifest", type=Path, required=True)
     omnihand_train_parser.add_argument("--validation-manifest", type=Path, required=True)
     omnihand_train_parser.add_argument("--split-assignments", type=Path, required=True)
+    omnihand_train_parser.add_argument("--resume-state-metadata", type=Path)
+    omnihand_train_parser.add_argument("--resume-state-tensors", type=Path)
     omnihand_train_parser.add_argument("--project-root", type=Path)
 
     omnihand_evaluate_parser = subparsers.add_parser(
@@ -308,6 +310,8 @@ def _build_parser() -> argparse.ArgumentParser:
     wavellm_train_parser.add_argument("--train-manifest", type=Path, required=True)
     wavellm_train_parser.add_argument("--validation-manifest", type=Path, required=True)
     wavellm_train_parser.add_argument("--split-assignments", type=Path, required=True)
+    wavellm_train_parser.add_argument("--resume-state-metadata", type=Path)
+    wavellm_train_parser.add_argument("--resume-state-tensors", type=Path)
     wavellm_train_parser.add_argument("--project-root", type=Path)
 
     wavellm_evaluate_parser = subparsers.add_parser(
@@ -605,6 +609,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     train_manifest_path=arguments.train_manifest,
                     validation_manifest_path=arguments.validation_manifest,
                     split_assignments_path=arguments.split_assignments,
+                    resume_state_metadata_path=arguments.resume_state_metadata,
+                    resume_state_tensors_path=arguments.resume_state_tensors,
                     project_root=project_root,
                     command=("mmprism", *effective_argv),
                 )
@@ -654,6 +660,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     train_manifest_path=arguments.train_manifest,
                     validation_manifest_path=arguments.validation_manifest,
                     split_assignments_path=arguments.split_assignments,
+                    resume_state_metadata_path=arguments.resume_state_metadata,
+                    resume_state_tensors_path=arguments.resume_state_tensors,
                     project_root=project_root,
                     command=("mmprism", *effective_argv),
                 )

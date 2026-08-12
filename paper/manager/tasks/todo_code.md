@@ -19,8 +19,9 @@ Role: `architecture_execution_tracker`
 | `ARCH-004-B` | P1 | 实现 batch-first temporal processing | evidence_ready | 10-frame vectorized encoder、8-layer/16-head mask-aware transformer、single-frame path、padding counterfactual和显存/吞吐报告通过 |
 | `ARCH-005-A` | P1 | 清理 model factory 与 MT5/Phi-3 支持边界 | evidence_ready | mT5-only boundary、pinned asset、canonical wrapper、两步 train/generate GPU smoke 和 unsupported-backend release gate 均通过；`EVID-CODE-MT5-SMOKE-V1` |
 | `ARCH-005-B` | P1 | 实现 canonical WaveLLM modality/fusion/LLM components | evidence_ready | strict model-ready adapter、双手 ST-GCN、radar projector、confidence-aware fusion、mT5 与 clean commit `e31000b` formal train/checkpoint/reload/evaluate 及 250-gate 审计通过；待真实数据 |
-| `ARCH-006-A` | P2 | 统一 prediction/result artifact schema | evidence_ready | rank-local immutable JSONL/receipt、no-clobber publish、完整 rank/checksum/schema/exact coverage gate、SQLite 确定性聚合和原子批量 register 已通过；OmniHand/WaveLLM world-size-one train/evaluate 已统一接入，196 tests passed |
+| `ARCH-006-A` | P2 | 统一 prediction/result artifact schema | evidence_ready | rank-local immutable JSONL/receipt、no-clobber publish、完整 rank/checksum/schema/exact coverage gate、SQLite 确定性聚合和原子批量 register 已通过；OmniHand/WaveLLM world-size-one train/evaluate 已统一接入 |
 | `ARCH-006-B` | P2 | 建立 metric protocol versioning | in_progress | pose v1 与 Unicode character v1 的 sample/count-weighted summary 已统一；待 production BLEU/ROUGE/semantic 与 legacy/current 显式并存 |
+| `ARCH-006-C` | P2 | 建立 single-process epoch-boundary exact resume | evidence_ready | OmniHand/WaveLLM 每个完整 epoch 发布 immutable JSON/Safetensors 状态；模型/AdamW/GradScaler/RNG/loader/history/global-step 与严格 binding/target gate 已实现；分段/连续训练 tensor+history exact equality、tamper/inventory/drift/target rejection 通过，项目共 199 tests passed |
 | `ARCH-007-A` | P2 | 添加 CI/static/test profiles | not_started | lint/unit/contracts on CPU |
 | `ARCH-008-A` | P2 | 重写 README 与复现指南 | not_started | 文档命令通过验证 |
 | `ARCH-REV-001` | P0 | 将审稿人点名脚本的本地路径改为 config/CLI | in_progress | clean-machine path smoke |

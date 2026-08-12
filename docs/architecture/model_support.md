@@ -1,6 +1,6 @@
 # Language Model Support Boundary
 
-Status: `mt5_formal_single_device_ready_phi3_excluded`
+Status: `mt5_formal_single_device_resume_ready_phi3_excluded`
 Last Updated: `2026-08-11`
 
 ## Decision
@@ -39,8 +39,9 @@ The smoke freezes all 582,401,280 language-model parameters and updates 2,170,43
 Clean commit `e31000b` additionally completed manifest-driven single-device train, adapter-only
 Safetensors, reload, sample prediction, Unicode character metric, and standalone evaluation. That formal
 run is still a synthetic engineering fixture, not a real dataset result, production metric protocol, or
-paper-facing value. Real-data, resume, and distributed requirements remain open under `ARCH-003`,
-`ARCH-006`, and the experiment registry.
+paper-facing value. Single-process completed-epoch resume is implemented for the same adapter-only model
+scope; real-data and distributed model/checkpoint requirements remain open under `ARCH-003`, `ARCH-006`,
+and the experiment registry.
 
 SBERT and SimCSE are evaluator assets, not caption-generation backends. Their loader readiness is tracked
 separately under `EVID-CODE-MODELS-V1`.

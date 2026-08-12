@@ -46,7 +46,11 @@ metric protocol 写入有限数值；domain writer 还可原子写入 strict JSO
 checkpoint 等顶层 artifact。Prediction artifact 已统一为 rank-local immutable JSONL + receipt：各 rank
 不写共享 `run.json`，rank 0 校验完整 rank 集、receipt/shard checksum、domain schema、sample ID 唯一性和
 exact manifest coverage，再通过 SQLite 外部排序生成确定性 `predictions.jsonl`/index，并一次性登记全套
-artifact；OmniHand/WaveLLM 的 world-size-one train/evaluate 已走同一路径。Model-ready pose adapter 现严格读取 manifest 绑定的 radar-cube/metric-pose
+artifact；OmniHand/WaveLLM 的 world-size-one train/evaluate 已走同一路径。两条 single-process
+训练路径还会在每个完整 epoch 发布 immutable strict JSON/Safetensors 状态，恢复模型、AdamW、
+GradScaler、Python/NumPy/Torch/CUDA RNG、DataLoader generator、history/global step，并以 Git/data/
+split/model/runtime exact binding 和非递减训练目标拒绝漂移；partial epoch 从上一完整边界重跑。
+Model-ready pose adapter 现严格读取 manifest 绑定的 radar-cube/metric-pose
 `.npy`、校验 shape/dtype/checksum/单位/坐标系，并对变长时间序列执行零填充和 mask。CSL-News RTMW3D 标注已具有独立 strict
 config、durable atomic artifact、source-bound resume/conflict/failure contract、CPU-only 全量 identity audit、
 不可变 replacement overlay、source-versioned artifact、deterministic immutable-conflict recovery、checksum-bound explicit quarantine、GPU smoke、
@@ -66,7 +70,7 @@ confidence-aware fusion、真实 mT5、单卡 mixed-precision train/evaluate、a
 prediction 和 Unicode character metric。clean commit `e31000b` 已在 A100/BF16 上完成 4/2-record synthetic
 manifest 的 train/checkpoint/reload/evaluate，独立 250-gate 审计验证全部输入/数组/产物哈希、sequence split、
 adapter inventory、prediction/metric replay 和性能记录；真实 pose/radar feature 数据、production metrics、
-resume、DDP training orchestration 和 checkpoint aggregation 仍待实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
+DDP training orchestration 和 checkpoint aggregation 仍待实现。公开代码边界现由 Git allowlist release audit 管理，可生成逐文件 SHA-256 inventory、
 canonical dependency graph，并自动拒绝 legacy/internal path、硬编码本地路径、缺失 entrypoint 和 import cycle。
 外部 evaluator 资产现由 `mmprism.assets` 管理：strict config 固定 Hugging Face commit 和相对目标，
 下载使用可恢复 cache、逐文件 SHA-256 与同文件系统原子晋升，现有目录只有在完整复验后才复用；
@@ -77,7 +81,7 @@ Foundation and environment verification (`2026-08-11`)：
 
 ```text
 UV 0.11.23 / Python 3.12.13 / uv.lock
-196 tests passed（含 formal preflight/split binding、distributed prediction aggregation、annotation identity/quarantine/recovery、OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
+199 tests passed（含 formal preflight/split binding、distributed prediction aggregation、single-process epoch resume、annotation identity/quarantine/recovery、OmniHand/WaveLLM formal train/reload/evaluate、CubeNet 和 mT5 integration）
 doctor/config/plan/prepare/manifest/split CLI passed
 Ruff and strict Mypy passed
 sdist and wheel build passed
@@ -116,6 +120,8 @@ Clean `mmprism prepare` at `766453b` passed manifest/split membership and left a
 Metrics require a versioned protocol, sample count and finite values; completed runs require metrics
 Three-rank prediction contract passed immutable shard/receipt, empty-rank, checksum, exact coverage,
 duplicate/missing/extra-rank rejection and deterministic SQLite aggregation tests
+OmniHand and WaveLLM segmented two-epoch training exactly matched uninterrupted final tensors and history
+Epoch resume rejects binding drift, tensor tampering, extra/unreferenced tensors, target decrease, reached targets, and unpaired inputs
 Pinned SimCSE/SBERT acquisition passed 14-file checksum validation and real CPU `[2,768]` loader smoke
 Pinned mT5-base acquisition passed 6-file checksum validation at immutable revision `2eb15465...`
 Clean mT5 A100 smoke at `79b45b5`: two finite adapter updates, confidence counterfactual and beam generation passed
