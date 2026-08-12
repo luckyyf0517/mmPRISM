@@ -26,8 +26,8 @@ Role: `data_execution_tracker`
 | `DATA-003-D` | P1 | damaged/missing/ambiguous asset quarantine | in_progress | primary `001/005/008` 和 1,875 个 unbound/旧来源 pair 保持隔离；唯一 sidecar/NPZ conflict 已恢复为 immutable source variant，原 pair 仍由 clean audit + checksum exclusion 保留；待最终全量 audit |
 | `DATA-004-A` | P1 | 建立 subject/signer/sequence group split | in_progress | 2,157-record CSL-News partial sequence split 已通过 deterministic coverage/leakage audit；待 full manifest、signer/subject metadata 和最终 split |
 | `DATA-004-B` | P1 | 识别原投稿 split | not_started | paper split hash/provenance |
-| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | durable publication、source-bound resume、immutable conflict recovery 和 4-worker v2 shard 已通过；12,057-record clean snapshot 已纳入恢复样本且保留原冲突证据，夜间全量 build 待完成 |
-| `DATA-005-D` | P1 | 对照两条 NAS historical CSL-News pose 与 canonical 输出 | awaiting_upload | exact archive/member 匹配；shape/dtype/frame/caption、bitwise/allclose、per-axis/joint、depth-center、left/right 报告 |
+| `DATA-005-A` | P2 | 重建 pose annotation pipeline | in_progress | durable publication、source-bound resume、immutable conflict recovery 和 8-worker v2 shard 已通过；GPU 7 lane 0--3 + GPU 5 lane 4--7 使用 `archive_id % 8`，扩容首段 157 pairs/约 3 min、0 新 failure；12,057-record clean snapshot 已纳入恢复样本且保留原冲突证据，夜间全量 build 待完成 |
+| `DATA-005-D` | P1 | 对照 NAS historical CSL-News pose 与 canonical 输出 | in_progress | `archive_002` 1,624 条 59-joint historical export 已完整对照：identity/shape/frame/depth mapping 对齐，numerical equivalence 未闭合；待 historical environment evidence + `archive_007` clean cross-check |
 | `DATA-005-B` | P2 | 重建 radar processing/simulation pipeline | in_progress | NumPy range-Doppler v1/analytic tests 已通过；beamforming/simulation 等 acquisition、array、calibration evidence |
 | `DATA-005-C` | P2 | 重建 pred_pose/feature pipeline | not_started | checkpoint-bound provenance |
 | `DATA-006-A` | P2 | 生成 model-ready processed dataset | in_progress | strict dependency-light radar-cube/metric-pose manifest adapter、checksum 和 variable-time collator 已通过；待真实 collected cube/pose build、validation report 与 frozen manifest hash |

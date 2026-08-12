@@ -57,8 +57,9 @@ Role: `control_panel`
 - clean commit `eb5de64` 已为该 partial manifest 生成 sequence-disjoint split：1,701/219/237，
   2,157/2,157 coverage、0 cross-group leakage；缺少 signer，因此不作为 subject-independent 证据。
 - `/mnt/gfs` 当前约余 3.1 TB，但属于共享动态容量；CSL-News 下载保留 1 TiB floor 且暂不解压。
-- NAS 上约 `0-99` archive 的历史 CSL-News pose 已确认存在；两样本 forensic intake 目录已建立，
-  等待按原始 archive/member identity 上传后与 canonical 输出逐帧对照。
+- NAS 上约 `0-99` archive 的历史 CSL-News pose 已确认存在；`archive_002` historical export 已上传并完成
+  1,624 条逐序列只读对照：coverage/frame/depth mapping 对齐，但 historical inference environment 未数值等价；
+  57 条 old/unbound current pair 未混入严格结论，下一步收集 historical runtime/config 并对 `archive_007` clean source 交叉验证。
 - canonical UV 环境已锁定 Python 3.12/PyTorch 2.11 cu128；199 项测试、Ruff、Mypy、wheel、
   annotation 依赖 import、CUDA smoke 和真实 RTMW3D 视频 smoke 均通过。
 - formal-run writer 与 OmniHand/WaveLLM single-device train/evaluate 已实现：原子冻结
@@ -91,8 +92,8 @@ Role: `control_panel`
 
 1. 补充导入原投稿定稿，并按 20 项 display registry 补齐 dataset/split/run/checkpoint/metric/script/Source Data。
 2. 按已建立的 sober-language 与 Availability 清单准备回写；不在新增实验完成前强化结果主张。
-3. 监控 CSL-News 官方下载和夜间姿态标注；先验收两条 NAS historical pose 对照样本，再收集其余
-   私人 archive/目录的名称、大小和可重下标记。
+3. 监控 CSL-News 官方下载和夜间姿态标注；保留 `archive_002` forensic report，补收 historical MMPose/runtime
+   evidence，并以 `archive_007` clean source 完成第二轮对照，再收集其余私人 archive/目录的名称、大小和可重下标记。
 4. 确认可新增真实数据的人数、伦理边界、方向/遮挡采集条件和时间预算。
 5. 在 OmniHand 与 WaveLLM formal synthetic 工程闭环已通过的基础上，待真实 source 到位后完成 data/radar、
    production training/checkpoint/prediction/evaluation 闭环。
@@ -114,7 +115,7 @@ Role: `control_panel`
 
 1. 继续执行 `PAPER-001B`，登记当前 manuscript/supplement，并导入原投稿定稿。
 2. 执行 `DATA-001-K/DATA-005-A`，下载 promotion 和标注前都做完整 ZIP gate；只对通过清单生成 pose。
-3. 执行 `DATA-005-D`：按 archive/member identity 验收两条 NAS historical pose，并生成新旧逐帧对照报告。
+3. 继续 `DATA-005-D`：`archive_002` archive-level 逐帧报告已完成；取得 historical runtime/config 后解释数值差异，并以 archive_007 完成 clean cross-check。
 4. 继续 `DATA-REV-001/002`：把 CSL-News profile 绑定到 frozen manifest，并确认真实采集的
    subject/non-manual/scene/split 与伦理资源。
 5. 继续 formal training orchestration：为 OmniHand/WaveLLM 补 DDP model execution、checkpoint

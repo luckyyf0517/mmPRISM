@@ -347,3 +347,12 @@ scripts/run_csl_news_annotation_audit.sh
   failed 0；第二轮无新增 scan 也以 exit 0 完成，下一周期仍为 5 分钟。`00:45Z` source-aware status
   为 `healthy`：14,655 current-source pair、missing pair 0、抽检 3/3，近期约 2,173 samples/hour；
   报告 SHA-256 为 `788a4e0988fed5112c21995ff64ae8fa0f71af9b8e237c37f746c909c52bfebc`。
+- `01:31:43Z` 切换前只读状态为 `healthy`：81 个 registry-passed archive、134,660 个可用视频、
+  16,162 个 current-source pose/text pair、duplicate/missing pair 均为 0；最近窗口为约
+  1,857 samples/hour。为缩短重建时间，先同时停止旧 4 个 `v3` worker，确认无残留 annotation
+  进程后，于 `01:32:52Z` 启动 8 个互斥 `v4` lane：GPU 7 的 lane `0..3` 和空闲 GPU 5 的 lane
+  `4..7`，全部使用 `archive_id % 8 == worker_index`、相同 v2 registry 与 output/scratch roots。
+  该切换不触碰 aria2 下载或 integrity timer，也不删除、移动或覆盖 raw、partial、scratch、failure 或 pose artifact。
+- 8-lane 首段验证：8/8 worker `active/running`、`NRestarts=0`；GPU 5/7 分别约 12.3/6.0 GiB 已用且
+  均约 99% utilization；启动后约 3 分钟新增 157 个完成 pair、0 新 failure，最近 120 秒新增 111 个
+  pair，折合约 3.1k--3.3k samples/hour。该短窗值只用于调度验收，稳定吞吐仍以之后的 status report 为准。

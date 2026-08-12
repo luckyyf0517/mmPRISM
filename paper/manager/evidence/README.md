@@ -10,6 +10,7 @@ Last Updated: `2026-08-11`
 - `data_registry.md`：数据族、manifest、split、license 和质量状态。
 - `csl_news_source_integrity.md`：CSL-News frozen archive 的完整 CRC、隔离和恢复证据。
 - `csl_news_pose_manifest.md`：CSL-News integrity-gated pose+caption partial snapshot 与 adapter 验收证据。
+- `csl_news_legacy_pose_comparison.md`：historical archive 与 current native RTMW3D 59-joint view 的只读逐序列对照及结论边界。
 - `csl_news_pose_split.md`：CSL-News pose partial manifest 的 sequence-disjoint split 与 leakage audit。
 - `manuscript_inventory.md`：当前 Overleaf 主稿和 supplementary 的结构、引用、资产与合规静态证据。
 - `display_item_registry.md`：20 个当前 display item 的 Source Data 与 provenance 控制表。

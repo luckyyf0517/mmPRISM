@@ -41,6 +41,7 @@ Role: `cross_workstream_decisions`
 | `DEC-033` | 2026-08-11 | 已发布 canonical pose 冲突通过确定性的 full-source-SHA variant 恢复，原文件永久只读 | 覆盖或删除 canonical pair 会销毁 incident evidence，仅排除又会永久丢失可恢复样本 | accepted | recovery 只在 canonical 当前来源不完整/不一致时路由到 `--source_<archive-sha256>`；resume 和 status 只接受唯一有效 variant；manifest 必须继续验证并复制 canonical exclusion evidence，同时纳入恢复 record；多有效 variant 硬失败 |
 | `DEC-034` | 2026-08-11 | prediction artifact 采用 rank-local immutable shard/receipt 与 rank-zero exact-coverage 聚合 | 多 rank 并发写最终 JSONL 或共享 `run.json` 会损坏 provenance；全量 pose payload 内存排序不可扩展 | accepted | rank 只做 no-clobber publish；rank 0 验证完整 rank/checksum/schema/ID coverage，以 SQLite 确定性排序并一次性登记 shard、receipt、index 和 final JSONL；原 shard 永久保留 |
 | `DEC-035` | 2026-08-12 | canonical v1 训练恢复限定为 single-process completed-epoch exact resume | 把普通权重加载称为 resume 会丢失 optimizer/RNG/history；mid-epoch 与 DDP 状态需要不同的分片和 sampler 契约 | accepted | 每个完整 epoch 发布 immutable strict JSON/Safetensors 状态，精确绑定 Git/data/split/model/runtime 并恢复模型、AdamW、GradScaler、全部 RNG、loader、history/global step；仅训练目标可保持或增加，partial epoch 从上一完整边界重跑；DDP/checkpoint aggregation 继续独立实施 |
+| `DEC-037` | 2026-08-12 | CSL-News RTMW3D 标注从 4 lane 扩展到 2 GPU 上的 8 个互斥 lane | GPU 5 空闲约 81 GiB；原 GPU 7 的 4 lane 健康但约 1.86k samples/hour。重新分片必须避免同时消费同一 archive | accepted | 先停止旧 `mod 4` pool，再启动 GPU 7 lane 0--3、GPU 5 lane 4--7 的 `archive_id % 8` pool；已发布 pair 由 source identity/config/member/artifact checksum 复验跳过；扩容不得中断下载/integrity 或清理任何数据。首段 157 pair/约 3 min、0 新 failure；稳定吞吐由后续 status report 确认 |
 
 ## 决策记录模板
 

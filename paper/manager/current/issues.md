@@ -6,7 +6,7 @@ Role: `risk_register`
 
 | ID | Severity | Issue | Impact | Status | Next Action |
 |---|---|---|---|---|---|
-| `BLOCK-DATA-ROOT` | P0 | 作者已确认全部项目数据在其 NAS，但当前机器尚无 NAS 路径、source-side inventory 或已验收批次 | 真实数据与原投稿结果仍无法验证 | blocked | 先接收两条 CSL-News historical pose 对照样本，再按 metadata/calibration/raw 顺序分批 transfer 和 intake |
+| `BLOCK-DATA-ROOT` | P0 | 作者已确认全部项目数据在其 NAS，但当前机器尚无 NAS 路径、source-side inventory 或已验收批次；首个 CSL-News historical pose archive 已到达但 environment provenance 未到达 | 真实数据与原投稿结果仍无法验证 | active_mitigated | 已完成 archive_002 逐序列 forensic comparison；继续获取 historical MMPose/runtime evidence，并按 metadata/calibration/raw 顺序分批 transfer 和 intake |
 | `BLOCK-MANUSCRIPT` | P0 | 当前 19 个 display environment/20 个 display item 已登记，但原投稿定稿和 response 未导入，所有科学 provenance 未闭合；Supplementary Tables S2-S6 是未验证占位数据 | 无法完成新旧稿差异、全部 claim 和 paper-facing 数值审计 | in_progress | 导入原投稿；按 `display_item_registry.md` 补 dataset/split/run/checkpoint/metric/script/Source Data，重新生成 S2-S6 |
 | `BLOCK-PROVENANCE` | P0 | 论文数值与 checkpoint/split/metrics 未建立映射 | 结果不可审计 | not_started | 建立 data/experiment/paper evidence registry |
 | `BLOCK-RUNTIME` | P1 | canonical UV/Python/CUDA 环境缺失 | 曾阻断 wheel、ML 和 GPU smoke | done | UV research profile、lockfile、wheel 和 A100 smoke 已验证；后续只通过 pyproject/uv.lock 变更 |

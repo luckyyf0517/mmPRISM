@@ -532,3 +532,23 @@ UV `.venv`。clean-state gate 保持不变；连续两次 scan 均 exit 0，首�
 37.91 frames/s；报告 SHA-256 为
 `788a4e0988fed5112c21995ff64ae8fa0f71af9b8e237c37f746c909c52bfebc`。下载、四个 worker 和 clean
 integrity timer 均为 `active`；主开发 worktree 的未提交 DDP 文件未被移动、覆盖或提交。
+
+`01:31:43 UTC` 切换前状态为 `healthy`：81 个 integrity-passed archive、134,660 个可用视频、
+16,162 个 current-source pose/text pair，duplicate/missing pair 均为 0，最近窗口约 1,857 samples/hour。
+于 `01:32:52 UTC` 受控停止旧 GPU 7 的 `worker_index=0..3/worker_count=4` pool 后，重编排为 8 个互斥
+worker：GPU 7 lane `0..3`、空闲 GPU 5 lane `4..7`，统一按 `archive_id % 8 == worker_index` 消费同一
+source-integrity v2 registry。启动后约 3 分钟产生 157 个 current-source pair、0 新 failure；最近 120 秒
+产生 111 个，即约 3.1k--3.3k samples/hour。8/8 worker 均 `active/running`、`NRestarts=0`，GPU 5/7
+均约 99% utilization。短窗值仅为扩容验收，正式稳定吞吐仍由下一次 CPU-only status snapshot 记录；下载、
+integrity timer、raw ZIP、`.part`、scratch、failure、quarantine 和既有 pose artifact 均未移动、删除或覆盖。
+
+`2026-08-12` 收到 `/home/yanyifan/upload/20260812/archive_002.zip`（SHA-256
+`3b3af27c...`）；ZIP 完整性通过，含 1,624 条 historical `float64 [T,59,3]` pose。这不是预期的
+2x24 final tensor，而是 old `17 body + 42 hand` intermediate representation。只读对照依据 archive_002
+current source SHA `a1086401...`、sidecar legacy pose identity、native 133-joint 重建相同 depth-center/
+59-joint view：coverage、frame count、shape、depth center 全部为 1,624/1,624；1,567 条 current-source-bound
+序列的 median sequence mean absolute error 为 `5.257e-05`，但没有任何 bitwise 或
+`allclose(rtol=1e-5, atol=1e-6)` 等价项，且少数 body-joint frame 有最高 `1.379` 的离散跳变。
+这证实 transform/coverage 对齐但 historical inference environment 未实现数值等价；该 ZIP 与 57 条
+source-identity-unbound current pair 均保持 forensic-only，不能进入 canonical manifest。详细证据与报告 hash
+见 `../evidence/csl_news_legacy_pose_comparison.md`。

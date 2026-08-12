@@ -39,7 +39,8 @@ Role: `dataset_and_split_provenance`
 
 | ID | Source | Protocol | Location | Validation | Status |
 |---|---|---|---|---|---|
-| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；4 v2 registry workers active；known conflict recovered to immutable source variant with canonical bytes preserved；clean `6e9cc5e` snapshot 12,057 records/12 archives, SHA-256 `cdd450e4...`；00:45Z live current-source pairs 14,655, missing 0 | in_progress |
+| `BUILD-CSL-NEWS-RTMW3D-V1` | `DATASET-CSL-NEWS` | native 133-joint RTMW3D + historical crop/depth/2x24 mapping; config fingerprint `d7525ebb...` | `/mnt/gfs/yanyifan/mmPRISM/interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1` | GPU smoke/QC passed；immutable conflict recovery preserved；clean `6e9cc5e` snapshot 12,057 records/12 archives, SHA-256 `cdd450e4...`；01:32Z expanded to 8 registry lanes: 0--3 on GPU 7 and 4--7 on GPU 5, `archive_id % 8`; baseline 16,162 current-source pairs/81 passed archives, first 3 min +157 pairs/0 new failures, all lanes active | in_progress |
+| `EVID-CSL-NEWS-LEGACY-POSE-002-V1` | historical NAS-derived `archive_002` pose export | immutable ZIP `3b3af27c...`, 1,624 finite float64 `[T,59,3]` arrays; read-only comparison against current source SHA `a1086401...` | upload `/home/yanyifan/upload/20260812/archive_002.zip`; report `interim/csl_news/pose_annotation/rtmw3d_l_794dbc78_v1/legacy_comparisons/20260812_archive_002_v2` | ZIP test, exact source member/frame/depth-center coverage 1,624/1,624; 1,567 current-source-bound, numerical non-equivalence documented; 57 identity-unbound excluded from strict result | forensic_only_environment_equivalence_open |
 
 ## Model-ready Contracts
 
@@ -94,10 +95,11 @@ Pending historical comparison batch:
 /mnt/gfs/yanyifan/mmPRISM/incoming/20260812_csl_news_legacy_pose_pair_v1/legacy_evidence/
 ```
 
-该目录已建立但当前为空。作者报告 NAS 上保留约 `0-99` archive 的历史处理后 CSL-News pose，并将先
-上传两条原始 `.npy`。在收到原始 relative path、archive ID 和精确 video/ZIP-member identity 前，
-该批次状态为 `awaiting_upload`，不是 registered source，也不得进入任何 canonical manifest。验收任务为
-`DATA-005-D`，比较范围见 `../current/data_status.md`。
+该目录保留为规范化两样本 intake 目标。作者随后在 `/home/yanyifan/upload/20260812/archive_002.zip`
+提供了完整 archive-level historical pose export；原始上传位置保持不变，未复制至 intake target。该 ZIP 已按
+`annotation.legacy_pose_name` 关联并完成只读 full-archive 对照，细节见
+`csl_news_legacy_pose_comparison.md`。它是 forensic evidence，不是 registered source，也不得进入任何
+canonical manifest；`DATA-005-D` 仍需补齐 historical environment 与第二个 clean archive 交叉验证。
 
 Metadata at the pinned revision completed on `2026-08-11`: JSON SHA-256
 `3381d80157fa75012ec2a220eb8a63c88968af2d60d5dbcb5a82bf680db8a3a5`, CSV SHA-256
