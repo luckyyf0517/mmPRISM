@@ -99,13 +99,16 @@ may supplement, but never replace, typed fields.
 
 ## Semantic Ground Truth
 
+The primary signing language is Chinese Sign Language (CSL). Every content pack and semantic take declares CSL plus
+the frozen variety/register code; unspecified generic `sign_language` labels are not accepted for production data.
+
 The canonical semantic unit is an immutable `utterance_id` from the frozen content pack. An accepted take must not
 derive its target text only from the prompt shown to the participant: a qualified reviewer confirms that the
 performed utterance matches the intended meaning or records an allowed paraphrase/ambiguity.
 
 For each utterance, preserve:
 
-- target sign language and variant/register;
+- sign language `CSL` and its frozen variety/register;
 - canonical target-language translation;
 - allowed reference translations when justified;
 - lexical/content tags and length statistics;

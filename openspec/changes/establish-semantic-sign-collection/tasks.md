@@ -6,7 +6,8 @@
 
 ## 2. Language, Ethics And Recruitment Freeze
 
-- [ ] 2.1 Select and document the target sign language, regional/register boundary and primary continuous task.
+- [x] 2.1a Select and document Chinese Sign Language (CSL) as the primary signing language.
+- [ ] 2.1b Freeze the CSL regional/register boundary, written translation target and primary continuous task.
 - [ ] 2.2 Approve the content pack, translations, non-manual policy and signer-review rubric.
 - [ ] 2.3 Obtain required ethics/consent approval and freeze compensation, withdrawal, access and release scopes.
 - [ ] 2.4 Freeze participant eligibility, recruitment channels, session burden and replacement policy.

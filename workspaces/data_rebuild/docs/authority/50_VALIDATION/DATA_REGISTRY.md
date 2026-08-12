@@ -14,7 +14,7 @@ Last reviewed: 2026-08-12
 | `DATASET-COLLECTED-BASE` | collected_base | unknown | private | unknown | missing | missing | legacy non-semantic radar gesture/pose evidence only | blocked_legacy_inventory |
 | `DATASET-COLLECTED-DEMO` | collected_demo | unknown | private | unknown | missing | missing | legacy non-semantic development/demo only | blocked_legacy_inventory |
 | `DATASET-COLLECTED-CSL` | historical directory label only; contents are non-semantic gestures | unknown | private | unknown | missing | missing | legacy pose/forensic evidence; prohibited from semantic SLU totals or translation claims | blocked_legacy_inventory |
-| `DATASET-SEMANTIC-SIGN-V2` | new semantic continuous sign-language collection | not collected; owned by `sign_language_collection` | private/ethics pending | unknown | missing | readiness `G0` only; language/content/ethics/acquisition/pilot blocked | real semantic SLU, unseen-user and real-world generalization; approximately 30 usable participants planned | planning |
+| `DATASET-SEMANTIC-SIGN-V2` | new semantic continuous Chinese Sign Language (CSL) collection | not collected; owned by `sign_language_collection` | private/ethics pending | unknown | missing | readiness `G0` passed and `G1` in progress; CSL variety/content/ethics/acquisition/pilot pending | real semantic CSL translation, unseen-user and real-world generalization; approximately 30 usable participants planned | planning |
 | `DATASET-REAL-STRESS-REV1` | compact orientation/occlusion subset of `DATASET-SEMANTIC-SIGN-V2` | not collected | private/ethics pending | unknown | missing | condition matrix and pilot pending | reviewer real-world boundary tests; not an independent participant cohort | planning |
 
 ## Processed Delivery Profiles

@@ -46,6 +46,7 @@ Last reviewed: 2026-08-12
 | `DEC-038` | 2026-08-12 | final training delivery 采用 immutable task-specific Parquet：每 row 一个 sample、每 part <=1,024 rows、每 split-homogeneous chunk <=64 parts | 作者要求统一 final training format，但当前 OmniHand 和 WaveLLM 模态/单位契约不同；现有 CSL-News visual pose 尚无 calibrated radar input | accepted | sidecar/NPZ 继续作为 interim forensic layer；frozen manifest/split 是唯一 materializer input；Pose Reconstruction 与 SLU 分立 schema，typed Arrow nested lists/ZSTD/no opaque blobs；delivery 需 capacity/inventory/checksum/reader parity/adapter smoke 后才可 formal train。CSL-News annotation 留在同一 repo，live run 后再模块化，不拆 workspace |
 | `DEC-039` | 2026-08-12 | 项目 current truth 使用 project Authority 加五个轻量业务 workspace | 原控制面混合 current status、任务、运行证据和论文治理，日常同步成本过高；workspace 应表示业务流程而非 Python package | accepted | `docs/authority/00_INDEX.md` 管跨 workspace 真值；每个 workspace 只用一个 index 汇总当前状态；共享代码保留根目录；`paper/manager` 和 `docs/architecture` 旧文档改为兼容入口 |
 | `DEC-040` | 2026-08-12 | 新建 semantic sign-language collection workspace，目标约 30 名可用参与者 | 旧自采数据全部是无语义手势，不能支撑连续手语翻译、数据集透明度或新用户语义泛化；新采集需要独立的招募、语义审核、同步和 QC 责任 | accepted | 旧数据不计入新语义 cohort；约 30 人完成核心有语义连续手语采集；边界场景采用紧凑子集；采集输出冻结后交给 data rebuild，不在采集 workspace 建共享代码 |
+| `DEC-041` | 2026-08-12 | 新版真实语义数据的主要手语语种确定为中文手语（CSL） | 项目已有 CSL-News/CSL-Daily 语义资源，作者确认新采集也以 CSL 为主，避免继续把目标语种作为完全开放问题 | accepted | 招募、内容包、语义审核和数据统计均以 CSL 为主；不得把 CSL 等同于任意中文伴随手势或逐字手势编码；地域/流派、书面翻译目标和非手部语法范围仍须在试采前冻结 |
 
 ## 决策记录模板
 

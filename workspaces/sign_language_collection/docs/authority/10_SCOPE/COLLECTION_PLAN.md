@@ -11,6 +11,11 @@ Build a new real-world dataset that can support both radar hand reconstruction a
 sign-language translation. The collection must correct the central limitation of the historical self-collected
 data: those recordings are non-semantic gestures and cannot establish sentence-level sign-language understanding.
 
+The primary signing language is **Chinese Sign Language (CSL)**. Here CSL means an actual sign language used by
+eligible signers, not arbitrary gestures, signed spoken-Chinese word order, or a prompt-by-prompt hand-motion
+encoding. The exact regional/register scope and written translation target remain to be frozen with the
+sign-language lead.
+
 The production target is approximately 30 **usable** participants. The final paper reports the actual accepted
 count, not the recruitment target or number of attempted sessions. The historical 12-person cohort is reported
 separately and is never added to the new cohort count.
@@ -64,7 +69,7 @@ the reviewers:
 ### Eligibility to freeze before recruitment
 
 - Default to adults unless ethics approval explicitly covers another population.
-- Ability to perform the frozen target sign language/variant at the required level.
+- Ability to perform the frozen CSL variety/register at the required level.
 - Eligibility assessed by a named sign-language reviewer role using a recorded rubric, not by self-report alone.
 - Ability and consent to complete radar and reference recordings and the planned session duration.
 - Exclusion/withdrawal criteria and compensation treatment defined before the first contact.
@@ -86,9 +91,10 @@ The content pack must be versioned and frozen before the pilot. It contains:
 
 ```text
 content_pack_id and version
-target sign language and regional/register scope
+sign language: Chinese Sign Language (CSL)
+CSL regional/register scope
 utterance_id
-canonical target-language meaning
+canonical written translation/meaning and target language
 allowed paraphrases, if any
 prompt shown to the participant
 content category and lexical tags
@@ -103,8 +109,9 @@ pack should cover varied sentence lengths and everyday semantic categories witho
 coverage beyond its actual inventory. Items that require facial/body grammar must either be captured and annotated
 with an appropriate reference modality or explicitly marked outside the hand/radar-only task boundary.
 
-Exact language, vocabulary, sentence count, repetition count and length distribution remain open decisions. They
-are fixed only after a language expert review and a timed pilot establish correctness and participant burden.
+The primary language is fixed as CSL. Its precise variety/register, written translation target, vocabulary,
+sentence count, repetition count and length distribution remain open decisions. They are fixed only after a
+language expert review and a timed pilot establish correctness and participant burden.
 
 ## Efficient Two-Tier Acquisition
 
@@ -141,7 +148,7 @@ results must retain condition labels rather than being collapsed into one overal
 
 | Phase | Main work | Deliverable |
 |---|---|---|
-| 0. Freeze scientific scope | language/variant, task boundary, cohort target, core/stress principles | approved protocol version |
+| 0. Freeze scientific scope | CSL variety/register, written target, task boundary, cohort target, core/stress principles | approved protocol version |
 | 1. Ethics and recruitment | approval, consent, compensation, screening, identity separation | approved participant package |
 | 2. Content and hardware | reviewed content pack, radar/reference config, synchronization, calibration | immutable protocol bundle |
 | 3. Pilot | small eligible cohort, full operator rehearsal, timing and QC | dated pilot report and go/no-go decision |

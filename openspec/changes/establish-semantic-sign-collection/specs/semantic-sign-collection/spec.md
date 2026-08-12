@@ -27,9 +27,11 @@ SHALL NOT be counted as usable production participants.
 
 ### Requirement: Primary records contain verified semantic signing
 
-The primary dataset SHALL consist of meaningful continuous sign-language utterances bound to a frozen content-pack
-identity and canonical meaning. A qualified sign-language reviewer SHALL verify performed meaning or an allowed
-paraphrase; the prompt shown to the participant SHALL NOT by itself establish semantic ground truth.
+The primary dataset SHALL record Chinese Sign Language (CSL) and SHALL consist of meaningful continuous CSL
+utterances bound to a frozen CSL variety/register, content-pack identity and canonical meaning. A qualified
+sign-language reviewer SHALL verify performed meaning or an allowed paraphrase; the prompt shown to the participant
+SHALL NOT by itself establish semantic ground truth. Arbitrary non-semantic gestures or manually encoded
+spoken-Chinese word sequences SHALL NOT be accepted as CSL evidence.
 
 #### Scenario: Performed signing differs from the prompt
 

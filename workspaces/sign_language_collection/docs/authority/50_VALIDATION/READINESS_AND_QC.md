@@ -10,7 +10,7 @@ Last reviewed: 2026-08-12
 | Gate | Requirement | State | Blocking evidence |
 |---|---|---|---|
 | `G0` scope | legacy exclusion, approximately 30-participant target, core/stress boundary and ownership accepted | passed | `DEC-040` and workspace Authority |
-| `G1` language/content | target language/variant, task definition, reviewed content pack and non-manual policy frozen | blocked | approved content-pack version |
+| `G1` CSL/content | primary language selected as CSL; variety/register, written target, task definition, reviewed content pack and non-manual policy still required | in_progress | `DEC-041`; approved content-pack version pending |
 | `G2` ethics/recruitment | ethics/consent, compensation, access/release scope, signer eligibility and withdrawal policy accepted | blocked | approved documents and rubric |
 | `G3` acquisition | radar/reference modalities, config, placement, calibration, sync method/tolerance and storage plan frozen | blocked | bench report and protocol bundle |
 | `G4` operator dry run | complete no-participant/authorized dry run with immutable package and automated QC | blocked | dry-run validation report |
@@ -18,8 +18,8 @@ Last reviewed: 2026-08-12
 | `G6` production | approximately 30 usable core participants plus frozen stress coverage accepted | blocked | live manifest-derived coverage report |
 | `G7` handoff | immutable snapshot independently validates and data rebuild accepts it | blocked | snapshot hash and acceptance receipt |
 
-Only `G0` is currently passed. This table is the current readiness truth; task completion elsewhere cannot promote a
-gate without the named evidence.
+Only `G0` is currently passed; `G1` is partially advanced by selecting CSL but is not passed. This table is the
+current readiness truth; task completion elsewhere cannot promote a gate without the named evidence.
 
 ## Take States
 

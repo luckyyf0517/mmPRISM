@@ -14,8 +14,9 @@ Current cross-workspace blockers:
 
 - Private source inventory, calibration, and historical run provenance are not yet complete.
 - Full physical radar-cube reconstruction remains blocked on acquisition and calibration evidence.
-- The new semantic sign-language collection targets approximately 30 usable participants, but language,
-  corpus, ethics, recruitment, synchronization, and pilot gates are not yet frozen.
+- The new semantic sign-language collection targets approximately 30 usable participants and primarily uses
+  Chinese Sign Language (CSL), but the CSL variety/register, corpus, ethics, recruitment, synchronization, and
+  pilot gates are not yet frozen.
 - Original-submission evidence and paper-facing experiment provenance remain incomplete.
 
 ## Workspaces

@@ -8,6 +8,13 @@ frozen evidence.
 
 ## Decisions
 
+### Chinese Sign Language is the primary language
+
+The new semantic collection primarily records Chinese Sign Language (CSL). CSL selection is fixed, while its exact
+regional/register boundary, written translation target, content inventory and non-manual policy remain subject to
+expert review. The protocol does not treat arbitrary gestures or manually encoded spoken-Chinese word sequences as
+CSL evidence.
+
 ### Separate semantic collection ownership
 
 `sign_language_collection` owns new acquisition through immutable session and collection manifests. It hands off
@@ -51,7 +58,8 @@ calibration, synchronization evidence, QC state and checksums are published with
 - Reference video is identifiable; access/release scopes must be explicit even if radar is described as private.
 - Mid-collection protocol drift can create incomparable strata; every material change receives a new protocol ID.
 - An oversized condition matrix can exhaust participants and operators; stress coverage stays compact and frozen.
-- A sentence corpus can overstate linguistic scope; task/language/variant and non-manual boundaries are mandatory.
+- A sentence corpus can overstate linguistic scope; CSL variety/register, written target, task and non-manual
+  boundaries are mandatory.
 
 ## Handoff
 

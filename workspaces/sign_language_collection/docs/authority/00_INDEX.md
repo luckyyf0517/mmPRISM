@@ -21,6 +21,8 @@ models, or promote paper claims. Those responsibilities remain with `data_rebuil
   or forensic material, not semantic sign-language data.
 - The new planning target is approximately 30 usable participants, substantially beyond the previously reported
   cohort of 12. Attempts that fail eligibility or session QC do not count as usable participants.
+- The primary signing language is Chinese Sign Language (CSL). The precise CSL regional/register boundary,
+  written translation target and non-manual grammar policy still require expert review before the pilot.
 - The primary collection unit is a meaningful continuous sign-language utterance with a verified semantic
   target. Isolated or non-semantic gestures may be recorded for calibration but cannot constitute the primary
   translation dataset.
@@ -31,9 +33,10 @@ models, or promote paper claims. Those responsibilities remain with `data_rebuil
 
 ## Current State
 
-Planning is active; recruitment and collection have not started. The target language/variant, semantic content
-pack, signer eligibility rubric, ethics/consent scope, compensation, exact recording modalities, synchronization
-tolerance, session duration, stress-subset size and downstream release scope remain to be frozen.
+Planning is active; recruitment and collection have not started. CSL is selected as the primary signing language;
+its regional/register boundary, semantic content pack, written translation target, signer eligibility rubric,
+ethics/consent scope, compensation, exact recording modalities, synchronization tolerance, session duration,
+stress-subset size and downstream release scope remain to be frozen.
 
 No production collection may start until readiness gates `G0` through `G4` pass. A small pilot precedes production,
 and pilot data is excluded from the production dataset unless the protocol and hardware remain identical and an
@@ -43,7 +46,7 @@ explicit acceptance decision is recorded.
 
 | Phase | State | Exit condition |
 |---|---|---|
-| Protocol and ownership | in progress | scope, language, content, identity and handoff contracts frozen |
+| Protocol and ownership | in progress | CSL variety/register, task, content, identity and handoff contracts frozen |
 | Ethics and recruitment | blocked | approval/consent, compensation and signer eligibility accepted |
 | Hardware and synchronization | blocked | radar/reference/calibration protocol and tolerances pass bench test |
 | Pilot | blocked | complete small-cohort dry run passes semantic, signal, sync and operator review |

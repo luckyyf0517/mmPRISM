@@ -14,3 +14,5 @@ Last reviewed: 2026-08-12
 - Defined a core continuous-semantic protocol for all accepted participants and a compact orientation/occlusion
   stress subset to control recruitment and recording burden.
 - Added draft acquisition, identity and operator contracts plus current readiness/QC gates.
+- Fixed Chinese Sign Language (CSL) as the primary signing language; retained the CSL variety/register, written
+  translation target, content pack and non-manual grammar policy as pre-pilot decisions.
