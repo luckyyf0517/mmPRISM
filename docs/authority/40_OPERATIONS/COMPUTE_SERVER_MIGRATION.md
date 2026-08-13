@@ -8,8 +8,9 @@ Last reviewed: 2026-08-13
 ## Purpose
 
 The shared Slurm node is saturated and no longer provides predictable turnaround for the revision-critical
-CSL-Daily reconstruction and training loop. This runbook prepares a replacement compute server. It is a runtime
-relocation only: no data product, checkpoint, experiment result, or paper claim is promoted by moving machines.
+CSL-Daily reconstruction and training loop. This runbook prepares a replacement compute server that does **not**
+use Slurm. It is a runtime relocation only: no data product, checkpoint, experiment result, or paper claim is
+promoted by moving machines.
 
 Current local execution is intentionally stopped. The two pending CSL-Daily batch-64 benchmark jobs (`116`, `117`)
 were cancelled before they started. The `annotation_v2` scheduler was initialized at
@@ -46,9 +47,9 @@ deliberately accepted GFS output root; they must never be written under `externa
 | Platform | Linux x86_64, Python 3.12, `uv >=0.11,<0.12`, sufficient local SSD for environment, model cache and active shards. |
 | GPU | At least one CUDA-capable GPU for smoke; four 24/32 GB GPUs are appropriate for distributed training. A Blackwell 5090/RTX PRO 6000D requires a driver and PyTorch build that recognize its CUDA capability. |
 | CUDA stack | Use the committed PyTorch CUDA 12.8 lockfile (`torch 2.11.0+cu128` on this host). Do not copy old virtual environments, PyTorch wheels, DeepSpeed builds, FlashAttention, xFormers, MMCV, or MMPose extension binaries. |
-| Distributed path | For four GPUs, install the `distributed` profile and validate NCCL locally. Network connectivity is adequate for DDP/ZeRO-2; NVLink is optional for the current mT5-base control. |
+| Distributed path | For four GPUs, install the `distributed` profile and validate NCCL locally. Launch `torchrun` or DeepSpeed directly from a persistent shell/session; network connectivity is adequate for DDP/ZeRO-2 and NVLink is optional for the current mT5-base control. |
 | Storage | Keep active caches, temporary Parquet parts, checkpoints and logs on local SSD where possible. Copy only frozen manifests, selected data shards and required model assets; sync formal artifacts back atomically. |
-| Access | The target may read GFS/NAS data but must not require project tokens in the repository. Machine-specific credentials remain in an untracked target-local `.env`. |
+| Access | The target may read GFS/NAS data but must not require project tokens in the repository. The project-local untracked `.env` has `MMPRISM_COMPUTE_SSH_{HOST,PORT,USER,PASSWORD}` for transfer setup; do not echo it, commit it, or copy it into logs. |
 
 `4 x 4090/5090` is expected to be the most efficient first training target. The historical WaveLLM script used
 two ranks with ZeRO-2; four ranks reduce its old global batch of 64 to a micro-batch of 16 per GPU. A single
@@ -78,7 +79,7 @@ two ranks with ZeRO-2; four ranks reduce its old global batch of 64 to a micro-b
    Git commit and resolved environment in the first smoke run. Do not treat `nvidia-smi` output as sufficient proof
    that the Python stack supports the GPU.
 6. Complete the acceptance gates below. Only after all required gates pass may the coordinator explicitly resume
-   `annotation_v2` or submit a training job.
+   `annotation_v2` or start a direct training process.
 
 ## Target Acceptance Gates
 
@@ -103,8 +104,9 @@ Then perform three isolated GPU gates in order:
 1. **Core models:** run `scripts/run_omnihand_smoke.sh` and `scripts/run_mt5_smoke.sh` with target-local artifact
    roots and the pinned mT5 asset. These are engineering checks only.
 2. **Distributed runtime:** on a four-GPU target, execute the existing multi-GPU NCCL integration smoke before
-   using DeepSpeed for a formal run. For WaveLLM, begin with BF16 and ZeRO-2; do not jump to ZeRO-3 unless a measured
-   micro-batch OOM requires it.
+   using DeepSpeed for a formal run. Launch it directly, for example with `CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun`
+   or the equivalent DeepSpeed launcher, from `tmux`/`screen` or an operator-managed service. For WaveLLM, begin
+   with BF16 and ZeRO-2; do not jump to ZeRO-3 unless a measured micro-batch OOM requires it.
 3. **Annotation runtime:** with a read-only CSL-Daily input subset and a separate disposable output root, run one
    RTMW3D sequence through the v2 transform and visually inspect native/canonical output. Do not resume the canonical
    scheduler merely to test the target environment.
@@ -117,8 +119,9 @@ to preserve an obsolete wheel.
 
 1. Review the target handoff record and explicitly select the target artifact root.
 2. Run the one-sequence `annotation_v2` quality smoke and review its overlay/sidecar.
-3. Resume the existing `annotation_v2` scheduler, submit only the approved number of elastic Slurm-equivalent
-   workers, and preserve the pause/finalize rules in the
+3. Resume the existing `annotation_v2` scheduler, then start only the approved number of direct workers with
+   disjoint `CUDA_VISIBLE_DEVICES` assignments. The scheduler is an application-level lease queue, not Slurm; it
+   preserves the pause/finalize rules in the
    [CSL-Daily reproduction operation](../../../workspaces/data_rebuild/docs/authority/40_OPERATIONS/CSL_DAILY_REPRODUCTION.md).
 4. After a frozen full-corpus annotation and synthetic-FMCW delivery, run OmniHand before the two pose-only WaveLLM
    controls. The feature/fusion comparison remains later work.
@@ -137,7 +140,7 @@ environment profile and lockfile hash
 source mount or copied-subset manifest/checksum identity
 artifact root and free-capacity report
 each acceptance gate command, result, and artifact location
-explicit scheduler state and submitted-job IDs (if any)
+explicit scheduler state and direct-process PID/session/log location (if any)
 known blocker and next authorized action
 ```
 

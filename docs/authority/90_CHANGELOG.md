@@ -44,7 +44,8 @@ Last reviewed: 2026-08-12
 - Paused local CSL-Daily execution for compute-server migration: the `annotation_v2` queue remains initialized but
   paused, and the two pending batch benchmark jobs were cancelled before starting. Added a target-server acceptance
   and handoff runbook that keeps GFS data and historical checkpoints immutable while requiring a fresh CUDA 12.8
-  environment, core-model, distributed, and RTMW3D runtime gates before work resumes.
+  environment, core-model, distributed, and RTMW3D runtime gates before work resumes. The target execution model is
+  direct-process based and does not require Slurm.
 - Recorded that the historical WaveLLM bundle is now staged under `log/archived/` but remains preservation-only;
   receipt, format/world-size, metadata/tensor, and controlled-load audit are separate pending work.
 
