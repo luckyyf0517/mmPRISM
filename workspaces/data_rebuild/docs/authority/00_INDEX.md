@@ -30,9 +30,10 @@ workspace begins only after receiving its immutable raw-session manifest and val
   QC -> separately labelled skeleton-simulation delivery -> OmniHand/WaveLLM controls; it is documented in the
   [CSL-Daily reproduction operation](40_OPERATIONS/CSL_DAILY_REPRODUCTION.md).
 - CE-CNSL is registered as a P1 follow-on source for vocabulary and heterogeneous-domain expansion, with an
-  independent manifest, split, label namespace, artifact root, and result identity. Execution is paused: do not
-  download the source, implement an adapter, run the 120--240-sequence pilot, or allocate GPU capacity until the
-  CSL-Daily end-to-end stable loop is accepted and the coordinator explicitly reactivates this work. See the
+  independent manifest, split, label namespace, artifact root, and result identity. Execution is paused. During the
+  late stable phase of CSL-Daily, explicit project-owner authorization may unlock source download and immutable
+  receipt only. Adapter, label repair, the 120--240-sequence pilot, processing, and GPU work remain inactive until the
+  CSL-Daily end-to-end stable loop is accepted and this work is explicitly reactivated. See the
   [CE-CNSL intake and pose pilot](40_OPERATIONS/CE_CNSL_INTAKE_AND_POSE_PILOT.md).
 - A historical WaveLLM bundle is uploading under the project mirror `log/archived/`. It is preservation-only until
   stable inventory, checksum, format, and controlled-load receipt completes. The recovered CSL-News-derived mT5-only
@@ -46,7 +47,8 @@ CSL-Daily metadata/source, freeze `annotation_v1` and QC before any candidate im
 control split (the legacy validation/test files are identical), and build immutable synthetic task products. Real
 radar calibration/metadata and the subject-aware real-data split remain separate blockers.
 
-CE-CNSL has no active next action. Revisit its saved OpenSpec only after the CSL-Daily stable-loop activation gate.
+CE-CNSL has no active next action. In CSL-Daily's late stable phase, await explicit project-owner authorization before
+any optional source download; otherwise revisit its saved OpenSpec only after the stable-loop activation gate.
 
 Full CSL-News source reconstruction and training may be useful for future provenance or ceiling work, but it does not
 block the CSL-Daily revision path. It requires an explicit future decision and cannot restore the missing historical

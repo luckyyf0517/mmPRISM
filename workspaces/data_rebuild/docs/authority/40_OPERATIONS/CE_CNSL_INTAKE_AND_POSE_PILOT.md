@@ -7,20 +7,24 @@ Last reviewed: 2026-08-13
 
 ## Purpose And Priority
 
-CE-CNSL is a P1 follow-on public source. Under `DEC-054`, this operation is paused while CSL-Daily remains the P0
-stable baseline. The page preserves the already reviewed procedure; it is not an instruction to start intake now.
+CE-CNSL is a P1 follow-on public source. Under `DEC-054` and `DEC-056`, implementation remains paused while
+CSL-Daily is P0, with only an explicitly authorized late-phase archive transfer allowed before full activation. The
+page preserves the reviewed procedure; it is not an instruction to start intake now.
 
-## Activation Gate
+## Authorization And Activation Gates
 
-Do not download the source, implement an adapter, select/run the pilot, or allocate GPU capacity until both conditions
-are recorded:
+There are two distinct gates:
 
-1. CSL-Daily has an accepted `annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only WaveLLM` stable loop with
-   frozen run/evaluation evidence.
-2. The coordinator explicitly reactivates `add-ce-cnsl-parallel-source` after reviewing what the CSL-Daily
-   implementation established about shared and dataset-specific interfaces.
+1. **Optional download authorization:** during CSL-Daily's late stable phase, the project owner may explicitly
+   authorize CE-CNSL source download, checksum, and immutable receipt. Without that authorization, do not download.
+   This authorization does not permit label repair, adapter work, pilot selection/execution, processing, or GPU use.
+2. **Full activation:** implementation and compute work remain paused until both conditions are recorded:
+   - CSL-Daily has an accepted `annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only WaveLLM` stable loop with
+     frozen run/evaluation evidence;
+   - the CE-CNSL OpenSpec is explicitly reactivated after reviewing what CSL-Daily established about shared and
+     dataset-specific interfaces.
 
-There is no automatic activation based only on elapsed time or free compute.
+Neither elapsed time nor free compute automatically satisfies either gate.
 
 This workspace owns CE-CNSL intake and processed delivery. No separate CE-CNSL workspace is created. Shared code
 belongs under `src/mmprism/`; dataset-specific filename, label, and source-layout behavior belongs in a thin adapter.
@@ -34,13 +38,20 @@ belongs under `src/mmprism/`; dataset-specific filename, label, and source-layou
 - Do not call CE-CNSL `CSL-Daily-v2`, silently concatenate datasets, or publish one mixed aggregate score.
 - Visual background diversity is not evidence of radar multipath diversity after skeleton-only simulation.
 
-## Gate 1: Immutable Source Receipt
+## Gate 1A: Authorized Archive Transfer
 
-After activation, download the complete archive into a versioned `incoming/` or `external/` destination configured
-through the data root. Before extraction or processing, record:
+After optional download authorization or full activation, download the complete archive into a versioned `incoming/`
+or `external/` destination configured through the data root. Record source URL, retrieval time, repository revision,
+archive byte count, and SHA-256, then publish a no-clobber immutable archive receipt.
 
-- source URL, retrieval time, archive byte count, SHA-256, and complete extracted inventory;
-- repository commit and exact train/dev/test CSV checksums;
+Under download-only authorization, stop here. Do not extract videos, scan codecs, repair labels, implement adapters,
+select a pilot, or allocate GPU capacity.
+
+## Gate 1B: Activated Source Intake Audit
+
+After full activation, extract into a versioned destination and record:
+
+- complete extracted inventory and exact train/dev/test CSV checksums;
 - codec, FPS, resolution, duration, and decodable frame count for every video;
 - one-to-one sample-number coverage between videos and CSV rows;
 - explicit upstream license/permission status for processing and derivative redistribution.

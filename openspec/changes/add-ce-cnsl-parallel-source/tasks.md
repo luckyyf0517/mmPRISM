@@ -1,16 +1,21 @@
 ## 0. Activation Gate
 
+- [ ] 0.0 Optionally record project-owner authorization for source download and immutable receipt during CSL-Daily's
+  late stable phase; keep all implementation and compute tasks inactive.
 - [ ] 0.1 Confirm an accepted CSL-Daily `annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only WaveLLM` stable
   loop with frozen run/evaluation evidence.
-- [ ] 0.2 Record explicit coordinator reactivation after reviewing CSL-Daily's shared and dataset-specific interfaces.
-- [ ] 0.3 Keep all remaining tasks inactive until both activation conditions pass.
+- [ ] 0.2 Record explicit reactivation after reviewing CSL-Daily's shared and dataset-specific interfaces.
+- [ ] 0.3 Until 0.1 and 0.2 pass, permit only an explicitly authorized 0.0 download/receipt and keep tasks 1.2 onward
+  plus all implementation and compute tasks inactive.
 
 ## 1. Source And Metadata
 
-- [ ] 1.1 Freeze repository revision, full archive SHA-256/size, extracted inventory, and license status.
-- [ ] 1.2 Validate exact video/CSV sample-number coverage and record codec/FPS/resolution/frame-count metadata.
-- [ ] 1.3 Build and manually audit the signer repair table, especially H--L boundary samples.
-- [ ] 1.4 Preserve spoken Chinese, raw Gloss, versioned normalized Gloss, and regional notes without destructive edits.
+- [ ] 1.1 After optional authorization or full activation, freeze source URL/retrieval time, repository revision, full
+  archive byte size and SHA-256 in immutable storage; do not extract or decode under download-only authorization.
+- [ ] 1.2 After full activation, extract into a versioned destination and freeze the inventory and license status.
+- [ ] 1.3 Validate exact video/CSV sample-number coverage and record codec/FPS/resolution/frame-count metadata.
+- [ ] 1.4 Build and manually audit the signer repair table, especially H--L boundary samples.
+- [ ] 1.5 Preserve spoken Chinese, raw Gloss, versioned normalized Gloss, and regional notes without destructive edits.
 
 ## 2. Shared Processing Boundary
 

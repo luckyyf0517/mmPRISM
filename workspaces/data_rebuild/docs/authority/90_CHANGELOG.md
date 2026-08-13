@@ -41,3 +41,5 @@ Last reviewed: 2026-08-13
 - Applied `DEC-054`: CE-CNSL is now a paused follow-on source rather than an active parallel intake. Its assessment,
   identities, runbook, and OpenSpec remain; source download, adapter work, pilot, and GPU execution wait for an
   accepted CSL-Daily end-to-end stable loop and explicit coordinator reactivation.
+- Applied `DEC-056`: explicit project-owner authorization during CSL-Daily's late stable phase may unlock CE-CNSL
+  download and immutable receipt only. It does not activate label repair, adapter, pilot, processing, or GPU work.

@@ -38,11 +38,13 @@ is a synthetic-control/historical-replay lane and cannot replace the new real-ra
 change is specified by OpenSpec `add-csl-daily-reproduction-controls` and its executing workspace operations are
 linked from the Data Rebuild, OmniHand Training, WaveLLM Training, and Paper Revision indexes.
 
-CE-CNSL remains registered as a P1 follow-on public source, but execution is paused under `DEC-054`. No source
-download, adapter implementation, pose pilot, or GPU work starts until the CSL-Daily line has produced an accepted
-`annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only WaveLLM` stable loop and the coordinator explicitly
-reactivates this change. The completed literature/label audit and independent dataset/split identity remain available
-for that later review; CE-CNSL never blocks CSL-Daily or the new real-radar collection.
+CE-CNSL remains registered as a P1 follow-on public source, but execution is paused under `DEC-054` and `DEC-056`.
+During the late stable phase of the CSL-Daily line, the project owner may explicitly authorize source download and
+immutable receipt only. That authorization does not activate adapter implementation, label repair, pose pilot,
+full-corpus processing, or GPU work. Those tasks still wait for an accepted
+`annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only WaveLLM` stable loop and explicit reactivation. The
+completed literature/label audit and independent dataset/split identity remain available for that later review;
+CE-CNSL never blocks CSL-Daily or the new real-radar collection.
 
 Full CSL-News reconstruction and retraining do not block the CSL-Daily revision path. The incoming historical bundle
 does not become a hidden precondition and cannot support historical reproduction claims until its audit passes. See

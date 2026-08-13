@@ -47,3 +47,6 @@ Last reviewed: 2026-08-12
 - Accepted `DEC-054`, superseding the execution schedule in `DEC-052`: preserve the CE-CNSL assessment and planned
   contracts, but pause all intake, adapter, pilot, and GPU work until the CSL-Daily end-to-end reproduction loop is
   accepted and the coordinator explicitly reactivates CE-CNSL.
+- Accepted `DEC-056`: during CSL-Daily's late stable phase, explicit project-owner authorization may unlock CE-CNSL
+  source download and immutable receipt only; all adapter, pilot, processing, and GPU work remains behind the stable
+  loop and explicit-reactivation gate.

@@ -12,7 +12,9 @@ on a parallel, gated lane that reuses source-independent processing contracts.
 ## What Changes
 
 - Register `DATASET-CE-CNSL` as a paused P1 follow-on source while CSL-Daily remains P0.
-- Require an accepted CSL-Daily end-to-end stable loop and explicit coordinator reactivation before any task starts.
+- Permit source download and immutable receipt during CSL-Daily's late stable phase only after explicit project-owner
+  authorization.
+- Require an accepted CSL-Daily end-to-end stable loop and explicit reactivation before implementation or pilot work.
 - Add immutable source receipt, video/CSV correspondence, signer-repair, and reversible label contracts.
 - Add a 120--240-sequence pose pilot using the CSL-Daily `annotation_v2` output and QC semantics.
 - Separate dataset adapters from reusable annotation scheduling, pose payload/QC, simulation, and delivery code.
@@ -22,7 +24,8 @@ on a parallel, gated lane that reuses source-independent processing contracts.
 ## Non-Goals
 
 - Replacing or delaying the CSL-Daily P0 reproduction path.
-- Downloading, adapting, piloting, or scheduling CE-CNSL before its activation gate.
+- Downloading CE-CNSL without explicit project-owner authorization.
+- Treating an authorized download as permission to adapt, pilot, process, or schedule CE-CNSL.
 - Replacing new participant-disjoint real-radar CSL collection.
 - Renaming CE-CNSL as CSL-Daily v2 or publishing a mixed aggregate score.
 - Reproducing TFNet or accepting its advertised 32.46% checkpoint as an mmPRISM result.

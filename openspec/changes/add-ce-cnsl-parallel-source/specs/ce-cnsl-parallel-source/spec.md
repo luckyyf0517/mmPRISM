@@ -3,24 +3,41 @@
 ### Requirement: CE-CNSL is an independent paused follow-on source
 
 The system SHALL identify CE-CNSL as `DATASET-CE-CNSL` and SHALL keep its source manifest, artifact root, split,
-label transform, and metrics separate from CSL-Daily. Before activation, the system SHALL NOT download the source,
-implement an adapter, run a pose pilot, or allocate CE-CNSL GPU work.
+label transform, and metrics separate from CSL-Daily. Before full activation, the system SHALL NOT implement an
+adapter, repair labels, run a pose pilot, process the corpus, or allocate CE-CNSL GPU work.
 
 #### Scenario: Attempt CE-CNSL work before activation
 
-- **WHEN** the CSL-Daily stable loop or explicit coordinator reactivation is absent
-- **THEN** CE-CNSL intake, adapter, pilot, and GPU execution remain inactive
+- **WHEN** the CSL-Daily stable loop or explicit reactivation is absent
+- **THEN** CE-CNSL adapter, label-repair, pilot, processing, and GPU execution remain inactive
 - **AND** the saved assessment and OpenSpec stay available for later review.
+
+### Requirement: Early source download requires explicit owner authorization
+
+During CSL-Daily's late stable phase, CE-CNSL source download, checksum, and immutable receipt MAY begin only after
+the project owner explicitly authorizes them. This authorization SHALL NOT activate any downstream task.
+
+#### Scenario: Authorize source transfer before full activation
+
+- **WHEN** CSL-Daily is in its late stable phase
+- **AND** the project owner explicitly authorizes CE-CNSL source download
+- **THEN** the complete source may be downloaded and published into immutable receipt storage
+- **AND** adapter, label-repair, pilot, processing, and GPU tasks remain inactive.
+
+#### Scenario: No source-transfer authorization exists
+
+- **WHEN** full activation has not occurred and no explicit download authorization is recorded
+- **THEN** CE-CNSL source download does not start.
 
 ### Requirement: CE-CNSL activation follows CSL-Daily evidence
 
 CE-CNSL execution SHALL require an accepted CSL-Daily `annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only
-WaveLLM` stable loop with frozen run/evaluation evidence and explicit coordinator reactivation.
+WaveLLM` stable loop with frozen run/evaluation evidence and explicit reactivation.
 
 #### Scenario: Reactivate CE-CNSL planning
 
 - **WHEN** the CSL-Daily stable-loop evidence is accepted
-- **AND** the coordinator explicitly reactivates this change
+- **AND** this change is explicitly reactivated
 - **THEN** source intake may begin at Gate 1
 - **AND** implementation reuses only interfaces demonstrated by the accepted CSL-Daily path.
 
