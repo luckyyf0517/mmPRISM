@@ -10,3 +10,4 @@ explicit decision or promotion into [project Authority](../authority/00_INDEX.md
 ## Notes
 
 - [Uni-Sign: Toward Unified Sign Language Understanding at Scale](notes/UNI_SIGN_2025.md)
+- [CE-CNSL / CE-CSL: A Chinese Continuous Sign Language Dataset Based on Complex Environments](notes/CE_CNSL_2025.md)
