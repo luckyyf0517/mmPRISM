@@ -3,7 +3,7 @@
 Status: current
 Owner: mmPRISM coordinator
 Authority scope: Cross-workspace mmPRISM rules, contracts, architecture, operations, or decisions defined by this page.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 | ID | Date | Decision | Rationale | Status | Consequence |
 |---|---|---|---|---|---|
@@ -53,6 +53,7 @@ Last reviewed: 2026-08-12
 | `DEC-045` | 2026-08-12 | 以恢复的 CSL-News-derived mT5-only export 作为 CSL-Daily 的受控语言初始化，不再把完整历史 WaveLLM 作为返修前置 | 本地 mT5 导出可加载，且权重不同于官方 mT5-base；其张量仅覆盖 mT5，不含历史 pose encoder、radar/fusion state 或可审计端到端预测。当前 canonical geometry adapter 结构也与历史 `HandPoseEncoder` 不同 | superseded by `DEC-046` | mT5 export 保留为 load-smoke-verified fallback；其是否作为最终 controlled initialization 待 incoming historical bundle receipt/audit 后决定 |
 | `DEC-046` | 2026-08-12 | 上传中的历史 WaveLLM log bundle 先按 preservation-only intake 管理，完成 receipt/audit 前不改变训练或论文证据状态 | 作者在 project mirror `log/archived/` 发现并上传历史 checkpoint 目录；传输尚未完成，部分 DeepSpeed rank-local state 正在增长。历史原件珍贵，partial bytes、run directory 名称和旧 evaluation 文件都不足以证明完整性、原投稿链接或指标可信度 | accepted | 禁止写入、移动、删除、转换或加载 inbound `log/`；作者确认完成后以稳定 inventory、SHA-256、format/world-size、metadata/tensor audit 和 controlled load 接收。mT5-only export 暂为 fallback；只有 receipt 后再决定是否作为 formal initialization 或 historical forensic evidence |
 | `DEC-047` | 2026-08-12 | 原投稿取证代码整体迁入显式 `legacy/` 目录，只移动不删除 | legacy 参考代码散落在根目录 `run_*.py`、`config/`、`src/{data,fmcw,model,eval,scripts,utils}` 与 `scripts/{omnihand,wavellm}`，边界不可见，且 `packages.find where=["src"]` 会把 legacy 模块打成顶层包进入发行版 | accepted | 取证内容逐字节保留于 `legacy/`（含 `legacy/README.md` 边界说明）；`src/` 仅剩 `mmprism` 包；release 审计 forbidden 规则指向 `legacy/**`；唯一 legacy 消费者 `scripts/simulation/freeze_legacy_equivalence_fixture.py` 改从 `legacy/` 解析；inbound `log/`（DEC-046）不在搬迁范围 |
+| `DEC-052` | 2026-08-13 | 将 CE-CNSL 作为 CSL-Daily 重建期间并行推进的 P1 公共数据源，复用通用处理能力但保持独立数据身份 | CE-CNSL 的 5,988 条视频和约 3,515 词主要补充 CSL-Daily 的语义长尾与异构采集域；本地标签审计显示规范化联合词表约 4,179，较 CSL-Daily 新增约 2,179 类型。当前既要从头重建 CSL-Daily，接收、manifest、姿态契约和仿真接口的通用化可同时服务第二来源，而不应等待 P0 全部结束后重复开发 | accepted | CSL-Daily 继续是 P0 稳定基线；CE-CNSL 在同一 `data_rebuild` workspace 内并行完成 source/license receipt、视频/CSV/signer 修复审计和 120--240 条 `annotation_v2` 契约 pilot。pilot 通过后才做全量 pose/仿真及 `CSL-Daily -> CE-CNSL` 适配；任一 CE-CNSL blocker 不得阻塞 P0 或真实雷达采集。两个数据源的 manifest、split、raw/normalized Gloss、指标和 paper role 必须分别登记，不得隐式拼接或汇总单一分数 |
 
 ## 决策记录模板
 

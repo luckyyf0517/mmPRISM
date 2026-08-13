@@ -38,3 +38,9 @@ Last reviewed: 2026-08-12
   `pose_only` or `pose_plus_radar_feature`, with a parameter-free pose-only path and checkpoint mode enforcement.
   Final Parquet pose-only delivery now omits radar features at the schema/row/reader level; CubeNet
   prediction/feature provenance remains the explicit follow-up contract.
+
+## 2026-08-13
+
+- Accepted `DEC-052`: CE-CNSL becomes a P1 parallel public source for vocabulary and heterogeneous-domain
+  expansion while CSL-Daily remains the P0 baseline. Intake, signer/label audit, and a bounded pose pilot proceed
+  in parallel; full processing is gated and cannot block CSL-Daily or new real-radar collection.

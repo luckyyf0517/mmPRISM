@@ -3,7 +3,7 @@
 Status: current
 Owner: Data rebuild lane
 Authority scope: Material changes to data intake, radar rebuild, split, and delivery boundaries.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## 2026-08-12
 
@@ -32,3 +32,9 @@ Last reviewed: 2026-08-12
 - Added a no-clobber, read-only source-receipt command for the direct CSL-Daily preservation upload. It compares
   time-separated inventories, hashes every source file, receipts legacy split identities, and publishes only under
   `interim/`; it remains deliberately blocked while the active rsync transfer changes the source tree.
+
+## 2026-08-13
+
+- Registered CE-CNSL as a P1 parallel intake under `DEC-052`, without creating another workspace. Added its
+  independent dataset/split identities and a bounded source, label/signer, and pose-pilot runbook. Full-corpus
+  annotation and simulation remain conditional and never block CSL-Daily P0.

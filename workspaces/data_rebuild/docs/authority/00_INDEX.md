@@ -3,7 +3,7 @@
 Status: current
 Owner: Data rebuild lane
 Authority scope: Current source intake, radar rebuild, split, quarantine, and data delivery workflow.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## Boundary
 
@@ -29,6 +29,12 @@ workspace begins only after receiving its immutable raw-session manifest and val
   validation, despite its direct `external/` location. The next gated path is receipt -> baseline camera-pose
   QC -> separately labelled skeleton-simulation delivery -> OmniHand/WaveLLM controls; it is documented in the
   [CSL-Daily reproduction operation](40_OPERATIONS/CSL_DAILY_REPRODUCTION.md).
+- CE-CNSL is registered as a P1 parallel public source for vocabulary and heterogeneous-domain expansion. Its
+  immediate work is source/license receipt, exact video/CSV/signer audit, reversible label normalization, and a
+  120--240-sequence pose pilot. It reuses the CSL-Daily `annotation_v2` output/QC contract through a dataset adapter,
+  but keeps an independent manifest, split, label namespace, artifact root, and result identity. Full processing is
+  conditional on the pilot and cannot block the CSL-Daily P0 path. See the
+  [CE-CNSL intake and pose pilot](40_OPERATIONS/CE_CNSL_INTAKE_AND_POSE_PILOT.md).
 - A historical WaveLLM bundle is uploading under the project mirror `log/archived/`. It is preservation-only until
   stable inventory, checksum, format, and controlled-load receipt completes. The recovered CSL-News-derived mT5-only
   export remains a fallback, not historical end-to-end evidence.
@@ -40,6 +46,9 @@ Next actions: preserve the incoming historical bundle and await upload completio
 CSL-Daily metadata/source, freeze `annotation_v1` and QC before any candidate improvement, create a distinct
 control split (the legacy validation/test files are identical), and build immutable synthetic task products. Real
 radar calibration/metadata and the subject-aware real-data split remain separate blockers.
+
+In parallel, download CE-CNSL into versioned intake, freeze source and license status, repair/audit signer metadata,
+and execute its bounded pose pilot. Do not schedule the full CE-CNSL corpus until that pilot is accepted.
 
 Full CSL-News source reconstruction and training may be useful for future provenance or ceiling work, but it does not
 block the CSL-Daily revision path. It requires an explicit future decision and cannot restore the missing historical
@@ -74,5 +83,6 @@ Canonical evidence: [source manifest log](../../../csl_news_annotation/docs/logs
 - [Data rebuild runbook](40_OPERATIONS/DATA_REBUILD.md)
 - [CSL-Daily reproduction operation](40_OPERATIONS/CSL_DAILY_REPRODUCTION.md)
 - [Data registry](50_VALIDATION/DATA_REGISTRY.md)
+- [CE-CNSL intake and pose pilot](40_OPERATIONS/CE_CNSL_INTAKE_AND_POSE_PILOT.md)
 - [Changelog](90_CHANGELOG.md)
 - [Logs](../logs/README.md)

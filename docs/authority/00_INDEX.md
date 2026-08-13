@@ -3,7 +3,7 @@
 Status: current
 Owner: mmPRISM coordinator
 Authority scope: Cross-workspace project state, boundaries, shared contracts, and reading order.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## Project State
 
@@ -37,6 +37,13 @@ predicted-mmWave-pose translation, and the same predicted pose plus checkpoint-b
 is a synthetic-control/historical-replay lane and cannot replace the new real-radar reviewer evidence. Its interface
 change is specified by OpenSpec `add-csl-daily-reproduction-controls` and its executing workspace operations are
 linked from the Data Rebuild, OmniHand Training, WaveLLM Training, and Paper Revision indexes.
+
+CE-CNSL is a P1 parallel public source while CSL-Daily remains the P0 stable baseline (`DEC-052`). Its intake,
+label/signer audit, and 120--240-sequence pose pilot may proceed during the CSL-Daily rebuild by reusing the same
+source-independent annotation and simulation contracts. Full-corpus promotion is gated on source/license receipt,
+signer repair, and pilot quality; it never blocks CSL-Daily or the new real-radar collection. CE-CNSL retains a
+separate dataset identity, split, vocabulary policy, and result table because its primary value is CSL-Daily
+vocabulary/domain expansion rather than an interchangeable same-distribution sample increase.
 
 Full CSL-News reconstruction and retraining do not block the CSL-Daily revision path. The incoming historical bundle
 does not become a hidden precondition and cannot support historical reproduction claims until its audit passes. See
