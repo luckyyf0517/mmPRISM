@@ -21,12 +21,13 @@ Use two explicit participant types:
 
 1. `professional_or_proficient_signer`: aim for 3--4 people who know CSL, if they can be found. They can check the
    reference set, demonstrate difficult items and contribute a small high-quality reference subset.
-2. `video_guided_volunteer`: the main source of scale. Volunteers watch a fixed CSL video, learn/rehearse it, and
-   reproduce it during synchronized radar and reference-video capture.
+2. `video_guided_volunteer`: the main source of scale. Volunteers complete a systematic training protocol on
+   the frozen CSL reference material and perform it during synchronized radar and reference-video capture.
 
-Professional/proficient signer availability is desirable but is not a gate for starting the pilot. Do not label a
-video-guided volunteer as a fluent signer. This dataset can test cross-participant reproduction and sensor/model
-robustness; by itself it cannot establish natural CSL use by the Deaf/signing community.
+Professional/proficient signer availability is desirable but is not a gate for starting the pilot. The two
+participant types are recorded and reported accurately; paper-facing claim wording follows the disclosed
+training protocol and is finalized during manuscript writing (see `DEC-055`). Semantic coverage per
+participant is an open planning parameter, not capped by this plan.
 
 ## Minimal Reference Set
 
@@ -110,14 +111,13 @@ actually analyze them and collection is approved.
 The manuscript must report separately:
 
 - number of professional/proficient CSL contributors actually recorded;
-- number of video-guided volunteers;
+- number of trained video-guided volunteers;
 - source and size of the fixed CSL reference set;
-- that volunteers learned/reproduced prompted videos rather than producing spontaneous natural CSL;
+- the volunteer training protocol, disclosed as part of the methods;
 - participant-disjoint evaluation and which participants appeared in the stress subset.
 
-This design provides new real semantic-aligned radar data and more performer diversity than the old non-semantic
-cohort. It does not justify claiming population-level generalization to fluent sign-language users unless enough
-professional/proficient signer evidence is actually collected.
+Claim wording is finalized during manuscript writing on the basis of these disclosed facts (see `DEC-055`);
+this plan does not pre-cap the paper's framing.
 
 ## Completion
 

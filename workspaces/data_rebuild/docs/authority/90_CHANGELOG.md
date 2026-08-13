@@ -35,6 +35,32 @@ Last reviewed: 2026-08-13
 
 ## 2026-08-13
 
+- Paused CSL-Daily execution for compute-server migration. The initialized `annotation_v2` queue remains paused and
+  no v2 sample or manifest has been published. The shared migration runbook requires an isolated target smoke before
+  any worker resume; cancelled batch benchmarks remain reusable scripts only.
+
+- Recorded the then-provisional `DEC-048` pose-only ordering. It was superseded for camera-pose reconstruction by
+  `DEC-051` after the v1 pilot demonstrated material contract failure; full-corpus `annotation_v2` is now mandatory.
+  Feature/fusion remains explicitly a non-blocking later delivery.
+- Applied `DEC-049`: CSL-Daily persistence ends at pre-beamforming synthetic FMCW. The power cube is derived by the
+  versioned runtime processor; direct-cube materialization is retained only as a non-formal engineering prototype.
+- Reclassified `DELIVERY-POSE-RECON-V1` and its direct-cube tensor/Parquet contract as fixture-only for CSL-Daily,
+  and registered the pending raw-FMCW delivery and runtime-processing acceptance gates.
+- Added a bounded CSL-Daily legacy-path replay runbook. It separates today's source-backed end-to-end diagnostic
+  (camera pose -> temporary simulated cube -> OmniHand -> pose-only WaveLLM generation) from the formal
+  raw-FMCW/Parquet reconstruction, defines source/asset gates and failure classification, and prohibits using
+  the replay as paper evidence or an independent legacy test.
+- Applied `DEC-050`: recorded the duplicate compressed CSL-Daily frame payload for removal, retained expanded
+  frames/official metadata/review video as the source of record, and made full-corpus versioned cam-pose
+  reconstruction with QC/eligibility coverage a P0 gate. The partial RTMW3D pilot remains diagnostic-only.
+- Applied `DEC-051`: froze the partial v1 pilot because its completed poses retain NaNs and its sidecars lack native
+  pose/scores, canonical confidence, and validity masks. A new contract-complete v2 implementation and resumable
+  full-corpus build now precede all simulation and training work.
+- Added v2 execution controls: finite interpolated canonical pose, native RTMW3D/scores plus confidence,
+  validity, imputation and frame-mask audit payloads, per-sequence no-clobber restart validation, durable leases,
+  cooperative pause/resume, error quarantine, and a lease-free full-coverage finalization gate.
+- Removed full-source SHA-256 receipt from the P0 annotation gate. It remains an optional release/archive operation;
+  source root/ID, frame list/count, configuration/model identity and Git state stay attached to formal outputs.
 - Registered CE-CNSL as a P1 parallel intake under `DEC-052`, without creating another workspace. Added its
   independent dataset/split identities and a bounded source, label/signer, and pose-pilot runbook. Full-corpus
   annotation and simulation remain conditional and never block CSL-Daily P0.

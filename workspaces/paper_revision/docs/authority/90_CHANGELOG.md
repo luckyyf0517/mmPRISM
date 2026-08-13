@@ -3,7 +3,7 @@
 Status: current
 Owner: Paper revision lane
 Authority scope: Material changes to reviewer closure, evidence promotion, and manuscript operations.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## 2026-08-12
 
@@ -29,3 +29,9 @@ Last reviewed: 2026-08-12
 - Registered the CSL-Daily controlled reconstruction matrix as an upstream diagnostic: baseline/candidate camera-
   pose QC, cross-fitted predicted-pose and feature inputs, explicit pose-only semantics, and replay-only use of
   the legacy duplicated validation/test mapping. It does not close real-radar reviewer evidence requirements.
+
+## 2026-08-13
+
+- Updated historical WaveLLM status from transfer-in-progress to staged preservation-only. The bundle remains
+  unaccepted for original-submission linkage, historical metrics, initialization, or manuscript claims until its
+  independent receipt and controlled audit complete.

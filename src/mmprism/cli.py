@@ -23,7 +23,9 @@ from mmprism.assets import (
 from mmprism.config import ConfigError, load_experiment_config
 from mmprism.contracts import ManifestError, SplitContractError, validate_manifest
 from mmprism.data import (
+    ANNOTATION_V2_SCHEMA_VERSION,
     CslDailyPoseAnnotationError,
+    CslDailySchedulerError,
     CslDailySourceReceiptError,
     CslNewsAnnotationError,
     CslNewsAuditError,
@@ -34,6 +36,7 @@ from mmprism.data import (
     DataSplitError,
     ParquetDeliveryError,
     audit_csl_news_archive,
+    build_csl_daily_scheduler_status,
     build_csl_news_annotation_identity_audit,
     build_csl_news_annotation_qc,
     build_csl_news_annotation_status,
@@ -42,6 +45,8 @@ from mmprism.data import (
     build_csl_news_source_manifest_snapshot,
     build_data_split_snapshot,
     create_csl_daily_source_receipt,
+    finalize_csl_daily_annotation_v2,
+    initialize_csl_daily_scheduler,
     load_csl_daily_pose_annotation_config,
     load_csl_news_annotation_config,
     load_csl_news_integrity_config,
@@ -51,10 +56,12 @@ from mmprism.data import (
     load_parquet_delivery_config,
     materialize_parquet_delivery,
     plan_parquet_delivery,
+    run_csl_daily_annotation_scheduled_worker,
     run_csl_daily_pose_annotation,
     run_csl_news_annotation,
     scan_csl_news_source_integrity,
     select_csl_news_integrity_archive,
+    set_csl_daily_scheduler_state,
     validate_csl_daily_source_receipt,
     validate_parquet_delivery,
     write_csl_news_annotation_identity_audit,
@@ -205,6 +212,43 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="SEQUENCE_ID",
         help="Annotate only this sequence; may be repeated",
     )
+
+    csl_daily_scheduler_init = subparsers.add_parser(
+        "csl-daily-scheduler-init",
+        help="Initialize the paused CSL-Daily v2 annotation queue",
+    )
+    csl_daily_scheduler_init.add_argument("config", type=Path)
+    csl_daily_scheduler_init.add_argument("--project-root", type=Path)
+    csl_daily_scheduler_init.add_argument("--lease-seconds", type=int, default=1800)
+    for command, help_text in (
+        ("csl-daily-scheduler-pause", "Cooperatively pause CSL-Daily v2 annotation workers"),
+        ("csl-daily-scheduler-resume", "Resume CSL-Daily v2 annotation workers"),
+    ):
+        control_parser = subparsers.add_parser(command, help=help_text)
+        control_parser.add_argument("config", type=Path)
+        control_parser.add_argument("--project-root", type=Path)
+        control_parser.add_argument("--reason")
+    csl_daily_scheduler_status = subparsers.add_parser(
+        "csl-daily-scheduler-status",
+        help="Report CSL-Daily v2 annotation queue coverage and leases",
+    )
+    csl_daily_scheduler_status.add_argument("config", type=Path)
+    csl_daily_scheduler_status.add_argument("--project-root", type=Path)
+    csl_daily_scheduled = subparsers.add_parser(
+        "csl-daily-annotate-scheduled",
+        help="Run one elastic, lease-controlled CSL-Daily v2 annotation worker",
+    )
+    csl_daily_scheduled.add_argument("config", type=Path)
+    csl_daily_scheduled.add_argument("--project-root", type=Path)
+    csl_daily_scheduled.add_argument("--worker-id")
+    csl_daily_scheduled.add_argument("--poll-seconds", type=int, default=15)
+    csl_daily_scheduled.add_argument("--once", action="store_true")
+    csl_daily_finalize = subparsers.add_parser(
+        "csl-daily-annotation-finalize",
+        help="Finalize v2 manifests and coverage while the CSL-Daily queue is paused",
+    )
+    csl_daily_finalize.add_argument("config", type=Path)
+    csl_daily_finalize.add_argument("--project-root", type=Path)
 
     csl_news_parser = subparsers.add_parser(
         "csl-news-audit", help="Audit one complete CSL-News archive against official labels"
@@ -656,6 +700,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             daily_annotation_config = load_csl_daily_pose_annotation_config(
                 arguments.config, project_root, variables=os.environ
             )
+            if daily_annotation_config.schema_version == ANNOTATION_V2_SCHEMA_VERSION:
+                print(
+                    "error: annotation v2 must use csl-daily-annotate-scheduled; "
+                    "initialize and resume its scheduler first",
+                    file=sys.stderr,
+                )
+                return 2
             try:
                 from mmprism.data.csl_daily_pose_annotation import (
                     MMPoseRtmw3dFrameEstimator,
@@ -675,6 +726,43 @@ def main(argv: Sequence[str] | None = None) -> int:
                 sequence_ids=arguments.sequence_id or None,
             )
             exit_code = 0 if payload["failed"] == 0 else 1
+        elif (
+            arguments.command.startswith("csl-daily-scheduler-")
+            or arguments.command == "csl-daily-annotate-scheduled"
+            or arguments.command == "csl-daily-annotation-finalize"
+        ):
+            project_root = (
+                arguments.project_root.resolve()
+                if arguments.project_root
+                else discover_project_root()
+            )
+            daily_annotation_config = load_csl_daily_pose_annotation_config(
+                arguments.config, project_root, variables=os.environ
+            )
+            if arguments.command == "csl-daily-scheduler-init":
+                payload = initialize_csl_daily_scheduler(
+                    daily_annotation_config, lease_seconds=arguments.lease_seconds
+                )
+            elif arguments.command == "csl-daily-scheduler-pause":
+                payload = set_csl_daily_scheduler_state(
+                    daily_annotation_config, state="paused", reason=arguments.reason
+                )
+            elif arguments.command == "csl-daily-scheduler-resume":
+                payload = set_csl_daily_scheduler_state(
+                    daily_annotation_config, state="running", reason=arguments.reason
+                )
+            elif arguments.command == "csl-daily-scheduler-status":
+                payload = build_csl_daily_scheduler_status(daily_annotation_config)
+            elif arguments.command == "csl-daily-annotation-finalize":
+                payload = finalize_csl_daily_annotation_v2(daily_annotation_config)
+            else:
+                payload = run_csl_daily_annotation_scheduled_worker(
+                    daily_annotation_config,
+                    worker_id=arguments.worker_id,
+                    once=arguments.once,
+                    poll_seconds=arguments.poll_seconds,
+                )
+            exit_code = 0 if payload.get("failed", 0) == 0 else 1
         elif arguments.command == "csl-news-audit":
             payload = audit_csl_news_archive(
                 arguments.archive,
@@ -1051,6 +1139,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         CslNewsSourceManifestError,
         CslDailySourceReceiptError,
         CslDailyPoseAnnotationError,
+        CslDailySchedulerError,
         DataSplitError,
         ParquetDeliveryError,
         FileNotFoundError,

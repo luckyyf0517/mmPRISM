@@ -3,13 +3,14 @@
 Status: current
 Owner: WaveLLM training lane
 Authority scope: WaveLLM input modes, upstream handoffs, experimental matrix, and historical-replay boundary for CSL-Daily.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## Purpose
 
-This operation turns accepted CSL-Daily products into three controlled WaveLLM experiments. It measures where
-semantic degradation enters the rebuilt cascade. It does not establish real-radar robustness or replace the
-participant-disjoint revision dataset.
+This operation turns accepted CSL-Daily products into controlled WaveLLM experiments. Its first delivery measures
+semantic degradation from camera pose to reconstructed pose using two pose-only controls. A third feature/fusion
+comparison follows independently. It does not establish real-radar robustness or replace the participant-disjoint
+revision dataset.
 
 The cross-workspace meanings of cam-pose, synthetic-domain mmw-pose and radar feature are fixed by the
 [research execution model](../../../../../docs/authority/30_ARCHITECTURE/RESEARCH_EXECUTION_MODEL.md). This page
@@ -49,6 +50,13 @@ optimization budget, generation, and metric protocol unless a row explicitly stu
 increment under the same predicted pose. None is a substitute for Reviewer 2's direct cube-to-LLM baseline; that
 remains a separately parameter/budget-matched architecture experiment.
 
+## Execution Priority
+
+`CSLD-WL-01` and `CSLD-WL-02` are the first-loop deliverables. The received historical CSL-Daily checkpoints are
+also pose-only by a read-only checkpoint namespace audit, so this path is the most direct canonical and historical
+comparison boundary. `CSLD-WL-03` waits for the independent checkpoint-bound feature-export contract; it must not
+delay either pose-only run. This ordering does not remove the fusion comparison or relax its provenance contract.
+
 ## Mode Contract
 
 `pose_only` is a first-class model/data mode. It requires pose, confidence, frame mask, and caption and has no
@@ -85,13 +93,13 @@ The existing character metric is orchestration validation only.
 
 ```text
 accepted CSL-Daily source + receipt of any existing historical pose/signal/feature candidates
--> shortest labelled historical replay, retaining legacy inputs unchanged
 -> canonical pose-only delivery and small CSLD-WL-01 smoke
 -> accepted skeleton-simulation reconstruction delivery
 -> CubeNet small smoke and frozen formal checkpoint(s)
--> cross-fitted predicted pose + feature export
--> CSLD-WL-02 and CSLD-WL-03 smokes
--> frozen production metric protocol and formal matrix
+-> cross-fitted predicted-pose export and CSLD-WL-02 smoke
+-> frozen production pose-only metric protocol and formal first-loop controls
+-> optional checkpoint-bound feature export and CSLD-WL-03 fusion smoke
+-> shortest labelled historical replay, retaining legacy inputs unchanged
 -> historical checkpoint/config/evaluation audit, reported separately
 ```
 

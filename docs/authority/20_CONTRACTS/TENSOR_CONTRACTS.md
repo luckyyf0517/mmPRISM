@@ -38,7 +38,7 @@ recovered or a documented conversion is implemented.
 
 ### Model-ready pose reconstruction manifest
 
-The dependency-light adapter `mmprism.data.PoseReconstructionManifest` accepts only local relative
+The dependency-light direct-cube engineering adapter `mmprism.data.PoseReconstructionManifest` accepts only local relative
 `.npy` modality references in `mmprism.sample.v1` JSONL records. Each modality must carry its exact
 shape, dtype, and SHA-256. Required modalities are:
 
@@ -52,6 +52,13 @@ coordinate frame. Collation pads time with zero power and marks padding invalid;
 also zeroed. The sample acquisition metadata must declare
 `sample_protocol: mmprism.pose_reconstruction.sample_v1`. This contract does not make the current
 CSL-News image-derived pose metric or establish radar-camera calibration.
+
+This is an implemented fixture/prototype contract. It does **not** define the formal CSL-Daily input after
+`DEC-049`: CSL-Daily will persist a separately versioned, checksum-bound pre-beamforming synthetic FMCW modality
+`synthetic_fmcw [T,C,A,S]`, with explicit representation (`real`, complex interleaved, or another declared encoding),
+dtype, simulator configuration and processor fingerprint. The training adapter will derive a transient
+`[T,D,R,A,E]` power cube at runtime. Its raw-radar manifest, Parquet schema and runtime adapter remain a pending
+implementation; no CSL-Daily formal run may use the direct-cube adapter as a substitute.
 
 Raw storage order intentionally differs from the notation order `S_raw(t,n,m)` used in the manuscript:
 `t -> sample`, `n -> chirp`, and `m -> antenna`. The storage mapping is explicit at every validator call;

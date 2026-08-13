@@ -45,6 +45,7 @@ non-semantic gestures into these totals.
 
 ## Claim Check
 
-Before handoff, verify that dataset text says `video-guided volunteers` where applicable and does not call all
-participants fluent/native CSL signers. If no professional/proficient contributors are found, state that directly
-and limit conclusions to prompted CSL reproduction across participants.
+Before handoff, verify that dataset text reports participant types accurately (`video_guided_volunteer` versus
+`professional_or_proficient_signer`) and that the volunteer training protocol is described. If no
+professional/proficient contributors are found, record that directly in the dataset facts. Paper-facing claim
+wording follows these disclosed facts and is finalized during manuscript writing (`DEC-055`).

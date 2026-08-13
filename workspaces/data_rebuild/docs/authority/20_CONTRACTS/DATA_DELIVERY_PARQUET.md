@@ -105,9 +105,14 @@ machine absolute paths, staging paths or cache paths.
 The current training adapters define final payloads. Numeric payloads are `float32`; masks are `bool`; a reader
 may not silently coerce data. Variable temporal axes use typed Arrow lists and static axes use fixed-size lists.
 
-### Pose Reconstruction
+### Pose Reconstruction Direct-Cube Prototype
 
 Protocol: `mmprism.pose_reconstruction.sample_v1`.
+
+This implemented schema is retained for fixture and engineering validation. Under `DEC-049`, it is not the formal
+CSL-Daily delivery schema because it persists `radar_cube`. A versioned raw-radar pose-reconstruction schema is
+pending: it will carry `synthetic_fmcw [T,C,A,S]`, declared representation/dtype and simulator/processor provenance;
+the runtime adapter will materialize the power cube and no final CSL-Daily Parquet row will carry `radar_cube`.
 
 | Column | Arrow logical shape | Required contract |
 |---|---|---|
@@ -116,8 +121,8 @@ Protocol: `mmprism.pose_reconstruction.sample_v1`.
 | `pose_gt` | `fixed_size_list<fixed_size_list<fixed_size_list<float32,3>,24>,2>` | `[2,24,3]` metric target. |
 | `pose_valid` | `fixed_size_list<fixed_size_list<bool,24>,2>` | `[2,24]`; source omission materializes as all true. |
 
-Admission requires `pose_units == "m"`, explicit coordinate frame, agreed static dimensions, explicit radar
-protocol and calibration/acquisition evidence that radar cube and pose share the coordinate contract.
+Direct-cube prototype admission requires `pose_units == "m"`, explicit coordinate frame, agreed static dimensions,
+explicit radar protocol and calibration/acquisition evidence that radar cube and pose share the coordinate contract.
 
 ### Sign Language Translation
 
@@ -188,7 +193,7 @@ its final training configs may not silently revert to those array paths.
    writing. `mmprism parquet-delivery-build CONFIG` requires clean Git and atomically publishes a no-clobber
    delivery. `mmprism parquet-delivery-validate ROOT` rechecks copied input bindings, inventory, index, schema,
    rows and checksums.
-3. Fixture parity covers both translation modes and pose reconstruction; placement, split isolation, no-clobber,
+3. Fixture parity covers both translation modes and direct-cube pose reconstruction; placement, split isolation, no-clobber,
    input-mode/schema tampering, part tampering, inventory drift, unlisted parts, and the missing optional dependency
    are rejected. A real delivery still requires a dedicated
    capacity report and CPU/GPU one-batch adapter smoke before formal training.

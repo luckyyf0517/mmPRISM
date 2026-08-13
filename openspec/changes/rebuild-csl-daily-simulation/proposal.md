@@ -1,9 +1,10 @@
 ## Why
 
 The revision-critical execution path requires recovering the CSL-Daily simulation / OmniHand second stage. The
-new `src/mmprism/` package already provides everything downstream of radar-cube generation (tensor contracts,
-manifests, splits, parquet delivery, formal training), but the CSL-Daily upstream is missing: no intake adapter,
-no pose-annotation adapter, no simulation module, and no pose-to-cube materialization pipeline. The legacy
+new `src/mmprism/` package already provides an engineering radar-cube fixture path, but CSL-Daily requires a
+different persistent data boundary: pre-beamforming simulated FMCW must be stored and the power cube must be derived
+at runtime. The remaining upstream work includes intake, pose annotation, raw-radar materialization and a runtime
+processor adapter. The legacy
 implementations (`run_csl_daily_annotation.py`, `run_simulation.py`, `src/fmcw/`) are read-only forensic
 references and cannot be imported.
 
@@ -19,13 +20,14 @@ references and cannot be imported.
   simulator (faithful port of the legacy skeleton simulator), synthetic-array processor producing
   `[T, 64, 32, 32, 32]` power cubes, and pose point-cloud densification/preprocessing. No legacy imports; a
   one-shot numerical-equivalence fixture is frozen against the legacy output.
-- Add a config-driven pose-to-cube materialization pipeline emitting an `mmprism.pose_reconstruction.sample_v1`
-  manifest bound to a `radar_config_id` and the frozen pose manifest hash.
+- Add a config-driven pose-to-pre-beamforming-FMCW materialization pipeline emitting a raw-radar reconstruction
+  manifest bound to a `radar_config_id`, a processor fingerprint and the frozen pose manifest hash. The runtime
+  adapter derives CubeNet power cubes on device and no formal CSL-Daily delivery persists `radar_cube`.
 - Register the rebuilt simulation as a separately labeled experiment protocol per `DEC-012`: it is a
   code-faithful re-implementation of the original-submission skeleton simulator and is **not** registered as a
   reproduction of the manuscript-described MANO mesh / ray-tracing pipeline.
-- Produce frozen splits and DELIVERY-POSE-RECON-V1 / DELIVERY-SLU-V2 Parquet deliveries via the existing
-  delivery commands.
+- Produce frozen splits and raw-radar pose-reconstruction / DELIVERY-SLU-V2 Parquet deliveries. The direct-cube
+  Parquet prototype remains a numerical fixture, not a CSL-Daily formal product.
 
 ## Non-Goals
 
@@ -40,8 +42,9 @@ references and cannot be imported.
 
 ## Impact
 
-- New modules under `src/mmprism/data/` and `src/mmprism/simulation/`, new CLI subcommands, new versioned
-  configs under `configs/data/`, new unit/contract/integration tests.
+- New raw-radar data adapter/reader under `src/mmprism/data/`, runtime processor orchestration, versioned configs
+  under `configs/data/`, and unit/contract/integration tests. Existing direct-cube code is retained for comparison
+  but not expanded for CSL-Daily formal delivery.
 - Raw CSL-Daily data lands under the data root as an immutable intake once the operator uploads it; nothing is
   downloaded or fetched automatically.
 - Data rebuild Authority (registry, changelog, index) records each stage's status.

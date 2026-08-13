@@ -3,7 +3,7 @@
 Status: current
 Owner: OmniHand training lane
 Authority scope: Current OmniHand model, training, resume, prediction, and evaluation workflow.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## Boundary
 
@@ -17,15 +17,20 @@ perform beamforming, own shared artifact infrastructure, or manufacture paper-fa
 - Two-process CPU/Gloo formal training is integration-validated with one rank-zero run, exact prediction coverage,
   merged metrics, consistent model-state hashes, and a checkpoint numerically matched to a single-process reference.
 - Synthetic A100 evidence is accepted as engineering validation, not a paper result.
-- CSL-Daily is the next synthetic control input after its accepted skeleton-simulation delivery. Its CubeNet
-  predictions and frame features require a checkpoint-bound, cross-fitted export before WaveLLM may consume them.
+- CSL-Daily is the next synthetic control input after its accepted pre-beamforming synthetic-FMCW delivery. The
+  runtime processor derives CubeNet inputs on device; its cross-fitted predicted poses are the first WaveLLM handoff.
+  Checkpoint-bound frame features are a later fusion-only export and do not block pose-only translation.
 
-Active blockers: accepted CSL-Daily synthetic delivery, checkpoint-bound cross-fitted prediction/feature export,
-real calibrated model-ready manifests, production training/evaluation, and multi-GPU NCCL smoke. DDP completed-
+Active blockers: accepted CSL-Daily raw-radar delivery and runtime processor adapter, checkpoint-bound cross-fitted
+predicted-pose export, real calibrated model-ready manifests, production training/evaluation, and multi-GPU NCCL
+smoke. Frame-feature
+export blocks only the later fusion comparison. DDP completed-
 epoch resume remains unsupported because per-rank RNG and sampler state are not yet captured.
 
-Next action: after data-rebuild receipt, run the CSL-Daily small synthetic smoke, freeze its reconstruction
-protocol, and produce the cross-fitted export required by WaveLLM; separately run the multi-GPU NCCL smoke.
+Next action: after data-rebuild receipt, validate the raw-radar runtime processor on a CSL-Daily pilot, then run the
+small synthetic smoke, freeze its reconstruction protocol, and produce the cross-fitted predicted-pose export for
+the pose-only WaveLLM control. Feature export and fusion follow independently; separately run the multi-GPU NCCL
+smoke.
 
 ## Canonical Locations
 

@@ -3,7 +3,7 @@
 Status: current
 Owner: WaveLLM training lane
 Authority scope: The WaveLLM training and evaluation boundary represented by this page.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## Boundary
 
@@ -41,10 +41,10 @@ configuration. The engineering recipe freezes mT5 and is not the final scientifi
 
 ## Revision Language Initialization
 
-A historical WaveLLM bundle is uploading under `/mnt/gfs/yanyifan/mmPRISM/log/archived/`. It may include the former
-cam-pose checkpoint and historical hand-pose encoder, but its run labels and partial files do not establish that fact.
-No inbound file may be loaded, converted, moved, or used for initialization until upload completion and the
-[transfer receipt](../../logs/2026/08/20260812_HISTORICAL_WAVELLM_TRANSFER.md) establishes a stable inventory,
+A historical WaveLLM bundle is staged under `/mnt/gfs/yanyifan/mmPRISM/log/archived/`. It may include the former
+cam-pose checkpoint and historical hand-pose encoder, but its run labels and staged files do not establish that fact.
+No inbound file may be loaded, converted, moved, or used for initialization until the
+[receipt and audit](../../logs/2026/08/20260813_HISTORICAL_WAVELLM_STAGING_HANDOFF.md) establish a stable inventory,
 checksums, format/world-size completeness, metadata, and a controlled load report.
 
 The retained local fallback is a CSL-News-derived mT5-only export, recorded as `MODEL-MT5-CSLNEWS-HISTORICAL-V1` and

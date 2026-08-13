@@ -3,7 +3,7 @@
 Status: current
 Owner: WaveLLM training lane
 Authority scope: Material changes to the WaveLLM training and evaluation workflow.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## 2026-08-12
 
@@ -24,3 +24,12 @@ Last reviewed: 2026-08-12
 - Implemented final Parquet `pose_only` translation delivery: the schema, rows, static dimensions, delivery metadata
   and reader all bind the mode and omit radar features rather than serializing empty placeholders. CubeNet feature
   provenance remains pending.
+
+## 2026-08-13
+
+- Recorded migration staging of the historical WaveLLM bundle as a read-only handoff observation. Upload completion
+  does not replace the `DEC-046` receipt, format/world-size, metadata/tensor, or controlled-load audit.
+
+- Applied `DEC-048`: CSL-Daily first-loop execution is `CSLD-WL-01` camera-pose and `CSLD-WL-02` cross-fitted
+  predicted-pose, both `pose_only`. The checkpoint-bound feature/fusion comparison (`CSLD-WL-03`) remains a required
+  separately reported third stage, but cannot block the first two runs.

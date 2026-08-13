@@ -24,8 +24,9 @@ models, or promote paper claims. Those responsibilities remain with `data_rebuil
   written translation target and reference-video set still require a simple content check before the pilot.
 - Seek 3--4 professional/proficient CSL contributors for demonstration, content checking and a small reference
   subset if they can be found. Their availability does not block volunteer collection.
-- Most scale comes from volunteers who watch the same frozen CSL video and reproduce it. Their records are typed
-  `video_guided_volunteer`, not represented as natural signing by fluent CSL users.
+- Most scale comes from volunteers who complete a systematic training protocol on the reference material and
+  then perform it during recording. Their records are typed `video_guided_volunteer`; the training protocol is
+  part of the dataset description.
 - Every recorded participant completes the core video-guided set. Expensive orientation and occlusion conditions
   use a frozen compact stress subset rather than repeating the full corpus in every condition.
 - The new dataset is identity-disjoint by participant for downstream evaluation. Exact split assignments are
@@ -53,6 +54,7 @@ used and its takes pass the same QC.
 ## Authority And Operations
 
 - [Collection plan](10_SCOPE/COLLECTION_PLAN.md)
+- [Reference set and scale plan (early draft)](10_SCOPE/REFERENCE_SET_PLAN.md)
 - [Acquisition and identity contract](20_CONTRACTS/ACQUISITION_CONTRACT.md)
 - [Collection runbook](40_OPERATIONS/COLLECTION_RUNBOOK.md)
 - [Readiness and QC gates](50_VALIDATION/READINESS_AND_QC.md)

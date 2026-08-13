@@ -13,8 +13,8 @@ remains under `src/mmprism/`; business execution and status are organized by wor
 Current cross-workspace blockers:
 
 - Private source inventory, calibration, and historical run provenance are not yet complete.
-- A historical WaveLLM bundle is uploading to the project mirror. It is preservation-only until a stable,
-  checksum-bound receipt, checkpoint-format audit, and controlled load complete; directory names and partial bytes
+- A historical WaveLLM bundle is preserved at the project mirror. It remains preservation-only until a stable,
+  checksum-bound receipt, checkpoint-format audit, and controlled load complete; directory names and staged bytes
   establish neither original-submission linkage nor usable weights. The recovered mT5-only export remains a
   load-smoke-verified fallback initialization.
 - Full physical radar-cube reconstruction remains blocked on acquisition and calibration evidence.
@@ -32,11 +32,17 @@ preserve and receipt the incoming historical WaveLLM bundle
 -> run matched sim2real adaptation and new-real-data experiments
 ```
 
-The CSL-Daily control is planned as three separately reported stages: camera-pose semantic ceiling, cross-fitted
-predicted-mmWave-pose translation, and the same predicted pose plus checkpoint-bound CubeNet frame features. This
-is a synthetic-control/historical-replay lane and cannot replace the new real-radar reviewer evidence. Its interface
-change is specified by OpenSpec `add-csl-daily-reproduction-controls` and its executing workspace operations are
-linked from the Data Rebuild, OmniHand Training, WaveLLM Training, and Paper Revision indexes.
+The CSL-Daily first delivery is a pose-only synthetic-control lane: required full-corpus camera-pose reconstruction
+from the retained source frames, followed by skeleton simulation and cross-fitted predicted-mmWave-pose translation.
+No reusable historical CSL-Daily pose, feature, signal, or predicted-pose payload was delivered; legacy JSON files are
+only stale path maps. The 54-sample `annotation_v1` RTMW3D pilot is frozen diagnostic evidence only: its output can
+contain hand NaNs and lacks native pose/scores, canonical confidence, and validity masks. A new contract-complete,
+full-corpus `annotation_v2` is therefore the P0, versioned source-derived product rather than an optional comparison.
+The delivery persists synthetic FMCW radar before beamforming and derives the CubeNet power cube only at runtime
+(`DEC-049`). The historical uploaded daily checkpoints are pose-only by a read-only tensor-namespace audit.
+Checkpoint-bound CubeNet frame-feature fusion is a separately reported third stage and does not block the first two
+controls. CSL-Daily cannot replace the new real-radar reviewer evidence. The interface change is specified by OpenSpec
+`add-csl-daily-reproduction-controls`; see `DEC-048`--`DEC-051` for execution priority and storage.
 
 CE-CNSL remains registered as a P1 follow-on public source, but execution is paused under `DEC-054` and `DEC-056`.
 During the late stable phase of the CSL-Daily line, the project owner may explicitly authorize source download and
@@ -74,6 +80,7 @@ Workspace ownership and handoffs are defined in the
 - [System architecture](30_ARCHITECTURE/SYSTEM_ARCHITECTURE.md)
 - [Research terms and end-to-end execution](30_ARCHITECTURE/RESEARCH_EXECUTION_MODEL.md)
 - [Release audit](40_OPERATIONS/RELEASE_AUDIT.md)
+- [Compute-server migration and handoff](40_OPERATIONS/COMPUTE_SERVER_MIGRATION.md)
 - [Decision log](60_DECISIONS/DECISION_LOG.md)
 - [Project changelog](90_CHANGELOG.md)
 

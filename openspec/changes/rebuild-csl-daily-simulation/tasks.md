@@ -17,14 +17,23 @@
 
 - [x] 3.1 Implement `csl_daily_pose_annotation.py` on the `PoseEstimator` protocol, batch fixed to 1.
 - [x] 3.2 Add `configs/data/csl_daily_rtmw3d.yaml` with injected roots.
-- [ ] 3.3 Add mocked unit tests; run GPU smoke on a small sequence subset. (unit tests done; GPU smoke pending data upload)
+- [ ] 3.3 Preserve the partial RTMW3D `annotation_v1` as diagnostic-only. Freeze the source receipt, implement the
+  contract-complete `annotation_v2`, complete its GPU smoke, then execute its resumable full-corpus run with validated
+  native/score sidecars, finite canonical pose/confidence/validity/frame-mask payloads, QC/quarantine records, and an
+  all-source coverage/eligibility manifest. It must not be promoted as training data before these gates pass.
 
 ## 4. Materialization And Delivery
 
-- [x] 4.1 Implement the pose-to-cube materialization pipeline and CLI, emitting `mmprism.pose_reconstruction.sample_v1`.
-- [x] 4.2 Add an end-to-end integration test over a small pose fixture.
-- [ ] 4.3 Freeze splits (signer-aware if metadata allows, else official-split binding with recorded limitation).
-- [ ] 4.4 Build and validate DELIVERY-POSE-RECON-V1 and DELIVERY-SLU-V2 Parquet deliveries with reader parity.
+- [x] 4.1 Implement a direct-cube engineering prototype and CLI with a numerical-equivalence fixture. It is retained
+  only for comparison after `DEC-049`, not as a CSL-Daily formal product.
+- [x] 4.2 Add an end-to-end direct-cube prototype integration test over a small pose fixture.
+- [ ] 4.3 Implement the canonical pose-to-pre-beamforming-FMCW materializer and immutable raw-radar manifest;
+  record signal representation/dtype/shape, simulator config and checksums.
+- [ ] 4.4 Implement the runtime range/Doppler/beamforming adapter, injecting its processor contract outside the
+  model; add CPU/GPU parity and no-persisted-cube tests.
+- [ ] 4.5 Freeze splits (signer-aware if metadata allows, else official-split binding with recorded limitation).
+- [ ] 4.6 Build and validate raw-radar pose-reconstruction and DELIVERY-SLU-V2 Parquet deliveries with reader
+  parity, pilot capacity/throughput measurements, and no persisted `radar_cube`.
 
 ## 5. Authority Closeout
 

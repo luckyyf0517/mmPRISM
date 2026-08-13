@@ -41,6 +41,25 @@ Last reviewed: 2026-08-12
 
 ## 2026-08-13
 
+- Paused local CSL-Daily execution for compute-server migration: the `annotation_v2` queue remains initialized but
+  paused, and the two pending batch benchmark jobs were cancelled before starting. Added a target-server acceptance
+  and handoff runbook that keeps GFS data and historical checkpoints immutable while requiring a fresh CUDA 12.8
+  environment, core-model, distributed, and RTMW3D runtime gates before work resumes.
+- Recorded that the historical WaveLLM bundle is now staged under `log/archived/` but remains preservation-only;
+  receipt, format/world-size, metadata/tensor, and controlled-load audit are separate pending work.
+
+- Accepted the then-provisional `DEC-048` pose-only ordering. `DEC-051` subsequently recorded the v1 pilot's
+  material contract failure and made full-corpus `annotation_v2` mandatory; checkpoint-bound feature/fusion remains
+  a non-blocking third-stage comparison.
+- Accepted `DEC-049`: CSL-Daily persists pre-beamforming synthetic FMCW and derives CubeNet power cubes at runtime.
+  The existing direct-cube materialization path is now an engineering prototype, not a formal CSL-Daily product.
+- Accepted `DEC-050`: the retained CSL-Daily source is the expanded JPEG tree plus official metadata and review
+  videos. The duplicate full archive and its transfer splits are removed after an inventory record. Since no
+  historical full pose/signal/feature products arrived, a versioned, quality-controlled full-corpus cam-pose
+  reconstruction is a P0 prerequisite for synthetic radar, OmniHand, and WaveLLM work.
+- Accepted `DEC-051`: the 54-sample RTMW3D annotation v1 pilot is frozen as diagnostic evidence, not a training
+  source, because completed arrays retain hand NaNs and its sidecars omit native pose/scores and validity data.
+  Contract-complete annotation v2 becomes the required full-corpus cam-pose reconstruction before simulation.
 - Accepted `DEC-052`: CE-CNSL becomes a P1 parallel public source for vocabulary and heterogeneous-domain
   expansion while CSL-Daily remains the P0 baseline. Intake, signer/label audit, and a bounded pose pilot proceed
   in parallel; full processing is gated and cannot block CSL-Daily or new real-radar collection.

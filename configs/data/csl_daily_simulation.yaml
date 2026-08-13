@@ -1,7 +1,11 @@
-# CSL-Daily pose -> simulated radar-cube materialization (DEC-012 protocol
-# csl_daily_skeleton_sim_v1). Consumes the frozen RTMW3D pose manifest and
-# emits an mmprism.pose_reconstruction.sample_v1 manifest of simulated
-# IWR1843 power cubes.
+# CSL-Daily pose -> simulated radar-cube ENGINEERING PROTOTYPE (DEC-012
+# protocol csl_daily_skeleton_sim_v1). Consumes the frozen RTMW3D pose
+# manifest and emits an mmprism.pose_reconstruction.sample_v1 manifest of
+# simulated IWR1843 power cubes.
+#
+# DEC-049 supersedes this storage boundary for formal CSL-Daily runs: persist
+# pre-beamforming synthetic FMCW and derive power cubes in the runtime adapter.
+# This config remains only for numerical comparison and fixture validation.
 #
 # Consumed via `mmprism csl-daily-simulate` with ${MMPRISM_DATA_ROOT}
 # supplied by the caller environment.
@@ -13,7 +17,7 @@ input:
   pose_manifest_path: ${MMPRISM_DATA_ROOT}/interim/csl_daily/pose_annotation/rtmw3d_l_794dbc78_v1/pose_manifest.jsonl
   pose_root: ${MMPRISM_DATA_ROOT}/interim/csl_daily/pose_annotation/rtmw3d_l_794dbc78_v1
 output:
-  # Doubles as the data_root of the emitted pose-reconstruction manifest.
+  # Doubles as the data_root of the emitted direct-cube prototype manifest.
   output_root: ${MMPRISM_DATA_ROOT}/processed/csl_daily/simulated_radar/iwr1843_sim_v1
   manifest_name: manifest.jsonl
   run_record_name: run_record.json

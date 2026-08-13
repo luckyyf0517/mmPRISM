@@ -3,7 +3,7 @@
 Status: current
 Owner: Paper revision lane
 Authority scope: Current reviewer, evidence-promotion, manuscript, response, and submission workflow.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## Boundary
 
@@ -14,7 +14,7 @@ production of upstream data, model checkpoints, predictions, or metrics.
 
 - Decision letter and reviewer comments are indexed with stable IDs.
 - The current manuscript/supplement display inventory and evidence map exist.
-- Historical WaveLLM artifacts are uploading and are preservation-only until the producing workspace completes a
+- Historical WaveLLM artifacts are staged and are preservation-only until the producing workspace completes a
   stable receipt and controlled audit; original-submission linkage and historical metrics remain unaccepted.
 - Results-based response text is intentionally blocked until corresponding evidence is accepted.
 

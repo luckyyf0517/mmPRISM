@@ -22,12 +22,18 @@ workspace begins only after receiving its immutable raw-session manifest and val
   the new semantic CSL collection are the active public/real-data paths. No CSL-News source bytes remain local.
 - `/mnt/gfs/yanyifan/mmPRISM/{dataset,pretrained_models,log}` is an old-project mirror preserved in its historical
   layout. `dataset` is legacy metadata/split evidence, `pretrained_models` is a legacy model mirror, and `log` is
-  incoming historical run evidence with checkpoints still transferring; canonical code must not write to or train
+  preserved historical run evidence pending its separate receipt/audit; canonical code must not write to or train
   directly from any of these paths.
-- The complete CSL-Daily raw source is being uploaded directly to the dedicated preservation root
-  `external/csl_daily/csl_daily_original_20260812/`. It remains an unaccepted source until stable inventory and
-  validation, despite its direct `external/` location. The next gated path is receipt -> baseline camera-pose
-  QC -> separately labelled skeleton-simulation delivery -> OmniHand/WaveLLM controls; it is documented in the
+- The CSL-Daily raw upload is complete at the dedicated preservation root
+  `external/csl_daily/csl_daily_original_20260812/`. The retained source of record is the expanded JPEG-frame tree,
+  official labels/split metadata, and review MP4s; the complete tarball and its transfer splits were removed with a
+  recorded cleanup inventory. No historical full CSL-Daily pose, feature, signal, or predicted-pose
+  product is present: legacy JSON files are metadata/path evidence only. The existing 54-sample `annotation_v1` pilot
+  has material contract failures (NaN hand values and missing native/scores/confidence/validity) and is diagnostic-only.
+  A complete, new versioned `annotation_v2` camera-pose rebuild is thus P0 and mandatory before simulation, not an
+  optional improvement. The gated path is GPU smoke -> frozen full-corpus `annotation_v2` and QC -> separately labelled pre-beamforming synthetic-FMCW
+  delivery -> runtime cube conversion/OmniHand -> pose-only WaveLLM controls. Feature/fusion is a non-blocking
+  later comparison. It is documented in the
   [CSL-Daily reproduction operation](40_OPERATIONS/CSL_DAILY_REPRODUCTION.md).
 - CE-CNSL is registered as a P1 follow-on source for vocabulary and heterogeneous-domain expansion, with an
   independent manifest, split, label namespace, artifact root, and result identity. Execution is paused. During the
@@ -35,17 +41,20 @@ workspace begins only after receiving its immutable raw-session manifest and val
   receipt only. Adapter, label repair, the 120--240-sequence pilot, processing, and GPU work remain inactive until the
   CSL-Daily end-to-end stable loop is accepted and this work is explicitly reactivated. See the
   [CE-CNSL intake and pose pilot](40_OPERATIONS/CE_CNSL_INTAKE_AND_POSE_PILOT.md).
-- A historical WaveLLM bundle is uploading under the project mirror `log/archived/`. It is preservation-only until
+- A historical WaveLLM bundle is preserved under the project mirror `log/archived/`. It is preservation-only until
   stable inventory, checksum, format, and controlled-load receipt completes. The recovered CSL-News-derived mT5-only
   export remains a fallback, not historical end-to-end evidence.
 
 Active blockers: NAS intake, acquisition/channel/calibration evidence, simulation provenance, and final
 subject-aware splits.
 
-Next actions: preserve the incoming historical bundle and await upload completion, then receipt/audit it; accept
-CSL-Daily metadata/source, freeze `annotation_v1` and QC before any candidate improvement, create a distinct
-control split (the legacy validation/test files are identical), and build immutable synthetic task products. Real
-radar calibration/metadata and the subject-aware real-data split remain separate blockers.
+Next actions: complete the `annotation_v2` GPU gate, then run/freeze
+and QC the full corpus, create a distinct
+control split (the legacy validation/test files are identical), and
+build immutable synthetic-FMCW
+and pose-only products for OmniHand and WaveLLM. Cube generation occurs in the runtime adapter rather than a
+persisted delivery. Feature/fusion does not block the first training loop. The historical bundle audit, real-radar
+calibration/metadata, and subject-aware real-data split remain separate blockers.
 
 CE-CNSL has no active next action. In CSL-Daily's late stable phase, await explicit project-owner authorization before
 any optional source download; otherwise revisit its saved OpenSpec only after the stable-loop activation gate.
@@ -82,7 +91,8 @@ Canonical evidence: [source manifest log](../../../csl_news_annotation/docs/logs
 - [Data intake](40_OPERATIONS/DATA_INTAKE.md)
 - [Data rebuild runbook](40_OPERATIONS/DATA_REBUILD.md)
 - [CSL-Daily reproduction operation](40_OPERATIONS/CSL_DAILY_REPRODUCTION.md)
-- [Data registry](50_VALIDATION/DATA_REGISTRY.md)
+- [CSL-Daily legacy-path replay runbook](40_OPERATIONS/CSL_DAILY_LEGACY_REPLAY.md)
 - [CE-CNSL intake and pose pilot](40_OPERATIONS/CE_CNSL_INTAKE_AND_POSE_PILOT.md)
+- [Data registry](50_VALIDATION/DATA_REGISTRY.md)
 - [Changelog](90_CHANGELOG.md)
 - [Logs](../logs/README.md)

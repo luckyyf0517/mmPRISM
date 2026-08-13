@@ -3,7 +3,7 @@
 Status: current
 Owner: WaveLLM training lane
 Authority scope: Current WaveLLM model, training, resume, prediction, and evaluation workflow.
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 ## Boundary
 
@@ -17,22 +17,23 @@ not reconstruct radar/pose inputs, resolve model paths inside models, or own pap
 - Formal train/evaluate now use the shared distributed lifecycle, exact prediction sharding, cross-rank metric
   merging, and rank-zero artifact publication; WaveLLM-specific multi-process validation remains open.
 - Current character metrics and synthetic A100 runs are engineering protocols, not paper results.
-- CSL-Daily will be evaluated as a three-row controlled matrix: camera-pose semantic ceiling, cross-fitted
-  predicted-mmWave-pose, and predicted-mmWave-pose plus checkpoint-bound CubeNet frame feature. JSONL+NPY and final
-  Parquet WaveLLM delivery now support the required first-class pose-only mode; checkpoint-bound cross-fitted
-  feature export remains the separate pending contract.
-- A historical WaveLLM bundle is uploading under the project mirror `log/archived/`. It is preservation-only until
-  transfer completion, a stable checksum-bound receipt, format/world-size audit, and controlled load establish its
+- CSL-Daily first evaluates two pose-only controls: camera-pose semantic ceiling and cross-fitted predicted-mmWave-
+  pose. JSONL+NPY and final Parquet WaveLLM delivery support this first-class mode. The same predicted pose plus a
+  checkpoint-bound CubeNet frame feature remains a separate third-stage fusion comparison and does not block the
+  initial training loop.
+- A historical WaveLLM bundle is preserved under the project mirror `log/archived/`. It is preservation-only until
+  a stable checksum-bound receipt, format/world-size audit, and controlled load establish its
   identity and completeness. The CSL-News-derived mT5-only export remains a load-smoke-verified fallback;
   no historical end-to-end reproduction, pose compatibility, or metric claim is currently accepted.
 
-Active blockers: accepted CSL-Daily delivery, checkpoint-bound cross-fitted feature
-export, production BLEU/ROUGE/semantic protocols, historical bundle receipt/audit, WaveLLM multi-process/NCCL
-validation, and final paper evaluation.
+Active blockers: accepted CSL-Daily pose-only delivery, cross-fitted predicted-pose delivery, production
+BLEU/ROUGE/semantic protocols, historical bundle receipt/audit, WaveLLM multi-process/NCCL validation, and final
+paper evaluation. Checkpoint-bound feature export blocks only the later fusion comparison.
 
-Next action: preserve the inbound bundle and await upload completion for its independent receipt/audit. In parallel,
-accept CSL-Daily through the data-rebuild gate, implement the producer-bound feature-export contract, then run the
-small three-row control matrix with an accepted language asset.
+Next action: preserve the inbound bundle for its independent receipt/audit. In parallel, accept CSL-Daily
+through the data-rebuild gate, run the camera-pose pose-only smoke, then run the cross-fitted predicted-pose
+pose-only control with an accepted language asset. Implement the producer-bound feature-export contract afterwards
+for the separate fusion comparison.
 
 Full CSL-News reconstruction and retraining are not P0. They remain a separately reported future ceiling or
 provenance task, regardless of the result of this historical bundle audit.

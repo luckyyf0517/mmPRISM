@@ -11,12 +11,15 @@ from mmprism.data import (
     run_csl_daily_pose_annotation,
 )
 from mmprism.data.csl_daily_pose_annotation import (
+    ANNOTATION_V2_SCHEMA_VERSION,
     CslDailyPoseAnnotationConflictError,
     FramePosePrediction,
+    build_sequence_annotation_v2,
     discover_sequences,
     list_sequence_frames,
     reduce_sequence_poses,
     subject_id_for_sequence,
+    validate_annotation_v2_audit,
 )
 from mmprism.data.csl_daily_simulation_run import load_pose_manifest
 from mmprism.data.csl_news_annotation import LEFT_JOINT_INDICES, RIGHT_JOINT_INDICES
@@ -83,6 +86,26 @@ runtime:
     def _load_config(self, root: Path):
         return load_csl_daily_pose_annotation_config(
             self._write_config(root), root, variables={"TEST_ROOT": str(root)}
+        )
+
+    def _load_v2_config(self, root: Path):
+        config = self._write_config(root)
+        config.write_text(
+            config.read_text(encoding="utf-8")
+            .replace(
+                "schema_version: mmprism.csl_daily_pose_annotation.v1",
+                f"schema_version: {ANNOTATION_V2_SCHEMA_VERSION}",
+            )
+            .replace(
+                "  confidence_threshold: 0.5\n",
+                "  confidence_threshold: 0.5\n"
+                "  minimum_valid_joints_per_frame: 12\n"
+                "  minimum_valid_frame_ratio: 0.8\n",
+            ),
+            encoding="utf-8",
+        )
+        return load_csl_daily_pose_annotation_config(
+            config, root, variables={"TEST_ROOT": str(root)}
         )
 
     def _write_sequence(
@@ -231,6 +254,32 @@ runtime:
         self.assertTrue(np.isnan(reduction.pose[:, 0, 2]).all())
         self.assertTrue(np.isfinite(reduction.pose[:, 1, 2]).all())
         self.assertIn("left_arm_nan", reduction.qc_reasons)
+
+    def test_v2_reduction_preserves_validity_and_never_emits_nan(self) -> None:
+        keypoints, scores = _full_score_keypoints(2)
+        scores[:, 91] = 0.1
+        keypoints[1, 92, 0] = np.nan
+        annotation = build_sequence_annotation_v2(
+            keypoints,
+            scores,
+            confidence_threshold=0.5,
+            minimum_valid_joints_per_frame=12,
+            minimum_valid_frame_ratio=0.8,
+        )
+
+        self.assertTrue(np.isfinite(annotation.canonical_pose).all())
+        self.assertFalse(annotation.canonical_valid[:, 0, 3].any())
+        np.testing.assert_allclose(
+            annotation.canonical_confidence[:, 0, 3], [0.1, 0.1]
+        )
+        self.assertTrue(annotation.canonical_imputed[:, 0, 3].all())
+        self.assertTrue((annotation.canonical_pose[:, 0, 3] == 0.0).all())
+        self.assertFalse(annotation.canonical_valid[1, 0, 4])
+        self.assertTrue(annotation.canonical_imputed[1, 0, 4])
+        self.assertNotEqual(float(annotation.canonical_pose[1, 0, 4, 0]), 0.0)
+        self.assertTrue(np.isnan(annotation.native_keypoints_3d[1, 92, 0]))
+        self.assertEqual(annotation.frame_mask.dtype, np.bool_)
+        self.assertTrue(annotation.frame_mask.all())
 
     def test_depth_recentering_subtracts_sequence_mean_of_joints_6_and_7(self) -> None:
         keypoints, scores = _full_score_keypoints(3, z_base=10.0)
@@ -381,6 +430,50 @@ runtime:
                 (config.runtime.output_root / "pose_manifest.jsonl").read_bytes(),
                 manifest_bytes,
             )
+
+    def test_v2_writes_audit_payload_and_validates_before_restart(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = self._load_v2_config(root)
+            self._write_sequence(root, "S000000_P0004_T00", ["f0.jpg", "f1.jpg"])
+            estimator = _FakeEstimator(
+                {"S000000_P0004_T00": _full_score_keypoints(2)}
+            )
+
+            first = run_csl_daily_pose_annotation(config, estimator=estimator)
+
+            self.assertEqual(first["manifest_rows"], 1)
+            pose_path = config.runtime.output_root / "poses" / "S000000_P0004_T00.npy"
+            audit_path = config.runtime.output_root / "samples" / "S000000_P0004_T00.npz"
+            self.assertTrue(validate_annotation_v2_audit(audit_path, pose_path=pose_path))
+            with np.load(audit_path, allow_pickle=False) as arrays:
+                self.assertEqual(
+                    set(arrays.files),
+                    {
+                        "native_keypoints_3d",
+                        "native_keypoint_scores",
+                        "canonical_pose",
+                        "canonical_confidence",
+                        "canonical_valid",
+                        "canonical_imputed",
+                        "frame_mask",
+                    },
+                )
+                self.assertTrue(np.isfinite(arrays["canonical_pose"]).all())
+
+            second = run_csl_daily_pose_annotation(config, estimator=estimator)
+            self.assertEqual(second["skipped_existing"], 1)
+            self.assertEqual(len(estimator.calls), 2)
+
+            with np.load(audit_path, allow_pickle=False) as arrays:
+                tampered = {name: arrays[name] for name in arrays.files}
+            tampered["canonical_pose"] = tampered["canonical_pose"].copy()
+            tampered["canonical_pose"][0, 0, 0, 0] += 1.0
+            np.savez_compressed(audit_path, **tampered)
+            with self.assertRaisesRegex(
+                CslDailyPoseAnnotationConflictError, "refusing to overwrite"
+            ):
+                run_csl_daily_pose_annotation(config, estimator=estimator)
 
     def test_orphan_artifact_is_a_conflict_never_clobbered(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

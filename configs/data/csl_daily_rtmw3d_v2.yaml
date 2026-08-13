@@ -1,0 +1,24 @@
+# P0 CSL-Daily cam-pose rebuild. This configuration is intentionally separate
+# from the frozen diagnostic annotation_v1 output. Source identity, frame list,
+# configuration and model hashes are recorded in each v2 sidecar.
+schema_version: mmprism.csl_daily_pose_annotation.v2
+source:
+  sequence_root: ${MMPRISM_DATA_ROOT}/external/csl_daily/csl_daily_original_20260812/CSL-Daily/sentence/frames_512x512
+  source_id: csl_daily_original_20260812_retained_frames
+model:
+  mmpose_root: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9
+  mmpose_commit: 759b39c13fea6ba094afc1fa932f51dc1b11cbf9
+  project_dir: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9/projects/rtmpose3d
+  config_path: .cache/mmpose/759b39c13fea6ba094afc1fa932f51dc1b11cbf9/projects/rtmpose3d/configs/rtmw3d-l_8xb64_cocktail14-384x288.py
+  checkpoint_path: /mnt/gfs/yanyifan/mmPRISM/external/models/rtmw3d/794dbc78_20240626/rtmw3d-l_8xb64_cocktail14-384x288-794dbc78_20240626.pth
+  checkpoint_sha256: 794dbc78b04a43d81781f8ab0eba5b24f3dd5d71aaf6ae253940424159fb81ed
+  device: cuda:0
+transform:
+  confidence_threshold: 0.5
+  # A non-padding frame is eligible when at least 12/48 selected joints are
+  # reliable; at least 80% of a sequence must meet that condition.
+  minimum_valid_joints_per_frame: 12
+  minimum_valid_frame_ratio: 0.8
+runtime:
+  output_root: ${MMPRISM_DATA_ROOT}/interim/csl_daily/pose_annotation/rtmw3d_l_794dbc78_v2
+  inference_batch_size: 1
