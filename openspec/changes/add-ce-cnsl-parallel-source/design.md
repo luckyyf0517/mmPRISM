@@ -1,8 +1,9 @@
 ## Context
 
 CSL-Daily is the revision-critical controlled baseline, but its historical derived assets are unavailable and the
-new `annotation_v2` path is already being built. CE-CNSL is small enough to intake in parallel and adds vocabulary
-and capture diversity. Its official layout and labels also contain source-specific risks: heterogeneous video
+new `annotation_v2` path is already being built. CE-CNSL adds vocabulary and capture diversity, but its adapter
+should be designed from the completed CSL-Daily path rather than assumptions made during that rebuild. Its official
+layout and labels also contain source-specific risks: heterogeneous video
 formats, regional CSL metadata, an acknowledged stale signer mapping, and a split containing every signer in every
 partition.
 
@@ -10,8 +11,10 @@ partition.
 
 ### Priority and ownership
 
-CSL-Daily remains P0. CE-CNSL is P1-parallel and remains inside `data_rebuild`; no new workspace is justified.
-Intake, metadata audit, and a bounded pilot may run now. Full-corpus CE-CNSL GPU work yields to CSL-Daily capacity.
+CSL-Daily remains P0. CE-CNSL is a paused P1 follow-on source inside `data_rebuild`; no new workspace is justified.
+No intake, adapter, pilot, or GPU task starts until the CSL-Daily end-to-end stable loop is accepted and the
+coordinator explicitly reactivates this change. The OpenSpec change ID is retained for stable links; it no longer
+means concurrent execution.
 
 ### Shared core and dataset adapters
 
@@ -39,10 +42,12 @@ experiments evaluate both datasets separately so vocabulary/domain gain and CSL-
 
 ## Gates
 
-1. Source: checksum-bound full archive/extraction, exact video/CSV coverage, decode metadata, and license status.
-2. Identity: frozen signer repair and reversible label representation.
-3. Pose pilot: 120--240 stratified sequences pass contract coverage and manual overlay QC.
-4. Promotion: explicit acceptance binds source, labels, pilot, config/model, and QC before full processing.
+1. Activation: accepted CSL-Daily `annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only WaveLLM` stable loop
+   plus explicit coordinator reactivation.
+2. Source: checksum-bound full archive/extraction, exact video/CSV coverage, decode metadata, and license status.
+3. Identity: frozen signer repair and reversible label representation.
+4. Pose pilot: 120--240 stratified sequences pass contract coverage and manual overlay QC.
+5. Promotion: explicit acceptance binds source, labels, pilot, config/model, and QC before full processing.
 
 ## Risks And Mitigations
 
@@ -50,5 +55,5 @@ experiments evaluate both datasets separately so vocabulary/domain gain and CSL-
 - Pose failure from heterogeneous framing: stratify the pilot, preserve aspect ratio, and retain explicit masks.
 - Dialect collapse: preserve raw variants and regional notes; make normalization versioned and reversible.
 - Participant leakage: never use the official split for new-user claims.
-- P0 resource contention: CE-CNSL full workers yield to the CSL-Daily critical path.
+- Premature execution: the activation gate prohibits all CE-CNSL download, adapter, pilot, and GPU work.
 - Premature abstraction: extract shared functions only when both adapters exercise the contract.

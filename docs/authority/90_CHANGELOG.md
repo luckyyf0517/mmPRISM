@@ -44,3 +44,6 @@ Last reviewed: 2026-08-12
 - Accepted `DEC-052`: CE-CNSL becomes a P1 parallel public source for vocabulary and heterogeneous-domain
   expansion while CSL-Daily remains the P0 baseline. Intake, signer/label audit, and a bounded pose pilot proceed
   in parallel; full processing is gated and cannot block CSL-Daily or new real-radar collection.
+- Accepted `DEC-054`, superseding the execution schedule in `DEC-052`: preserve the CE-CNSL assessment and planned
+  contracts, but pause all intake, adapter, pilot, and GPU work until the CSL-Daily end-to-end reproduction loop is
+  accepted and the coordinator explicitly reactivates CE-CNSL.

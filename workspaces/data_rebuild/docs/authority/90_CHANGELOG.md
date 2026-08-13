@@ -38,3 +38,6 @@ Last reviewed: 2026-08-13
 - Registered CE-CNSL as a P1 parallel intake under `DEC-052`, without creating another workspace. Added its
   independent dataset/split identities and a bounded source, label/signer, and pose-pilot runbook. Full-corpus
   annotation and simulation remain conditional and never block CSL-Daily P0.
+- Applied `DEC-054`: CE-CNSL is now a paused follow-on source rather than an active parallel intake. Its assessment,
+  identities, runbook, and OpenSpec remain; source download, adapter work, pilot, and GPU execution wait for an
+  accepted CSL-Daily end-to-end stable loop and explicit coordinator reactivation.

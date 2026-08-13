@@ -1,3 +1,10 @@
+## 0. Activation Gate
+
+- [ ] 0.1 Confirm an accepted CSL-Daily `annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only WaveLLM` stable
+  loop with frozen run/evaluation evidence.
+- [ ] 0.2 Record explicit coordinator reactivation after reviewing CSL-Daily's shared and dataset-specific interfaces.
+- [ ] 0.3 Keep all remaining tasks inactive until both activation conditions pass.
+
 ## 1. Source And Metadata
 
 - [ ] 1.1 Freeze repository revision, full archive SHA-256/size, extracted inventory, and license status.

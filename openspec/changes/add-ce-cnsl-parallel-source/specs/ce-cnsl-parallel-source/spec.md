@@ -1,16 +1,28 @@
 ## ADDED Requirements
 
-### Requirement: CE-CNSL is an independent parallel source
+### Requirement: CE-CNSL is an independent paused follow-on source
 
 The system SHALL identify CE-CNSL as `DATASET-CE-CNSL` and SHALL keep its source manifest, artifact root, split,
-label transform, and metrics separate from CSL-Daily. CE-CNSL work SHALL NOT block the CSL-Daily P0 path.
+label transform, and metrics separate from CSL-Daily. Before activation, the system SHALL NOT download the source,
+implement an adapter, run a pose pilot, or allocate CE-CNSL GPU work.
 
-#### Scenario: Run both source pipelines concurrently
+#### Scenario: Attempt CE-CNSL work before activation
 
-- **WHEN** CSL-Daily annotation and CE-CNSL intake or pilot are active
-- **THEN** each artifact binds exactly one dataset ID and source manifest
-- **AND** CE-CNSL full-corpus work yields resources required by the CSL-Daily critical path
-- **AND** neither result is published as one mixed CSL-Daily metric.
+- **WHEN** the CSL-Daily stable loop or explicit coordinator reactivation is absent
+- **THEN** CE-CNSL intake, adapter, pilot, and GPU execution remain inactive
+- **AND** the saved assessment and OpenSpec stay available for later review.
+
+### Requirement: CE-CNSL activation follows CSL-Daily evidence
+
+CE-CNSL execution SHALL require an accepted CSL-Daily `annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only
+WaveLLM` stable loop with frozen run/evaluation evidence and explicit coordinator reactivation.
+
+#### Scenario: Reactivate CE-CNSL planning
+
+- **WHEN** the CSL-Daily stable-loop evidence is accepted
+- **AND** the coordinator explicitly reactivates this change
+- **THEN** source intake may begin at Gate 1
+- **AND** implementation reuses only interfaces demonstrated by the accepted CSL-Daily path.
 
 ### Requirement: CE-CNSL source and signer identity are audited before promotion
 

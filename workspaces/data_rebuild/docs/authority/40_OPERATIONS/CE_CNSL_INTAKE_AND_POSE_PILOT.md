@@ -7,9 +7,20 @@ Last reviewed: 2026-08-13
 
 ## Purpose And Priority
 
-CE-CNSL is a P1 parallel public source under `DEC-052`. It expands CSL-Daily's vocabulary and source domain while
-CSL-Daily remains the P0 stable baseline. This operation may run concurrently with CSL-Daily source annotation,
-simulation, and training, but CE-CNSL failure or delay never blocks those activities or new real-radar collection.
+CE-CNSL is a P1 follow-on public source. Under `DEC-054`, this operation is paused while CSL-Daily remains the P0
+stable baseline. The page preserves the already reviewed procedure; it is not an instruction to start intake now.
+
+## Activation Gate
+
+Do not download the source, implement an adapter, select/run the pilot, or allocate GPU capacity until both conditions
+are recorded:
+
+1. CSL-Daily has an accepted `annotation_v2 -> synthetic FMCW -> OmniHand -> pose-only WaveLLM` stable loop with
+   frozen run/evaluation evidence.
+2. The coordinator explicitly reactivates `add-ce-cnsl-parallel-source` after reviewing what the CSL-Daily
+   implementation established about shared and dataset-specific interfaces.
+
+There is no automatic activation based only on elapsed time or free compute.
 
 This workspace owns CE-CNSL intake and processed delivery. No separate CE-CNSL workspace is created. Shared code
 belongs under `src/mmprism/`; dataset-specific filename, label, and source-layout behavior belongs in a thin adapter.
@@ -25,8 +36,8 @@ belongs under `src/mmprism/`; dataset-specific filename, label, and source-layou
 
 ## Gate 1: Immutable Source Receipt
 
-Download the complete archive into a versioned `incoming/` or `external/` destination configured through the data
-root. Before extraction or processing, record:
+After activation, download the complete archive into a versioned `incoming/` or `external/` destination configured
+through the data root. Before extraction or processing, record:
 
 - source URL, retrieval time, archive byte count, SHA-256, and complete extracted inventory;
 - repository commit and exact train/dev/test CSV checksums;
@@ -65,15 +76,15 @@ The pilot report includes exact coverage, failure categories, hand/joint validit
 temporal jump/bone-length/left-right alerts, plus deterministic source/overlay review. It compares strata rather than
 reporting only one average success rate.
 
-## Promotion And Parallel Scheduling
+## Promotion And Scheduling
 
 Full CE-CNSL annotation is permitted only after all three gates pass and an explicit acceptance record identifies
 the frozen source, repaired labels, pilot manifest, config/model fingerprints, and QC result. Promotion reuses the
 generic scheduler, annotation payload, QC, simulation, and delivery functions developed for CSL-Daily; it does not
 copy or import a `csl_daily` business wrapper whose assumptions are dataset-specific.
 
-GPU scheduling must preserve CSL-Daily P0 capacity. CE-CNSL may consume otherwise available workers, but its full
-run is paused whenever it delays the CSL-Daily source-to-training critical path.
+After activation, GPU scheduling must preserve CSL-Daily and revision-critical capacity. Free compute by itself does
+not authorize CE-CNSL execution.
 
 After promotion, the first semantic experiment is sequential `CSL-Daily -> CE-CNSL` adaptation. CE-CNSL-only and
 balanced joint/rehearsal runs are comparisons. Every report evaluates CSL-Daily and CE-CNSL separately to measure
