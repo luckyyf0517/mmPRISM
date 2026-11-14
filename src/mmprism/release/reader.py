@@ -17,7 +17,7 @@ from mmprism.data.sign_language_translation import (
 )
 from mmprism.models.stgcn_legacy import LegacyWaveLLMPoseEncoder
 from mmprism.models.translation import GeometryGuidedMT5
-from mmprism.release.data import SIGNERS, calibration_ids, cell_segments, person_data
+from mmprism.release.data import SIGNERS, calibration_ids, cell_segments, person_rows
 from mmprism.release.paths import PACKAGE_ROOT, resolve
 from mmprism.release.settings import recipe, release_device_memory, write_report
 from mmprism.training.translation.pose_source import PoseSource
@@ -89,15 +89,15 @@ def build_sample(sample_id, pose, mask, mean, std):
 
 
 def prediction_clip(signer, sid, mode):
-    rows, _, _ = person_data(signer)
+    rows = person_rows(signer)
     row = rows[sid]
     offset = row["frame_offset"]
     path = resolve("outputs.reconstruction", signer=signer, segment=sid, mode=mode)
     with np.load(path, allow_pickle=False) as payload:
         pose = payload["pose"].copy()
     # the inference mask comes from the reconstruction itself: a frame is usable when
-    # every reconstructed joint is finite. No annotation is read on this path.
-    mask = np.isfinite(pose).all(axis=(-2, -1))
+    # every reconstructed joint of it is finite. No annotation is read on this path.
+    mask = np.isfinite(pose).reshape(pose.shape[0], -1).all(axis=1)
     return pose, mask, np.arange(row["frames"], dtype=np.float64) * 0.1
 
 
@@ -110,7 +110,7 @@ def adapt_reader(signer: str, *, mode: str, device: str) -> dict:
     if batch_size <= 0:
         raise ValueError("Reader adaptation batch_size must be positive")
     seed = int(settings["seed"])
-    rows, _, _ = person_data(signer)
+    rows = person_rows(signer)
     selected = calibration_ids(signer)
     records = [
         {

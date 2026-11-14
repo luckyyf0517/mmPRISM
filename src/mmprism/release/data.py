@@ -33,6 +33,22 @@ class Segment:
 
 
 @lru_cache(maxsize=9)
+def person_rows(signer: str) -> dict:
+    """Segment rows for one signer, read from the manifest alone.
+
+    The inference path needs the frame count and the segment offsets and nothing
+    else, so this accessor never opens the camera pose or the validity mask.
+    """
+    if signer not in SIGNERS:
+        raise ValueError(f"Unknown signer {signer!r}; choose one of {', '.join(SIGNERS)}")
+    path = resolve("pack.pool", signer=signer)
+    return {
+        row["segment_id"]: row
+        for line in (path / "manifest.jsonl").read_text().splitlines()
+        if (row := json.loads(line))
+    }
+
+
 def _person(path: Path) -> tuple[dict, np.ndarray, np.ndarray]:
     rows = {
         row["segment_id"]: row
