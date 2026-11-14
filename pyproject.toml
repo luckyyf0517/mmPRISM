@@ -1,0 +1,62 @@
+[project]
+name = "mmprism-release"
+version = "0.1.0"
+description = "mmPRISM: millimetre-wave sign-language reconstruction and understanding"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "protobuf==6.33.6",
+    "numpy==2.5.2",
+    "torch==2.11.0+cu128",
+    "torchvision==0.26.0+cu128",
+    "PyYAML==6.0.3",
+    "transformers==4.57.6",
+    "sentencepiece==0.2.2",
+    "sacrebleu==2.6.0",
+    "rouge-score==0.1.2",
+    "lightning==2.6.5",
+    "pyarrow==23.0.1",
+    "scipy==1.18.0",
+    "safetensors==0.8.0",
+    "huggingface-hub==0.36.2",
+    "sentence-transformers==5.7.0",
+]
+
+[project.scripts]
+mmprism-verify-data = "mmprism.release.cli:verify_data"
+mmprism-verify-weights = "mmprism.release.cli:verify_weights"
+mmprism-reconstruct = "mmprism.release.cli:reconstruct"
+mmprism-evaluate = "mmprism.release.cli:evaluate"
+mmprism-adapt = "mmprism.release.cli:adapt"
+mmprism-translate = "mmprism.release.cli:translate"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mmprism"]
+
+[tool.ruff]
+line-length = 100
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "ruff==0.16.2"]
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+torchvision = { index = "pytorch" }
+
+[tool.hatch.build.targets.wheel.force-include]
+"configs" = "mmprism/release/resources/configs"
+"manifests" = "mmprism/release/resources/manifests"
+"scripts" = "mmprism/release/resources/scripts"
+
+[[tool.uv.index]]
+name = "pypi-mirror"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true

@@ -1,0 +1,166 @@
+data:
+  compact_sources:
+    new: training.compact_catalog_new
+    old: training.compact_catalog_old
+    v4: training.compact_catalog_v4
+  expected_prevalid_frames:
+    test: 15741
+    train: 689881
+    validation: 23089
+  expected_segments:
+    test: 159
+    train: 11221
+    validation: 354
+  train_window_frames: 32
+  membership: training.membership
+mixing:
+  real_share: 0.5
+  simulation_share: 0.5
+  per_device_real: 1
+  per_device_simulation: 1
+  prefetch_workers: 0
+  data_workers: 6
+  per_device_batch: 2
+  effective_global_batch: 8
+  heldout_signers:
+  - p01
+  - p03
+  - p06
+  - p10
+  - p11
+  - p17
+  - p36
+  - p37
+simulation_stream:
+  enabled: true
+  seed: 20261105
+  source_frame_stride: 3
+  target_fps: 10.0
+  membership:
+    source_root: training.daily_source_root
+    strict_split_assignments: training.daily_strict_split_assignments
+    expected_episodes:
+      train: 17916
+      validation: 300
+      test: 2438
+    allowed_unassigned_sample_ids: []
+  background:
+    alpha: 0.7
+    windows_per_draw: 3
+    donor_pool: old
+    donor_role: train
+    heldout_signers:
+    - p01
+    - p03
+    - p06
+    - p10
+    - p11
+    - p17
+    - p36
+    - p37
+  scene:
+    radar_position_m:
+    - 0.0
+    - 0.0
+    - 0.0
+    scatter_sample_count: 512
+    scatter_sampling_seed: 2026091701
+    complex_path_chunk_size: 32
+    adc_remove_mean: true
+    range_window: np.hanning(N+2)[1:-1]
+    range_bin_interval:
+    - 0
+    - 32
+    static_subtraction: none
+    scene_transform: fixed_per_selected_32_frame_window
+    shoulder_anchor:
+      canonical_radar_distance_m: 0.7268
+      canonical_lateral_m: 0.0308
+      canonical_height_m: 0.0739
+      train_radar_distance_range_m:
+      - 0.6268
+      - 0.8268
+      train_lateral_range_m:
+      - -0.0004
+      - 0.062
+      train_height_range_m:
+      - -0.0261
+      - 0.1739
+      train_lateral_jitter_m: 0.0312
+      train_height_jitter_m: 0.1
+      train_rotation_axis_angle_jitter_rad:
+      - 0.0872665
+      - 0.2617994
+      - 0.0872665
+    scattering_augmentation:
+      identity_std: 0.05
+      morphology_std: 0.05
+      surface_scale_range:
+      - 0.95
+      - 1.05
+      window_draw_constant: true
+    observation_noise:
+      kind: post_range_fft_complex_iq_gaussian
+      relative_rms_per_component: 0.01
+      seed: 2026091721
+    geometry_view_envelope:
+      front_axis: positive_z
+      fixed_angular_beamforming_gate: false
+      input_semantics: full_116_channel_complex_antenna_then_learned_frontend
+      retained_range_max_m: 1.393777964736
+error_head:
+  hidden_channels: 192
+  initial_error_metres: 0.03
+model:
+  attention_heads: 8
+  double_stream_blocks: 4
+  fused_single_stream_blocks: 8
+  hidden_channels: 384
+  mhr_head_seed: 2026092901
+  mlp_ratio: 4
+  token_shape:
+  - 256
+  - 768
+optimization:
+  beta1: 0.9
+  beta2: 0.999
+  checkpoint_every_steps: 5000
+  final_learning_rate: 1.0e-06
+  gradient_accumulation_steps: 1
+  gradient_clip_norm: 1.0
+  hold_learning_rate_steps: 10000
+  learning_rate: 0.0001
+  max_optimizer_steps: 20000
+  optimizer: adamw
+  precision: float32
+  sampler_seed: 20260929
+  scheduler: hold_then_cosine
+  seed: 20260929
+  validate_every_steps: 5000
+  warmup_steps: 1000
+  weight_decay: 0.01
+processor:
+  apply_doppler_window: true
+  range_bin_count: 32
+  remove_static: false
+runtime:
+  effective_global_batch: 8
+  gradient_accumulation_steps: 1
+  per_device_batch: 2
+  persistent_workers: true
+  pin_memory: true
+  prefetch_factor: 2
+  train_num_workers: 2
+  world_size: 4
+output_root: outputs.stage1_mixed
+cache:
+  target_root: training.targets
+upstream:
+  binding_root: training.binding
+  warm_start_checkpoint: outputs.stage1_real_checkpoint
+  mhr_rig: training.mhr_rig
+  mhr_fk_constants: training.mhr_fk_constants
+  official_dinov3_vitb_weights: training.backbone_weights
+objective:
+  auxiliary_calibration: training.auxiliary_calibration
+  error_head_weight: 0.05

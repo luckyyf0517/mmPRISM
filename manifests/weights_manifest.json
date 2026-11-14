@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "weights": {
+    "reconstruction": {
+      "relative_path": "artifacts/retained/mainline_20261106/checkpoints/producer_mixed100k_e2e_dual50_step_20000.pt",
+      "size_bytes": 1610190193,
+      "sha256": "ca738749fc4ca3bee869686bec2bc6cd341b29b7153670cdcf9b56be6db2ebc3",
+      "payload_key": "model_state_dict"
+    },
+    "reader": {
+      "relative_path": "artifacts/retained/stage2_reader_20261106/last.ckpt",
+      "size_bytes": 7033011744,
+      "sha256": "96b63e2873d3fb76c2ab81e1be3490bda1ef17607f350f13e739aa2404f9c566",
+      "payload_key": "state_dict"
+    }
+  }
+}

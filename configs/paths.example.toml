@@ -1,0 +1,7 @@
+# Copy to paths.toml (gitignored) or set MMPRISM_*_ROOT environment variables.
+# Every dataset and checkpoint path resolves through these roots; the package
+# itself contains no absolute paths.
+data_root = "/path/to/mmprism-data"        # the nine-signer pack
+weights_root = "/path/to/existing/source-root"  # originals remain under artifacts/retained/
+assets_root = "/path/to/body-rig-and-scoring-assets"
+output_root = "/path/to/mmprism-outputs"   # predictions and reports

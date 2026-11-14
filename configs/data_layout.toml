@@ -1,0 +1,55 @@
+# Logical resources are relative to their configured roots.
+[pack]
+manifest = "manifest.json"
+splits = "splits/cells.json"
+bigsplit = "splits/bigsplit.json"
+calibration_selection = "splits/calibration_selection.json"
+intrinsics = "annotations/camera_intrinsics.json"
+pool = "pool/{signer}"
+radar = "radar/{signer}/{segment}/mmwave.fp16.npy"
+labels = "labels3d/{signer}"
+daily_annotations = "daily/ce_daily_gtpose_paired"
+reader_base = "assets/reader_base"
+
+[weights]
+reconstruction = "artifacts/retained/mainline_20261106/checkpoints/producer_mixed100k_e2e_dual50_step_20000.pt"
+reader = "artifacts/retained/stage2_reader_20261106/last.ckpt"
+
+[assets]
+mhr_rig = "mhr_model.pt"
+mhr_fk_constants = "mhr_fk_constants.npz"
+sbert = "sbert"
+simcse = "simcse"
+
+# Optional full-corpus resources for reading the training recipe.
+[training]
+reader_initial_language = "training/assets/reader_language"
+reader_initial_pose = "training/assets/reader_pose.pt"
+membership = "training/membership.json"
+binding = "training/binding"
+targets = "training/targets"
+compact_catalog_old = "training/compact_sources/old.json"
+compact_catalog_new = "training/compact_sources/new.json"
+compact_catalog_v4 = "training/compact_sources/additional.json"
+daily_source_root = "training/daily/samples"
+daily_strict_split_assignments = "training/daily/split_assignments.jsonl"
+mhr_rig = "training/assets/mhr_model.pt"
+mhr_fk_constants = "training/assets/mhr_fk_constants.npz"
+backbone_weights = "training/assets/backbone.safetensors"
+auxiliary_calibration = "training/auxiliary_calibration.json"
+
+[outputs]
+stage1_real = "training/real"
+stage1_mixed = "training/mixed"
+reconstruction = "reconstruction/{mode}/{signer}/{segment}.npz"
+reconstruction_checkpoint = "adaptation/reconstruction/{signer}/model.pt"
+reader_checkpoint = "adaptation/reader/{mode}/{signer}/model.pt"
+adaptation_report = "adaptation/{side}/{signer}/report.json"
+pose_report = "evaluation/pose_{mode}.json"
+pose_signer_report = "evaluation/pose/{mode}/{signer}.json"
+translation = "translation/{mode}/{reader}/{signer}.jsonl"
+translation_report = "evaluation/translation_{mode}_{reader}.json"
+translation_signer_report = "evaluation/translation/{mode}/{reader}/{signer}.json"
+reader_report = "adaptation/reader/{mode}/{signer}/report.json"
+stage1_real_checkpoint = "training/real/checkpoints/reconstruction-step-80000.pt"
+reader_training = "training/reader"

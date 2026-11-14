@@ -1,0 +1,28 @@
+Upstream components
+
+The translation checkpoint contains language-model parameters initialized from
+Uni-Sign's mT5 model. mT5 (multilingual Text-to-Text Transfer Transformer, the
+reader's language backbone) was developed by Google Research.
+
+mT5: https://github.com/google-research/multilingual-t5
+Uni-Sign initialization: https://huggingface.co/ZechengLi19/Uni-Sign
+
+The reconstruction checkpoint uses a DINOv3 pretrained visual backbone.
+DINOv3: https://github.com/facebookresearch/dinov3
+
+Body-parameter decoding and surface simulation use external Momentum Human Rig
+assets. Momentum Human Rig: https://github.com/facebookresearch/MHR
+
+These upstream components retain their respective licenses and notices.
+
+Sentence encoders used for translation scoring
+
+SBERT (Sentence-BERT): shibing624/text2vec-base-chinese, revision
+183bb99aa7af74355fb58d16edf8c13ae7c5433e.
+
+SimCSE: cyclone/simcse-chinese-roberta-wwm-ext, revision
+871d7039a3fccd4869d545a25b63c545341ca7f4.
+
+These two encoders are supplied with the evaluation asset bundle that accompanies the
+code package, reproduced from those repositories at the revisions above, and they keep
+their own licences.

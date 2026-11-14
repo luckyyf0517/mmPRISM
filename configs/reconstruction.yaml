@@ -1,0 +1,24 @@
+model:
+  attention_heads: 8
+  double_stream_blocks: 4
+  fused_single_stream_blocks: 8
+  hidden_channels: 384
+  mhr_head_seed: 2026092901
+  mlp_ratio: 4
+  token_shape:
+  - 256
+  - 768
+processor:
+  apply_doppler_window: true
+  range_bin_count: 32
+  remove_static: false
+error_head:
+  hidden_channels: 192
+  initial_error_metres: 0.03
+data:
+  train_window_frames: 32
+optimization:
+  seed: 20260929
+upstream:
+  mhr_rig: assets.mhr_rig
+  mhr_fk_constants: assets.mhr_fk_constants

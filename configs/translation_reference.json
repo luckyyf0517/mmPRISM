@@ -1,0 +1,9 @@
+{
+  "description": "Camera-pose reference values printed in the paper, used as the denominator of relative performance.",
+  "metrics": {
+    "bleu4": 24.44,
+    "rouge_l": 50.34,
+    "sbert": 0.667,
+    "simcse": 87.2
+  }
+}

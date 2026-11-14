@@ -1,0 +1,62 @@
+# Reader, stage two: poses reconstructed from the same sentences.
+#
+# The values below are the recipe of the run behind the translation checkpoint
+# this package loads (stage two, November 2026: step 2988 of the schedule, epoch
+# field 82, 455 state entries). It trains for 3,000 optimizer updates at a peak
+# rate of 1e-4 with a cosine decay, after a 100-update warm-up, on a micro-batch
+# of eight sequences accumulated over sixteen steps on four cards.
+#
+# Corpus: the poses reconstructed from the daily split of the corpus, that is
+# 18,206 training takes over 713,656 frames, with 300 validation takes drawn with
+# seed 20261101. Training applies joint-style augmentation and tempo resampling in
+# the 0.6-1.0 band, and reads poses through the same normalisation profile as
+# stage one.
+#
+# Two of these settings sit outside this file: the 100-update warm-up is the
+# trainer's fixed constant (WARMUP_OPTIMIZER_STEPS in
+# src/mmprism/training/translation/wavellm_lightning.py), and the reconstructed
+# pose stream is produced by the reconstruction model rather than by the package.
+# Training needs the full corpus and the mT5 assets, which the package does not
+# carry; this file records the recipe, it is not a command of the release
+# workflow.
+schema_version: mmprism.wavellm_run.v2
+input_mode: pose_only
+model:
+  asset_id: reader_base
+  hidden_size: 768
+  joint_count: 24
+  coordinate_dim: 3
+  pose_channels:
+  - 32
+  - 64
+  temporal_kernel_size: 5
+  dropout: 0.0
+  label_smoothing: 0.2
+  freeze_language_model: false
+conditional_discrimination:
+  coefficient: 0.1
+  tie_seed: 20260921
+  negative_strategy: local_closest_length_excluding_same_text_and_group_v1
+data:
+  batch_size: 8
+  num_workers: 8
+  verify_checksums: false
+  shuffle: true
+  max_frames: 256
+  prompt: 'Translate hand sign language videos to Chinese:'
+  max_prompt_length: 32
+  max_target_length: 64
+optimization:
+  epochs: 100
+  max_steps: 3000
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-4
+  beta1: 0.9
+  beta2: 0.98
+  gradient_clip_norm: 1.0
+  accumulate_grad_batches: 16
+generation:
+  max_new_tokens: 64
+  num_beams: 2
+evaluation:
+  save_references: true

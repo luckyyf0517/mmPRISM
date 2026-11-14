@@ -1,0 +1,67 @@
+# Real-only prefix of the 100000-step schedule; the continuation starts at step 80000.
+data:
+  compact_sources:
+    new: training.compact_catalog_new
+    old: training.compact_catalog_old
+    v4: training.compact_catalog_v4
+  expected_prevalid_frames:
+    test: 15741
+    train: 689881
+    validation: 23089
+  expected_segments:
+    test: 159
+    train: 11221
+    validation: 354
+  train_window_frames: 32
+  membership: training.membership
+model:
+  attention_heads: 8
+  double_stream_blocks: 4
+  fused_single_stream_blocks: 8
+  hidden_channels: 384
+  mhr_head_seed: 2026092901
+  mlp_ratio: 4
+  token_shape:
+  - 256
+  - 768
+optimization:
+  beta1: 0.9
+  beta2: 0.999
+  checkpoint_every_steps: 10000
+  final_learning_rate: 1.0e-06
+  gradient_accumulation_steps: 1
+  gradient_clip_norm: 1.0
+  hold_learning_rate_steps: 40000
+  learning_rate: 0.0001
+  max_optimizer_steps: 100000
+  optimizer: adamw
+  precision: float32
+  sampler_seed: 20260929
+  scheduler: hold_then_cosine
+  seed: 20260929
+  validate_every_steps: 10000
+  weight_decay: 0.01
+  stop_at_step: 80000
+processor:
+  apply_doppler_window: true
+  range_bin_count: 32
+  remove_static: false
+runtime:
+  effective_global_batch: 8
+  gradient_accumulation_steps: 1
+  per_device_batch: 2
+  persistent_workers: true
+  pin_memory: true
+  prefetch_factor: 2
+  train_num_workers: 2
+  world_size: 4
+output_root: outputs.stage1_real
+cache:
+  target_root: training.targets
+upstream:
+  binding_root: training.binding
+  mhr_rig: training.mhr_rig
+  mhr_fk_constants: training.mhr_fk_constants
+  official_dinov3_vitb_weights: training.backbone_weights
+objective:
+  auxiliary_calibration: training.auxiliary_calibration
