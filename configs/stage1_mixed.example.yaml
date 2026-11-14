@@ -1,3 +1,6 @@
+# Mixed continuation of the 100000-step schedule: resumes from the step-80000 real-only
+# checkpoint and runs the last 20000 updates, global steps 80000-100000. Step counts in this
+# file and in checkpoint names are local to the continuation.
 data:
   compact_sources:
     new: training.compact_catalog_new

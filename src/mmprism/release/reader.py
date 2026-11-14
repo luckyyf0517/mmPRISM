@@ -89,13 +89,15 @@ def build_sample(sample_id, pose, mask, mean, std):
 
 
 def prediction_clip(signer, sid, mode):
-    rows, _, masks = person_data(signer)
+    rows, _, _ = person_data(signer)
     row = rows[sid]
     offset = row["frame_offset"]
     path = resolve("outputs.reconstruction", signer=signer, segment=sid, mode=mode)
     with np.load(path, allow_pickle=False) as payload:
         pose = payload["pose"].copy()
-    mask = np.asarray(masks[offset : offset + row["frames"]], dtype=bool)
+    # the inference mask comes from the reconstruction itself: a frame is usable when
+    # every reconstructed joint is finite. No annotation is read on this path.
+    mask = np.isfinite(pose).all(axis=(-2, -1))
     return pose, mask, np.arange(row["frames"], dtype=np.float64) * 0.1
 
 

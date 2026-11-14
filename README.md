@@ -112,6 +112,12 @@ output_root = "/path/to/mmprism-outputs"
 | Root | Contents |
 |---|---|
 | `data_root` | The released evaluation set, nine held-out signers, including splits, pose supervision and reader tokenizer/configuration files. |
+
+Stage one of the reconstruction model is a two-phase schedule: `configs/stage1_real.example.yaml`
+runs updates 0-80000 on measured windows and stops there, and `configs/stage1_mixed.example.yaml`
+continues for the last 20000, with one simulated window per card. Step counts in the second file
+and in checkpoint names are local to that continuation, so the shipped
+`producer_mixed100k_e2e_dual50_step_20000.pt` is update 100000 of Supplementary Note 7.
 | `weights_root` | The original reconstruction and reader checkpoints, at the relative locations declared under `[weights]` in the layout. |
 | `assets_root` | The body rig, forward-kinematics constants and two sentence encoders listed below. |
 | `output_root` | Generated poses, personal checkpoints, text predictions and evaluation reports. Use a new directory to retain a separate run. |
