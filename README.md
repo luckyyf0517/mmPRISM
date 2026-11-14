@@ -22,6 +22,40 @@ radar -> zero-shot pose -> evaluation before adaptation
       -> adapt the reader on the same 50 segments -> Chinese text -> translation scores
 ```
 
+## Reproduce in one pass
+
+A complete run takes three downloads, one configuration edit and four commands.
+
+```bash
+# 1. the three downloads (Hugging Face account not required for public files)
+pip install -U "huggingface_hub[cli]"
+huggingface-cli download luckyyf/mmprism-data --repo-type dataset --local-dir mmprism-data
+huggingface-cli download luckyyf/mmprism-checkpoints --local-dir weights-download
+huggingface-cli download luckyyf/mmprism-eval-models --local-dir assets
+
+# 2. put the checkpoints on the relative paths the layout expects
+mkdir -p weights/artifacts/retained/mainline_20261106/checkpoints weights/artifacts/retained/stage2_reader_20261106
+mv weights-download/producer_mixed100k_e2e_dual50_step_20000.pt weights/artifacts/retained/mainline_20261106/checkpoints/
+mv weights-download/stage2_reader_20261106_last.ckpt weights/artifacts/retained/stage2_reader_20261106/last.ckpt
+rmdir weights-download
+
+# 3. point the configuration at the three roots, then follow steps 3 to 6 below
+cp configs/paths.example.toml configs/paths.toml
+# data_root = "<this directory>/mmprism-data"
+# weights_root = "<this directory>/weights"
+# assets_root = "<this directory>/assets"
+```
+
+Resources: one NVIDIA GPU with at least 32 GB of memory, about 150 GB of disk
+for the inputs and the generated checkpoints, and roughly two to three hours for
+the nine signers on one card, or under an hour with four cards running one signer
+each.
+
+The run writes, below `output_root`: reconstructed poses, the personal
+reconstruction and reader checkpoints with their training reports, the text
+predictions, and the pose and translation reports. Step 3 verifies that the data
+and the checkpoints match their recorded digests before anything is computed.
+
 ## 1. Install the environment
 
 Use Linux, Python 3.12 and [uv](https://docs.astral.sh/uv/) (the Python package and
@@ -129,13 +163,18 @@ The files in `splits/` define **our repartition of the source corpus**.
 order for each signer. `bigsplit.json` records the sentence split used by the
 reader recipe. The commands consume these supplied memberships directly.
 
-### Checkpoints and external assets
+### Where the supplied files are
 
-The two checkpoints are supplied in the review bundle, below its `weights/`
-directory at the relative paths recorded in
-[manifests/weights_manifest.json](manifests/weights_manifest.json), which also holds
-their sizes and SHA-256 digests. The reader
-loads its tokenizer and language-model configuration from
+| What | Where | Size |
+|---|---|---|
+| this code | this repository | 1.7 MB |
+| reconstruction and translation checkpoints | https://huggingface.co/luckyyf/mmprism-checkpoints | 8.6 GB |
+| nine-signer data pack | https://huggingface.co/datasets/luckyyf/mmprism-data | 93 GB |
+| body rig, forward-kinematics constants, two sentence encoders | https://huggingface.co/luckyyf/mmprism-eval-models | 1.5 GB |
+
+[manifests/weights_manifest.json](manifests/weights_manifest.json) records the size
+and SHA-256 digest of both checkpoints, so the downloaded copies can be checked
+against it. The reader loads its tokenizer and language-model configuration from
 `data_root/assets/reader_base/`, then loads learned parameters from the reader
 checkpoint.
 
@@ -146,10 +185,11 @@ checkpoint.
 | `assets.sbert` | `sbert/` | SBERT (Sentence-BERT, the sentence encoder used for semantic translation similarity): `shibing624/text2vec-base-chinese` at revision `183bb99aa7af74355fb58d16edf8c13ae7c5433e`. |
 | `assets.simcse` | `simcse/` | SimCSE (Simple Contrastive Learning of Sentence Embeddings, the second semantic translation scorer): `cyclone/simcse-chinese-roberta-wwm-ext` at revision `871d7039a3fccd4869d545a25b63c545341ca7f4`. |
 
-The two scoring models are supplied with the evaluation asset bundle, at the
-revisions named in the table, and are placed below `assets_root` as `sbert/` and
-`simcse/`. Nothing is downloaded at run time: the commands load the reader
-tokenizer and both sentence encoders from local files.
+The two scoring models sit in the evaluation asset repository at the revisions
+named in the table and are placed below `assets_root` as `sbert/` and `simcse/`,
+next to `mhr_model.pt` and `mhr_fk_constants.npz`. Nothing is downloaded at run
+time: the commands load the reader tokenizer, the rig constants and both sentence
+encoders from local files.
 
 ## 3. Verify the inputs
 
