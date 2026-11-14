@@ -28,6 +28,7 @@ mixing:
   - p06
   - p10
   - p11
+  - p15
   - p17
   - p36
   - p37
@@ -55,6 +56,7 @@ simulation_stream:
     - p06
     - p10
     - p11
+    - p15
     - p17
     - p36
     - p37

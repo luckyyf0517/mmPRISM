@@ -11,8 +11,10 @@ This release provides the complete inference and evaluation workflow for nine
 signers: zero-shot reconstruction, personal adaptation of reconstruction and the
 reader using fifty segments per signer, and translation with both models adapted.
 The workflow starts from the supplied pretrained checkpoints. Full training
-sources are included for reading the Methods recipe; the separate nine-signer
-data pack supports the inference and personal-adaptation experiments below.
+sources are included for reading the Methods recipe. The data pack released with
+this package is the evaluation set: the nine held-out signers, 1,416 evaluation
+segments and 450 calibration segments. The training pool is not public and is
+available from the corresponding author under the access described in the paper.
 
 The experimental sequence is:
 
@@ -24,14 +26,14 @@ radar -> zero-shot pose -> evaluation before adaptation
 
 ## Reproduce in one pass
 
-A complete run takes three downloads, one configuration edit and four commands.
+A complete run takes three downloads, one configuration edit and the commands below.
 
 ```bash
 # 1. the three downloads (Hugging Face account not required for public files)
-pip install -U "huggingface_hub[cli]"
-huggingface-cli download luckyyf/mmprism-data --repo-type dataset --local-dir mmprism-data
-huggingface-cli download luckyyf/mmprism-checkpoints --local-dir weights-download
-huggingface-cli download luckyyf/mmprism-eval-models --local-dir assets
+pip install -U huggingface_hub
+hf download luckyyf/mmprism-data --repo-type dataset --local-dir mmprism-data
+hf download luckyyf/mmprism-checkpoints --local-dir weights-download
+hf download luckyyf/mmprism-eval-models --local-dir assets
 
 # 2. put the checkpoints on the relative paths the layout expects
 mkdir -p weights/artifacts/retained/mainline_20261106/checkpoints weights/artifacts/retained/stage2_reader_20261106
@@ -109,7 +111,7 @@ output_root = "/path/to/mmprism-outputs"
 
 | Root | Contents |
 |---|---|
-| `data_root` | The supplied nine-signer data pack, including splits, pose supervision and reader tokenizer/configuration files. |
+| `data_root` | The released evaluation set, nine held-out signers, including splits, pose supervision and reader tokenizer/configuration files. |
 | `weights_root` | The original reconstruction and reader checkpoints, at the relative locations declared under `[weights]` in the layout. |
 | `assets_root` | The body rig, forward-kinematics constants and two sentence encoders listed below. |
 | `output_root` | Generated poses, personal checkpoints, text predictions and evaluation reports. Use a new directory to retain a separate run. |
@@ -169,7 +171,7 @@ reader recipe. The commands consume these supplied memberships directly.
 |---|---|---|
 | this code | this repository | 1.7 MB |
 | reconstruction and translation checkpoints | https://huggingface.co/luckyyf/mmprism-checkpoints | 8.6 GB |
-| nine-signer data pack | https://huggingface.co/datasets/luckyyf/mmprism-data | 93 GB |
+| evaluation set, nine held-out signers | https://huggingface.co/datasets/luckyyf/mmprism-data | 93 GB |
 | body rig, forward-kinematics constants, two sentence encoders | https://huggingface.co/luckyyf/mmprism-eval-models | 1.5 GB |
 
 [manifests/weights_manifest.json](manifests/weights_manifest.json) records the size

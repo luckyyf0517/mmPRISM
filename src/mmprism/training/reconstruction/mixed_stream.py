@@ -27,7 +27,7 @@ from mmprism.simulation.mixed_domain import (
 from mmprism.training.reconstruction.dataset import collate_windows
 
 WINDOW_FRAMES = 32
-HELD_OUT_SIGNERS = ("p01", "p03", "p06", "p10", "p11", "p17", "p36", "p37")
+HELD_OUT_SIGNERS = ("p01", "p03", "p06", "p10", "p11", "p15", "p17", "p36", "p37")
 _RENDER_LOCK = threading.Lock()
 
 
