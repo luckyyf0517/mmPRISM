@@ -1,4 +1,5 @@
-"""Six release commands for verification, reconstruction, adaptation and translation."""
+"""Seven release commands: verification, reconstruction, adaptation, translation and the
+camera-pose reference decode."""
 
 from __future__ import annotations
 
@@ -13,7 +14,15 @@ from mmprism.release.paths import PACKAGE_ROOT, configure
 from mmprism.release.verify import verify_data as check_data
 from mmprism.release.verify import verify_weights as check_weights
 
-COMMANDS = ("verify-data", "verify-weights", "reconstruct", "evaluate", "adapt", "translate")
+COMMANDS = (
+    "verify-data",
+    "verify-weights",
+    "reconstruct",
+    "evaluate",
+    "adapt",
+    "translate",
+    "reference",
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -57,6 +66,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                 reconstruct_signer(signer, mode=options.mode, device=options.device)
                 release_device_memory(options.device)
             return 0
+        if args.command == "reference":
+            from mmprism.release.camera_reference import build_reference, compare_with_printed
+            from mmprism.release.data import SIGNERS
+            from mmprism.release.settings import release_device_memory
+
+            command_parser = argparse.ArgumentParser(prog="mmprism-reference")
+            command_parser.add_argument("--signer", action="append", choices=SIGNERS)
+            command_parser.add_argument("--device", default="cpu")
+            command_parser.add_argument("--force", action="store_true")
+            options = command_parser.parse_args(remainder)
+            result = build_reference(
+                tuple(dict.fromkeys(options.signer or SIGNERS)),
+                device=options.device,
+                force=options.force,
+            )
+            result["against_printed"] = compare_with_printed(result["reference"])
+            print(json.dumps(result, indent=2))
+            release_device_memory(options.device)
+            return 0
         script = {
             "evaluate": "eval_cell_visibility.py",
             "adapt": "harness.py",
@@ -83,6 +111,10 @@ def verify_weights() -> int:
 
 def reconstruct() -> int:
     return main(["reconstruct", *sys.argv[1:]])
+
+
+def reference() -> int:
+    return main(["reference", *sys.argv[1:]])
 
 
 def evaluate() -> int:

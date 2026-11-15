@@ -28,6 +28,7 @@ mmprism-reconstruct = "mmprism.release.cli:reconstruct"
 mmprism-evaluate = "mmprism.release.cli:evaluate"
 mmprism-adapt = "mmprism.release.cli:adapt"
 mmprism-translate = "mmprism.release.cli:translate"
+mmprism-reference = "mmprism.release.cli:reference"
 
 [build-system]
 requires = ["hatchling"]

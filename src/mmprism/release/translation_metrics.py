@@ -12,8 +12,29 @@ from mmprism.evaluation.language import (
     _official_rouge_l,
 )
 from mmprism.release.data import SIGNERS
-from mmprism.release.paths import PACKAGE_ROOT, resolve
+from mmprism.release.paths import PACKAGE_ROOT, PathConfigurationError, resolve
 from mmprism.release.settings import write_report
+
+
+def load_reference() -> tuple[dict, str]:
+    """The denominator of relative performance.
+
+    The paper divides by the camera-pose reference decode of the evaluation support, so the
+    computed file wins whenever ``mmprism-reference`` has produced one. The shipped constants are
+    only a fallback for a reader who has not run that command yet, and the returned source string
+    says which of the two was used, so a report can never silently mix them.
+    """
+    shipped = PACKAGE_ROOT / "configs/translation_reference.json"
+    try:
+        computed = resolve("outputs.translation_reference")
+    except PathConfigurationError:
+        computed = None
+    if computed is not None and computed.is_file():
+        return json.loads(computed.read_text()), str(computed)
+    return (
+        json.loads(shipped.read_text()),
+        f"shipped constants {shipped.name}: run mmprism-reference to compute the reference decode",
+    )
 
 
 class SimCSE:
@@ -100,7 +121,7 @@ def score_translation(signers, *, mode, reader, device="cpu"):
     pooled = {
         key: sum(row[key] * row["segments"] for row in per_person.values()) / total for key in keys
     }
-    reference = json.loads((PACKAGE_ROOT / "configs/translation_reference.json").read_text())
+    reference, reference_source = load_reference()
     if set(signers) == set(SIGNERS):
         pooled["relative_performance"] = (
             100.0 * sum(pooled[key] / reference["metrics"][key] for key in keys) / 4
@@ -112,6 +133,7 @@ def score_translation(signers, *, mode, reader, device="cpu"):
         "pooled": pooled,
         "per_person": per_person,
         "reference": reference,
+        "reference_source": reference_source,
         "aggregation": "segment-weighted mean of per-signer corpus scores",
     }
     if set(signers) == set(SIGNERS):

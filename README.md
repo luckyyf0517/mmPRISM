@@ -225,6 +225,21 @@ Reconstruction exports both the calibration and evaluation segments. Evaluation
 scores only the evaluation membership. The pooled report is
 `output_root/evaluation/pose_zero-shot.json`.
 
+## Two adaptation routes
+
+Each signer has one calibration file of fifty segments with their sentence texts
+(`splits/calibration_selection.json`). The same file serves both routes below, so a run of
+either route uses exactly the segments the other route would use.
+
+| Route | Commands | What it needs |
+|---|---|---|
+| Reader only, no camera | `mmprism-reconstruct --mode zero-shot`, then `mmprism-adapt --side reader --mode zero-shot`, then `mmprism-translate --mode zero-shot --reader adapted` | the signer's radar recordings and the sentence texts of the calibration segments |
+| Both stages | steps 5 and 6 below: `mmprism-adapt --side reconstruction`, `mmprism-reconstruct --mode adapted`, `mmprism-adapt --side reader --mode adapted`, `mmprism-translate --mode adapted --reader adapted` | the same, plus camera-derived joint positions for the calibration segments, which supervise the reconstruction stage |
+
+The reader-only route calibrates the reader on the zero-shot radar pose streams and
+decodes on them; no camera data enters it. Only the reconstruction route needs
+camera-derived supervision, and it is the only part that does.
+
 ## 5. Adapt reconstruction and evaluate it
 
 Adapt a separate reconstruction model for each signer using that signer's fixed
@@ -298,8 +313,30 @@ four consecutive characters), ROUGE-L (Recall-Oriented Understudy for Gisting
 Evaluation–Longest Common Subsequence, sequence overlap), and the two sentence
 encoders described above. Scores are computed per signer and pooled by
 evaluation-segment count. Relative performance is the mean of the four metric ratios to the
-paper's camera-pose reference, multiplied by one hundred; those denominators are
-stored in [configs/translation_reference.json](configs/translation_reference.json).
+camera-pose reference decode, multiplied by one hundred. That decode is the file
+`evaluation/translation_reference.json` below `output_root`, written by `mmprism-reference`;
+until that command has run, the constants in
+[configs/translation_reference.json](configs/translation_reference.json) stand in, and the report
+names whichever of the two it divided by in its `reference_source` field.
+
+### Camera-pose reference
+
+The camera-pose reference is computed by `mmprism-reference`: it adapts the reader on
+the camera poses of each signer's calibration segments, decodes the evaluation
+segments from camera poses, and scores them with the same metrics. It writes
+`evaluation/translation_reference.json` below `output_root` and prints the computed values
+beside those in `configs/translation_reference.json`. `mmprism-translate` divides by that
+computed file whenever it exists, so a reader who runs the reference first reproduces the
+paper's retained percentages from the delivered data rather than from a constant.
+
+```bash
+uv run --frozen mmprism-reference --signer p06 --device cuda:0   # one signer
+uv run --frozen mmprism-reference --device cuda:0                # all nine signers
+```
+
+`tests/test_camera_reference.py` fails if the computed nine-signer reference drifts
+from the shipped constants by more than 1.5 BLEU-4 points, 1.5 ROUGE-L points, 0.02
+SBERT or 1.0 SimCSE point.
 
 ## Run one signer or inspect the outputs
 
@@ -362,7 +399,8 @@ The reader is trained in three stages. Stage one reads public camera poses paire
 with text for 3,600 updates at 8e-4; stage two reads the poses reconstructed from
 the same sentences for 3,000 updates at 1e-4 after a 100-update warm-up; stage
 three adapts the reader to a signer, on the same fifty segments as the
-reconstruction stage, for 500 updates at 5e-5. The first two stages carry 512
+reconstruction stage (the selection is shared; the reader can also be adapted
+without any camera, see "Two adaptation routes"), for 500 updates at 5e-5. The first two stages carry 512
 sequences per update on four cards and apply joint-style and tempo augmentation;
 stage three runs on one card with eight segments per update. The
 [reader training recipe](src/mmprism/training/translation/recipe.py) holds the

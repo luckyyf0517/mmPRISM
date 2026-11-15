@@ -1,9 +1,9 @@
 {
-  "description": "Camera-pose reference values printed in the paper, used as the denominator of relative performance.",
+  "description": "Camera-pose reference decode of the evaluation support, the denominator of relative performance. Values printed in the paper; mmprism-reference recomputes them and writes outputs.translation_reference.",
   "metrics": {
-    "bleu4": 24.44,
-    "rouge_l": 50.34,
-    "sbert": 0.667,
-    "simcse": 87.2
+    "bleu4": 25.4,
+    "rouge_l": 51.19,
+    "sbert": 0.679,
+    "simcse": 87.5
   }
 }
