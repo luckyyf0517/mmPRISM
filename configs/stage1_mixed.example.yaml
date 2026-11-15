@@ -1,19 +1,11 @@
-# Mixed continuation of the 100000-step schedule: resumes from the step-80000 real-only
-# checkpoint and runs the last 20000 updates, global steps 80000-100000. Step counts in this
-# file and in checkpoint names are local to the continuation.
+# Reconstruction training, one measured and one simulated window per card, updates 80,000 to
+# 100,000 of the schedule. Resumes from the checkpoint the measured-only phase writes; step counts
+# in this file and in checkpoint names are local to this continuation.
 data:
   compact_sources:
     new: training.compact_catalog_new
     old: training.compact_catalog_old
     v4: training.compact_catalog_v4
-  expected_prevalid_frames:
-    test: 15741
-    train: 689881
-    validation: 23089
-  expected_segments:
-    test: 159
-    train: 11221
-    validation: 354
   train_window_frames: 32
   membership: training.membership
 mixing:

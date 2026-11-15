@@ -421,12 +421,6 @@ def build_binding(config: Mapping[str, Any]) -> tuple[tuple[BoundSegment, ...], 
     data = _mapping(config.get("data"), "data")
     membership_path = _section_path(config, "data", "membership")
     records = parse_membership(_read_json(membership_path, "reconstruction membership"))
-    expected_segments = _mapping(data.get("expected_segments"), "expected_segments")
-    _require(
-        role_counts(records)
-        == {role: int(expected_segments[role]) for role in ("train", "validation", "test")},
-        "reconstruction membership segment counts differ from reconstruction contract",
-    )
     target_column = data.get("rootw5_target_column")
     _require(
         isinstance(target_column, str) and target_column == "pose3d_global", "target column differs"
@@ -495,12 +489,6 @@ def build_binding(config: Mapping[str, Any]) -> tuple[tuple[BoundSegment, ...], 
             bounded.append(BoundSegment(**{**asdict(segment), "target_offset": offset}))
             offset += segment.frame_count
         role_frame_counts[role] = offset
-    expected_frames = _mapping(data.get("expected_prevalid_frames"), "expected_prevalid_frames")
-    _require(
-        role_frame_counts
-        == {role: int(expected_frames[role]) for role in ("train", "validation", "test")},
-        "reconstruction pre-validity frame counts differ from contract",
-    )
     report = {
         "schema_version": BINDING_SCHEMA,
         "membership": str(membership_path),

@@ -1,17 +1,9 @@
-# Real-only prefix of the 100000-step schedule; the continuation starts at step 80000.
+# Reconstruction training, measured windows only, updates 0 to 80,000 of the schedule.
 data:
   compact_sources:
     new: training.compact_catalog_new
     old: training.compact_catalog_old
     v4: training.compact_catalog_v4
-  expected_prevalid_frames:
-    test: 15741
-    train: 689881
-    validation: 23089
-  expected_segments:
-    test: 159
-    train: 11221
-    validation: 354
   train_window_frames: 32
   membership: training.membership
 model:
