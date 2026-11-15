@@ -335,8 +335,8 @@ uv run --frozen mmprism-reference --device cuda:0                # all nine sign
 ```
 
 `tests/test_camera_reference.py` fails if the computed nine-signer reference drifts
-from the shipped constants by more than 1.5 BLEU-4 points, 1.5 ROUGE-L points, 0.02
-SBERT or 1.0 SimCSE point.
+from the shipped constants by more than 0.2 BLEU-4 points, 0.2 ROUGE-L points, 0.005
+SBERT or 0.2 SimCSE point.
 
 ## Run one signer or inspect the outputs
 

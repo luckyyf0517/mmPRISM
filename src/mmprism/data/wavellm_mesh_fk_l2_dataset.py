@@ -1,8 +1,6 @@
 """WaveLLM mesh-FK L2 episode dataset: handoff-bound, episode-index reader.
 
-Implements the reader half of OpenSpec
-``refactor-wavellm-l2-episode-dataset``.  One dataset instance serves one
-split of one validated
+One dataset instance serves one split of one validated
 ``mmprism.csl_daily_mesh_fk_wavellm_handoff.v1``:
 
 1. construction validates the handoff hash set against the declared L2

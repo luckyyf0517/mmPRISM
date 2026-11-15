@@ -11,7 +11,7 @@ from mmprism.release.data import SIGNERS
 from mmprism.release.paths import PathConfigurationError, resolve
 
 # The printed values come from the delivered decode; mmprism-reference re-derives them, so the
-# recomputation is allowed the rounding of a single decode, not a loose band.
+# recomputation is allowed the rounding of a single decode.
 TOLERANCE = {"bleu4": 0.2, "rouge_l": 0.2, "sbert": 0.005, "simcse": 0.2}
 
 
