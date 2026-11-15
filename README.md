@@ -176,7 +176,7 @@ reader recipe. The commands consume these supplied memberships directly.
 |---|---|---|
 | this code | this repository | 1.7 MB |
 | reconstruction and translation checkpoints | https://huggingface.co/luckyyf/mmprism-checkpoints | 8.6 GB |
-| evaluation set, nine held-out signers | https://huggingface.co/datasets/luckyyf/mmprism-data | 93 GB |
+| evaluation set, nine held-out signers | https://huggingface.co/datasets/luckyyf/mmprism-data | 99 GB |
 | body rig, forward-kinematics constants, two sentence encoders | https://huggingface.co/luckyyf/mmprism-eval-models | 1.5 GB |
 
 [manifests/weights_manifest.json](manifests/weights_manifest.json) records the size
