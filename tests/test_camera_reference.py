@@ -9,6 +9,7 @@ import pytest
 from mmprism.release.camera_reference import compare_with_printed
 from mmprism.release.data import SIGNERS
 from mmprism.release.paths import PathConfigurationError, resolve
+from mmprism.release.translation_metrics import load_reference
 
 # The printed values come from the delivered decode; mmprism-reference re-derives them, so the
 # recomputation is allowed the rounding of a single decode.
@@ -28,6 +29,40 @@ def test_comparison_reports_drift(tmp_path) -> None:
     assert rows["bleu4"]["delta"] == pytest.approx(1.5)
     assert rows["rouge_l"]["delta"] == pytest.approx(-1.0)
     assert rows["simcse"]["delta"] == 0.0
+
+
+@pytest.mark.parametrize(
+    "computed_signers,selected_signers,use_computed",
+    [
+        (("p06",), SIGNERS, False),
+        (SIGNERS, ("p06",), False),
+        (tuple(reversed(SIGNERS)), SIGNERS, True),
+        (("p06",), ("p06",), True),
+    ],
+)
+def test_reference_uses_matching_signer_support(
+    tmp_path, monkeypatch, computed_signers, selected_signers, use_computed
+) -> None:
+    from mmprism.release import translation_metrics
+
+    computed_path = tmp_path / "reference.json"
+    computed = {
+        "signers": list(computed_signers),
+        "metrics": {"bleu4": 12.0, "rouge_l": 34.0, "sbert": 0.5, "simcse": 80.0},
+    }
+    computed_path.write_text(json.dumps(computed))
+    monkeypatch.setattr(translation_metrics, "resolve", lambda key: computed_path)
+
+    reference, source = load_reference(selected_signers)
+
+    if use_computed:
+        assert reference == computed
+        assert source == str(computed_path)
+    else:
+        printed = translation_metrics.PACKAGE_ROOT / "configs/translation_reference.json"
+        assert reference == json.loads(printed.read_text())
+        assert "shipped constants" in source
+        assert "different signers" in source
 
 
 def test_computed_reference_matches_printed_constants() -> None:

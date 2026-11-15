@@ -39,7 +39,6 @@ hf download luckyyf/mmprism-eval-models --local-dir assets
 mkdir -p weights/artifacts/retained/mainline_20261106/checkpoints weights/artifacts/retained/stage2_reader_20261106
 mv weights-download/producer_mixed100k_e2e_dual50_step_20000.pt weights/artifacts/retained/mainline_20261106/checkpoints/
 mv weights-download/stage2_reader_20261106_last.ckpt weights/artifacts/retained/stage2_reader_20261106/last.ckpt
-rmdir weights-download
 
 # 3. point the configuration at the three roots, then follow steps 3 to 6 below
 cp configs/paths.example.toml configs/paths.toml
@@ -314,10 +313,11 @@ Evaluation–Longest Common Subsequence, sequence overlap), and the two sentence
 encoders described above. Scores are computed per signer and pooled by
 evaluation-segment count. Relative performance is the mean of the four metric ratios to the
 camera-pose reference decode, multiplied by one hundred. That decode is the file
-`evaluation/translation_reference.json` below `output_root`, written by `mmprism-reference`;
-until that command has run, the constants in
+`evaluation/translation_reference.json` below `output_root`, written by `mmprism-reference`
+for the same signer selection. Otherwise, the constants in
 [configs/translation_reference.json](configs/translation_reference.json) stand in, and the report
-names whichever of the two it divided by in its `reference_source` field.
+names whichever of the two it divided by in its `reference_source` field, including the
+reason when a computed reference covers different signers.
 
 ### Camera-pose reference
 
@@ -326,8 +326,8 @@ the camera poses of each signer's calibration segments, decodes the evaluation
 segments from camera poses, and scores them with the same metrics. It writes
 `evaluation/translation_reference.json` below `output_root` and prints the computed values
 beside those in `configs/translation_reference.json`. `mmprism-translate` divides by that
-computed file whenever it exists, so a reader who runs the reference first reproduces the
-paper's retained percentages from the delivered data rather than from a constant.
+computed file when it covers the same signers, so a reader who runs the reference first
+reproduces the paper's retained percentages from the delivered data rather than from a constant.
 
 ```bash
 uv run --frozen mmprism-reference --signer p06 --device cuda:0   # one signer

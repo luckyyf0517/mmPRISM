@@ -16,24 +16,31 @@ from mmprism.release.paths import PACKAGE_ROOT, PathConfigurationError, resolve
 from mmprism.release.settings import write_report
 
 
-def load_reference() -> tuple[dict, str]:
+def load_reference(signers=SIGNERS) -> tuple[dict, str]:
     """The denominator of relative performance.
 
-    The paper divides by the camera-pose reference decode of the evaluation support, so the
-    computed file wins whenever ``mmprism-reference`` has produced one. The shipped constants are
-    only a fallback for a reader who has not run that command yet, and the returned source string
-    says which of the two was used, so a report can never silently mix them.
+    The paper divides by a camera-pose reference decode of the same evaluation support.
+    A computed file is used when it covers the same signers as the translation run. Otherwise,
+    the shipped constants supply the full-cohort reference, and the source string explains
+    why they were selected.
     """
     shipped = PACKAGE_ROOT / "configs/translation_reference.json"
     try:
         computed = resolve("outputs.translation_reference")
     except PathConfigurationError:
         computed = None
+    reason = "run mmprism-reference to compute the reference decode"
     if computed is not None and computed.is_file():
-        return json.loads(computed.read_text()), str(computed)
+        reference = json.loads(computed.read_text())
+        if set(reference.get("signers", ())) == set(signers):
+            return reference, str(computed)
+        reason = (
+            f"computed reference {computed} has different signers; "
+            "run mmprism-reference with the same signer selection"
+        )
     return (
         json.loads(shipped.read_text()),
-        f"shipped constants {shipped.name}: run mmprism-reference to compute the reference decode",
+        f"shipped constants {shipped.name}: {reason}",
     )
 
 
@@ -121,7 +128,7 @@ def score_translation(signers, *, mode, reader, device="cpu"):
     pooled = {
         key: sum(row[key] * row["segments"] for row in per_person.values()) / total for key in keys
     }
-    reference, reference_source = load_reference()
+    reference, reference_source = load_reference(signers)
     if set(signers) == set(SIGNERS):
         pooled["relative_performance"] = (
             100.0 * sum(pooled[key] / reference["metrics"][key] for key in keys) / 4
