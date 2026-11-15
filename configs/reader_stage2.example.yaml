@@ -1,7 +1,7 @@
 # Reader, stage two: poses reconstructed from the same sentences.
 #
 # The values below are the recipe of the run behind the translation checkpoint
-# this package loads (stage two, November 2026: step 2988 of the 3,000 it trains).
+# this package loads (stage two, November 2026: 3,000 optimizer updates).
 # It trains for 3,000 optimizer updates at a peak
 # rate of 1e-4 with a cosine decay, after a 100-update warm-up, on a micro-batch
 # of eight sequences accumulated over sixteen steps on four cards.
